@@ -83,6 +83,8 @@ dev_dependencies:
   args: ^2.7.0
   freezed: ^4.0.1
   riverpod_generator: ^4.0.9
+  # setup.dart only: the unsigned iOS packaging rewrites entitlements XML.
+  xml: ^7.0.1
 
   drift_dev: ^2.35.1
   intl_utils: ^2.8.16
