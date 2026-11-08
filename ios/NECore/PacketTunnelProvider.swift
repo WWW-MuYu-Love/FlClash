@@ -22,7 +22,17 @@ final class PacketTunnelProvider: NEPacketTunnelProvider {
     sharedStateStore.clearRunTime()
     sharedStateStore.clearLastError()
     reloadWidgets()
-    guard let snapshot = sharedStateStore.loadVPNOptionsSnapshot() else {
+    let snapshot: (options: PacketTunnelVPNOptions, data: Data)
+    let setupParams: Data
+    if let forwarded = sharedStateStore.loadForwardedConfig(
+      from: options
+    ) {
+      snapshot = forwarded.snapshot
+      setupParams = forwarded.setupParams
+    } else if let loaded = sharedStateStore.loadVPNOptionsSnapshot() {
+      snapshot = loaded
+      setupParams = sharedStateStore.loadSetupParams()
+    } else {
       logger.error("startTunnel failed: missing vpn options")
       sharedStateStore.saveLastError("missing VPN options")
       completionHandler(PacketTunnelProviderError.missingVPNOptions)
@@ -65,7 +75,6 @@ final class PacketTunnelProvider: NEPacketTunnelProvider {
       )
       self.eventQueue.start()
       let initParams = self.sharedStateStore.makeInitParams()
-      let setupParams = self.sharedStateStore.loadSetupParams()
       self.logger.info(
         "quickSetup initParams=\(initParams, privacy: .public)"
       )

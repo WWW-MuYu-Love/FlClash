@@ -1,5 +1,6 @@
 import Foundation
 import NetworkExtension
+import Shared
 import os
 
 @MainActor
@@ -315,7 +316,11 @@ final class TunnelCoordinator {
       }
 
       do {
-        try manager.connection.startVPNTunnel()
+        // The extension may be signed without the App Group, so forward the config through the start options.
+        let options = TunnelStartOptions.build(
+          appGroupIdentifier: NEHelper.appGroupIdentifier
+        )
+        try manager.connection.startVPNTunnel(options: options)
         log("start requested")
       } catch {
         if finishRunningRequestIfSatisfied(request, manager: manager) {

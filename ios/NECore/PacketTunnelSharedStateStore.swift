@@ -70,9 +70,99 @@ final class PacketTunnelSharedStateStore {
   }
 
   func makeInitParams() -> String {
-    let homeDirectory = appGroupDirectory()?.path ?? ""
+    let homeDirectory = homeDirectory()?.path ?? ""
     return "{\"home-dir\":\"\(homeDirectory)\",\"version\":0}"
   }
+
+  /// The core's home directory: the group container when the extension can reach it, otherwise its own container.
+  func homeDirectory() -> URL? {
+    let directory: URL?
+    if let group = appGroupDirectory() {
+      directory = group
+    } else {
+      directory = FileManager.default.urls(
+        for: .applicationSupportDirectory,
+        in: .userDomainMask
+      ).first
+    }
+    if let directory {
+      try? FileManager.default.createDirectory(
+        at: directory,
+        withIntermediateDirectories: true
+      )
+    }
+    return directory
+  }
+
+  /// Resolves the tunnel config forwarded through the start options; nil when the options carry no usable config.
+  func loadForwardedConfig(
+    from options: [String: NSObject]?
+  ) -> (
+    snapshot: (options: PacketTunnelVPNOptions, data: Data),
+    setupParams: Data
+  )? {
+    guard let options,
+      let vpnOptionsString = options[Self.forwardedVpnOptionsKey] as? String,
+      let vpnOptionsData = vpnOptionsString.data(using: .utf8),
+      let vpnOptions = try? JSONDecoder().decode(
+        PacketTunnelVPNOptions.self,
+        from: vpnOptionsData
+      ),
+      let setupParamsString = options[Self.forwardedSetupParamsKey]
+        as? String,
+      let initialSetupParamsData = setupParamsString.data(using: .utf8)
+    else {
+      return nil
+    }
+    var setupParamsData = initialSetupParamsData
+    if let profile = options[Self.forwardedProfileKey] as? String {
+      guard
+        let staged = stageForwardedProfile(
+          profile,
+          setupParamsData: setupParamsData
+        )
+      else {
+        return nil
+      }
+      setupParamsData = staged
+    }
+    return (
+      snapshot: (options: vpnOptions, data: vpnOptionsData),
+      setupParams: setupParamsData
+    )
+  }
+
+  private func stageForwardedProfile(
+    _ profile: String,
+    setupParamsData: Data
+  ) -> Data? {
+    guard let home = homeDirectory(),
+      var setupJson = try? JSONSerialization.jsonObject(
+        with: setupParamsData
+      ) as? [String: Any],
+      var base = setupJson["base"] as? [String: Any],
+      base["path"] is String
+    else {
+      return nil
+    }
+    let stagedURL = home.appendingPathComponent(
+      "tunnel-profile.yaml",
+      isDirectory: false
+    )
+    do {
+      try profile.write(to: stagedURL, atomically: true, encoding: .utf8)
+    } catch {
+      return nil
+    }
+    base["path"] = stagedURL.path
+    setupJson["base"] = base
+    return try? JSONSerialization.data(withJSONObject: setupJson)
+  }
+
+  // Start-option keys mirror TunnelStartOptions in the Shared module; keep the two in sync.
+  private static let forwardedVpnOptionsKey = "vpnOptions"
+  private static let forwardedSetupParamsKey = "setupParams"
+  private static let forwardedProfileKey = "profile"
 
   func appGroupDirectory() -> URL? {
     FileManager.default.containerURL(

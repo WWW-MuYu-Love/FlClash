@@ -116,7 +116,11 @@ public enum NEHelper {
     if isRunning(status) {
       return true
     }
-    try manager.connection.startVPNTunnel()
+    try manager.connection.startVPNTunnel(
+      options: TunnelStartOptions.build(
+        appGroupIdentifier: appGroupIdentifier
+      )
+    )
     return true
   }
 
