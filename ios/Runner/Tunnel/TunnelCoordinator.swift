@@ -20,6 +20,7 @@ final class TunnelCoordinator {
   private var reportedTunnelState: TunnelTarget?
   private var publishedTunnelState: TunnelTarget?
   private var lastStartError: String?
+  private var lastStartOptionsSummary: String?
 
   private var requestGeneration: UInt64 = 0
   private var tunnelRequest: TunnelRequest?
@@ -234,6 +235,7 @@ final class TunnelCoordinator {
     while isCurrent(request) {
       // A stored extension error past this point belongs to this attempt.
       managerStore.clearTunnelLastError()
+      lastStartOptionsSummary = nil
       let loadedManager = try await managerStore.loadManager()
       guard isCurrent(request) else {
         return
@@ -320,6 +322,14 @@ final class TunnelCoordinator {
         let options = TunnelStartOptions.build(
           appGroupIdentifier: NEHelper.appGroupIdentifier
         )
+        if let options {
+          lastStartOptionsSummary =
+            options[TunnelStartOptions.profileKey] != nil
+            ? "start options sent (with profile)"
+            : "start options sent (no profile)"
+        } else {
+          lastStartOptionsSummary = "no start options"
+        }
         try manager.connection.startVPNTunnel(options: options)
         log("start requested")
       } catch {
@@ -651,9 +661,15 @@ final class TunnelCoordinator {
       .compactMap { $0 }
       .filter { !$0.isEmpty }
     lastStartError = nil
-    onTunnelFailure(
-      parts.isEmpty ? "tunnel did not connect" : parts.joined(separator: " / ")
-    )
+    let summary = lastStartOptionsSummary
+    lastStartOptionsSummary = nil
+    if parts.isEmpty {
+      onTunnelFailure(
+        "tunnel did not connect (\(summary ?? "start options unknown"))"
+      )
+    } else {
+      onTunnelFailure(parts.joined(separator: " / "))
+    }
   }
 
   private func reportTunnelState(_ state: TunnelTarget) {

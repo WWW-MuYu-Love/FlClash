@@ -2,9 +2,9 @@ import Foundation
 
 /// Forwards the tunnel config through startVPNTunnel options; the extension may be signed without the App Group.
 public enum TunnelStartOptions {
-  static let vpnOptionsKey = "vpnOptions"
-  static let setupParamsKey = "setupParams"
-  static let profileKey = "profile"
+  public static let vpnOptionsKey = "vpnOptions"
+  public static let setupParamsKey = "setupParams"
+  public static let profileKey = "profile"
 
   /// Reads the current shared state and returns the start options, or nil when the config is not available.
   public static func build(appGroupIdentifier: String) -> [String: NSObject]? {
