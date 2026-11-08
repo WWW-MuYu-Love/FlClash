@@ -13,6 +13,7 @@ class BuildConfig {
     required this.coreVersion,
     required this.coreDir,
     required this.coreName,
+    required this.libName,
     required this.outputDir,
     required this.helperDir,
     required this.helperName,
@@ -23,6 +24,9 @@ class BuildConfig {
   final String coreVersion;
   final String coreDir;
   final String coreName;
+
+  /// File stem for library targets (iOS c-archives: libclash/libclash_lowmem).
+  final String libName;
   final String outputDir;
   final String helperDir;
   final String helperName;
@@ -33,6 +37,7 @@ class BuildConfig {
     coreVersion: '',
     coreDir: 'core',
     coreName: 'FlClashCore',
+    libName: 'libclash',
     outputDir: 'libclash',
     helperDir: 'services/helper',
     helperName: 'FlClashHelperService',
@@ -52,6 +57,7 @@ class BuildConfig {
       coreVersion: yaml['core_version'] as String? ?? _defaults.coreVersion,
       coreDir: yaml['core_dir'] as String? ?? _defaults.coreDir,
       coreName: yaml['core_name'] as String? ?? _defaults.coreName,
+      libName: yaml['lib_name'] as String? ?? _defaults.libName,
       outputDir: yaml['output_dir'] as String? ?? _defaults.outputDir,
       helperDir: yaml['helper_dir'] as String? ?? _defaults.helperDir,
       helperName: yaml['helper_name'] as String? ?? _defaults.helperName,
@@ -64,6 +70,7 @@ class BuildConfig {
     'core_version': coreVersion,
     'core_dir': coreDir,
     'core_name': coreName,
+    'lib_name': libName,
     'output_dir': outputDir,
     'helper_dir': helperDir,
     'helper_name': helperName,

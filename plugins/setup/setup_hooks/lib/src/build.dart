@@ -61,6 +61,16 @@ Future<BuildReport> buildPlatform(BuildRequest request) async {
     notice: notice,
     harnessInputs: harnessInputs,
   ).build(target);
+  if (target.goos == 'ios') {
+    final lowMemoryCore = await GoBuilder(
+      rootDir: rootDir,
+      config: config,
+      cache: cache,
+      notice: notice,
+      harnessInputs: harnessInputs,
+    ).build(Target.iosArm64LowMem);
+    return _report([core, lowMemoryCore]);
+  }
   if (!target.hasHelper) {
     _log.info('Done in ${stopwatch.elapsed}: ${core.primaryOutput}');
     return _report([core]);
