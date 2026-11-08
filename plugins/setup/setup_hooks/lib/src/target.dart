@@ -1,7 +1,12 @@
 import 'error.dart';
 
 class Target {
-  const Target({required this.goos, required this.goarch, this.abi, this.lowMemory = false});
+  const Target({
+    required this.goos,
+    required this.goarch,
+    this.abi,
+    this.lowMemory = false,
+  });
 
   final String goos;
   final String goarch;

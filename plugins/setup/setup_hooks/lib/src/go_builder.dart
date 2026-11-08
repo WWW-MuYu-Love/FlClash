@@ -155,11 +155,7 @@ class GoBuilder {
       }
       return env;
     }
-    return {
-      'GOOS': target.goos,
-      'GOARCH': target.goarch,
-      'CGO_ENABLED': '0',
-    };
+    return {'GOOS': target.goos, 'GOARCH': target.goarch, 'CGO_ENABLED': '0'};
   }
 
   // Package-level vars in mihomo copy constant.Version during init, so only the
@@ -255,10 +251,7 @@ class GoBuilder {
     return builder.finishWithInputs();
   }
 
-  Set<String> _resolveGoInputs(
-    Map<String, String> environment,
-    Target target,
-  ) {
+  Set<String> _resolveGoInputs(Map<String, String> environment, Target target) {
     const template =
         r'''{{range .GoFiles}}{{$.Dir}}/{{.}}{{"\n"}}{{end}}{{range .CgoFiles}}{{$.Dir}}/{{.}}{{"\n"}}{{end}}{{range .CFiles}}{{$.Dir}}/{{.}}{{"\n"}}{{end}}{{range .CXXFiles}}{{$.Dir}}/{{.}}{{"\n"}}{{end}}{{range .MFiles}}{{$.Dir}}/{{.}}{{"\n"}}{{end}}{{range .HFiles}}{{$.Dir}}/{{.}}{{"\n"}}{{end}}{{range .FFiles}}{{$.Dir}}/{{.}}{{"\n"}}{{end}}{{range .SFiles}}{{$.Dir}}/{{.}}{{"\n"}}{{end}}{{range .SwigFiles}}{{$.Dir}}/{{.}}{{"\n"}}{{end}}{{range .SwigCXXFiles}}{{$.Dir}}/{{.}}{{"\n"}}{{end}}{{range .SysoFiles}}{{$.Dir}}/{{.}}{{"\n"}}{{end}}{{range .EmbedFiles}}{{$.Dir}}/{{.}}{{"\n"}}{{end}}{{with .Module}}{{if .GoMod}}{{.GoMod}}{{"\n"}}{{end}}{{end}}''';
     final result = runCommand(

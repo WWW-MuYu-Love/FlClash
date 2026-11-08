@@ -1,4 +1,4 @@
-//go:build (android || ios)
+//go:build android || ios
 
 package tun
 
@@ -17,8 +17,8 @@ import (
 )
 
 type startOptions struct {
-	MTU                    uint32 `json:"mtu"`
-	CongestionController   string `json:"congestion-controller"`
+	MTU                  uint32 `json:"mtu"`
+	CongestionController string `json:"congestion-controller"`
 	// iOS-only; Android never sends these keys, so Android behavior is
 	// unchanged. Tags match core/cmd/ios's coreTunOptions.
 	RecvMsgX               bool   `json:"recvMsgX"`

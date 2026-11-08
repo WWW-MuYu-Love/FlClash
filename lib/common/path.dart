@@ -82,9 +82,9 @@ class AppPath {
         final packageInfo = await PackageInfo.fromPlatform();
         final appGroupPath =
             await PathProviderFoundation().getContainerPath(
-                  appGroupIdentifier: 'group.${packageInfo.packageName}',
-                ) ??
-                '';
+              appGroupIdentifier: 'group.${packageInfo.packageName}',
+            ) ??
+            '';
         return migrateIOSDataDirectory(
           supportDirectory: support,
           appGroupPath: appGroupPath,
