@@ -667,6 +667,19 @@ TunnelState? tunnelState(Ref ref) {
   return source.value;
 }
 
+/// The last iOS tunnel start failure; null elsewhere or when none happened.
+/// Wired to the service channel's `tunnelError` reports.
+@Riverpod(keepAlive: true)
+String? tunnelError(Ref ref) {
+  if (!system.isIOS) {
+    return null;
+  }
+  final source = Service().tunnelError;
+  source.addListener(ref.invalidateSelf);
+  ref.onDispose(() => source.removeListener(ref.invalidateSelf));
+  return source.value;
+}
+
 @Riverpod(keepAlive: true)
 class CurrentSSID extends _$CurrentSSID with AutoDisposeNotifierMixin {
   @override

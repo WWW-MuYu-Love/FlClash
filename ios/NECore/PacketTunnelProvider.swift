@@ -20,9 +20,11 @@ final class PacketTunnelProvider: NEPacketTunnelProvider {
   ) {
     logger.info("startTunnel begin")
     sharedStateStore.clearRunTime()
+    sharedStateStore.clearLastError()
     reloadWidgets()
     guard let snapshot = sharedStateStore.loadVPNOptionsSnapshot() else {
       logger.error("startTunnel failed: missing vpn options")
+      sharedStateStore.saveLastError("missing VPN options")
       completionHandler(PacketTunnelProviderError.missingVPNOptions)
       return
     }
@@ -38,6 +40,7 @@ final class PacketTunnelProvider: NEPacketTunnelProvider {
         self.logger.error(
           "setTunnelNetworkSettings failed: \(error.localizedDescription, privacy: .public)"
         )
+        self.sharedStateStore.saveLastError(error.localizedDescription)
         completionHandler(error)
         return
       }
@@ -48,6 +51,9 @@ final class PacketTunnelProvider: NEPacketTunnelProvider {
       else {
         self.logger.error(
           "startTunnel failed: tunnel file descriptor missing"
+        )
+        self.sharedStateStore.saveLastError(
+          "could not determine tunnel file descriptor"
         )
         completionHandler(
           PacketTunnelProviderError.couldNotDetermineFileDescriptor
@@ -74,6 +80,7 @@ final class PacketTunnelProvider: NEPacketTunnelProvider {
           self.logger.error(
             "quickSetup failed: \(message, privacy: .public)"
           )
+          self.sharedStateStore.saveLastError(message)
           completionHandler(PacketTunnelProviderError.couldNotStartCoreTun)
           return
         }
@@ -91,6 +98,7 @@ final class PacketTunnelProvider: NEPacketTunnelProvider {
         )
         guard let coreTunOptionsData = try? JSONEncoder().encode(coreTunOptions)
         else {
+          self.sharedStateStore.saveLastError("could not start core TUN")
           completionHandler(PacketTunnelProviderError.couldNotStartCoreTun)
           return
         }
@@ -103,6 +111,8 @@ final class PacketTunnelProvider: NEPacketTunnelProvider {
         )
         if started {
           self.sharedStateStore.saveRunTime(vpnOptions: snapshot.data)
+        } else {
+          self.sharedStateStore.saveLastError("could not start core TUN")
         }
         completionHandler(
           started ? nil : PacketTunnelProviderError.couldNotStartCoreTun

@@ -7,6 +7,7 @@ final class TunnelCoordinator {
   private let managerStore: TunnelManagerStore
   private let onTunnelStateChanged: (TunnelTarget) -> Void
   private let onConnectionStateChanged: (String) -> Void
+  private let onTunnelFailure: (String) -> Void
   private let onExternalStart: () -> Void
   private let onExternalStop: () -> Void
   private let logger = Logger(
@@ -17,6 +18,7 @@ final class TunnelCoordinator {
   private var observedTunnelStatus: NEVPNStatus?
   private var reportedTunnelState: TunnelTarget?
   private var publishedTunnelState: TunnelTarget?
+  private var lastStartError: String?
 
   private var requestGeneration: UInt64 = 0
   private var tunnelRequest: TunnelRequest?
@@ -34,12 +36,14 @@ final class TunnelCoordinator {
     managerStore: TunnelManagerStore,
     onTunnelStateChanged: @escaping (TunnelTarget) -> Void,
     onConnectionStateChanged: @escaping (String) -> Void,
+    onTunnelFailure: @escaping (String) -> Void,
     onExternalStart: @escaping () -> Void,
     onExternalStop: @escaping () -> Void
   ) {
     self.managerStore = managerStore
     self.onTunnelStateChanged = onTunnelStateChanged
     self.onConnectionStateChanged = onConnectionStateChanged
+    self.onTunnelFailure = onTunnelFailure
     self.onExternalStart = onExternalStart
     self.onExternalStop = onExternalStop
   }
@@ -200,6 +204,7 @@ final class TunnelCoordinator {
         guard isCurrent(request) else {
           return
         }
+        lastStartError = error.localizedDescription
         let status = observedTunnelStatus
         if request.preferenceRetryCount == 0,
           managerStore.invalidateCachedManager(forPreferenceError: error)
@@ -226,6 +231,8 @@ final class TunnelCoordinator {
     _ request: TunnelRequest
   ) async throws {
     while isCurrent(request) {
+      // A stored extension error past this point belongs to this attempt.
+      managerStore.clearTunnelLastError()
       let loadedManager = try await managerStore.loadManager()
       guard isCurrent(request) else {
         return
@@ -514,6 +521,9 @@ final class TunnelCoordinator {
     restartOwed = false
     defer { publishConnectionState() }
     guard let actualState else {
+      if request.target == .running {
+        reportStartFailure()
+      }
       log(
         "\(request.target.description) completed actual=unknown generation=\(request.generation)"
       )
@@ -521,6 +531,9 @@ final class TunnelCoordinator {
     }
     reportTunnelState(actualState)
     publishedTunnelState = actualState
+    if request.target == .running, actualState != .running {
+      reportStartFailure()
+    }
     log(
       "\(request.target.description) completed actual=\(actualState.description) generation=\(request.generation)"
     )
@@ -626,6 +639,16 @@ final class TunnelCoordinator {
     } else if publishedTunnelState == nil {
       publishedTunnelState = stableState
     }
+  }
+
+  private func reportStartFailure() {
+    let parts = [lastStartError, managerStore.tunnelLastError()]
+      .compactMap { $0 }
+      .filter { !$0.isEmpty }
+    lastStartError = nil
+    onTunnelFailure(
+      parts.isEmpty ? "tunnel did not connect" : parts.joined(separator: " / ")
+    )
   }
 
   private func reportTunnelState(_ state: TunnelTarget) {

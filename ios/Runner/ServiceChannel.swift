@@ -99,6 +99,9 @@ final class ServiceChannel {
       onConnectionStateChanged: { state in
         channel.invokeMethod("tunnelState", arguments: state)
       },
+      onTunnelFailure: { message in
+        channel.invokeMethod("tunnelError", arguments: message)
+      },
       onExternalStart: {
         tileChannel.invokeMethod("syncRunningState", arguments: [
           "running": true,

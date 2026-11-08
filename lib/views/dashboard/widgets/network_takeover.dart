@@ -1,4 +1,5 @@
 import 'package:fl_clash/common/common.dart';
+import 'package:fl_clash/plugins/service.dart';
 import 'package:fl_clash/providers/providers.dart';
 import 'package:fl_clash/ui/icons/icons.dart';
 import 'package:fl_clash/ui/ui.dart';
@@ -196,26 +197,48 @@ void _setVpn(WidgetRef ref, bool value) => ref
     .read(vpnSettingProvider.notifier)
     .update((state) => state.copyWith(enable: value));
 
+/// On iOS the switch is only the setting; the subtitle reports the real
+/// tunnel state, so a failed start shows as unconnected instead of "enabled".
+String _vpnSubtitle(
+  BuildContext context,
+  TunnelState? tunnelState,
+  String? tunnelError,
+  bool enabled,
+) {
+  final appLocalizations = context.appLocalizations;
+  final state = tunnelState;
+  if (state == null) {
+    return enabled ? appLocalizations.enabled : appLocalizations.disabled;
+  }
+  return switch (state) {
+    TunnelState.connected => appLocalizations.connected,
+    TunnelState.pending => appLocalizations.connecting,
+    TunnelState.disconnected =>
+      tunnelError == null
+          ? appLocalizations.disconnected
+          : '${appLocalizations.disconnected}: $tunnelError',
+  };
+}
+
 /// The VPN switch in the grid's control row, in place of the takeover tiles.
 class VpnTile extends ConsumerWidget {
   const VpnTile({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final appLocalizations = context.appLocalizations;
     final metrics = _tileMetricsOf(DashboardDensityScope.of(context));
     final enabled = ref.watch(
       vpnSettingProvider.select((state) => state.enable),
     );
+    final tunnelState = ref.watch(tunnelStateProvider);
+    final tunnelError = ref.watch(tunnelErrorProvider);
     return DashboardCard(
       padding: EdgeInsets.zero,
       child: DashboardSwitchRow(
         glyph: AppGlyphs.vpn,
         title: 'VPN',
         subtitle: metrics.subtitle
-            ? enabled
-                  ? appLocalizations.enabled
-                  : appLocalizations.disabled
+            ? _vpnSubtitle(context, tunnelState, tunnelError, enabled)
             : null,
         value: enabled,
         iconSize: metrics.icon,
@@ -236,12 +259,13 @@ class VpnCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final appLocalizations = context.appLocalizations;
     final colorScheme = context.colorScheme;
     final colors = DashboardColors.of(context);
     final enabled = ref.watch(
       vpnSettingProvider.select((state) => state.enable),
     );
+    final tunnelState = ref.watch(tunnelStateProvider);
+    final tunnelError = ref.watch(tunnelErrorProvider);
     void change(bool value) => _setVpn(ref, value);
     return DashboardCard(
       semanticLabel: 'VPN',
@@ -275,9 +299,7 @@ class VpnCard extends ConsumerWidget {
                   style: AppTextStyle.callout.of(context, emphasized: true),
                 ),
                 Text(
-                  enabled
-                      ? appLocalizations.enabled
-                      : appLocalizations.disabled,
+                  _vpnSubtitle(context, tunnelState, tunnelError, enabled),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: AppTextStyle.footnote

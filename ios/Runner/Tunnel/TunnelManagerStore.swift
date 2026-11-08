@@ -179,6 +179,14 @@ final class TunnelManagerStore {
     return manager.connection === connection
   }
 
+  func tunnelLastError() -> String? {
+    sharedStateStore.tunnelLastError()
+  }
+
+  func clearTunnelLastError() {
+    sharedStateStore.clearTunnelLastError()
+  }
+
   private func isRetryablePreferenceError(_ error: Error) -> Bool {
     let error = error as NSError
     guard error.domain == NEVPNErrorDomain,

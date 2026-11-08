@@ -2306,6 +2306,104 @@ final class IsUpdatingFamily extends $Family
   String toString() => r'isUpdatingProvider';
 }
 
+/// iOS tunnel state reported by the Network Extension; null elsewhere.
+/// Wired to the service channel's `tunnelState` reports.
+
+@ProviderFor(tunnelState)
+final tunnelStateProvider = TunnelStateProvider._();
+
+/// iOS tunnel state reported by the Network Extension; null elsewhere.
+/// Wired to the service channel's `tunnelState` reports.
+
+final class TunnelStateProvider
+    extends $FunctionalProvider<TunnelState?, TunnelState?, TunnelState?>
+    with $Provider<TunnelState?> {
+  /// iOS tunnel state reported by the Network Extension; null elsewhere.
+  /// Wired to the service channel's `tunnelState` reports.
+  TunnelStateProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'tunnelStateProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$tunnelStateHash();
+
+  @$internal
+  @override
+  $ProviderElement<TunnelState?> $createElement($ProviderPointer pointer) =>
+      $ProviderElement(pointer);
+
+  @override
+  TunnelState? create(Ref ref) {
+    return tunnelState(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(TunnelState? value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<TunnelState?>(value),
+    );
+  }
+}
+
+String _$tunnelStateHash() => r'ee8cebd111275876956af3eb7e7906496949e6f2';
+
+/// The last iOS tunnel start failure; null elsewhere or when none happened.
+/// Wired to the service channel's `tunnelError` reports.
+
+@ProviderFor(tunnelError)
+final tunnelErrorProvider = TunnelErrorProvider._();
+
+/// The last iOS tunnel start failure; null elsewhere or when none happened.
+/// Wired to the service channel's `tunnelError` reports.
+
+final class TunnelErrorProvider
+    extends $FunctionalProvider<String?, String?, String?>
+    with $Provider<String?> {
+  /// The last iOS tunnel start failure; null elsewhere or when none happened.
+  /// Wired to the service channel's `tunnelError` reports.
+  TunnelErrorProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'tunnelErrorProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$tunnelErrorHash();
+
+  @$internal
+  @override
+  $ProviderElement<String?> $createElement($ProviderPointer pointer) =>
+      $ProviderElement(pointer);
+
+  @override
+  String? create(Ref ref) {
+    return tunnelError(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(String? value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<String?>(value),
+    );
+  }
+}
+
+String _$tunnelErrorHash() => r'c8a0ee5aa5460f49df4ba843441ad1dd9c3a5227';
+
 @ProviderFor(CurrentSSID)
 final currentSSIDProvider = CurrentSSIDProvider._();
 

@@ -47,6 +47,10 @@ class Service {
 
   ValueListenable<TunnelState> get tunnelState => _tunnelState;
 
+  final _tunnelError = ValueNotifier<String?>(null);
+
+  ValueListenable<String?> get tunnelError => _tunnelError;
+
   final ObserverList<ServiceListener> _listeners =
       ObserverList<ServiceListener>();
 
@@ -66,6 +70,11 @@ class Service {
           _tunnelState.value = TunnelState.values.byName(
             call.arguments as String,
           );
+          break;
+        case 'tunnelError':
+          final message = call.arguments as String;
+          _tunnelError.value = message;
+          commonPrint.log('Tunnel failed: $message', logLevel: LogLevel.error);
           break;
         case 'event':
           final methodCall = CoreMethodCall.fromJson(
@@ -126,6 +135,7 @@ class Service {
 
   Future<bool> start() async {
     _startRequested = true;
+    _tunnelError.value = null;
     return await methodChannel.invokeMethod<bool>(
           'start',
           ++_commandRevision,

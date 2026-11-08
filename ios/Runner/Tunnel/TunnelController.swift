@@ -20,6 +20,7 @@ final class TunnelController {
     sharedStateStore: SharedStateStore,
     onTunnelStateChanged: @escaping (TunnelTarget) -> Void,
     onConnectionStateChanged: @escaping (String) -> Void,
+    onTunnelFailure: @escaping (String) -> Void,
     onExternalStart: @escaping () -> Void,
     onExternalStop: @escaping () -> Void
   ) {
@@ -36,6 +37,7 @@ final class TunnelController {
       managerStore: managerStore,
       onTunnelStateChanged: onTunnelStateChanged,
       onConnectionStateChanged: onConnectionStateChanged,
+      onTunnelFailure: onTunnelFailure,
       onExternalStart: onExternalStart,
       onExternalStop: onExternalStop
     )

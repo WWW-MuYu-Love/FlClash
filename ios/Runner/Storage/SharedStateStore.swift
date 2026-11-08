@@ -116,6 +116,16 @@ final class SharedStateStore {
     UserDefaults(suiteName: appGroupIdentifier)?
       .integer(forKey: runTimeKey) ?? 0
   }
+
+  func tunnelLastError() -> String? {
+    UserDefaults(suiteName: appGroupIdentifier)?
+      .string(forKey: "tunnelLastError")
+  }
+
+  func clearTunnelLastError() {
+    UserDefaults(suiteName: appGroupIdentifier)?
+      .removeObject(forKey: "tunnelLastError")
+  }
 }
 
 struct TunnelConfiguration {

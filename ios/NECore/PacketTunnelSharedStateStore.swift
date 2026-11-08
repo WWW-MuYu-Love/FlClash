@@ -18,6 +18,23 @@ final class PacketTunnelSharedStateStore {
   private let setupParamsKey = "setupParams"
   private let runTimeKey = "runTime"
   private let activeVpnOptionsKey = "activeVpnOptions"
+  private let lastErrorKey = "tunnelLastError"
+
+  // The app reads this when a start fails: the extension's own log is not
+  // visible to the app, so the failure reason crosses over through the
+  // shared defaults instead.
+  func saveLastError(_ message: String) {
+    userDefaults?.set(message, forKey: lastErrorKey)
+    userDefaults?.synchronize()
+  }
+
+  func loadLastError() -> String? {
+    userDefaults?.string(forKey: lastErrorKey)
+  }
+
+  func clearLastError() {
+    userDefaults?.removeObject(forKey: lastErrorKey)
+  }
 
   func loadVPNOptionsSnapshot() -> (options: PacketTunnelVPNOptions, data: Data)? {
     guard let sharedData = userDefaults?.data(forKey: sharedStateKey),
