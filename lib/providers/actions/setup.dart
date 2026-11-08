@@ -261,8 +261,11 @@ class SetupAction extends _$SetupAction {
 
   Future<void> _setListening(bool running) async {
     final vpnOptions = await ref.read(vpnOptionsProvider.future);
+    final skipStart = running && system.isIOS && !vpnOptions.enable;
     try {
-      await setCoreRunning(running);
+      if (!skipStart) {
+        await setCoreRunning(running);
+      }
     } catch (error) {
       if (_isUnanswered(error)) {
         ref.read(runningVpnOptionsProvider.notifier).value = null;

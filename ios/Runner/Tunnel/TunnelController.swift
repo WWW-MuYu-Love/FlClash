@@ -148,21 +148,24 @@ final class TunnelController {
     }
   }
 
-  func isCoreActive() async -> Bool {
+  func getRunTime() async -> Int {
     do {
       let manager = try await managerStore.loadManager(createIfNeeded: false)
-      return manager?.connection.status.tunnelState == .running
+      guard manager?.connection.status.tunnelState == .running else {
+        return 0
+      }
+      let stored = sharedStateStore.runTime()
+      if stored > 0 {
+        return stored
+      }
+      if let connectedDate = manager?.connection.connectedDate {
+        return Int(connectedDate.timeIntervalSince1970 * 1000)
+      }
+      return 0
     } catch {
-      log("isCoreActive failed: \(error.localizedDescription)")
-      return false
-    }
-  }
-
-  func getRunTime() async -> Int {
-    guard await isCoreActive() else {
+      log("getRunTime failed: \(error.localizedDescription)")
       return 0
     }
-    return sharedStateStore.runTime()
   }
 
   private func log(_ message: String) {

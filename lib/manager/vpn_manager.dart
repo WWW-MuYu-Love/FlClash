@@ -2,8 +2,10 @@ import 'dart:async';
 
 import 'package:fl_clash/common/common.dart';
 import 'package:fl_clash/models/models.dart';
+import 'package:fl_clash/plugins/tile.dart';
 import 'package:fl_clash/providers/action.dart';
 import 'package:fl_clash/providers/app.dart';
+import 'package:fl_clash/providers/config.dart';
 import 'package:fl_clash/providers/state.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -18,10 +20,11 @@ class VpnManager extends ConsumerStatefulWidget {
   ConsumerState<VpnManager> createState() => _VpnContainerState();
 }
 
-class _VpnContainerState extends ConsumerState<VpnManager> {
+class _VpnContainerState extends ConsumerState<VpnManager> with TileListener {
   @override
   void initState() {
     super.initState();
+    tile?.addListener(this);
     ref.listenManual(
       vpnOptionsProvider.select((state) => state.value?.effective),
       (prev, next) {
@@ -41,6 +44,37 @@ class _VpnContainerState extends ConsumerState<VpnManager> {
         dialogs.showBanner(next, level: BannerLevel.error);
       }
     });
+  }
+
+  @override
+  void dispose() {
+    tile?.removeListener(this);
+    super.dispose();
+  }
+
+  @override
+  void onSyncRunningState(bool running) {
+    if (!ref.read(initProvider)) {
+      return;
+    }
+    if (running) {
+      ref
+          .read(vpnSettingProvider.notifier)
+          .update((state) => state.copyWith(enable: true));
+      if (!ref.read(isStartProvider)) {
+        unawaited(ref.read(setupActionProvider.notifier).setRunning(true));
+      }
+      return;
+    }
+    if (!ref.read(isStartProvider) ||
+        !ref.read(vpnSettingProvider).enable ||
+        ref.read(suspendProvider)) {
+      return;
+    }
+    ref
+        .read(vpnSettingProvider.notifier)
+        .update((state) => state.copyWith(enable: false));
+    unawaited(ref.read(setupActionProvider.notifier).setRunning(false));
   }
 
   void _showRestartTip() {
