@@ -1,4 +1,4 @@
-//go:build android
+//go:build (android || ios)
 
 package tun
 
@@ -17,8 +17,15 @@ import (
 )
 
 type startOptions struct {
-	MTU                  uint32 `json:"mtu"`
-	CongestionController string `json:"congestion-controller"`
+	MTU                    uint32 `json:"mtu"`
+	CongestionController   string `json:"congestion-controller"`
+	// iOS-only; Android never sends these keys, so Android behavior is
+	// unchanged. Tags match core/cmd/ios's coreTunOptions.
+	RecvMsgX               bool   `json:"recvMsgX"`
+	SendMsgX               bool   `json:"sendMsgX"`
+	DisableICMPForwarding  bool   `json:"disableIcmpForwarding"`
+	EndpointIndependentNAT bool   `json:"endpointIndependentNat"`
+	LoopbackAddress        string `json:"loopback-address"`
 }
 
 // Start takes ownership of fd. dupFd is handed to sing_tun.New, which only
@@ -83,17 +90,22 @@ func Start(fd int, stack, address, dns, rawOptions string) *sing_tun.Listener {
 	defer func() { _ = syscall.Close(fd) }()
 
 	options := LC.Tun{
-		Enable:               true,
-		Device:               "FlClash",
-		Stack:                tunStack,
-		DNSHijack:            dnsHijack,
-		AutoRoute:            false,
-		AutoDetectInterface:  false,
-		Inet4Address:         prefix4,
-		Inet6Address:         prefix6,
-		MTU:                  settings.MTU,
-		CongestionController: settings.CongestionController,
-		FileDescriptor:       dupFd,
+		Enable:                 true,
+		Device:                 "FlClash",
+		Stack:                  tunStack,
+		RecvMsgX:               settings.RecvMsgX,
+		SendMsgX:               settings.SendMsgX,
+		DNSHijack:              dnsHijack,
+		AutoRoute:              false,
+		AutoDetectInterface:    false,
+		Inet4Address:           prefix4,
+		Inet6Address:           prefix6,
+		MTU:                    settings.MTU,
+		DisableICMPForwarding:  settings.DisableICMPForwarding,
+		EndpointIndependentNat: settings.EndpointIndependentNAT,
+		LoopbackAddress:        loopbackAddress(settings.LoopbackAddress),
+		CongestionController:   settings.CongestionController,
+		FileDescriptor:         dupFd,
 	}
 
 	listener, err := sing_tun.New(options, tunnel.Tunnel)
@@ -104,4 +116,18 @@ func Start(fd int, stack, address, dns, rawOptions string) *sing_tun.Listener {
 	}
 
 	return listener
+}
+
+// loopbackAddress parses the optional iOS loopback address. An empty value
+// keeps the field unset, which is the Android behavior.
+func loopbackAddress(value string) []netip.Addr {
+	if value == "" {
+		return nil
+	}
+	addr, err := netip.ParseAddr(value)
+	if err != nil {
+		log.Errorln("TUN: %v", err)
+		return nil
+	}
+	return []netip.Addr{addr}
 }
