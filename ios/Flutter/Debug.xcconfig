@@ -1,0 +1,4 @@
+#include "Generated.xcconfig"
+
+APP_BUNDLE_ID = love.muyu.flclash
+#include? "GeneratedBundleConfig.xcconfig"
