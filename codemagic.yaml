@@ -31,8 +31,8 @@ workflows:
     instance_type: mac_mini_m2
     max_build_duration: 120
     environment:
-      flutter: 3.47.7
-      xcode: 26.2
+      flutter: 3.47.9
+      xcode: 26.3
       cocoapods: default
       # No `groups:` — this workflow needs NO secrets at all.
       # (No GH_TOKEN, no signing credentials, no App Store key.)
@@ -146,8 +146,8 @@ workflows:
   #   instance_type: mac_mini_m2
   #   max_build_duration: 120
   #   environment:
-  #     flutter: 3.47.7
-  #     xcode: 26.2
+  #     flutter: 3.47.9
+  #     xcode: 26.3
   #     cocoapods: default
   #     ios_signing:
   #       distribution_type: ad_hoc        # <-- FILL IN (a)
