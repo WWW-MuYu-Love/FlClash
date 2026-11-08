@@ -750,7 +750,15 @@ class SetupAction extends _$SetupAction {
     }, title: 'build profile');
     final profileFailed = realProfile == null;
     final setupParams = _setupParams.copyWith(base: realProfile?.base);
-    ref.read(appliedProfileBaseProvider.notifier).value = realProfile?.base;
+    // A script or custom profile has no base, so the built config is written
+    // to configFilePath instead. Forward that file as the base so the
+    // extension can load it; the overlay stays empty because the file already
+    // holds the whole config, and merging it with itself would duplicate rules.
+    var appliedBase = realProfile?.base;
+    if (appliedBase == null && realProfile != null) {
+      appliedBase = SetupBase(path: await appPath.configFilePath, overlay: '');
+    }
+    ref.read(appliedProfileBaseProvider.notifier).value = appliedBase;
     final inputs = switch (setupState) {
       final state? when !profileFailed => (
         state,
