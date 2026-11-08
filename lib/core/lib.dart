@@ -197,4 +197,7 @@ class CoreLib extends CoreHandlerInterface {
   }
 }
 
-CoreLib? get coreLib => system.isAndroid ? CoreLib() : null;
+// iOS uses CoreLib too (fork parity): isAndroid alone leaves coreLib null
+// on iOS and crashes startup in CoreController (null check at
+// controller.dart:22).
+CoreLib? get coreLib => system.isMobile ? CoreLib() : null;
