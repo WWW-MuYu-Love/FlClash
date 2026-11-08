@@ -1,6 +1,6 @@
 #import "IOSCoreBridge.h"
 
-#import "../../core/bride.h"
+#import "../../core/cmd/ios/bride.h"
 #import "../../libclash/ios/arm64/libclash.h"
 #import <os/log.h>
 #import <string.h>
