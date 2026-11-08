@@ -814,7 +814,7 @@ class SetupAction extends _$SetupAction {
           }
           try {
             await _core.setupConfig(
-              params: setupParams,
+              params: setupParams.copyWith(skipDnsListen: system.isIOS),
               preloadInvoke: preloadInvoke,
             );
           } on CoreMethodException catch (error) {

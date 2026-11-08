@@ -1064,3 +1064,34 @@ func TestTestDelayStopsQueueingOnceTheTimeoutIsSpent(t *testing.T) {
 		t.Fatal("handleTestDelay outlived the timeout it was given, waiting for a slot")
 	}
 }
+
+func TestSkipDNSListenClearsTheListenAddress(t *testing.T) {
+	skipped := &config.Config{
+		DNS: &config.DNS{Listen: "0.0.0.0:7874"},
+	}
+	skipDNSListen(&SetupParams{SkipDNSListen: true}, skipped)
+	if skipped.DNS.Listen != "" {
+		t.Fatalf("DNS listen = %q, want it cleared", skipped.DNS.Listen)
+	}
+	kept := &config.Config{
+		DNS: &config.DNS{Listen: "0.0.0.0:7874"},
+	}
+	skipDNSListen(&SetupParams{}, kept)
+	if kept.DNS.Listen != "0.0.0.0:7874" {
+		t.Fatalf("DNS listen = %q, want it kept", kept.DNS.Listen)
+	}
+	skipDNSListen(&SetupParams{SkipDNSListen: true}, &config.Config{})
+}
+
+func TestSetupParamsReadsSkipDNSListen(t *testing.T) {
+	params := &SetupParams{}
+	if err := json.Unmarshal(
+		[]byte(`{"selected-map":{},"options":{},"skip-dns-listen":true}`),
+		params,
+	); err != nil {
+		t.Fatalf("unmarshal setup params: %v", err)
+	}
+	if !params.SkipDNSListen {
+		t.Fatal("SkipDNSListen = false, want true")
+	}
+}

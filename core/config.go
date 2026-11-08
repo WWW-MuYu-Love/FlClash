@@ -159,6 +159,7 @@ func applyConfig(params *SetupParams) error {
 		}
 		cfg = fallback
 	}
+	skipDNSListen(params, cfg)
 
 	currentConfig = cfg
 	hub.ApplyConfig(cfg)
@@ -172,6 +173,12 @@ func applyConfig(params *SetupParams) error {
 		return &MethodError{Code: "config_rejected", Message: err.Error()}
 	}
 	return nil
+}
+
+func skipDNSListen(params *SetupParams, cfg *config.Config) {
+	if params.SkipDNSListen && cfg.DNS != nil {
+		cfg.DNS.Listen = ""
+	}
 }
 
 func updateConfig(params *UpdateParams) error {
