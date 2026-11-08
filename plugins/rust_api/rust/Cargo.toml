@@ -10,9 +10,10 @@ crate-type = ["cdylib", "staticlib"]
 [dependencies]
 flutter_rust_bridge = "=2.13.0"
 encoding_rs = "0.8"
-# Pinned to the reference fork's 0.14 (quickjs-ng): 0.12's classic QuickJS
-# emits ___chkstk_darwin stack-probe calls that fail to link for the
-# aarch64-apple-ios target (rustc links for iOS 10.0).
+# Pinned to the reference fork's 0.14 (quickjs-ng) for parity with its
+# known-good lock. The ___chkstk_darwin link failure is not a QuickJS
+# version issue — it is fixed by setting IPHONEOS_DEPLOYMENT_TARGET in
+# plugins/rust_api/hook/build.dart (rustc defaults to iOS 10.0).
 rquickjs = { version = "=0.14.0", default-features = false }
 ropey = { version = "1.6.1", default-features = false, features = ["simd"] }
 
