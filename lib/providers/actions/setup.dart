@@ -750,6 +750,7 @@ class SetupAction extends _$SetupAction {
     }, title: 'build profile');
     final profileFailed = realProfile == null;
     final setupParams = _setupParams.copyWith(base: realProfile?.base);
+    ref.read(appliedProfileBaseProvider.notifier).value = realProfile?.base;
     final inputs = switch (setupState) {
       final state? when !profileFailed => (
         state,
@@ -828,6 +829,18 @@ class SetupAction extends _$SetupAction {
           await preferences.saveAppliedConfigMd5(yamlMd5);
         }
         await onUpdated?.call();
+        // The extension reads the shared state at tunnel start, so a profile
+        // change must reach the App Group even when the Core is not restarted.
+        if (system.isIOS) {
+          final syncError =
+              await service?.syncState(ref.read(sharedStateProvider)) ?? '';
+          if (syncError.isNotEmpty) {
+            commonPrint.log(
+              'sync shared state failed: $syncError',
+              logLevel: LogLevel.warning,
+            );
+          }
+        }
       },
       silence: true,
       tag: !silence ? LoadingTag.proxies : null,

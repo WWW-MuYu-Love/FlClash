@@ -191,6 +191,16 @@ bool shouldPatchSystemDns(Ref ref) {
       authorizationState == TunAuthorizationState.authorized;
 }
 
+/// The profile file the Core merges with the built overlay. The shared state
+/// carries it so the iOS extension, which cannot read the App Group, can have
+/// the file forwarded to it through the tunnel start options.
+@Riverpod(keepAlive: true)
+class AppliedProfileBase extends _$AppliedProfileBase
+    with AutoDisposeNotifierMixin {
+  @override
+  SetupBase? build() => null;
+}
+
 @riverpod
 SharedState sharedState(Ref ref) {
   ref.watch(loadedLocaleProvider);
@@ -223,6 +233,7 @@ SharedState sharedState(Ref ref) {
     startTip: currentAppLocalizations.startVpn,
     localNetworkTip: currentAppLocalizations.localNetworkDeniedTip,
     setupParams: SetupParams(
+      base: ref.watch(appliedProfileBaseProvider),
       selectedMap: selectedMap,
       options: ref.watch(coreOptionsProvider),
     ),

@@ -89,7 +89,7 @@ final class CoreOptionsProvider
   }
 }
 
-String _$coreOptionsHash() => r'ef7cb84b1c8ad89180f56c91cf863376c1ff9db5';
+String _$coreOptionsHash() => r'43945407c97ebce7e8106973f53ca83ce95c861a';
 
 @ProviderFor(setupPatch)
 final setupPatchProvider = SetupPatchProvider._();
@@ -439,6 +439,73 @@ final class ShouldPatchSystemDnsProvider
 String _$shouldPatchSystemDnsHash() =>
     r'f74bcdbae504e9528b2e960b8620d097c27f3ca9';
 
+/// The profile file the Core merges with the built overlay. The shared state
+/// carries it so the iOS extension, which cannot read the App Group, can have
+/// the file forwarded to it through the tunnel start options.
+
+@ProviderFor(AppliedProfileBase)
+final appliedProfileBaseProvider = AppliedProfileBaseProvider._();
+
+/// The profile file the Core merges with the built overlay. The shared state
+/// carries it so the iOS extension, which cannot read the App Group, can have
+/// the file forwarded to it through the tunnel start options.
+final class AppliedProfileBaseProvider
+    extends $NotifierProvider<AppliedProfileBase, SetupBase?> {
+  /// The profile file the Core merges with the built overlay. The shared state
+  /// carries it so the iOS extension, which cannot read the App Group, can have
+  /// the file forwarded to it through the tunnel start options.
+  AppliedProfileBaseProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'appliedProfileBaseProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$appliedProfileBaseHash();
+
+  @$internal
+  @override
+  AppliedProfileBase create() => AppliedProfileBase();
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(SetupBase? value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<SetupBase?>(value),
+    );
+  }
+}
+
+String _$appliedProfileBaseHash() =>
+    r'1321c790e9b1f7abea3df0a4183b5f3baa3122da';
+
+/// The profile file the Core merges with the built overlay. The shared state
+/// carries it so the iOS extension, which cannot read the App Group, can have
+/// the file forwarded to it through the tunnel start options.
+
+abstract class _$AppliedProfileBase extends $Notifier<SetupBase?> {
+  SetupBase? build();
+  @$mustCallSuper
+  @override
+  WhenComplete runBuild() {
+    final ref = this.ref as $Ref<SetupBase?, SetupBase?>;
+    final element =
+        ref.element
+            as $ClassProviderElement<
+              AnyNotifier<SetupBase?, SetupBase?>,
+              SetupBase?,
+              Object?,
+              Object?
+            >;
+    return element.handleCreate(ref, build);
+  }
+}
+
 @ProviderFor(sharedState)
 final sharedStateProvider = SharedStateProvider._();
 
@@ -478,7 +545,7 @@ final class SharedStateProvider
   }
 }
 
-String _$sharedStateHash() => r'bad20df240acfd1b384cad3655a58987a992a4ca';
+String _$sharedStateHash() => r'67329c406b9a65e2a3091320ffb80d6f0eb525bd';
 
 @ProviderFor(vpnRouteAddress)
 final vpnRouteAddressProvider = VpnRouteAddressProvider._();
@@ -1954,7 +2021,7 @@ final class ProxyStateProvider
   }
 }
 
-String _$proxyStateHash() => r'76a71ab5da07dca9aeb351282c5c03ab222d0760';
+String _$proxyStateHash() => r'd2079a9a47a469ed73351b796bba8e79e5694405';
 
 /// Watching the delay map instead would drop nodes one probe at a time, and
 /// reading it on any other rebuild would drop them whenever something
@@ -3659,7 +3726,7 @@ final class SetupStateProvider
   }
 }
 
-String _$setupStateHash() => r'4cfdb0a779dc8097c8c1027b73252f19f925a3ad';
+String _$setupStateHash() => r'e8c7cc4742b6e4cf4227071dc01ec6a943334dd0';
 
 final class SetupStateFamily extends $Family
     with $FunctionalFamilyOverride<FutureOr<SetupState>, int?> {
