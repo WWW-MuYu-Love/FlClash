@@ -14,6 +14,7 @@ import (
 
 	"github.com/metacubex/mihomo/component/age"
 	"github.com/metacubex/mihomo/config"
+	"github.com/metacubex/mihomo/constant"
 	"go.yaml.in/yaml/v3"
 )
 
@@ -103,6 +104,7 @@ func loadConfigWithBase(base *SetupBase, configPath string) (*config.Config, err
 	if err != nil {
 		return nil, err
 	}
+	dropUnsafeProviderPaths(document)
 	raw := config.DefaultRawConfig()
 	if err := document.Decode(raw); err != nil {
 		return nil, err
@@ -172,6 +174,39 @@ func mergeProfileBase(base *SetupBase) (*yaml.Node, error) {
 		retagShortIDs(root)
 	}
 	return &yaml.Node{Kind: yaml.DocumentNode, Content: []*yaml.Node{root}}, nil
+}
+
+func dropUnsafeProviderPaths(document *yaml.Node) {
+	root, err := documentMapping(document)
+	if err != nil {
+		return
+	}
+	for _, section := range []string{"rule-providers", "proxy-providers"} {
+		providers := mappingValue(root, section)
+		if providers == nil || providers.Kind != yaml.MappingNode {
+			continue
+		}
+		for i := 0; i+1 < len(providers.Content); i += 2 {
+			provider := providers.Content[i+1]
+			if provider.Kind != yaml.MappingNode {
+				continue
+			}
+			if kind := mappingValue(provider, "type"); kind != nil && kind.Value == "file" {
+				continue
+			}
+			path := mappingValue(provider, "path")
+			if path == nil || constant.Path.IsSafePath(path.Value) {
+				continue
+			}
+			for j := 0; j+1 < len(provider.Content); j += 2 {
+				name := provider.Content[j]
+				if name.Kind == yaml.ScalarNode && name.Value == "path" {
+					provider.Content = append(provider.Content[:j], provider.Content[j+2:]...)
+					break
+				}
+			}
+		}
+	}
 }
 
 func documentMapping(document *yaml.Node) (*yaml.Node, error) {

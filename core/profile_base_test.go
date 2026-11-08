@@ -412,3 +412,96 @@ func TestEncodeConfigMappingKeepsEveryKeyAfterAnOpenEndedScalar(t *testing.T) {
 		t.Errorf("decoded %d rules, want all %d in order", len(decoded.Rules), len(rules))
 	}
 }
+
+func TestLoadConfigWithBaseDropsProviderPathsOutsideHome(t *testing.T) {
+	home := t.TempDir()
+	previous := constant.Path.HomeDir()
+	constant.SetHomeDir(home)
+	t.Cleanup(func() { constant.SetHomeDir(previous) })
+	path := writeBaseProfile(t, baseProfile)
+	base, err := handleGetProfileBase(PathParams{Path: path})
+	if err != nil {
+		t.Fatalf("handleGetProfileBase = %v", err)
+	}
+	outside := filepath.Join(t.TempDir(), "cn.mrs")
+	overlay := overlayOf(t, base, []string{"RULE-SET,cn_ip,DIRECT", "MATCH,g"}, map[string]any{
+		"rule-providers": map[string]any{
+			"cn_ip": map[string]any{
+				"type": "http", "behavior": "ipcidr", "format": "mrs",
+				"url": "https://example.com/cn.mrs", "path": outside,
+			},
+		},
+	})
+	configPath := filepath.Join(home, "config.yaml")
+	if _, err := loadConfigWithBase(&SetupBase{Path: path, Overlay: overlay}, configPath); err != nil {
+		t.Fatalf("loadConfigWithBase = %v", err)
+	}
+	written, err := os.ReadFile(configPath)
+	if err != nil {
+		t.Fatalf("read config.yaml: %v", err)
+	}
+	if strings.Contains(string(written), outside) {
+		t.Errorf("config.yaml still carries the outside path %s", outside)
+	}
+}
+
+func TestDropUnsafeProviderPathsKeepsFileProvidersAndRelativePaths(t *testing.T) {
+	home := t.TempDir()
+	previous := constant.Path.HomeDir()
+	constant.SetHomeDir(home)
+	t.Cleanup(func() { constant.SetHomeDir(previous) })
+	outside := filepath.Join(t.TempDir(), "rules.mrs")
+	document := `rule-providers:
+  remote:
+    type: http
+    behavior: ipcidr
+    format: mrs
+    url: https://example.com/rules.mrs
+    path: ` + outside + `
+  local:
+    type: file
+    behavior: classical
+    format: yaml
+    path: ` + outside + `
+  relative:
+    type: http
+    behavior: domain
+    format: mrs
+    url: https://example.com/rel.mrs
+    path: cache/rel.mrs
+`
+	var node yaml.Node
+	if err := yaml.Unmarshal([]byte(document), &node); err != nil {
+		t.Fatalf("unmarshal = %v", err)
+	}
+	dropUnsafeProviderPaths(&node)
+	root, err := documentMapping(&node)
+	if err != nil {
+		t.Fatalf("documentMapping = %v", err)
+	}
+	providers := mappingValue(root, "rule-providers")
+	if providers == nil {
+		t.Fatal("rule-providers is missing")
+	}
+	remote := mappingValue(providers, "remote")
+	if remote == nil {
+		t.Fatal("remote provider is missing")
+	}
+	if path := mappingValue(remote, "path"); path != nil {
+		t.Errorf("remote path = %q, want it dropped", path.Value)
+	}
+	local := mappingValue(providers, "local")
+	if local == nil {
+		t.Fatal("local provider is missing")
+	}
+	if path := mappingValue(local, "path"); path == nil || path.Value != outside {
+		t.Errorf("local path = %v, want the file provider kept at %s", path, outside)
+	}
+	relative := mappingValue(providers, "relative")
+	if relative == nil {
+		t.Fatal("relative provider is missing")
+	}
+	if path := mappingValue(relative, "path"); path == nil || path.Value != "cache/rel.mrs" {
+		t.Errorf("relative path = %v, want cache/rel.mrs kept", path)
+	}
+}
