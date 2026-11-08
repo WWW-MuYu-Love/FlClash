@@ -85,7 +85,7 @@ class AppPath {
               appGroupIdentifier: 'group.${packageInfo.packageName}',
             ) ??
             '';
-        return migrateIOSDataDirectory(
+        return await migrateIOSDataDirectory(
           supportDirectory: support,
           appGroupPath: appGroupPath,
         );
