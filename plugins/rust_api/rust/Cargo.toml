@@ -21,7 +21,10 @@ tokio = { version = "1.36", features = ["io-util", "macros", "rt", "sync"] }
 global-hotkey = "0.8"
 
 [target.'cfg(all(unix, not(target_os = "android")))'.dependencies]
-libc = "0.2"
+# Pinned: libc 0.2.190 moved the _dyld_* functions behind
+# #[cfg(target_os = "macos")], so backtrace 0.3.76 (via allo-isolate) no
+# longer compiles for iOS. Unpin once backtrace stops calling them.
+libc = "=0.2.189"
 
 # rquickjs ships pre-generated bindings for every target this project builds
 # except the Android ones, which have to be generated during the build.
