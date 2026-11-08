@@ -1,0 +1,85 @@
+name: ios-unsigned
+
+# Build the unsigned FlClash iOS IPA on GitHub Actions.
+# Why Actions and not Codemagic: the identical command
+# (`dart setup.dart ios --no-codesign`) with the identical toolchain
+# (Flutter 3.47.9, Xcode 26.3) fails on Codemagic with
+# "Building a deployable iOS app requires a selected Development Team"
+# (builds #2 and #3), while the reference fork's own CI runs the same
+# command on macos-26 and passes (tag v0.9.9, 2026-11-07). The failure
+# is specific to the Codemagic environment, so build where it is known
+# to work. Manual trigger only — no push builds, no releases.
+#
+# Steps mirror the reference fork's iOS job
+# (chenx-dust/FlClash-Patched .github/workflows/build.yaml).
+
+on:
+  workflow_dispatch:
+
+jobs:
+  ios:
+    runs-on: macos-26
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          submodules: recursive
+
+      - name: Fetch mihomo tags
+        shell: bash
+        run: |
+          git -C core/mihomo fetch --unshallow --no-tags origin
+          git -C core/mihomo fetch --no-tags https://github.com/MetaCubeX/mihomo.git '+refs/tags/v*:refs/tags/v*'
+
+      - name: Setup Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: '1.26.10'
+          cache-dependency-path: core/go.sum
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: master
+          flutter-version: '3.47.9'
+          cache: true
+
+      - name: Setup Xcode
+        run: |
+          sudo xcode-select -s /Applications/Xcode_26.3.app || sudo xcode-select -s /Applications/Xcode_26.2.app
+          xcodebuild -version
+
+      - name: Setup Rust
+        run: |
+          if ! command -v cargo >/dev/null 2>&1; then
+            curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable
+          fi
+          echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
+          rustup target add aarch64-apple-ios
+          cargo --version
+
+      - name: Get Flutter Dependency
+        run: |
+          flutter --version
+          flutter pub get
+
+      - name: Fetch CA certificates
+        shell: bash
+        run: |
+          bundle=core/mihomo/component/ca/ca-certificates.crt
+          curl -fsSL --retry 3 -o "$bundle" https://curl.se/ca/cacert.pem
+          count=$(grep -c 'BEGIN CERTIFICATE' "$bundle")
+          echo "$count CA certificates"
+          test "$count" -ge 100
+          mkdir -p assets/data
+          cp "$bundle" assets/data/ca-certificates.crt
+
+      - name: Setup
+        run: dart setup.dart ios --no-codesign -v
+
+      - name: Upload
+        uses: actions/upload-artifact@v7
+        with:
+          name: artifact-ios
+          path: ./dist
+          overwrite: true
