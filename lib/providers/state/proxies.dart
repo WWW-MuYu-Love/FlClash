@@ -26,9 +26,16 @@ Group _withoutSelection(Group group) {
 
 bool _hasSelection(Proxy proxy) => proxy.now?.isNotEmpty ?? false;
 
+/// iOS has no suspend state: the proxy is never suspended there.
+bool resolveProxySuspended({required bool isIOS, required bool suspend}) =>
+    !isIOS && suspend;
+
 @riverpod
 ProxyState proxyState(Ref ref) {
-  final suspend = ref.watch(suspendProvider);
+  final suspend = resolveProxySuspended(
+    isIOS: system.isIOS,
+    suspend: ref.watch(suspendProvider),
+  );
   final isStart = ref.watch(runTimeProvider.select((state) => state != null));
   final systemProxySelector = ref.watch(
     networkSettingProvider.select(

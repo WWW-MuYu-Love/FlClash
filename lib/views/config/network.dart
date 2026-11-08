@@ -554,7 +554,7 @@ class NetworkListView extends StatelessWidget {
         bottom: 16 + context.bottomInset,
       ),
       children: [
-        if (system.isAndroid) const VpnSections(),
+        if (system.isMobile) const VpnSections(),
         if (system.isDesktop) const SystemProxySection(),
         const NetworkOptionsSection(),
         TunSection(

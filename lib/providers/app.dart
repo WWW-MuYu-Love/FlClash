@@ -7,6 +7,7 @@ import 'package:fl_clash/common/common.dart';
 import 'package:fl_clash/enum/enum.dart';
 import 'package:fl_clash/models/models.dart';
 import 'package:fl_clash/plugins/app.dart';
+import 'package:fl_clash/plugins/service.dart';
 import 'package:fl_clash/providers/core.dart';
 import 'package:flutter/services.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -651,6 +652,19 @@ class UpdatingKeys extends _$UpdatingKeys {
 @riverpod
 bool isUpdating(Ref ref, String name) {
   return ref.watch(updatingKeysProvider).contains(name);
+}
+
+/// iOS tunnel state reported by the Network Extension; null elsewhere.
+/// Wired to the service channel's `tunnelState` reports.
+@Riverpod(keepAlive: true)
+TunnelState? tunnelState(Ref ref) {
+  if (!system.isIOS) {
+    return null;
+  }
+  final source = Service().tunnelState;
+  source.addListener(ref.invalidateSelf);
+  ref.onDispose(() => source.removeListener(ref.invalidateSelf));
+  return source.value;
 }
 
 @Riverpod(keepAlive: true)

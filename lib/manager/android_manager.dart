@@ -24,12 +24,15 @@ class _AndroidContainerState extends ConsumerState<AndroidManager>
   @override
   void initState() {
     super.initState();
-    ref.listenManual(appSettingProvider.select((state) => state.hidden), (
-      prev,
-      next,
-    ) {
-      app?.updateExcludeFromRecents(next);
-    }, fireImmediately: true);
+    // updateExcludeFromRecents is Android-only.
+    if (system.isAndroid) {
+      ref.listenManual(appSettingProvider.select((state) => state.hidden), (
+        prev,
+        next,
+      ) {
+        app?.updateExcludeFromRecents(next);
+      }, fireImmediately: true);
+    }
     ref.listenManual(loadedLocaleProvider, (prev, next) {
       if (prev != null && prev != next && !safeModeBuild) {
         app?.initShortcuts();

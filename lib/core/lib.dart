@@ -15,6 +15,7 @@ class CoreLib extends CoreHandlerInterface {
   static CoreLib? _instance;
 
   final Service? _service;
+  final bool _listenerManagedByService;
 
   Completer<bool> _connectedCompleter = Completer<bool>();
   Future<CoreLifecycleResult>? _closeOperation;
@@ -22,10 +23,13 @@ class CoreLib extends CoreHandlerInterface {
   int _methodCallId = 0;
   bool _closed = false;
 
-  CoreLib._internal() : _service = service;
+  CoreLib._internal()
+    : _service = service,
+      _listenerManagedByService = system.isIOS;
 
   @visibleForTesting
-  CoreLib.scoped(Service this._service);
+  CoreLib.scoped(Service this._service, {bool listenerManagedByService = false})
+    : _listenerManagedByService = listenerManagedByService;
 
   @visibleForTesting
   static void resetInstance() {
@@ -94,7 +98,7 @@ class CoreLib extends CoreHandlerInterface {
     _connectedCompleter = Completer<bool>();
     final stopped = await _service?.shutdown() ?? true;
     if (!stopped) {
-      throw StateError('Android Core service shutdown failed');
+      throw StateError('Mobile Core service shutdown failed');
     }
     return CoreLifecycleResult(
       revision: revision,
@@ -116,6 +120,17 @@ class CoreLib extends CoreHandlerInterface {
   // that ends, so once it takes the command the Core's own answer is moot.
   @override
   Future<void> startListener() async {
+    // iOS: the NECore applies the config (and starts the listeners) via
+    // quickSetup when the tunnel starts; only start the service here.
+    if (_listenerManagedByService) {
+      if (!await _service!.start()) {
+        throw const CoreMethodException(
+          code: 'service_refused',
+          message: 'The iOS service did not start',
+        );
+      }
+      return;
+    }
     await _ignoreUnanswered(super.startListener);
     if (!await _service!.start()) {
       throw const CoreMethodException(
@@ -128,11 +143,13 @@ class CoreLib extends CoreHandlerInterface {
   @override
   Future<void> stopListener() async {
     final serviceStopped = await _service!.stop();
-    await _ignoreUnanswered(super.stopListener);
+    if (!_listenerManagedByService) {
+      await _ignoreUnanswered(super.stopListener);
+    }
     if (!serviceStopped) {
       throw const CoreMethodException(
         code: 'service_refused',
-        message: 'The Android service did not stop',
+        message: 'The mobile service did not stop',
       );
     }
   }

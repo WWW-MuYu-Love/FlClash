@@ -18,13 +18,16 @@ class LocationPermissions extends _$LocationPermissions {
   bool _requesting = false;
   bool _autoRequested = false;
 
+  @protected
+  bool get supported => system.isMobile || system.isMacOS;
+
   @override
   WifiSsidPermission build() => WifiSsidPermission.denied;
 
   /// Only a request can tell a permanent denial apart, so a check leaves that
   /// answer in place until it sees the grant.
   Future<void> refresh() async {
-    if (ref.read(safeModeProvider)) {
+    if (!supported || ref.read(safeModeProvider)) {
       return;
     }
     final WifiSsidPermission permission;
