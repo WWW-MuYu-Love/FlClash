@@ -16,8 +16,8 @@ import (
 
 	"github.com/metacubex/mihomo/component/dialer"
 	"github.com/metacubex/mihomo/component/process"
-	"gi
-...[truncated 13571 chars]
+	"github.com/metacubex/mihomo/constant"
+	"github.com/metacubex/mihomo/listener/sing_tun"
 	"github.com/metacubex/mihomo/log"
 )
 
