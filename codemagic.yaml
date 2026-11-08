@@ -125,7 +125,7 @@ workflows:
   #       (pick from what his signing actually is; App Store is NOT the
   #       plan — do not use app_store unless he explicitly orders it)
   #   (b) bundle_identifier — must match the Xcode project AND the
-  #       provisioning profile (proposed: com.muyu.flclash — confirm
+  #       provisioning profile (proposed: love.muyu.flclash — confirm
   #       against the port plan's identifier proposal first)
   #   (c) Code signing identities in the Codemagic UI (app > Code signing
   #       identities): upload his certificate (.p12 + password) and the
@@ -151,7 +151,7 @@ workflows:
   #     cocoapods: default
   #     ios_signing:
   #       distribution_type: ad_hoc        # <-- FILL IN (a)
-  #       bundle_identifier: com.muyu.flclash  # <-- FILL IN (b), must match profile
+  #       bundle_identifier: love.muyu.flclash  # <-- FILL IN (b), must match profile
   #   # No `triggering:` — manual/API starts only (same reason as above).
   #   scripts:
   #     - name: Init submodules
