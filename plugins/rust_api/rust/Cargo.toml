@@ -10,7 +10,10 @@ crate-type = ["cdylib", "staticlib"]
 [dependencies]
 flutter_rust_bridge = "=2.13.0"
 encoding_rs = "0.8"
-rquickjs = { version = "0.12", default-features = false }
+# Pinned to the reference fork's 0.14 (quickjs-ng): 0.12's classic QuickJS
+# emits ___chkstk_darwin stack-probe calls that fail to link for the
+# aarch64-apple-ios target (rustc links for iOS 10.0).
+rquickjs = { version = "=0.14.0", default-features = false }
 ropey = { version = "1.6.1", default-features = false, features = ["simd"] }
 
 # The IPC server exists so a desktop Core process can talk to the app. Android
@@ -29,7 +32,7 @@ libc = "=0.2.189"
 # rquickjs does not ship pre-generated bindings for Android or iOS, so
 # generate them from the target SDK headers during the build.
 [target.'cfg(any(target_os = "android", target_os = "ios"))'.dependencies]
-rquickjs = { version = "0.12", default-features = false, features = ["bindgen"] }
+rquickjs = { version = "=0.14.0", default-features = false, features = ["bindgen"] }
 
 [target.'cfg(target_os = "macos")'.dependencies]
 dispatch2 = "0.3"
