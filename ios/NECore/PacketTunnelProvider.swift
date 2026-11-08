@@ -14,6 +14,16 @@ final class PacketTunnelProvider: NEPacketTunnelProvider {
     category: "PacketTunnelProvider"
   )
 
+  private func savedProtocolConfiguration() -> [String: NSObject]? {
+    guard
+      let proto = self.protocolConfiguration as? NETunnelProviderProtocol,
+      let configuration = proto.providerConfiguration
+    else {
+      return nil
+    }
+    return configuration.compactMapValues { $0 as? NSObject }
+  }
+
   override func startTunnel(
     options: [String: NSObject]?,
     completionHandler: @escaping (Error?) -> Void
@@ -28,6 +38,12 @@ final class PacketTunnelProvider: NEPacketTunnelProvider {
     if let forwarded = sharedStateStore.loadForwardedConfig(
       from: options
     ) {
+      snapshot = forwarded.snapshot
+      setupParams = forwarded.setupParams
+    } else if let forwarded = sharedStateStore.loadForwardedConfig(
+      from: savedProtocolConfiguration()
+    ) {
+      sharedStateStore.saveStage("protocol config")
       snapshot = forwarded.snapshot
       setupParams = forwarded.setupParams
     } else if let loaded = sharedStateStore.loadVPNOptionsSnapshot() {

@@ -1,5 +1,6 @@
 import Foundation
 import NetworkExtension
+import Shared
 import os
 
 private struct ManagerLoadRequest {
@@ -134,6 +135,12 @@ final class TunnelManagerStore {
     log(
       "applyNEOptions includeAll=\(options.includeAllNetworks) excludeLocal=\(options.excludeLocalNetworks) excludeAPNs=\(options.excludeAPNs) excludeCellular=\(options.excludeCellularServices) enforceRoutes=\(options.enforceRoutes) excludeDeviceComm=\(options.excludeDeviceCommunication)"
     )
+    if let persisted = TunnelStartOptions.build(
+      appGroupIdentifier: sharedStateStore.appGroupIdentifier
+    ) {
+      proto.providerConfiguration = persisted as [String: Any]
+      log("persisted tunnel config to providerConfiguration")
+    }
 
     var rules: [NEOnDemandRule] = []
     if !configuration.excludeSSIDs.isEmpty {

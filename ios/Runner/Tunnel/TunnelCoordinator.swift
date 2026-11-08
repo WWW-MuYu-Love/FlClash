@@ -666,10 +666,10 @@ final class TunnelCoordinator {
     if parts.isEmpty {
       let stage = managerStore.tunnelStage().map { " stage: \($0)" } ?? ""
       onTunnelFailure(
-        "tunnel did not connect: \(summary ?? "start options unknown") #22\(stage)"
+        "tunnel did not connect: \(summary ?? "start options unknown") #24\(stage)"
       )
     } else {
-      onTunnelFailure(parts.joined(separator: " / ") + " #22")
+      onTunnelFailure(parts.joined(separator: " / ") + " #24")
     }
   }
 
