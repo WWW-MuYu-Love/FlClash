@@ -25,12 +25,6 @@ jobs:
         with:
           submodules: recursive
 
-      - name: Fetch mihomo tags
-        shell: bash
-        run: |
-          git -C core/mihomo fetch --unshallow --no-tags origin
-          git -C core/mihomo fetch --no-tags https://github.com/MetaCubeX/mihomo.git '+refs/tags/v*:refs/tags/v*'
-
       - name: Setup Go
         uses: actions/setup-go@v6
         with:
@@ -63,16 +57,18 @@ jobs:
           flutter --version
           flutter pub get
 
+      # The core embeds this bundle and FlClashHttpOverrides.trustCoreRoots loads it for Dart.
+      # Pinned by hash, so a new bundle from https://curl.se/docs/caextract.html is a reviewed bump.
+      # (Upstream v0.9.3 layout: the core is the Clash.Meta submodule, not core/mihomo.)
       - name: Fetch CA certificates
         shell: bash
+        env:
+          CA_BUNDLE: cacert-2026-09-25.pem
+          CA_BUNDLE_SHA256: a41b5d356aea97a529fe27e0f7316d2f9d946d75927476cf9cf1b90637d00505
         run: |
-          bundle=core/mihomo/component/ca/ca-certificates.crt
-          curl -fsSL --retry 3 -o "$bundle" https://curl.se/ca/cacert.pem
-          count=$(grep -c 'BEGIN CERTIFICATE' "$bundle")
-          echo "$count CA certificates"
-          test "$count" -ge 100
-          mkdir -p assets/data
-          cp "$bundle" assets/data/ca-certificates.crt
+          bundle=core/Clash.Meta/component/ca/ca-certificates.crt
+          curl -fsSL --retry 3 -o "$bundle" "https://curl.se/ca/$CA_BUNDLE"
+          echo "$CA_BUNDLE_SHA256  $bundle" | sha256sum -c -
 
       - name: Setup
         run: dart setup.dart ios --no-codesign -v
