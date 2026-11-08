@@ -9,6 +9,8 @@ final class SharedStateStore {
   private let eventQueueDirectoryName = "core-events"
 
   let appGroupIdentifier = "group.\(Bundle.main.bundleIdentifier!)"
+  // SideKite's generated group, listed in both the app and the extension profiles.
+  private static let fallbackAppGroupIdentifier = "group.72f479443544b95e.1"
   let eventNotificationName = "\(Bundle.main.bundleIdentifier!).NECore.event"
 
   func activeVpnOptions() -> String? {
@@ -118,13 +120,25 @@ final class SharedStateStore {
   }
 
   func tunnelLastError() -> String? {
-    UserDefaults(suiteName: appGroupIdentifier)?
+    if let error = UserDefaults(suiteName: appGroupIdentifier)?
+      .string(forKey: "tunnelLastError")
+    {
+      return error
+    }
+    return UserDefaults(suiteName: Self.fallbackAppGroupIdentifier)?
       .string(forKey: "tunnelLastError")
   }
 
   func clearTunnelLastError() {
     UserDefaults(suiteName: appGroupIdentifier)?
       .removeObject(forKey: "tunnelLastError")
+    UserDefaults(suiteName: Self.fallbackAppGroupIdentifier)?
+      .removeObject(forKey: "tunnelLastError")
+  }
+
+  func tunnelStage() -> String? {
+    UserDefaults(suiteName: Self.fallbackAppGroupIdentifier)?
+      .string(forKey: "tunnelStage")
   }
 }
 

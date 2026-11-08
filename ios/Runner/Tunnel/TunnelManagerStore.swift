@@ -183,6 +183,10 @@ final class TunnelManagerStore {
     sharedStateStore.tunnelLastError()
   }
 
+  func tunnelStage() -> String? {
+    sharedStateStore.tunnelStage()
+  }
+
   func clearTunnelLastError() {
     sharedStateStore.clearTunnelLastError()
   }

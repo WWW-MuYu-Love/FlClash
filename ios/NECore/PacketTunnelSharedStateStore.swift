@@ -19,6 +19,9 @@ final class PacketTunnelSharedStateStore {
   private let runTimeKey = "runTime"
   private let activeVpnOptionsKey = "activeVpnOptions"
   private let lastErrorKey = "tunnelLastError"
+  private let stageKey = "tunnelStage"
+  // SideKite's generated group, listed in both the app and the extension profiles.
+  private static let fallbackAppGroupIdentifier = "group.72f479443544b95e.1"
 
   // The app reads this when a start fails: the extension's own log is not
   // visible to the app, so the failure reason crosses over through the
@@ -26,6 +29,8 @@ final class PacketTunnelSharedStateStore {
   func saveLastError(_ message: String) {
     userDefaults?.set(message, forKey: lastErrorKey)
     userDefaults?.synchronize()
+    fallbackDefaults?.set(message, forKey: lastErrorKey)
+    fallbackDefaults?.synchronize()
   }
 
   func loadLastError() -> String? {
@@ -34,6 +39,12 @@ final class PacketTunnelSharedStateStore {
 
   func clearLastError() {
     userDefaults?.removeObject(forKey: lastErrorKey)
+    fallbackDefaults?.removeObject(forKey: lastErrorKey)
+  }
+
+  func saveStage(_ stage: String) {
+    fallbackDefaults?.set(stage, forKey: stageKey)
+    fallbackDefaults?.synchronize()
   }
 
   func loadVPNOptionsSnapshot() -> (options: PacketTunnelVPNOptions, data: Data)? {
@@ -186,6 +197,10 @@ final class PacketTunnelSharedStateStore {
     UserDefaults(
       suiteName: PacketTunnelEnvironment.appGroupIdentifier
     )
+  }
+
+  private var fallbackDefaults: UserDefaults? {
+    UserDefaults(suiteName: Self.fallbackAppGroupIdentifier)
   }
 }
 

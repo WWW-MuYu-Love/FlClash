@@ -21,6 +21,7 @@ final class PacketTunnelProvider: NEPacketTunnelProvider {
     logger.info("startTunnel begin")
     sharedStateStore.clearRunTime()
     sharedStateStore.clearLastError()
+    sharedStateStore.saveStage("started")
     reloadWidgets()
     let snapshot: (options: PacketTunnelVPNOptions, data: Data)
     let setupParams: Data
@@ -55,6 +56,7 @@ final class PacketTunnelProvider: NEPacketTunnelProvider {
         return
       }
       self.logger.info("setTunnelNetworkSettings completed")
+      self.sharedStateStore.saveStage("network settings ok")
       guard
         let tunnelFileDescriptor =
           self.networkConfiguration.tunnelFileDescriptor()
@@ -78,6 +80,7 @@ final class PacketTunnelProvider: NEPacketTunnelProvider {
       self.logger.info(
         "quickSetup initParams=\(initParams, privacy: .public)"
       )
+      self.sharedStateStore.saveStage("quickSetup started")
       NECoreBridge.quickSetup(
         withInitParams: initParams,
         setupParams: setupParams
@@ -94,6 +97,7 @@ final class PacketTunnelProvider: NEPacketTunnelProvider {
           return
         }
         self.logger.info("quickSetup completed")
+        self.sharedStateStore.saveStage("quickSetup ok")
         let coreTunOptions = CoreTunOptions(
           stack: vpnOptions.stack,
           address: self.networkConfiguration.tunAddress(for: vpnOptions),
@@ -117,6 +121,9 @@ final class PacketTunnelProvider: NEPacketTunnelProvider {
         )
         self.logger.info(
           "NECoreBridge.startTun result=\(started, privacy: .public)"
+        )
+        self.sharedStateStore.saveStage(
+          started ? "startTun ok" : "startTun failed"
         )
         if started {
           self.sharedStateStore.saveRunTime(vpnOptions: snapshot.data)
