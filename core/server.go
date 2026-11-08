@@ -1,5 +1,9 @@
-//go:build !android
+//go:build !android && !ios
 
+// The desktop core talks to its host over IPC; on iOS the core is
+// embedded and events flow through the in-process listener in lib.go,
+// whose deliverEvent/hasEventListener would otherwise collide with
+// the ones below.
 package core
 
 import (
