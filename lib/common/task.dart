@@ -186,6 +186,10 @@ Future<RealProfile> _makeRealProfileTask(MakeRealProfileState data) async {
       rawConfig['interface-name'] = realPatchConfig.interfaceName;
   }
   rawConfig['external-ui-url'] = '';
+  // mihomo auto-downloads the web UI whenever external-ui-name is set,
+  // even with the URL cleared, so the name must be cleared too or every
+  // start fails downloading from an empty URL.
+  rawConfig['external-ui-name'] = '';
   rawConfig.addAll(realPatchConfig.generalOverrideJson);
   rawConfig['log-level'] = realPatchConfig.logLevel.name;
   rawConfig['port'] = 0;
