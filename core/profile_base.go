@@ -130,6 +130,21 @@ func mergeProfileBase(base *SetupBase) (*yaml.Node, error) {
 	if err := yaml.Unmarshal(buf, &profileDocument); err != nil {
 		return nil, err
 	}
+	if base.Overlay == "" {
+		// No overlay: the profile file already holds the whole config
+		// (script or custom profile, where the host forwards the built
+		// file instead of a base). Use it as-is; merging an empty
+		// overlay would keep only the profile sections and drop tun,
+		// dns and everything else the tunnel needs.
+		root, err := documentMapping(&profileDocument)
+		if err != nil {
+			return nil, err
+		}
+		if retag {
+			retagShortIDs(root)
+		}
+		return &yaml.Node{Kind: yaml.DocumentNode, Content: []*yaml.Node{root}}, nil
+	}
 	if err := yaml.Unmarshal([]byte(base.Overlay), &overlayDocument); err != nil {
 		return nil, err
 	}
