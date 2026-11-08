@@ -1,0 +1,207 @@
+# FlClash iOS port — Codemagic build config (DRAFT, not yet committed anywhere)
+#
+# Purpose: build .ipa files of the FlClash iOS port on Codemagic's free
+# Mac mini M2 runner. TWO workflows:
+#   1. flclash-ios (unsigned) — the baseline. Build this FIRST.
+#   2. flclash-ios-signed — STAGED TEMPLATE, commented out. Uncomment and
+#      fill in ONLY once Campbell's signing type is known (see
+#      codemagic-notes.md §9). No signing, no App Store, no release
+#      publishing in either workflow.
+# The .ipa is kept as a Codemagic build artifact for sideloading.
+#
+# HOW TO USE: copy this file to the ROOT of the MuYu-Blog/FlClash repo
+# (default branch) as `codemagic.yaml`, then create the Codemagic app
+# pointing at that repo (see codemagic-notes.md). Do NOT commit it to
+# LiveContainer-zh or reuse the LiveContainer Codemagic app.
+#
+# Template lineage: structure mirrors ~/workspace/LiveContainer-zh/codemagic.yaml
+# (mac_mini_m2, pinned xcode, script steps, artifacts) but the build itself
+# follows the reference fork's flow: `dart setup.dart ios --no-codesign`
+# (chenx-dust/FlClash-Patched, CI on macos-26).
+#
+# Reference versions (from the fork's CI/docs — verify against the fork's
+# .github/workflows/build.yaml when MuYu-Blog/FlClash exists):
+#   Flutter 3.47.7 (Dart 3.13.5), Go 1.26.4, macos-26 runner.
+# Codemagic side: xcode 26.2 pinned (same as LiveContainer, known good;
+# Codemagic's current default is 26.2, 26.3 also available).
+
+workflows:
+  flclash-ios:
+    name: FlClash iOS (unsigned)
+    instance_type: mac_mini_m2
+    max_build_duration: 120
+    environment:
+      flutter: 3.47.7
+      xcode: 26.2
+      cocoapods: default
+      # No `groups:` — this workflow needs NO secrets at all.
+      # (No GH_TOKEN, no signing credentials, no App Store key.)
+    # No `triggering:` section on purpose: builds start MANUALLY from the
+    # Codemagic UI or via the REST API only. Push auto-trigger would burn
+    # the shared 500 min/month free allowance on every commit.
+    # To enable push builds later, add:
+    #   triggering:
+    #     events:
+    #       - push
+    #     branch_patterns:
+    #       - pattern: main
+    #         include: true
+    #     cancel_previous_builds: true
+    # ...and set up the webhook (Codemagic UI: app > Webhooks, or the
+    # GitHub App must have access to MuYu-Blog/FlClash — see notes).
+    scripts:
+      - name: Init submodules
+        script: |
+          git submodule update --init --recursive || true
+      - name: Toolchain versions
+        script: |
+          flutter --version
+          dart --version
+          xcodebuild -version
+          go version || echo "Go NOT preinstalled — will install below"
+          cargo --version || echo "Rust NOT preinstalled — will install below"
+          rustc --version || true
+      - name: Ensure Go (hook builds the mihomo core with CGO)
+        script: |
+          if ! command -v go >/dev/null 2>&1; then
+            brew install go
+          fi
+          go version
+          # Reference CI pins Go 1.26.4. If the hook fails on a newer Go,
+          # pin 1.26.4 from https://go.dev/dl/ instead of brew's latest.
+      - name: Ensure Rust (hook builds the Rust helper for iOS)
+        script: |
+          if ! command -v cargo >/dev/null 2>&1; then
+            curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable
+          fi
+          export PATH="$HOME/.cargo/bin:$PATH"
+          rustup target add aarch64-apple-ios
+          cargo --version
+          rustc --version
+      - name: Flutter pub get
+        script: |
+          flutter pub get
+      - name: Build unsigned iOS IPA
+        script: |
+          export PATH="$HOME/.cargo/bin:$PATH"
+          # setup.dart downloads GeoData, writes env.json, runs the Flutter
+          # iOS build (the Dart build hook compiles the Go core + Rust
+          # helper), and packages the .ipa via flutter_distributor.
+          # --no-codesign: arm64 device IPA, no provisioning/certificate.
+          # Bundle ID comes from the Xcode project in the repo; pass
+          # --ios-bundle-id <id> here only if the first build complains
+          # about a missing/placeholder bundle ID.
+          dart setup.dart ios --no-codesign
+          echo "--- dist/ contents ---"
+          find dist -type f | head -50
+      - name: Stage IPA artifact
+        script: |
+          IPA_PATH=$(find dist -name '*.ipa' | head -n 1)
+          if [ -z "$IPA_PATH" ]; then
+            echo "ERROR: no .ipa found under dist/ — see previous step's listing"
+            exit 1
+          fi
+          echo "Found IPA: $IPA_PATH"
+          cp "$IPA_PATH" ./FlClash-unsigned.ipa
+          ls -lh FlClash-unsigned.ipa
+    artifacts:
+      - FlClash-unsigned.ipa
+
+  # ---------------------------------------------------------------------------
+  # STAGED TEMPLATE — SIGNED WORKFLOW. DO NOT UNCOMMENT UNTIL THE
+  # SIGNING MECHANISM IS KNOWN (see codemagic-notes.md §9).
+  #
+  # SIGNING STATUS (2026-11-08 ~17:17): Campbell confirmed his signing
+  # CAN carry the packet-tunnel-provider entitlement ("可以") — the
+  # signing blocker is CLEARED and the tunnel should be able to run.
+  # What is still unknown is the MECHANISM: does he sign the IPA himself
+  # on his end (then deliver the UNSIGNED ipa), or does Codemagic sign it
+  # (then this workflow is needed, plus team ID / certificate /
+  # provisioning profile inputs)? Do NOT ask him for credential values —
+  # the parent collects those through the secure flow, never in chat.
+  #
+  # When the mechanism is known, uncomment this workflow and fill in:
+  #   (a) distribution_type — development | ad_hoc | enterprise | app_store
+  #       (pick from what his signing actually is; App Store is NOT the
+  #       plan — do not use app_store unless he explicitly orders it)
+  #   (b) bundle_identifier — must match the Xcode project AND the
+  #       provisioning profile (proposed: com.muyu.flclash — confirm
+  #       against the port plan's identifier proposal first)
+  #   (c) Code signing identities in the Codemagic UI (app > Code signing
+  #       identities): upload his certificate (.p12 + password) and the
+  #       provisioning profile. NEVER put certificate/profile material in
+  #       this yaml or in git. The profile MUST include the
+  #       packet-tunnel-provider entitlement and the App Group, or the
+  #       tunnel will not start on device.
+  #   (d) setup.dart signed invocation — confirm against setup.dart's
+  #       options once the port plan lands: the signed build is
+  #       `dart setup.dart ios` (no --no-codesign), possibly with
+  #       --ios-development-team <TEAM_ID> / --ios-bundle-id <id>.
+  #       If setup.dart cannot consume Codemagic signing, the fallback is
+  #       a plain `flutter build ipa` with an export options plist —
+  #       decide from the first unsigned build's log + setup.dart source.
+  #
+  # flclash-ios-signed:
+  #   name: FlClash iOS (signed)
+  #   instance_type: mac_mini_m2
+  #   max_build_duration: 120
+  #   environment:
+  #     flutter: 3.47.7
+  #     xcode: 26.2
+  #     cocoapods: default
+  #     ios_signing:
+  #       distribution_type: ad_hoc        # <-- FILL IN (a)
+  #       bundle_identifier: com.muyu.flclash  # <-- FILL IN (b), must match profile
+  #   # No `triggering:` — manual/API starts only (same reason as above).
+  #   scripts:
+  #     - name: Init submodules
+  #       script: |
+  #         git submodule update --init --recursive || true
+  #     - name: Toolchain versions
+  #       script: |
+  #         flutter --version
+  #         dart --version
+  #         xcodebuild -version
+  #         go version || echo "Go NOT preinstalled — will install below"
+  #         cargo --version || echo "Rust NOT preinstalled — will install below"
+  #         rustc --version || true
+  #     - name: Ensure Go (hook builds the mihomo core with CGO)
+  #       script: |
+  #         if ! command -v go >/dev/null 2>&1; then
+  #           brew install go
+  #         fi
+  #         go version
+  #     - name: Ensure Rust (hook builds the Rust helper for iOS)
+  #       script: |
+  #         if ! command -v cargo >/dev/null 2>&1; then
+  #           curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable
+  #         fi
+  #         export PATH="$HOME/.cargo/bin:$PATH"
+  #         rustup target add aarch64-apple-ios
+  #         cargo --version
+  #         rustc --version
+  #     - name: Flutter pub get
+  #       script: |
+  #         flutter pub get
+  #     - name: Build SIGNED iOS IPA
+  #       script: |
+  #         export PATH="$HOME/.cargo/bin:$PATH"
+  #         # Signed build: setup.dart WITHOUT --no-codesign. Confirm the
+  #         # exact flags against setup.dart source once the port plan
+  #         # lands (see (d) above). Codemagic injects the signing
+  #         # identity/profile from the UI into the Xcode build.
+  #         dart setup.dart ios
+  #         echo "--- dist/ contents ---"
+  #         find dist -type f | head -50
+  #     - name: Stage IPA artifact
+  #       script: |
+  #         IPA_PATH=$(find dist -name '*.ipa' | head -n 1)
+  #         if [ -z "$IPA_PATH" ]; then
+  #           echo "ERROR: no .ipa found under dist/ — see previous step's listing"
+  #           exit 1
+  #         fi
+  #         echo "Found IPA: $IPA_PATH"
+  #         cp "$IPA_PATH" ./FlClash-signed.ipa
+  #         ls -lh FlClash-signed.ipa
+  #   artifacts:
+  #     - FlClash-signed.ipa
