@@ -816,7 +816,7 @@ class SetupAction extends _$SetupAction {
             await _core.setupConfig(
               params: setupParams.copyWith(
                 skipDnsListen: system.isIOS,
-                skipMixedPort: system.isIOS,
+                skipMixedPort: false,
               ),
               preloadInvoke: preloadInvoke,
             );
