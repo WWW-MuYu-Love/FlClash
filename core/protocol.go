@@ -122,6 +122,9 @@ type SetupParams struct {
 	// The iOS app core never serves DNS: nothing queries it, and the tunnel
 	// extension already binds the configured listen address.
 	SkipDNSListen bool `json:"skip-dns-listen,omitempty"`
+	// The iOS app core never serves the mixed port: the system proxy is
+	// answered by the tunnel extension, which already binds it.
+	SkipMixedPort bool `json:"skip-mixed-port,omitempty"`
 }
 
 type CoreOptions struct {

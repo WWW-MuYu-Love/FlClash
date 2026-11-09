@@ -13,6 +13,7 @@ abstract class SetupParams with _$SetupParams {
     @JsonKey(name: 'selected-map') required Map<String, String> selectedMap,
     required CoreOptions options,
     @Default(false) @JsonKey(name: 'skip-dns-listen') bool skipDnsListen,
+    @Default(false) @JsonKey(name: 'skip-mixed-port') bool skipMixedPort,
   }) = _SetupParams;
 
   factory SetupParams.fromJson(Map<String, dynamic> json) =>

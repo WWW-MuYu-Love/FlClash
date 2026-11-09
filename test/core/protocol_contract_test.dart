@@ -286,6 +286,8 @@ void main() {
         'delay-test-timeout': defaultDelayTestTimeout,
         'mitm-capture': false,
       },
+      'skip-dns-listen': false,
+      'skip-mixed-port': false,
     });
     expect(handler.calls[CoreMethod.routeWatch], {'watch': true});
     expect(json.decode(json.encode(handler.calls[CoreMethod.routeCheck])), {
