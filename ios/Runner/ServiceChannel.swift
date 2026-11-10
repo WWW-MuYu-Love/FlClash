@@ -1,5 +1,6 @@
 import Flutter
 import Foundation
+import Shared
 import os
 
 @MainActor
