@@ -1,5 +1,6 @@
 import 'package:fl_clash/common/common.dart';
 import 'package:fl_clash/core/controller.dart';
+import 'package:fl_clash/core/external_controller.dart';
 import 'package:fl_clash/core/interface.dart';
 import 'package:fl_clash/enum/enum.dart';
 import 'package:fl_clash/models/models.dart';
@@ -20,6 +21,16 @@ import '../../helpers/test_profiles.dart';
 import '../../helpers/host_scaffold.dart';
 
 class _MockCore extends Mock implements CoreHandlerInterface {}
+
+class _FakeExternalControllerClient extends ExternalControllerClient {
+  _FakeExternalControllerClient(this.snapshot)
+    : super(baseUri: Uri.parse('http://127.0.0.1:1'));
+
+  final ExternalControllerSnapshot? snapshot;
+
+  @override
+  Future<ExternalControllerSnapshot?> fetchConnections() async => snapshot;
+}
 
 TrackerInfo _connection(
   int index, {
@@ -206,6 +217,69 @@ void main() {
     await tester.tap(find.text('Download'));
     await tester.pump();
     expect(find.text('host-0.test'), findsOneWidget);
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump(const Duration(seconds: 2));
+  });
+
+  testWidgets('the table shows the 9090 connections instead of the core '
+      'ones', (tester) async {
+    final core = _MockCore();
+    when(
+      () => core.getConnections(),
+    ).thenAnswer((_) async => [_connection(0, network: 'tcp')]);
+    final snapshot = ExternalControllerSnapshot(
+      uploadTotal: 0,
+      downloadTotal: 0,
+      connections: [
+        _connection(1, network: 'tcp'),
+        _connection(2, network: 'tcp'),
+      ],
+    );
+    final connections = ProviderContainer(
+      overrides: [
+        profilesProvider.overrideWith(TestProfiles.new),
+        coreHandlerProvider.overrideWithValue(CoreController.scoped(core)),
+        coreStatusProvider.overrideWithBuild((_, _) => CoreStatus.connected),
+        externalControllerClientProvider.overrideWithValue(
+          _FakeExternalControllerClient(snapshot),
+        ),
+      ],
+    );
+    addTearDown(connections.dispose);
+    globalState.container = connections;
+    const size = Size(1000, 700);
+    connections.read(viewSizeProvider.notifier).value = size;
+    tester.view.physicalSize = size;
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: connections,
+        child: const TestApp(
+          child: HostScaffold(
+            body: SizedBox(
+              width: 960,
+              height: 600,
+              child: DashboardDensityScope(
+                density: DashboardDensity.standard,
+                scale: 1,
+                child: ConnectionsTableCard(),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+    await tester.pump();
+
+    expect(find.text('host-1.test'), findsOneWidget);
+    expect(find.text('host-2.test'), findsOneWidget);
+    expect(find.text('host-0.test'), findsNothing);
+    verifyNever(() => core.getConnections());
 
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.pump(const Duration(seconds: 2));

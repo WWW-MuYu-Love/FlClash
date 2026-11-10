@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:fl_clash/core/controller.dart';
+import 'package:fl_clash/core/external_controller.dart';
 import 'package:fl_clash/core/interface.dart';
 import 'package:fl_clash/enum/enum.dart';
 import 'package:fl_clash/models/models.dart';
@@ -15,6 +16,16 @@ import 'package:package_info_plus/package_info_plus.dart';
 import 'package:riverpod/riverpod.dart';
 
 class MockCoreHandlerInterface extends Mock implements CoreHandlerInterface {}
+
+class _FakeExternalControllerClient extends ExternalControllerClient {
+  _FakeExternalControllerClient(this.snapshot)
+    : super(baseUri: Uri.parse('http://127.0.0.1:1'));
+
+  final ExternalControllerSnapshot? snapshot;
+
+  @override
+  Future<ExternalControllerSnapshot?> fetchConnections() async => snapshot;
+}
 
 const runningVersion = '0.8.96';
 
@@ -154,6 +165,62 @@ void main() {
         verify(() => core.getTotalTraffic(any())).called(1);
       },
     );
+  });
+
+  group('CommonAction.updateTraffic via the external controller', () {
+    const snapshot = ExternalControllerSnapshot(
+      uploadTotal: 5000,
+      downloadTotal: 9000,
+      connections: [],
+    );
+
+    ProviderContainer buildExternalContainer(
+      ExternalControllerSnapshot? snapshot,
+    ) {
+      final container = ProviderContainer(
+        overrides: [
+          coreHandlerProvider.overrideWithValue(CoreController.scoped(core)),
+          externalControllerClientProvider.overrideWithValue(
+            _FakeExternalControllerClient(snapshot),
+          ),
+        ],
+      );
+      addTearDown(container.dispose);
+      return container;
+    }
+
+    test('takes the totals from 9090 and never asks the core', () async {
+      final container = buildExternalContainer(snapshot);
+
+      await container.read(commonActionProvider.notifier).updateTraffic();
+
+      expect(
+        container.read(totalTrafficProvider),
+        const Traffic(up: 5000, down: 9000),
+      );
+      verifyNever(() => core.getTraffic(any()));
+      verifyNever(() => core.getTotalTraffic(any()));
+    });
+
+    test('falls back to the core when 9090 is unreachable', () async {
+      final container = buildExternalContainer(null);
+      when(
+        () => core.getTraffic(any()),
+      ).thenAnswer((_) async => const Traffic(up: 10, down: 20));
+      when(
+        () => core.getTotalTraffic(any()),
+      ).thenAnswer((_) async => const Traffic(up: 100, down: 200));
+
+      await container.read(commonActionProvider.notifier).updateTraffic();
+
+      expect(container.read(trafficsProvider).list.last.up, 10);
+      expect(
+        container.read(totalTrafficProvider),
+        const Traffic(up: 100, down: 200),
+      );
+      verify(() => core.getTraffic(any())).called(1);
+      verify(() => core.getTotalTraffic(any())).called(1);
+    });
   });
 
   group('CommonAction.autoCheckUpdate', () {

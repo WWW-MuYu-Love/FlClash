@@ -5,6 +5,7 @@ class CommonAction extends _$CommonAction {
   CoreController get _core => ref.read(coreHandlerProvider);
   bool _isUpdatingTraffic = false;
   CancelToken? _updateCancelToken;
+  final _externalTrafficSampler = ExternalTrafficSampler();
 
   @override
   void build() {}
@@ -53,6 +54,15 @@ class CommonAction extends _$CommonAction {
     }
     _isUpdatingTraffic = true;
     try {
+      final external = await _readExternalTraffic();
+      if (external != null) {
+        final (instant, total) = external;
+        if (instant != null) {
+          ref.read(trafficsProvider.notifier).addTraffic(instant);
+        }
+        ref.read(totalTrafficProvider.notifier).value = total;
+        return;
+      }
       final onlyStatisticsProxy = ref.read(
         appSettingProvider.select((state) => state.onlyStatisticsProxy),
       );
@@ -69,6 +79,20 @@ class CommonAction extends _$CommonAction {
     } finally {
       _isUpdatingTraffic = false;
     }
+  }
+
+  Future<(Traffic?, Traffic)?> _readExternalTraffic() async {
+    final snapshot = await ref
+        .read(externalControllerClientProvider)
+        .fetchConnections();
+    if (snapshot == null) {
+      return null;
+    }
+    final instant = _externalTrafficSampler.sample(snapshot, DateTime.now());
+    return (
+      instant,
+      Traffic(up: snapshot.uploadTotal, down: snapshot.downloadTotal),
+    );
   }
 
   Future<Traffic?> _readTraffic(Future<Traffic> Function() request) async {

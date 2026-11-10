@@ -123,7 +123,7 @@ mixin ConnectionsPolling<T extends ConsumerStatefulWidget>
     }
     try {
       if (pollsConnections) {
-        final next = [...await _core.getConnections()];
+        final next = [...await _readConnections()];
         if (!isCurrent()) return;
         next.sort((a, b) => b.start.compareTo(a.start));
         final tcp = next
@@ -138,7 +138,7 @@ mixin ConnectionsPolling<T extends ConsumerStatefulWidget>
           }),
         );
       } else {
-        final count = await _core.getConnectionCount();
+        final count = await _readConnectionCount();
         if (!isCurrent()) return;
         connectionCount.value = count;
       }
@@ -148,6 +148,26 @@ mixin ConnectionsPolling<T extends ConsumerStatefulWidget>
         logLevel: coreFailureLogLevel(error),
       );
     }
+  }
+
+  Future<List<TrackerInfo>> _readConnections() async {
+    final snapshot = await ref
+        .read(externalControllerClientProvider)
+        .fetchConnections();
+    if (snapshot != null) {
+      return snapshot.connections;
+    }
+    return _core.getConnections();
+  }
+
+  Future<int> _readConnectionCount() async {
+    final snapshot = await ref
+        .read(externalControllerClientProvider)
+        .fetchConnections();
+    if (snapshot != null) {
+      return snapshot.connections.length;
+    }
+    return _core.getConnectionCount();
   }
 }
 
