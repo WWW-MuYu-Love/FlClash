@@ -85,7 +85,17 @@ class SetupAction extends _$SetupAction {
     ref.read(dnsQueryCountProvider.notifier).value = 0;
     ref.read(requestCountProvider.notifier).value = 0;
     try {
-      return await setupResult;
+      final ok = await setupResult;
+      // A profile switch rebuilds the config for the App core only. The
+      // extension core only loads the full config at tunnel start, so
+      // while the VPN is on it keeps routing on the old profile — the
+      // dashboard already shows the new proxies, but the real egress
+      // stays on the old ones — until the tunnel restarts. Restart it so
+      // the routing core loads the new profile.
+      if (ok && ref.read(runningVpnOptionsProvider)?.enable == true) {
+        await restartVpn();
+      }
+      return ok;
     } catch (e, s) {
       commonPrint.log('fullSetup ===> ${compactError(e)}, $s');
       return false;
