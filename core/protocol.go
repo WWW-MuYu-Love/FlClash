@@ -119,6 +119,9 @@ type SetupParams struct {
 	Base        *SetupBase        `json:"base,omitempty"`
 	SelectedMap map[string]string `json:"selected-map"`
 	Options     CoreOptions       `json:"options"`
+	// The iOS app core never serves DNS: nothing queries it, and the tunnel
+	// extension already binds the configured listen address.
+	SkipDNSListen bool `json:"skip-dns-listen,omitempty"`
 }
 
 type CoreOptions struct {
