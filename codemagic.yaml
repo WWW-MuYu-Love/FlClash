@@ -1,29 +1,21 @@
-# FlClash iOS port — Codemagic build config (DRAFT, not yet committed anywhere)
+# FlClash iOS port — Codemagic build config.
 #
-# Purpose: build .ipa files of the FlClash iOS port on Codemagic's free
-# Mac mini M2 runner. TWO workflows:
-#   1. flclash-ios (unsigned) — the baseline. Build this FIRST.
-#   2. flclash-ios-signed — STAGED TEMPLATE, commented out. Uncomment and
-#      fill in ONLY once Campbell's signing type is known (see
-#      codemagic-notes.md §9). No signing, no App Store, no release
-#      publishing in either workflow.
-# The .ipa is kept as a Codemagic build artifact for sideloading.
+# Builds the unsigned FlClash iOS .ipa on Codemagic's free Mac mini M2
+# runner. This is the working build line: builds #1 and #2 SUCCEEDED
+# on this file (2026-11-10, repo WWW-MuYu-Love/FlClash). The .ipa is
+# kept as a Codemagic build artifact for sideloading.
 #
-# HOW TO USE: copy this file to the ROOT of the MuYu-Blog/FlClash repo
-# (default branch) as `codemagic.yaml`, then create the Codemagic app
-# pointing at that repo (see codemagic-notes.md). Do NOT commit it to
-# LiveContainer-zh or reuse the LiveContainer Codemagic app.
+# TWO workflows:
+#   1. flclash-ios (unsigned) — the baseline.
+#   2. flclash-ios-signed — STAGED TEMPLATE, commented out. Uncomment
+#      only once the signing mechanism is decided (see the block below).
+#      No App Store, no release publishing in either workflow.
 #
-# Template lineage: structure mirrors ~/workspace/LiveContainer-zh/codemagic.yaml
-# (mac_mini_m2, pinned xcode, script steps, artifacts) but the build itself
-# follows the reference fork's flow: `dart setup.dart ios --no-codesign`
+# Toolchain (pinned per workflow): Flutter 3.47.9, Xcode 26.3. Go and
+# Rust are installed by the scripts when missing (Go via brew, Rust via
+# rustup + aarch64-apple-ios). The build follows the reference fork's
+# flow: `dart setup.dart ios --no-codesign`
 # (chenx-dust/FlClash-Patched, CI on macos-26).
-#
-# Reference versions (from the fork's CI/docs — verify against the fork's
-# .github/workflows/build.yaml when MuYu-Blog/FlClash exists):
-#   Flutter 3.47.7 (Dart 3.13.5), Go 1.26.4, macos-26 runner.
-# Codemagic side: xcode 26.2 pinned (same as LiveContainer, known good;
-# Codemagic's current default is 26.2, 26.3 also available).
 
 workflows:
   flclash-ios:
@@ -48,7 +40,7 @@ workflows:
     #         include: true
     #     cancel_previous_builds: true
     # ...and set up the webhook (Codemagic UI: app > Webhooks, or the
-    # GitHub App must have access to MuYu-Blog/FlClash — see notes).
+    # GitHub App must have access to WWW-MuYu-Love/FlClash).
     scripts:
       - name: Init submodules
         script: |
@@ -109,7 +101,7 @@ workflows:
 
   # ---------------------------------------------------------------------------
   # STAGED TEMPLATE — SIGNED WORKFLOW. DO NOT UNCOMMENT UNTIL THE
-  # SIGNING MECHANISM IS KNOWN (see codemagic-notes.md §9).
+  # SIGNING MECHANISM IS KNOWN.
   #
   # SIGNING STATUS (2026-11-08 ~17:17): Campbell confirmed his signing
   # CAN carry the packet-tunnel-provider entitlement ("可以") — the

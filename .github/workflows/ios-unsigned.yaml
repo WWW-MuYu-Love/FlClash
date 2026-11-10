@@ -1,14 +1,12 @@
 name: ios-unsigned
 
 # Build the unsigned FlClash iOS IPA on GitHub Actions.
-# Why Actions and not Codemagic: the identical command
-# (`dart setup.dart ios --no-codesign`) with the identical toolchain
-# (Flutter 3.47.9, Xcode 26.3) fails on Codemagic with
-# "Building a deployable iOS app requires a selected Development Team"
-# (builds #2 and #3), while the reference fork's own CI runs the same
-# command on macos-26 and passes (tag v0.9.9, 2026-11-07). The failure
-# is specific to the Codemagic environment, so build where it is known
-# to work. Manual trigger only — no push builds, no releases.
+# Fallback build line: Codemagic is the working line (builds #1/#2
+# succeeded 2026-11-10). Actions builds #5–#8 all CANCELLED the same
+# way — queued ~15 min for a macos-26 runner, then cancelled with 0
+# steps and no logs. The cause is outside the code (runner pool or
+# new-account throttling, unconfirmed). Use Actions only if Codemagic
+# is unavailable. Manual trigger only — no push builds, no releases.
 #
 # Steps mirror the reference fork's iOS job
 # (chenx-dust/FlClash-Patched .github/workflows/build.yaml).
