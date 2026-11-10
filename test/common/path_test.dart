@@ -197,14 +197,15 @@ void main() {
 
   test('resolves the app group derived from the bundle id', () async {
     const derivedPath = '/groups/derived';
-    const fallbackPath = '/groups/sidekite';
+    const profilePath = '/groups/profile';
 
     final resolved = await resolveIOSAppGroupPath(
       packageName: 'love.muyu.flclash',
+      profileAppGroups: const ['group.e6c8545ed2c36db3.1'],
       getContainerPath: (identifier) async {
         return switch (identifier) {
           'group.love.muyu.flclash' => derivedPath,
-          sidekiteAppGroupIdentifier => fallbackPath,
+          'group.e6c8545ed2c36db3.1' => profilePath,
           _ => null,
         };
       },
@@ -214,47 +215,70 @@ void main() {
   });
 
   test(
-    'falls back to the SideKite group when the derived group is missing',
+    'falls back to a profile group when the derived group is missing',
     () async {
-      const fallbackPath = '/groups/sidekite';
+      const profilePath = '/groups/profile';
 
       final resolved = await resolveIOSAppGroupPath(
         packageName: 'renamed.by.sidekite',
+        profileAppGroups: const ['group.e6c8545ed2c36db3.1'],
         getContainerPath: (identifier) async {
           return switch (identifier) {
-            sidekiteAppGroupIdentifier => fallbackPath,
+            'group.e6c8545ed2c36db3.1' => profilePath,
             _ => null,
           };
         },
       );
 
-      expect(resolved, fallbackPath);
+      expect(resolved, profilePath);
     },
   );
 
   test(
-    'falls back to the SideKite group when the derived group is empty',
+    'falls back to a profile group when the derived group is empty',
     () async {
-      const fallbackPath = '/groups/sidekite';
+      const profilePath = '/groups/profile';
 
       final resolved = await resolveIOSAppGroupPath(
         packageName: 'renamed.by.sidekite',
+        profileAppGroups: const ['group.e6c8545ed2c36db3.1'],
         getContainerPath: (identifier) async {
           return switch (identifier) {
             'group.renamed.by.sidekite' => '',
-            sidekiteAppGroupIdentifier => fallbackPath,
+            'group.e6c8545ed2c36db3.1' => profilePath,
             _ => null,
           };
         },
       );
 
-      expect(resolved, fallbackPath);
+      expect(resolved, profilePath);
     },
   );
+
+  test('tries profile groups in order', () async {
+    const secondPath = '/groups/second';
+
+    final resolved = await resolveIOSAppGroupPath(
+      packageName: 'renamed.by.sidekite',
+      profileAppGroups: const [
+        'group.e6c8545ed2c36db3.1',
+        'group.e6c8545ed2c36db3.2',
+      ],
+      getContainerPath: (identifier) async {
+        return switch (identifier) {
+          'group.e6c8545ed2c36db3.2' => secondPath,
+          _ => null,
+        };
+      },
+    );
+
+    expect(resolved, secondPath);
+  });
 
   test('returns empty when neither app group resolves', () async {
     final resolved = await resolveIOSAppGroupPath(
       packageName: 'renamed.by.sidekite',
+      profileAppGroups: const [],
       getContainerPath: (_) async => null,
     );
 

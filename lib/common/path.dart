@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:fl_clash/common/common.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
@@ -40,35 +41,47 @@ Future<Directory> migrateIOSDataDirectory({
   return appGroupDirectory;
 }
 
-/// SideKite's generated App Group, listed in both the app and the
-/// extension profiles. SideKite renames the bundle ID at install, so the
-/// group derived from it (`group.<bundleId>`) does not exist; this is the
-/// fallback the app and the extension both use. Keep in sync with
-/// fallbackAppGroupIdentifier in
-/// ios/NECore/PacketTunnelSharedStateStore.swift and
-/// ios/Runner/Storage/SharedStateStore.swift.
-const sidekiteAppGroupIdentifier = 'group.72f479443544b95e.1';
+/// App Groups listed in the install's own provisioning profile, read
+/// natively: every install is signed with its own groups, so the
+/// identifier differs per device and certificate. Empty when the channel
+/// is unavailable (non-iOS, or before the engine is ready); the caller
+/// then only tries the derived group.
+@visibleForTesting
+Future<List<String>> profileAppGroups() async {
+  try {
+    const channel = MethodChannel('$packageName/service');
+    final groups = await channel.invokeMethod<List<dynamic>>(
+      'getProfileAppGroups',
+    );
+    return groups?.map((group) => group.toString()).toList() ?? [];
+  } catch (_) {
+    return [];
+  }
+}
 
 /// Resolves the iOS App Group container path: the group derived from the
-/// bundle ID first, then SideKite's generated group when the derived one
-/// does not exist (SideKite renames the bundle ID at install, so the
-/// derived group never resolves on a SideKite install). Returns '' when
-/// neither resolves, and the caller falls back to the app's own support
-/// directory. Without the fallback both the app and the extension fall
-/// back to their own private containers, so the extension core cannot
-/// serve the bundled zashboard from the app's container: its IsSafePath
-/// check rejects paths outside its own home.
+/// bundle ID first, then the groups from the provisioning profile in
+/// order (SideKite renames the bundle ID at install, so the derived
+/// group never resolves on a SideKite install). Returns '' when none
+/// resolves, and the caller falls back to the app's own support
+/// directory. Without a shared group both the app and the extension
+/// fall back to their own private containers, so the extension core
+/// cannot serve the bundled zashboard from the app's container: its
+/// IsSafePath check rejects paths outside its own home.
 @visibleForTesting
 Future<String> resolveIOSAppGroupPath({
   required String packageName,
+  required List<String> profileAppGroups,
   required Future<String?> Function(String appGroupIdentifier)
   getContainerPath,
 }) async {
-  final derived = await getContainerPath('group.$packageName');
-  if (derived != null && derived.isNotEmpty) {
-    return derived;
+  for (final identifier in ['group.$packageName', ...profileAppGroups]) {
+    final path = await getContainerPath(identifier);
+    if (path != null && path.isNotEmpty) {
+      return path;
+    }
   }
-  return await getContainerPath(sidekiteAppGroupIdentifier) ?? '';
+  return '';
 }
 
 class AppPath {
@@ -113,6 +126,7 @@ class AppPath {
         final packageInfo = await PackageInfo.fromPlatform();
         final appGroupPath = await resolveIOSAppGroupPath(
           packageName: packageInfo.packageName,
+          profileAppGroups: await profileAppGroups(),
           getContainerPath:
               (identifier) => PathProviderFoundation().getContainerPath(
                 appGroupIdentifier: identifier,
