@@ -288,7 +288,6 @@ void main() {
       },
       'skip-dns-listen': false,
       'skip-mixed-port': false,
-      'skip-external-controller': false,
     });
     expect(handler.calls[CoreMethod.routeWatch], {'watch': true});
     expect(json.decode(json.encode(handler.calls[CoreMethod.routeCheck])), {
