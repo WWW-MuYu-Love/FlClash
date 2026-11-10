@@ -72,8 +72,7 @@ Future<List<String>> profileAppGroups() async {
 Future<String> resolveIOSAppGroupPath({
   required String packageName,
   required List<String> profileAppGroups,
-  required Future<String?> Function(String appGroupIdentifier)
-  getContainerPath,
+  required Future<String?> Function(String appGroupIdentifier) getContainerPath,
 }) async {
   for (final identifier in ['group.$packageName', ...profileAppGroups]) {
     final path = await getContainerPath(identifier);
@@ -127,10 +126,8 @@ class AppPath {
         final appGroupPath = await resolveIOSAppGroupPath(
           packageName: packageInfo.packageName,
           profileAppGroups: await profileAppGroups(),
-          getContainerPath:
-              (identifier) => PathProviderFoundation().getContainerPath(
-                appGroupIdentifier: identifier,
-              ),
+          getContainerPath: (identifier) => PathProviderFoundation()
+              .getContainerPath(appGroupIdentifier: identifier),
         );
         return await migrateIOSDataDirectory(
           supportDirectory: support,
