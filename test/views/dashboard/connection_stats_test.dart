@@ -1,4 +1,5 @@
 import 'package:fl_clash/core/controller.dart';
+import 'package:fl_clash/core/external_controller.dart';
 import 'package:fl_clash/core/interface.dart';
 import 'package:fl_clash/enum/enum.dart';
 import 'package:fl_clash/features/connection/tracker_info_list.dart';
@@ -19,6 +20,19 @@ import '../../helpers/test_profiles.dart';
 import '../../helpers/host_scaffold.dart';
 
 class _MockCore extends Mock implements CoreHandlerInterface {}
+
+// Widget tests cannot make real HTTP requests (the test binding answers
+// 400 to every HttpClient call), so the 9090 client is faked here: the
+// mixin only calls fetchConnections on it.
+class _FakeExternalControllerClient extends ExternalControllerClient {
+  _FakeExternalControllerClient(this.snapshot)
+    : super(baseUri: Uri.parse('http://127.0.0.1:9090'));
+
+  final ExternalControllerSnapshot? snapshot;
+
+  @override
+  Future<ExternalControllerSnapshot?> fetchConnections() async => snapshot;
+}
 
 const _mobileSize = Size(400, 800);
 
@@ -50,16 +64,22 @@ void main() {
   late _MockCore core;
   late ProviderContainer container;
 
-  setUp(() {
-    core = _MockCore();
-    when(() => core.getConnectionCount()).thenAnswer((_) async => 0);
-    container = ProviderContainer(
+  ProviderContainer createContainer({ExternalControllerClient? client}) {
+    return ProviderContainer(
       overrides: [
         profilesProvider.overrideWith(TestProfiles.new),
         coreHandlerProvider.overrideWithValue(CoreController.scoped(core)),
         coreStatusProvider.overrideWithBuild((_, _) => CoreStatus.connected),
+        if (client != null)
+          externalControllerClientProvider.overrideWithValue(client),
       ],
     );
+  }
+
+  setUp(() {
+    core = _MockCore();
+    when(() => core.getConnectionCount()).thenAnswer((_) async => 0);
+    container = createContainer();
     globalState.container = container;
   });
 
@@ -100,6 +120,49 @@ void main() {
     when(() => core.getConnectionCount()).thenAnswer((_) async => 34);
 
     await pumpCard(tester);
+
+    expect(find.text('34'), findsOneWidget);
+
+    await teardownCard(tester);
+  });
+
+  testWidgets('prefers the 9090 snapshot count over the Core count', (
+    tester,
+  ) async {
+    when(() => core.getConnectionCount()).thenAnswer((_) async => 34);
+    final client = _FakeExternalControllerClient(
+      ExternalControllerSnapshot(
+        uploadTotal: 1000,
+        downloadTotal: 2000,
+        connections: [for (var i = 0; i < 61; i++) _request(i)],
+      ),
+    );
+    addTearDown(client.close);
+    container.dispose();
+    container = createContainer(client: client);
+    globalState.container = container;
+
+    await pumpCard(tester);
+    await tester.pump(const Duration(seconds: 2));
+
+    expect(find.text('61'), findsOneWidget);
+    expect(find.text('34'), findsNothing);
+
+    await teardownCard(tester);
+  });
+
+  testWidgets('falls back to the Core count when 9090 is unreachable', (
+    tester,
+  ) async {
+    when(() => core.getConnectionCount()).thenAnswer((_) async => 34);
+    final client = _FakeExternalControllerClient(null);
+    addTearDown(client.close);
+    container.dispose();
+    container = createContainer(client: client);
+    globalState.container = container;
+
+    await pumpCard(tester);
+    await tester.pump(const Duration(seconds: 2));
 
     expect(find.text('34'), findsOneWidget);
 

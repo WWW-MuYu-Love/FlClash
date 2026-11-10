@@ -138,7 +138,7 @@ mixin ConnectionsPolling<T extends ConsumerStatefulWidget>
           }),
         );
       } else {
-        final count = await _core.getConnectionCount();
+        final count = await _readConnectionCount();
         if (!isCurrent()) return;
         connectionCount.value = count;
       }
@@ -148,6 +148,20 @@ mixin ConnectionsPolling<T extends ConsumerStatefulWidget>
         logLevel: coreFailureLogLevel(error),
       );
     }
+  }
+
+  // The stats card is mobile-visible: with VPN on, the App core tracks no
+  // traffic, so read the routing core's count over 9090 first and fall
+  // back to the App core when 9090 is down. The table's list above stays
+  // on the App core (desktop-only, reverted in 9a3098f0).
+  Future<int> _readConnectionCount() async {
+    final snapshot = await ref
+        .read(externalControllerClientProvider)
+        .fetchConnections();
+    if (snapshot != null) {
+      return snapshot.connections.length;
+    }
+    return _core.getConnectionCount();
   }
 }
 
