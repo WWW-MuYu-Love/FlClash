@@ -217,7 +217,6 @@ abstract class VpnOptions with _$VpnOptions {
     required AccessControlProps accessControlProps,
     required bool allowBypass,
     required bool systemProxy,
-    @Default(false) bool allowLan,
     required List<String> bypassDomain,
     required String stack,
     @Default([]) List<String> routeAddress,

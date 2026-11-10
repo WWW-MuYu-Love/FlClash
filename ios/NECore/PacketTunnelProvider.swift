@@ -1,5 +1,4 @@
 import Foundation
-import Network
 import NetworkExtension
 import WidgetKit
 import os
@@ -7,7 +6,6 @@ import os
 final class PacketTunnelProvider: NEPacketTunnelProvider {
   private let sharedStateStore = PacketTunnelSharedStateStore()
   private let networkConfiguration = PacketTunnelNetworkConfiguration()
-  private var tcpForwarder: PacketTunnelTCPForwarder?
   private lazy var eventQueue = NECoreEventQueue(
     sharedStateStore: sharedStateStore
   )
@@ -144,7 +142,6 @@ final class PacketTunnelProvider: NEPacketTunnelProvider {
           started ? "startTun ok" : "startTun failed"
         )
         if started {
-          self.startTCPForwarder(for: vpnOptions)
           self.sharedStateStore.saveRunTime(vpnOptions: snapshot.data)
         } else {
           self.sharedStateStore.saveLastError("could not start core TUN")
@@ -156,38 +153,11 @@ final class PacketTunnelProvider: NEPacketTunnelProvider {
     }
   }
 
-  // LAN devices reach the loopback-only proxy on mixed-port + 1.
-  private func startTCPForwarder(for options: PacketTunnelVPNOptions) {
-    guard options.allowLan else { return }
-    guard options.port > 0, options.port < 65535 else {
-      logger.error("tcp forwarder skipped: invalid mixed port")
-      return
-    }
-    guard
-      let targetPort = NWEndpoint.Port(rawValue: UInt16(options.port)),
-      let listenPort = NWEndpoint.Port(rawValue: UInt16(options.port + 1))
-    else {
-      logger.error("tcp forwarder skipped: invalid port")
-      return
-    }
-    let forwarder = PacketTunnelTCPForwarder(
-      listenPort: listenPort,
-      targetPort: targetPort
-    )
-    tcpForwarder = forwarder
-    forwarder.start()
-    logger.info(
-      "tcp forwarder starting listen=\(options.port + 1, privacy: .public) target=\(options.port, privacy: .public)"
-    )
-  }
-
   override func stopTunnel(
     with reason: NEProviderStopReason,
     completionHandler: @escaping () -> Void
   ) {
     logger.info("stopTunnel reason=\(reason.rawValue, privacy: .public)")
-    tcpForwarder?.stop()
-    tcpForwarder = nil
     sharedStateStore.clearRunTime()
     reloadWidgets()
     eventQueue.stop()

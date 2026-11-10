@@ -269,11 +269,7 @@ Future<VpnOptions> vpnOptions(Ref ref) async {
   );
   final clashConfig = ref.watch(
     patchClashConfigProvider.select(
-      (state) => (
-        tun: state.tun,
-        mixedPort: state.mixedPort,
-        allowLan: state.allowLan,
-      ),
+      (state) => (tun: state.tun, mixedPort: state.mixedPort),
     ),
   );
   final vpnSetting = ref.watch(vpnSettingProvider);
@@ -287,7 +283,6 @@ Future<VpnOptions> vpnOptions(Ref ref) async {
     // mixed port is left to TUN instead of declared as the system proxy.
     systemProxy:
         vpnSetting.systemProxy && !networkSetting.authenticated && !safeMode,
-    allowLan: clashConfig.allowLan,
     port: clashConfig.mixedPort,
     ipv6: vpnSetting.ipv6,
     dnsHijacking: vpnSetting.dnsHijacking,
