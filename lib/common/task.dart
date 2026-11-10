@@ -176,7 +176,16 @@ Future<RealProfile> _makeRealProfileTask(MakeRealProfileState data) async {
       rawConfig['iptables'] = {'enable': false};
     }
   }
-  rawConfig['external-ui'] = '';
+  // The external controller serves /ui from external-ui, so point it at
+  // the bundled zashboard directory the app extracts into
+  // <home>/ui/zashboard at startup (see CoreController.initZashboard).
+  // A bare name cannot serve it: mihomo only resolves a name against a
+  // set directory or the default <home>/ui, and with external-ui empty
+  // SetUIPath gets nothing, so /ui 404s even though the files are there.
+  // The name stays cleared so the UI updater checks this same directory
+  // and skips its download instead of probing <dir>/zashboard.
+  rawConfig['external-ui'] = join(dirname(profilesPath), 'ui', 'zashboard');
+  rawConfig['external-ui-name'] = '';
   switch (realPatchConfig.interfaceNameMode) {
     case InterfaceNameMode.clear:
       rawConfig['interface-name'] = '';
@@ -187,11 +196,10 @@ Future<RealProfile> _makeRealProfileTask(MakeRealProfileState data) async {
   }
   // The zashboard web dashboard is bundled with the app and extracted
   // into <home>/ui/zashboard at startup (see CoreController.initZashboard),
-  // so the external controller serves it at /ui with no download. The URL
-  // stays cleared: a set name with an empty URL would make mihomo try to
-  // download the UI from nothing on every start.
+  // and external-ui above points the controller at that directory, so it
+  // serves at /ui with no download. The URL stays cleared: a set URL would
+  // make mihomo try to download the UI on every start.
   rawConfig['external-ui-url'] = '';
-  rawConfig['external-ui-name'] = 'zashboard';
   rawConfig.addAll(realPatchConfig.generalOverrideJson);
   rawConfig['log-level'] = realPatchConfig.logLevel.name;
   rawConfig['port'] = 0;

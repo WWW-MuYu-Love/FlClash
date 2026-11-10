@@ -229,6 +229,32 @@ void main() {
     },
   );
 
+  test(
+    'makeRealProfileTask points external-ui at the bundled zashboard dir',
+    () async {
+      final result = await makeRealProfileTask(
+        const MakeRealProfileState(
+          profilesPath: '/home/profiles',
+          profileId: 7,
+          rawConfig: {},
+          realPatchConfig: PatchClashConfig(),
+          appendSystemDns: false,
+          proxyGroups: [],
+          rules: [],
+          addedRules: [],
+          defaultUA: 'FlClash-Test',
+        ),
+      );
+      final config = loadYaml(result.yaml) as YamlMap;
+
+      // The controller serves /ui from external-ui; a bare name with an
+      // empty directory 404s even though the files sit in <home>/ui/zashboard.
+      expect(config['external-ui'], '/home/ui/zashboard');
+      expect(config['external-ui-name'], '');
+      expect(config['external-ui-url'], '');
+    },
+  );
+
   test('lastMatchTarget reads the last MATCH rule that names a target', () {
     expect(
       lastMatchTarget(['MATCH,A', 'DOMAIN,x.test,B', 'match,C', 'MATCH,']),
