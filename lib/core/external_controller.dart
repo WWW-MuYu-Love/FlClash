@@ -113,6 +113,35 @@ class ExternalControllerClient {
     }
   }
 
+  // DELETE /connections closes every connection on the core behind 9090;
+  // DELETE /connections/{id} closes one. The extension core answers 204
+  // even for an unknown id, so a false return means the request itself
+  // failed (the tunnel is down or 9090 is unreachable).
+  Future<bool> closeConnections() => _delete(['connections']);
+
+  Future<bool> closeConnection(String id) => _delete(['connections', id]);
+
+  Future<bool> _delete(List<String> pathSegments) async {
+    try {
+      final request = await _http
+          .deleteUrl(
+            baseUri.replace(
+              pathSegments: [...baseUri.pathSegments, ...pathSegments],
+            ),
+          )
+          .timeout(_fetchTimeout);
+      if (secret.isNotEmpty) {
+        request.headers.set(HttpHeaders.authorizationHeader, 'Bearer $secret');
+      }
+      final response = await request.close().timeout(_fetchTimeout);
+      await response.drain<void>();
+      return response.statusCode == HttpStatus.noContent ||
+          response.statusCode == HttpStatus.ok;
+    } catch (_) {
+      return false;
+    }
+  }
+
   void close() {
     _http.close(force: true);
   }

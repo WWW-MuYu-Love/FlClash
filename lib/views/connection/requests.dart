@@ -350,7 +350,19 @@ class _LiveFeedState extends ConsumerState<_LiveFeed>
   @override
   Duration get pollInterval => const Duration(seconds: 1);
 
-  Future<void> closeAll() => _close(_core.closeConnections);
+  Future<void> closeAll() => _close(_closeAllConnections);
+
+  // The live feed lists the extension core's connections when VPN is on,
+  // so close them there; fall back to the App core when 9090 is down
+  // (the App core owns the connections then).
+  Future<void> _closeAllConnections() async {
+    final closed = await ref
+        .read(externalControllerClientProvider)
+        .closeConnections();
+    if (!closed) {
+      await _core.closeConnections();
+    }
+  }
 
   @override
   Future<void> poll(PollGuard isCurrent) async {
@@ -428,7 +440,16 @@ class _LiveFeedState extends ConsumerState<_LiveFeed>
   }
 
   Future<void> _closeConnection(TrackerInfo trackerInfo) =>
-      _close(() => _core.closeConnection(trackerInfo.id));
+      _close(() => _closeSingleConnection(trackerInfo.id));
+
+  Future<void> _closeSingleConnection(String id) async {
+    final closed = await ref
+        .read(externalControllerClientProvider)
+        .closeConnection(id);
+    if (!closed) {
+      await _core.closeConnection(id);
+    }
+  }
 
   Future<void> _close(Future<void> Function() close) async {
     await globalState.safeRun(close, title: 'close connections');

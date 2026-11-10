@@ -210,7 +210,7 @@ class ProxiesAction extends _$ProxiesAction {
     await _syncSelectionToExternalController(groupName, proxyName);
     try {
       if (ref.read(appSettingProvider).closeConnections) {
-        await _core.closeConnections();
+        await _closeConnectionsAfterSelection();
       } else {
         await _core.resetConnections();
       }
@@ -219,6 +219,19 @@ class ProxiesAction extends _$ProxiesAction {
         'changeProxy($groupName -> $proxyName) connection reset failed: $error',
         logLevel: coreFailureLogLevel(error),
       );
+    }
+  }
+
+  // The connections a selection change leaves behind belong to the
+  // extension core when VPN is on; close them through 9090 and fall back
+  // to the App core when it is down. The reset branch above stays on the
+  // App core: the external controller has no resolver-reset endpoint.
+  Future<void> _closeConnectionsAfterSelection() async {
+    final closed = await ref
+        .read(externalControllerClientProvider)
+        .closeConnections();
+    if (!closed) {
+      await _core.closeConnections();
     }
   }
 

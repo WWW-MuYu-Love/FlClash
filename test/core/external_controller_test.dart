@@ -295,4 +295,107 @@ void main() {
       expect(await dead.selectProxy('group', 'proxy'), isFalse);
     });
   });
+
+  group('ExternalControllerClient.closeConnections', () {
+    late HttpServer server;
+    late ExternalControllerClient client;
+
+    setUp(() async {
+      server = await _serve((request) async {
+        request.response.statusCode = HttpStatus.noContent;
+        await request.response.close();
+      });
+      client = ExternalControllerClient(
+        baseUri: Uri.parse('http://127.0.0.1:${server.port}'),
+      );
+    });
+
+    tearDown(() async {
+      client.close();
+      await server.close(force: true);
+    });
+
+    test('DELETEs /connections with the bearer secret', () async {
+      var seenMethod = '';
+      var seenPath = '';
+      var seenAuth = '';
+      await server.close(force: true);
+      server = await _serve((request) async {
+        seenMethod = request.method;
+        seenPath = request.uri.path;
+        seenAuth = request.headers.value(HttpHeaders.authorizationHeader) ?? '';
+        request.response.statusCode = HttpStatus.noContent;
+        await request.response.close();
+      });
+      final authed = ExternalControllerClient(
+        baseUri: Uri.parse('http://127.0.0.1:${server.port}'),
+        secret: 'secret',
+      );
+      addTearDown(authed.close);
+
+      expect(await authed.closeConnections(), isTrue);
+      expect(seenMethod, 'DELETE');
+      expect(seenPath, '/connections');
+      expect(seenAuth, 'Bearer secret');
+    });
+
+    test('DELETEs one connection at /connections/{id}', () async {
+      var seenMethod = '';
+      var seenPath = '';
+      await server.close(force: true);
+      server = await _serve((request) async {
+        seenMethod = request.method;
+        seenPath = request.uri.path;
+        request.response.statusCode = HttpStatus.noContent;
+        await request.response.close();
+      });
+      client = ExternalControllerClient(
+        baseUri: Uri.parse('http://127.0.0.1:${server.port}'),
+      );
+
+      expect(await client.closeConnection('42'), isTrue);
+      expect(seenMethod, 'DELETE');
+      expect(seenPath, '/connections/42');
+    });
+
+    test('returns true on 200 as well as 204', () async {
+      await server.close(force: true);
+      server = await _serve((request) async {
+        request.response.statusCode = HttpStatus.ok;
+        await request.response.close();
+      });
+      client = ExternalControllerClient(
+        baseUri: Uri.parse('http://127.0.0.1:${server.port}'),
+      );
+
+      expect(await client.closeConnections(), isTrue);
+      expect(await client.closeConnection('42'), isTrue);
+    });
+
+    test('returns false on a non-success status', () async {
+      await server.close(force: true);
+      server = await _serve((request) async {
+        request.response.statusCode = HttpStatus.badRequest;
+        await request.response.close();
+      });
+      client = ExternalControllerClient(
+        baseUri: Uri.parse('http://127.0.0.1:${server.port}'),
+      );
+
+      expect(await client.closeConnections(), isFalse);
+      expect(await client.closeConnection('42'), isFalse);
+    });
+
+    test('returns false without throwing when nothing listens', () async {
+      final port = server.port;
+      await server.close(force: true);
+      final dead = ExternalControllerClient(
+        baseUri: Uri.parse('http://127.0.0.1:$port'),
+      );
+      addTearDown(dead.close);
+
+      expect(await dead.closeConnections(), isFalse);
+      expect(await dead.closeConnection('42'), isFalse);
+    });
+  });
 }
