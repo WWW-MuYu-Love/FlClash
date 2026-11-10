@@ -236,7 +236,6 @@ SharedState sharedState(Ref ref) {
       base: ref.watch(appliedProfileBaseProvider),
       selectedMap: selectedMap,
       options: ref.watch(coreOptionsProvider),
-      skipMixedPort: system.isIOS,
     ),
     vpnOptions: ref.watch(vpnOptionsProvider).value,
   );
