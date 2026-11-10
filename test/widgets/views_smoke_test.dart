@@ -159,6 +159,89 @@ void main() {
     });
   }
 
+  testWidgets('zashboard row appears while the tunnel is running', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(1400, 1000);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    const runningOptions = VpnOptions(
+      enable: true,
+      port: 7890,
+      ipv6: false,
+      dnsHijacking: false,
+      accessControlProps: AccessControlProps(
+        enable: false,
+        mode: AccessControlMode.acceptSelected,
+        acceptList: [],
+        rejectList: [],
+      ),
+      allowBypass: false,
+      systemProxy: true,
+      bypassDomain: [],
+      stack: 'mixed',
+    );
+    final container = ProviderContainer(
+      overrides: [
+        profilesProvider.overrideWith(TestProfiles.new),
+        runningVpnOptionsProvider.overrideWithValue(runningOptions),
+      ],
+    );
+    addTearDown(container.dispose);
+    globalState.container = container;
+    container
+        .read(viewSizeProvider.notifier)
+        .update((_) => const Size(1400, 1000));
+
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: const TestApp(child: ToolsView()),
+      ),
+    );
+    await tester.pump();
+
+    final target = find.text('Zashboard');
+    await tester.scrollUntilVisible(
+      target,
+      500,
+      scrollable: find.byType(Scrollable).first,
+    );
+    expect(target, findsOneWidget);
+    expect(tester.takeException(), null);
+  });
+
+  testWidgets('zashboard row is hidden while the tunnel is down', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(1400, 1000);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final container = ProviderContainer(
+      overrides: [profilesProvider.overrideWith(TestProfiles.new)],
+    );
+    addTearDown(container.dispose);
+    globalState.container = container;
+    container
+        .read(viewSizeProvider.notifier)
+        .update((_) => const Size(1400, 1000));
+
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: const TestApp(child: ToolsView()),
+      ),
+    );
+    await tester.pump();
+
+    expect(find.text('Zashboard'), findsNothing);
+    expect(tester.takeException(), null);
+  });
+
   testWidgets('custom resources list directly in advanced config', (
     tester,
   ) async {

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:fl_clash/common/common.dart';
 import 'package:fl_clash/enum/enum.dart';
 import 'package:fl_clash/l10n/l10n.dart';
@@ -12,6 +14,7 @@ import 'package:fl_clash/views/hotkey.dart';
 import 'package:fl_clash/widgets/widgets.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import 'config/advanced.dart';
 import 'developer.dart';
@@ -35,13 +38,14 @@ class _ToolViewState extends ConsumerState<ToolsView> {
     );
   }
 
-  Widget _getOtherList(bool enableDeveloperMode) {
+  Widget _getOtherList(bool enableDeveloperMode, bool vpnRunning) {
     return generateSection(
       title: context.appLocalizations.other,
       items: [
         const _DisclaimerItem(),
         if (enableDeveloperMode) const _DeveloperItem(),
         const _InfoItem(),
+        if (vpnRunning) const _ZashboardItem(),
       ],
     );
   }
@@ -66,6 +70,8 @@ class _ToolViewState extends ConsumerState<ToolsView> {
     final developerMode = ref.watch(
       appSettingProvider.select((state) => state.developerMode),
     );
+    final vpnRunning =
+        ref.watch(runningVpnOptionsProvider)?.enable == true;
     final items = [
       Consumer(
         builder: (_, ref, _) {
@@ -79,7 +85,7 @@ class _ToolViewState extends ConsumerState<ToolsView> {
         },
       ),
       _getSettingList(),
-      _getOtherList(developerMode),
+      _getOtherList(developerMode, vpnRunning),
     ];
     return Scaffold(
       title: context.appLocalizations.tools,
@@ -229,6 +235,23 @@ class _InfoItem extends StatelessWidget {
       leading: const GlyphIcon(AppGlyphs.info),
       title: Text(context.appLocalizations.about),
       widget: const AboutView(),
+    );
+  }
+}
+
+class _ZashboardItem extends ConsumerWidget {
+  const _ZashboardItem();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return ListItem(
+      leading: const GlyphIcon(AppGlyphs.dashboard),
+      title: const Text('Zashboard'),
+      trailing: const GlyphIcon(AppGlyphs.openExternal),
+      onTap: () {
+        final baseUri = ref.read(externalControllerClientProvider).baseUri;
+        unawaited(launchUrl(baseUri.replace(path: '/ui')));
+      },
     );
   }
 }
