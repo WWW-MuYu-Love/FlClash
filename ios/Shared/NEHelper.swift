@@ -10,7 +10,9 @@ public enum NEHelper {
     return bundleId
   }
 
-  public static var appGroupIdentifier: String { "group.\(appBundleId)" }
+  public static var appGroupIdentifier: String {
+    AppGroupResolver.resolveAppGroupIdentifier(bundleIdentifier: appBundleId)
+  }
   public static var widgetIdentifier: String { "\(appBundleId).Widget" }
   public static var providerBundleIdentifier: String {
     "\(appBundleId).NECore"

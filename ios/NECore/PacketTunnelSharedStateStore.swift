@@ -5,7 +5,11 @@ enum PacketTunnelEnvironment {
   static let baseBundleIdentifier = String(
     extensionBundleIdentifier.dropLast(".NECore".count)
   )
-  static let appGroupIdentifier = "group.\(baseBundleIdentifier)"
+  static var appGroupIdentifier: String {
+    AppGroupResolver.resolveAppGroupIdentifier(
+      bundleIdentifier: baseBundleIdentifier
+    )
+  }
   static let widgetIdentifier = "\(baseBundleIdentifier).Widget"
   static let eventNotificationName =
     "\(extensionBundleIdentifier).event"
@@ -20,8 +24,6 @@ final class PacketTunnelSharedStateStore {
   private let activeVpnOptionsKey = "activeVpnOptions"
   private let lastErrorKey = "tunnelLastError"
   private let stageKey = "tunnelStage"
-  // SideKite's generated group, listed in both the app and the extension profiles.
-  private static let fallbackAppGroupIdentifier = "group.72f479443544b95e.1"
 
   // The app reads this when a start fails: the extension's own log is not
   // visible to the app, so the failure reason crosses over through the
@@ -29,8 +31,6 @@ final class PacketTunnelSharedStateStore {
   func saveLastError(_ message: String) {
     userDefaults?.set(message, forKey: lastErrorKey)
     userDefaults?.synchronize()
-    fallbackDefaults?.set(message, forKey: lastErrorKey)
-    fallbackDefaults?.synchronize()
   }
 
   func loadLastError() -> String? {
@@ -39,12 +39,11 @@ final class PacketTunnelSharedStateStore {
 
   func clearLastError() {
     userDefaults?.removeObject(forKey: lastErrorKey)
-    fallbackDefaults?.removeObject(forKey: lastErrorKey)
   }
 
   func saveStage(_ stage: String) {
-    fallbackDefaults?.set(stage, forKey: stageKey)
-    fallbackDefaults?.synchronize()
+    userDefaults?.set(stage, forKey: stageKey)
+    userDefaults?.synchronize()
   }
 
   func loadVPNOptionsSnapshot() -> (options: PacketTunnelVPNOptions, data: Data)? {
@@ -190,9 +189,8 @@ final class PacketTunnelSharedStateStore {
   private static let forwardedProfileKey = "profile"
 
   func appGroupDirectory() -> URL? {
-    FileManager.default.containerURL(
-      forSecurityApplicationGroupIdentifier:
-        PacketTunnelEnvironment.appGroupIdentifier
+    AppGroupResolver.resolveAppGroupDirectory(
+      bundleIdentifier: PacketTunnelEnvironment.baseBundleIdentifier
     )
   }
 
@@ -211,10 +209,6 @@ final class PacketTunnelSharedStateStore {
     UserDefaults(
       suiteName: PacketTunnelEnvironment.appGroupIdentifier
     )
-  }
-
-  private var fallbackDefaults: UserDefaults? {
-    UserDefaults(suiteName: Self.fallbackAppGroupIdentifier)
   }
 }
 

@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:fl_clash/common/common.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
@@ -38,6 +39,49 @@ Future<Directory> migrateIOSDataDirectory({
     }
   }
   return appGroupDirectory;
+}
+
+/// App Groups listed in the install's own provisioning profile, read
+/// natively: every install is signed with its own groups, so the
+/// identifier differs per device and certificate. Empty when the channel
+/// is unavailable (non-iOS, or before the engine is ready); the caller
+/// then only tries the derived group.
+@visibleForTesting
+Future<List<String>> profileAppGroups() async {
+  try {
+    const channel = MethodChannel('$packageName/service');
+    final groups = await channel.invokeMethod<List<dynamic>>(
+      'getProfileAppGroups',
+    );
+    return groups?.map((group) => group.toString()).toList() ?? [];
+  } catch (_) {
+    return [];
+  }
+}
+
+/// Resolves the iOS App Group container path: the group derived from the
+/// bundle ID first, then the groups from the provisioning profile in
+/// order (SideKite renames the bundle ID at install, so the derived
+/// group never resolves on a SideKite install). Returns '' when none
+/// resolves, and the caller falls back to the app's own support
+/// directory. Without a shared group both the app and the extension
+/// fall back to their own private containers, so the extension core
+/// cannot serve the bundled zashboard from the app's container: its
+/// IsSafePath check rejects paths outside its own home.
+@visibleForTesting
+Future<String> resolveIOSAppGroupPath({
+  required String packageName,
+  required List<String> profileAppGroups,
+  required Future<String?> Function(String appGroupIdentifier)
+  getContainerPath,
+}) async {
+  for (final identifier in ['group.$packageName', ...profileAppGroups]) {
+    final path = await getContainerPath(identifier);
+    if (path != null && path.isNotEmpty) {
+      return path;
+    }
+  }
+  return '';
 }
 
 class AppPath {
@@ -80,11 +124,14 @@ class AppPath {
       if (!system.isIOS) return support;
       try {
         final packageInfo = await PackageInfo.fromPlatform();
-        final appGroupPath =
-            await PathProviderFoundation().getContainerPath(
-              appGroupIdentifier: 'group.${packageInfo.packageName}',
-            ) ??
-            '';
+        final appGroupPath = await resolveIOSAppGroupPath(
+          packageName: packageInfo.packageName,
+          profileAppGroups: await profileAppGroups(),
+          getContainerPath:
+              (identifier) => PathProviderFoundation().getContainerPath(
+                appGroupIdentifier: identifier,
+              ),
+        );
         return await migrateIOSDataDirectory(
           supportDirectory: support,
           appGroupPath: appGroupPath,

@@ -225,6 +225,8 @@ final class ServiceChannel {
       Task {
         result(await tunnelController.getRunTime())
       }
+    case "getProfileAppGroups":
+      result(AppGroupResolver.profileAppGroups())
     case "getActiveVpnOptions":
       Task {
         let running = await tunnelController.getRunTime() > 0
