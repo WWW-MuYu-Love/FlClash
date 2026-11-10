@@ -25,6 +25,13 @@ workflows:
     instance_type: mac_mini_m2
     max_build_duration: 120
     environment:
+      # The default variable group, which holds GH_TOKEN (the secret
+      # the publish step uses to upload the IPA to GitHub Releases).
+      # Without this groups entry the workflow gets no variables from
+      # the UI at all, so the publish step would see GH_TOKEN as unset
+      # and skip the upload.
+      groups:
+        - default
       flutter: 3.47.9
       xcode: 26.3
       cocoapods: default
