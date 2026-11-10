@@ -212,6 +212,7 @@ struct PacketTunnelVPNOptions: Decodable {
   // upstream did not. Decode upstream's key into this property.
   let captureDns: Bool
   let systemProxy: Bool
+  let allowLan: Bool
   let bypassDomain: [String]
   let stack: String
   let mtu: Int
@@ -233,6 +234,7 @@ struct PacketTunnelVPNOptions: Decodable {
     case ipv6
     case dnsHijacking
     case systemProxy
+    case allowLan
     case bypassDomain
     case stack
     case mtu
@@ -256,6 +258,7 @@ struct PacketTunnelVPNOptions: Decodable {
     ipv6 = try container.decode(Bool.self, forKey: .ipv6)
     captureDns = try container.decode(Bool.self, forKey: .dnsHijacking)
     systemProxy = try container.decode(Bool.self, forKey: .systemProxy)
+    allowLan = try container.decodeIfPresent(Bool.self, forKey: .allowLan) ?? false
     bypassDomain = try container.decodeIfPresent(
       [String].self,
       forKey: .bypassDomain
