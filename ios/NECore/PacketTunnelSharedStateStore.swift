@@ -190,9 +190,20 @@ final class PacketTunnelSharedStateStore {
   private static let forwardedProfileKey = "profile"
 
   func appGroupDirectory() -> URL? {
-    FileManager.default.containerURL(
+    if let group = FileManager.default.containerURL(
       forSecurityApplicationGroupIdentifier:
         PacketTunnelEnvironment.appGroupIdentifier
+    ) {
+      return group
+    }
+    // SideKite renames the bundle ID at install, so the group derived
+    // from it does not exist; fall back to SideKite's generated group.
+    // Without this the extension falls back to its own container, and
+    // the core's IsSafePath check then rejects the zashboard directory
+    // the app extracted into its own container.
+    return FileManager.default.containerURL(
+      forSecurityApplicationGroupIdentifier:
+        Self.fallbackAppGroupIdentifier
     )
   }
 

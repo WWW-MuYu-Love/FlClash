@@ -40,6 +40,37 @@ Future<Directory> migrateIOSDataDirectory({
   return appGroupDirectory;
 }
 
+/// SideKite's generated App Group, listed in both the app and the
+/// extension profiles. SideKite renames the bundle ID at install, so the
+/// group derived from it (`group.<bundleId>`) does not exist; this is the
+/// fallback the app and the extension both use. Keep in sync with
+/// fallbackAppGroupIdentifier in
+/// ios/NECore/PacketTunnelSharedStateStore.swift and
+/// ios/Runner/Storage/SharedStateStore.swift.
+const sidekiteAppGroupIdentifier = 'group.72f479443544b95e.1';
+
+/// Resolves the iOS App Group container path: the group derived from the
+/// bundle ID first, then SideKite's generated group when the derived one
+/// does not exist (SideKite renames the bundle ID at install, so the
+/// derived group never resolves on a SideKite install). Returns '' when
+/// neither resolves, and the caller falls back to the app's own support
+/// directory. Without the fallback both the app and the extension fall
+/// back to their own private containers, so the extension core cannot
+/// serve the bundled zashboard from the app's container: its IsSafePath
+/// check rejects paths outside its own home.
+@visibleForTesting
+Future<String> resolveIOSAppGroupPath({
+  required String packageName,
+  required Future<String?> Function(String appGroupIdentifier)
+  getContainerPath,
+}) async {
+  final derived = await getContainerPath('group.$packageName');
+  if (derived != null && derived.isNotEmpty) {
+    return derived;
+  }
+  return await getContainerPath(sidekiteAppGroupIdentifier) ?? '';
+}
+
 class AppPath {
   static AppPath? _instance;
   late ResolveOnce<Directory> _dataDir;
@@ -80,11 +111,13 @@ class AppPath {
       if (!system.isIOS) return support;
       try {
         final packageInfo = await PackageInfo.fromPlatform();
-        final appGroupPath =
-            await PathProviderFoundation().getContainerPath(
-              appGroupIdentifier: 'group.${packageInfo.packageName}',
-            ) ??
-            '';
+        final appGroupPath = await resolveIOSAppGroupPath(
+          packageName: packageInfo.packageName,
+          getContainerPath:
+              (identifier) => PathProviderFoundation().getContainerPath(
+                appGroupIdentifier: identifier,
+              ),
+        );
         return await migrateIOSDataDirectory(
           supportDirectory: support,
           appGroupPath: appGroupPath,

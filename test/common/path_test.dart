@@ -194,4 +194,70 @@ void main() {
 
     expect(resolved.path, source.path);
   });
+
+  test('resolves the app group derived from the bundle id', () async {
+    const derivedPath = '/groups/derived';
+    const fallbackPath = '/groups/sidekite';
+
+    final resolved = await resolveIOSAppGroupPath(
+      packageName: 'love.muyu.flclash',
+      getContainerPath: (identifier) async {
+        return switch (identifier) {
+          'group.love.muyu.flclash' => derivedPath,
+          sidekiteAppGroupIdentifier => fallbackPath,
+          _ => null,
+        };
+      },
+    );
+
+    expect(resolved, derivedPath);
+  });
+
+  test(
+    'falls back to the SideKite group when the derived group is missing',
+    () async {
+      const fallbackPath = '/groups/sidekite';
+
+      final resolved = await resolveIOSAppGroupPath(
+        packageName: 'renamed.by.sidekite',
+        getContainerPath: (identifier) async {
+          return switch (identifier) {
+            sidekiteAppGroupIdentifier => fallbackPath,
+            _ => null,
+          };
+        },
+      );
+
+      expect(resolved, fallbackPath);
+    },
+  );
+
+  test(
+    'falls back to the SideKite group when the derived group is empty',
+    () async {
+      const fallbackPath = '/groups/sidekite';
+
+      final resolved = await resolveIOSAppGroupPath(
+        packageName: 'renamed.by.sidekite',
+        getContainerPath: (identifier) async {
+          return switch (identifier) {
+            'group.renamed.by.sidekite' => '',
+            sidekiteAppGroupIdentifier => fallbackPath,
+            _ => null,
+          };
+        },
+      );
+
+      expect(resolved, fallbackPath);
+    },
+  );
+
+  test('returns empty when neither app group resolves', () async {
+    final resolved = await resolveIOSAppGroupPath(
+      packageName: 'renamed.by.sidekite',
+      getContainerPath: (_) async => null,
+    );
+
+    expect(resolved, isEmpty);
+  });
 }

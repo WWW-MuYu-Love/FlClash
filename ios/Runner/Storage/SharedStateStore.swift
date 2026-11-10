@@ -102,8 +102,16 @@ final class SharedStateStore {
   }
 
   func appGroupDirectory() -> URL? {
-    FileManager.default.containerURL(
+    if let group = FileManager.default.containerURL(
       forSecurityApplicationGroupIdentifier: appGroupIdentifier
+    ) {
+      return group
+    }
+    // SideKite renames the bundle ID at install, so the group derived
+    // from it does not exist; fall back to SideKite's generated group.
+    return FileManager.default.containerURL(
+      forSecurityApplicationGroupIdentifier:
+        Self.fallbackAppGroupIdentifier
     )
   }
 
