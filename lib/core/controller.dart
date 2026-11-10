@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:archive/archive.dart';
 import 'package:fl_clash/common/common.dart';
 import 'package:fl_clash/core/core.dart';
 import 'package:fl_clash/core/interface.dart';
@@ -76,9 +77,97 @@ extension type CoreController._(CoreHandlerInterface _interface)
     }
   }
 
+  /// The zashboard web dashboard bundled with the app, served by the
+  /// external controller at /ui. Built in (not downloaded) so the panel
+  /// works without reaching GitHub at first start.
+  static const zashboardVersion = '3.30.0';
+  static const _zashboardAsset = 'assets/data/zashboard.zip';
+  static const _zashboardVersionFile = '.flclash-zashboard-version';
+
+  static Future<void> initZashboard() async {
+    final homePath = await appPath.homeDirPath;
+    final targetDir = Directory(join(homePath, 'ui', 'zashboard'));
+    try {
+      final versionFile = File(join(targetDir.path, _zashboardVersionFile));
+      if (await versionFile.exists() &&
+          (await versionFile.readAsString()).trim() == zashboardVersion) {
+        return;
+      }
+      final data = await rootBundle.load(_zashboardAsset);
+      final List<int> bytes = data.buffer.asUint8List();
+      await extractZashboardArchive(
+        zipBytes: bytes,
+        targetDir: targetDir,
+        version: zashboardVersion,
+      );
+    } catch (e) {
+      // The dashboard is optional: a failed extraction only leaves /ui
+      // empty, so log it and let the core start without the panel.
+      commonPrint.log(
+        'Failed to initialize zashboard: $e',
+        logLevel: LogLevel.error,
+      );
+    }
+  }
+
+  /// Extracts the bundled zashboard archive into [targetDir], stripping
+  /// the single top-level `dist/` directory the release zip carries, and
+  /// records [version] so a newer bundled build replaces the copy. Paths
+  /// are kept inside [targetDir].
+  @visibleForTesting
+  static Future<void> extractZashboardArchive({
+    required List<int> zipBytes,
+    required Directory targetDir,
+    required String version,
+  }) async {
+    final archive = ZipDecoder().decodeBytes(zipBytes);
+    if (await targetDir.exists()) {
+      await targetDir.delete(recursive: true);
+    }
+    await targetDir.create(recursive: true);
+    for (final file in archive.files) {
+      if (!file.isFile) {
+        continue;
+      }
+      final outPath = _zashboardEntryPath(targetDir.path, file.name);
+      if (outPath == null) {
+        continue;
+      }
+      await Directory(dirname(outPath)).create(recursive: true);
+      await File(outPath).writeAsBytes(
+        file.content as List<int>,
+        flush: true,
+      );
+    }
+    await File(
+      join(targetDir.path, _zashboardVersionFile),
+    ).writeAsString(version, flush: true);
+  }
+
+  static String? _zashboardEntryPath(String targetDirPath, String name) {
+    // Strip the single top-level dist/ directory the release zip carries.
+    var relative = name.replaceAll('\\', '/');
+    if (relative.startsWith('dist/')) {
+      relative = relative.substring('dist/'.length);
+    }
+    final normalized = posix.normalize(relative);
+    if (normalized.isEmpty ||
+        posix.isAbsolute(normalized) ||
+        normalized == '..' ||
+        normalized.startsWith('../')) {
+      return null;
+    }
+    final outPath = normalize(join(targetDirPath, normalized));
+    if (!isWithin(targetDirPath, outPath)) {
+      return null;
+    }
+    return outPath;
+  }
+
   Future<void> init(int version) async {
     await ensureHomeDir();
     await initGeo();
+    await initZashboard();
     final homeDirPath = await appPath.homeDirPath;
     await _interface.init(InitParams(homeDir: homeDirPath, version: version));
   }
