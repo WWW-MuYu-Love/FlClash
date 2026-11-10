@@ -580,7 +580,7 @@ as int,
 /// @nodoc
 mixin _$Metadata {
 
- int get uid; String get network; String get sourceIP; String get sourcePort; String get destinationIP; String get destinationPort; String get host; DnsMode? get dnsMode; String get process; String get processPath; String get remoteDestination; List<String> get sourceGeoIP; List<String> get destinationGeoIP; String get destinationIPASN; String get sourceIPASN; String get specialRules; String get specialProxy; bool get mitm; bool get mitmRefused;
+ int get uid; String get network; String get sourceIP;@JsonKey(fromJson: _portStringFromJson) String get sourcePort; String get destinationIP;@JsonKey(fromJson: _portStringFromJson) String get destinationPort; String get host;@JsonKey(fromJson: _dnsModeFromJson) DnsMode? get dnsMode; String get process; String get processPath; String get remoteDestination; List<String> get sourceGeoIP; List<String> get destinationGeoIP; String get destinationIPASN; String get sourceIPASN; String get specialRules; String get specialProxy; bool get mitm; bool get mitmRefused;
 /// Create a copy of Metadata
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -618,7 +618,7 @@ abstract mixin class $MetadataCopyWith<$Res>  {
   factory $MetadataCopyWith(Metadata value, $Res Function(Metadata) _then) = _$MetadataCopyWithImpl;
 @useResult
 $Res call({
- int uid, String network, String sourceIP, String sourcePort, String destinationIP, String destinationPort, String host, DnsMode? dnsMode, String process, String processPath, String remoteDestination, List<String> sourceGeoIP, List<String> destinationGeoIP, String destinationIPASN, String sourceIPASN, String specialRules, String specialProxy, bool mitm, bool mitmRefused
+ int uid, String network, String sourceIP,@JsonKey(fromJson: _portStringFromJson) String sourcePort, String destinationIP,@JsonKey(fromJson: _portStringFromJson) String destinationPort, String host,@JsonKey(fromJson: _dnsModeFromJson) DnsMode? dnsMode, String process, String processPath, String remoteDestination, List<String> sourceGeoIP, List<String> destinationGeoIP, String destinationIPASN, String sourceIPASN, String specialRules, String specialProxy, bool mitm, bool mitmRefused
 });
 
 
@@ -741,7 +741,7 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( int uid,  String network,  String sourceIP,  String sourcePort,  String destinationIP,  String destinationPort,  String host,  DnsMode? dnsMode,  String process,  String processPath,  String remoteDestination,  List<String> sourceGeoIP,  List<String> destinationGeoIP,  String destinationIPASN,  String sourceIPASN,  String specialRules,  String specialProxy,  bool mitm,  bool mitmRefused)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( int uid,  String network,  String sourceIP, @JsonKey(fromJson: _portStringFromJson)  String sourcePort,  String destinationIP, @JsonKey(fromJson: _portStringFromJson)  String destinationPort,  String host, @JsonKey(fromJson: _dnsModeFromJson)  DnsMode? dnsMode,  String process,  String processPath,  String remoteDestination,  List<String> sourceGeoIP,  List<String> destinationGeoIP,  String destinationIPASN,  String sourceIPASN,  String specialRules,  String specialProxy,  bool mitm,  bool mitmRefused)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _Metadata() when $default != null:
 return $default(_that.uid,_that.network,_that.sourceIP,_that.sourcePort,_that.destinationIP,_that.destinationPort,_that.host,_that.dnsMode,_that.process,_that.processPath,_that.remoteDestination,_that.sourceGeoIP,_that.destinationGeoIP,_that.destinationIPASN,_that.sourceIPASN,_that.specialRules,_that.specialProxy,_that.mitm,_that.mitmRefused);case _:
@@ -762,7 +762,7 @@ return $default(_that.uid,_that.network,_that.sourceIP,_that.sourcePort,_that.de
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( int uid,  String network,  String sourceIP,  String sourcePort,  String destinationIP,  String destinationPort,  String host,  DnsMode? dnsMode,  String process,  String processPath,  String remoteDestination,  List<String> sourceGeoIP,  List<String> destinationGeoIP,  String destinationIPASN,  String sourceIPASN,  String specialRules,  String specialProxy,  bool mitm,  bool mitmRefused)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( int uid,  String network,  String sourceIP, @JsonKey(fromJson: _portStringFromJson)  String sourcePort,  String destinationIP, @JsonKey(fromJson: _portStringFromJson)  String destinationPort,  String host, @JsonKey(fromJson: _dnsModeFromJson)  DnsMode? dnsMode,  String process,  String processPath,  String remoteDestination,  List<String> sourceGeoIP,  List<String> destinationGeoIP,  String destinationIPASN,  String sourceIPASN,  String specialRules,  String specialProxy,  bool mitm,  bool mitmRefused)  $default,) {final _that = this;
 switch (_that) {
 case _Metadata():
 return $default(_that.uid,_that.network,_that.sourceIP,_that.sourcePort,_that.destinationIP,_that.destinationPort,_that.host,_that.dnsMode,_that.process,_that.processPath,_that.remoteDestination,_that.sourceGeoIP,_that.destinationGeoIP,_that.destinationIPASN,_that.sourceIPASN,_that.specialRules,_that.specialProxy,_that.mitm,_that.mitmRefused);case _:
@@ -782,7 +782,7 @@ return $default(_that.uid,_that.network,_that.sourceIP,_that.sourcePort,_that.de
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( int uid,  String network,  String sourceIP,  String sourcePort,  String destinationIP,  String destinationPort,  String host,  DnsMode? dnsMode,  String process,  String processPath,  String remoteDestination,  List<String> sourceGeoIP,  List<String> destinationGeoIP,  String destinationIPASN,  String sourceIPASN,  String specialRules,  String specialProxy,  bool mitm,  bool mitmRefused)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( int uid,  String network,  String sourceIP, @JsonKey(fromJson: _portStringFromJson)  String sourcePort,  String destinationIP, @JsonKey(fromJson: _portStringFromJson)  String destinationPort,  String host, @JsonKey(fromJson: _dnsModeFromJson)  DnsMode? dnsMode,  String process,  String processPath,  String remoteDestination,  List<String> sourceGeoIP,  List<String> destinationGeoIP,  String destinationIPASN,  String sourceIPASN,  String specialRules,  String specialProxy,  bool mitm,  bool mitmRefused)?  $default,) {final _that = this;
 switch (_that) {
 case _Metadata() when $default != null:
 return $default(_that.uid,_that.network,_that.sourceIP,_that.sourcePort,_that.destinationIP,_that.destinationPort,_that.host,_that.dnsMode,_that.process,_that.processPath,_that.remoteDestination,_that.sourceGeoIP,_that.destinationGeoIP,_that.destinationIPASN,_that.sourceIPASN,_that.specialRules,_that.specialProxy,_that.mitm,_that.mitmRefused);case _:
@@ -797,17 +797,17 @@ return $default(_that.uid,_that.network,_that.sourceIP,_that.sourcePort,_that.de
 @JsonSerializable()
 
 class _Metadata implements Metadata {
-  const _Metadata({this.uid = 0, this.network = '', this.sourceIP = '', this.sourcePort = '', this.destinationIP = '', this.destinationPort = '', this.host = '', this.dnsMode, this.process = '', this.processPath = '', this.remoteDestination = '',  List<String> sourceGeoIP = const [],  List<String> destinationGeoIP = const [], this.destinationIPASN = '', this.sourceIPASN = '', this.specialRules = '', this.specialProxy = '', this.mitm = false, this.mitmRefused = false}): _sourceGeoIP = sourceGeoIP,_destinationGeoIP = destinationGeoIP;
+  const _Metadata({this.uid = 0, this.network = '', this.sourceIP = '', @JsonKey(fromJson: _portStringFromJson) this.sourcePort = '', this.destinationIP = '', @JsonKey(fromJson: _portStringFromJson) this.destinationPort = '', this.host = '', @JsonKey(fromJson: _dnsModeFromJson) this.dnsMode, this.process = '', this.processPath = '', this.remoteDestination = '',  List<String> sourceGeoIP = const [],  List<String> destinationGeoIP = const [], this.destinationIPASN = '', this.sourceIPASN = '', this.specialRules = '', this.specialProxy = '', this.mitm = false, this.mitmRefused = false}): _sourceGeoIP = sourceGeoIP,_destinationGeoIP = destinationGeoIP;
   factory _Metadata.fromJson(Map<String, dynamic> json) => _$MetadataFromJson(json);
 
 @override@JsonKey() final  int uid;
 @override@JsonKey() final  String network;
 @override@JsonKey() final  String sourceIP;
-@override@JsonKey() final  String sourcePort;
+@override@JsonKey(fromJson: _portStringFromJson) final  String sourcePort;
 @override@JsonKey() final  String destinationIP;
-@override@JsonKey() final  String destinationPort;
+@override@JsonKey(fromJson: _portStringFromJson) final  String destinationPort;
 @override@JsonKey() final  String host;
-@override final  DnsMode? dnsMode;
+@override@JsonKey(fromJson: _dnsModeFromJson) final  DnsMode? dnsMode;
 @override@JsonKey() final  String process;
 @override@JsonKey() final  String processPath;
 @override@JsonKey() final  String remoteDestination;
@@ -867,7 +867,7 @@ abstract mixin class _$MetadataCopyWith<$Res> implements $MetadataCopyWith<$Res>
   factory _$MetadataCopyWith(_Metadata value, $Res Function(_Metadata) _then) = __$MetadataCopyWithImpl;
 @override @useResult
 $Res call({
- int uid, String network, String sourceIP, String sourcePort, String destinationIP, String destinationPort, String host, DnsMode? dnsMode, String process, String processPath, String remoteDestination, List<String> sourceGeoIP, List<String> destinationGeoIP, String destinationIPASN, String sourceIPASN, String specialRules, String specialProxy, bool mitm, bool mitmRefused
+ int uid, String network, String sourceIP,@JsonKey(fromJson: _portStringFromJson) String sourcePort, String destinationIP,@JsonKey(fromJson: _portStringFromJson) String destinationPort, String host,@JsonKey(fromJson: _dnsModeFromJson) DnsMode? dnsMode, String process, String processPath, String remoteDestination, List<String> sourceGeoIP, List<String> destinationGeoIP, String destinationIPASN, String sourceIPASN, String specialRules, String specialProxy, bool mitm, bool mitmRefused
 });
 
 
@@ -1133,7 +1133,7 @@ return $default(_that.id,_that.upload,_that.download,_that.start,_that.metadata,
 @JsonSerializable()
 
 class _TrackerInfo implements TrackerInfo {
-  const _TrackerInfo({required this.id, this.upload = 0, this.download = 0, required this.start, required this.metadata, required  List<String> chains, required this.rule, required this.rulePayload, this.downloadSpeed, this.uploadSpeed}): _chains = chains;
+  const _TrackerInfo({required this.id, this.upload = 0, this.download = 0, required this.start, required this.metadata,  List<String> chains = const [], required this.rule, required this.rulePayload, this.downloadSpeed, this.uploadSpeed}): _chains = chains;
   factory _TrackerInfo.fromJson(Map<String, dynamic> json) => _$TrackerInfoFromJson(json);
 
 @override final  String id;
@@ -1142,7 +1142,7 @@ class _TrackerInfo implements TrackerInfo {
 @override final  DateTime start;
 @override final  Metadata metadata;
  final  List<String> _chains;
-@override List<String> get chains {
+@override@JsonKey() List<String> get chains {
   if (_chains is EqualUnmodifiableListView) return _chains;
   // ignore: implicit_dynamic_type
   return EqualUnmodifiableListView(_chains);

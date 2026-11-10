@@ -26,11 +26,15 @@ _Metadata _$MetadataFromJson(Map<String, dynamic> json) => _Metadata(
   uid: (json['uid'] as num?)?.toInt() ?? 0,
   network: json['network'] as String? ?? '',
   sourceIP: json['sourceIP'] as String? ?? '',
-  sourcePort: json['sourcePort'] as String? ?? '',
+  sourcePort: json['sourcePort'] == null
+      ? ''
+      : _portStringFromJson(json['sourcePort']),
   destinationIP: json['destinationIP'] as String? ?? '',
-  destinationPort: json['destinationPort'] as String? ?? '',
+  destinationPort: json['destinationPort'] == null
+      ? ''
+      : _portStringFromJson(json['destinationPort']),
   host: json['host'] as String? ?? '',
-  dnsMode: $enumDecodeNullable(_$DnsModeEnumMap, json['dnsMode']),
+  dnsMode: _dnsModeFromJson(json['dnsMode']),
   process: json['process'] as String? ?? '',
   processPath: json['processPath'] as String? ?? '',
   remoteDestination: json['remoteDestination'] as String? ?? '',
@@ -87,7 +91,9 @@ _TrackerInfo _$TrackerInfoFromJson(Map<String, dynamic> json) => _TrackerInfo(
   download: (json['download'] as num?)?.toInt() ?? 0,
   start: DateTime.parse(json['start'] as String),
   metadata: Metadata.fromJson(json['metadata'] as Map<String, dynamic>),
-  chains: (json['chains'] as List<dynamic>).map((e) => e as String).toList(),
+  chains:
+      (json['chains'] as List<dynamic>?)?.map((e) => e as String).toList() ??
+      const [],
   rule: json['rule'] as String,
   rulePayload: json['rulePayload'] as String,
   downloadSpeed: (json['downloadSpeed'] as num?)?.toInt(),

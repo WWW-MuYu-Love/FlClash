@@ -91,11 +91,13 @@ abstract class Metadata with _$Metadata {
     @Default(0) int uid,
     @Default('') String network,
     @Default('') String sourceIP,
-    @Default('') String sourcePort,
+    @JsonKey(fromJson: _portStringFromJson) @Default('') String sourcePort,
     @Default('') String destinationIP,
-    @Default('') String destinationPort,
+    @JsonKey(fromJson: _portStringFromJson)
+    @Default('')
+    String destinationPort,
     @Default('') String host,
-    DnsMode? dnsMode,
+    @JsonKey(fromJson: _dnsModeFromJson) DnsMode? dnsMode,
     @Default('') String process,
     @Default('') String processPath,
     @Default('') String remoteDestination,
@@ -121,7 +123,7 @@ abstract class TrackerInfo with _$TrackerInfo {
     @Default(0) int download,
     required DateTime start,
     required Metadata metadata,
-    required List<String> chains,
+    @Default([]) List<String> chains,
     required String rule,
     required String rulePayload,
     int? downloadSpeed,
@@ -132,16 +134,36 @@ abstract class TrackerInfo with _$TrackerInfo {
       _$TrackerInfoFromJson(json);
 }
 
+DnsMode? _dnsModeFromJson(Object? value) => switch (value) {
+  'normal' => DnsMode.normal,
+  'fake-ip' => DnsMode.fakeIp,
+  'redir-host' => DnsMode.redirHost,
+  'hosts' => DnsMode.hosts,
+  _ => null,
+};
+
+String _portStringFromJson(Object? value) => switch (value) {
+  null => '',
+  final String port => port,
+  final num port => port.toString(),
+  _ => '',
+};
+
 /// Reads the Core's `getConnections` answer.
 List<TrackerInfo> trackerInfosOf(Object? data) {
   final connections = data is Map ? data['connections'] : null;
   if (connections is! List) {
     return const [];
   }
-  return [
-    for (final item in connections.whereType<Map>())
-      TrackerInfo.fromJson(Map<String, Object?>.from(item)),
-  ];
+  final infos = <TrackerInfo>[];
+  for (final item in connections.whereType<Map>()) {
+    try {
+      infos.add(TrackerInfo.fromJson(Map<String, Object?>.from(item)));
+    } catch (_) {
+      // One malformed connection must not discard the whole list.
+    }
+  }
+  return infos;
 }
 
 typedef RequestTraffic = ({int upload, int download});
