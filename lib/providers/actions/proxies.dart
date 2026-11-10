@@ -237,10 +237,15 @@ class ProxiesAction extends _$ProxiesAction {
 
   // The App core is not the routing core when the VPN is on: the extension
   // core owns 9090 and keeps its own selection, so propagate the change.
+  // 9090 is bound by the extension only, so with the tunnel down nothing
+  // listens; skip the attempt instead of warning on every change.
   Future<void> _syncSelectionToExternalController(
     String groupName,
     String proxyName,
   ) async {
+    if (ref.read(runningVpnOptionsProvider)?.enable != true) {
+      return;
+    }
     final applied = await ref
         .read(externalControllerClientProvider)
         .selectProxy(groupName, proxyName);
