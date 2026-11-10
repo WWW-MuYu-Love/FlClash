@@ -88,6 +88,12 @@ class CommonAction extends _$CommonAction {
     if (snapshot == null) {
       return null;
     }
+    final onlyStatisticsProxy = ref.read(
+      appSettingProvider.select((state) => state.onlyStatisticsProxy),
+    );
+    if (onlyStatisticsProxy) {
+      return _externalTrafficSampler.sampleProxyOnly(snapshot, DateTime.now());
+    }
     final instant = _externalTrafficSampler.sample(snapshot, DateTime.now());
     return (
       instant,

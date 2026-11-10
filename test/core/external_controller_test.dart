@@ -40,6 +40,24 @@ Future<HttpServer> _serve(
   return server;
 }
 
+TrackerInfo _sampleConnection(
+  String id, {
+  int upload = 0,
+  int download = 0,
+  List<String> chains = const ['Proxy'],
+}) {
+  return TrackerInfo(
+    id: id,
+    upload: upload,
+    download: download,
+    start: DateTime.utc(2026, 11, 10, 10, 0, 0),
+    metadata: const Metadata(network: 'tcp', host: 'example.test'),
+    chains: chains,
+    rule: 'MATCH',
+    rulePayload: '',
+  );
+}
+
 void main() {
   group('ExternalControllerSnapshot.fromJson', () {
     test('parses totals and the connection list', () {
@@ -121,6 +139,97 @@ void main() {
         start.add(const Duration(seconds: 2)),
       );
       expect(next, const Traffic(up: 100, down: 200));
+    });
+
+    test('sampleProxyOnly excludes DIRECT traffic from totals and rate', () {
+      final sampler = ExternalTrafficSampler();
+      final start = DateTime.utc(2026, 11, 10, 10, 0, 0);
+      final first = ExternalControllerSnapshot(
+        uploadTotal: 10000,
+        downloadTotal: 20000,
+        connections: [
+          _sampleConnection(
+            '1',
+            upload: 100,
+            download: 200,
+            chains: const ['DIRECT'],
+          ),
+          _sampleConnection('2', upload: 300, download: 400),
+        ],
+      );
+
+      final (firstInstant, firstTotal) = sampler.sampleProxyOnly(first, start);
+      expect(firstInstant, isNull);
+      expect(firstTotal, const Traffic(up: 300, down: 400));
+
+      final second = ExternalControllerSnapshot(
+        uploadTotal: 20000,
+        downloadTotal: 40000,
+        connections: [
+          _sampleConnection(
+            '1',
+            upload: 1000,
+            download: 2000,
+            chains: const ['DIRECT'],
+          ),
+          _sampleConnection('2', upload: 500, download: 600),
+        ],
+      );
+      final (instant, total) = sampler.sampleProxyOnly(
+        second,
+        start.add(const Duration(seconds: 1)),
+      );
+      expect(instant, const Traffic(up: 200, down: 200));
+      expect(total, const Traffic(up: 500, down: 600));
+    });
+
+    test('sampleProxyOnly keeps totals monotonic when a connection closes', () {
+      final sampler = ExternalTrafficSampler();
+      final start = DateTime.utc(2026, 11, 10, 10, 0, 0);
+      final (firstInstant, firstTotal) = sampler.sampleProxyOnly(
+        ExternalControllerSnapshot(
+          uploadTotal: 1000,
+          downloadTotal: 2000,
+          connections: [_sampleConnection('2', upload: 300, download: 400)],
+        ),
+        start,
+      );
+      expect(firstInstant, isNull);
+      expect(firstTotal, const Traffic(up: 300, down: 400));
+
+      final (instant, total) = sampler.sampleProxyOnly(
+        const ExternalControllerSnapshot(
+          uploadTotal: 2000,
+          downloadTotal: 4000,
+          connections: [],
+        ),
+        start.add(const Duration(seconds: 1)),
+      );
+      expect(instant, const Traffic(up: 0, down: 0));
+      expect(total, const Traffic(up: 300, down: 400));
+    });
+
+    test('sampleProxyOnly ignores a reused id with smaller counters', () {
+      final sampler = ExternalTrafficSampler();
+      final start = DateTime.utc(2026, 11, 10, 10, 0, 0);
+      sampler.sampleProxyOnly(
+        ExternalControllerSnapshot(
+          uploadTotal: 1000,
+          downloadTotal: 2000,
+          connections: [_sampleConnection('2', upload: 300, download: 400)],
+        ),
+        start,
+      );
+      final (instant, total) = sampler.sampleProxyOnly(
+        ExternalControllerSnapshot(
+          uploadTotal: 1100,
+          downloadTotal: 2200,
+          connections: [_sampleConnection('2', upload: 50, download: 60)],
+        ),
+        start.add(const Duration(seconds: 1)),
+      );
+      expect(instant, const Traffic(up: 0, down: 0));
+      expect(total, const Traffic(up: 300, down: 400));
     });
   });
 

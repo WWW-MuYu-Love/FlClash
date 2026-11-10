@@ -36,6 +36,13 @@ class ExternalTrafficSampler {
   ExternalControllerSnapshot? _previous;
   DateTime? _previousAt;
 
+  // Per-connection last-seen byte counts behind the proxy-only totals.
+  final Map<String, ({int upload, int download})> _proxySeen = {};
+  int _proxyUploadTotal = 0;
+  int _proxyDownloadTotal = 0;
+  Traffic? _previousProxyTotal;
+  DateTime? _previousProxyAt;
+
   Traffic? sample(ExternalControllerSnapshot snapshot, DateTime now) {
     final previous = _previous;
     final previousAt = _previousAt;
@@ -54,6 +61,56 @@ class ExternalTrafficSampler {
       return null;
     }
     return Traffic(up: upDelta / elapsed, down: downDelta / elapsed);
+  }
+
+  // Proxy-only speed and cumulative totals, matching the App core's
+  // onlyStatisticsProxy. The snapshot carries no proxy-only total, so it
+  // is built from per-connection deltas: a connection counts unless its
+  // chain is exactly DIRECT. A connection that closed between polls loses
+  // its tail, and a reused id with smaller counters contributes nothing.
+  (Traffic? instant, Traffic total) sampleProxyOnly(
+    ExternalControllerSnapshot snapshot,
+    DateTime now,
+  ) {
+    final currentIds = <String>{};
+    for (final connection in snapshot.connections) {
+      if (connection.chains.firstOrNull == 'DIRECT') {
+        continue;
+      }
+      currentIds.add(connection.id);
+      final previous = _proxySeen[connection.id];
+      final upDelta = connection.upload - (previous?.upload ?? 0);
+      final downDelta = connection.download - (previous?.download ?? 0);
+      if (upDelta > 0) {
+        _proxyUploadTotal += upDelta;
+      }
+      if (downDelta > 0) {
+        _proxyDownloadTotal += downDelta;
+      }
+      _proxySeen[connection.id] = (
+        upload: connection.upload,
+        download: connection.download,
+      );
+    }
+    _proxySeen.removeWhere((id, _) => !currentIds.contains(id));
+    final total = Traffic(up: _proxyUploadTotal, down: _proxyDownloadTotal);
+    final previousTotal = _previousProxyTotal;
+    final previousAt = _previousProxyAt;
+    _previousProxyTotal = total;
+    _previousProxyAt = now;
+    if (previousTotal == null || previousAt == null) {
+      return (null, total);
+    }
+    final elapsed = now.difference(previousAt).inMicroseconds / 1e6;
+    if (elapsed <= 0) {
+      return (null, total);
+    }
+    final upDelta = total.up - previousTotal.up;
+    final downDelta = total.down - previousTotal.down;
+    if (upDelta < 0 || downDelta < 0) {
+      return (null, total);
+    }
+    return (Traffic(up: upDelta / elapsed, down: downDelta / elapsed), total);
   }
 }
 
