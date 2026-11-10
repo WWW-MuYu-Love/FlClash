@@ -17,16 +17,16 @@ class ZashboardCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final vpnRunning =
-        ref.watch(runningVpnOptionsProvider)?.enable == true;
+    final vpnRunning = ref.watch(runningVpnOptionsProvider)?.enable == true;
     final colorScheme = context.colorScheme;
     final style = AppTextStyle.footnote.of(context, emphasized: true);
     return DashboardCard(
       semanticLabel: 'Zashboard',
       onTap: vpnRunning
           ? () {
-              final baseUri =
-                  ref.read(externalControllerClientProvider).baseUri;
+              final baseUri = ref
+                  .read(externalControllerClientProvider)
+                  .baseUri;
               unawaited(launchUrl(baseUri.replace(path: '/ui')));
             }
           : null,

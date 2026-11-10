@@ -178,9 +178,7 @@ class ExternalControllerClient {
     try {
       final request = await _http
           .patchUrl(
-            baseUri.replace(
-              pathSegments: [...baseUri.pathSegments, 'configs'],
-            ),
+            baseUri.replace(pathSegments: [...baseUri.pathSegments, 'configs']),
           )
           .timeout(_fetchTimeout);
       if (secret.isNotEmpty) {

@@ -408,32 +408,35 @@ void main() {
       return ZipEncoder().encode(archive);
     }
 
-    test('extracts the bundled archive, stripping dist/, and records the version',
-        () async {
-      final target = Directory(join(tempDir.path, 'ui', 'zashboard'));
-      await CoreController.extractZashboardArchive(
-        zipBytes: buildZashboardZip(),
-        targetDir: target,
-        version: '3.30.0',
-      );
+    test(
+      'extracts the bundled archive, stripping dist/, and records the version',
+      () async {
+        final target = Directory(join(tempDir.path, 'ui', 'zashboard'));
+        await CoreController.extractZashboardArchive(
+          zipBytes: buildZashboardZip(),
+          targetDir: target,
+          version: '3.30.0',
+        );
 
-      expect(
-        await File(join(target.path, 'index.html')).readAsString(),
-        '<html></html>',
-      );
-      expect(
-        await File(join(target.path, 'assets', 'app.js')).readAsString(),
-        'console.log(1);',
-      );
-      expect(
-        await File(join(target.path, '.flclash-zashboard-version'))
-            .readAsString(),
-        '3.30.0',
-      );
-      // The traversal entry never lands outside the target, or inside it.
-      expect(await File(join(tempDir.path, 'evil.txt')).exists(), isFalse);
-      expect(await File(join(target.path, 'evil.txt')).exists(), isFalse);
-    });
+        expect(
+          await File(join(target.path, 'index.html')).readAsString(),
+          '<html></html>',
+        );
+        expect(
+          await File(join(target.path, 'assets', 'app.js')).readAsString(),
+          'console.log(1);',
+        );
+        expect(
+          await File(
+            join(target.path, '.flclash-zashboard-version'),
+          ).readAsString(),
+          '3.30.0',
+        );
+        // The traversal entry never lands outside the target, or inside it.
+        expect(await File(join(tempDir.path, 'evil.txt')).exists(), isFalse);
+        expect(await File(join(target.path, 'evil.txt')).exists(), isFalse);
+      },
+    );
 
     test('a newer version replaces stale files', () async {
       final target = Directory(join(tempDir.path, 'ui', 'zashboard'));
@@ -453,8 +456,9 @@ void main() {
       );
       expect(await stale.exists(), isFalse);
       expect(
-        await File(join(target.path, '.flclash-zashboard-version'))
-            .readAsString(),
+        await File(
+          join(target.path, '.flclash-zashboard-version'),
+        ).readAsString(),
         '3.31.0',
       );
     });

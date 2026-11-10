@@ -134,10 +134,7 @@ extension type CoreController._(CoreHandlerInterface _interface)
         continue;
       }
       await Directory(dirname(outPath)).create(recursive: true);
-      await File(outPath).writeAsBytes(
-        file.content as List<int>,
-        flush: true,
-      );
+      await File(outPath).writeAsBytes(file.content as List<int>, flush: true);
     }
     await File(
       join(targetDir.path, _zashboardVersionFile),
