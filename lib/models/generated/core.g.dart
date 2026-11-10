@@ -13,6 +13,7 @@ _SetupParams _$SetupParamsFromJson(Map<String, dynamic> json) => _SetupParams(
   selectedMap: Map<String, String>.from(json['selected-map'] as Map),
   options: CoreOptions.fromJson(json['options'] as Map<String, dynamic>),
   skipDnsListen: json['skip-dns-listen'] as bool? ?? false,
+  skipExternalController: json['skip-external-controller'] as bool? ?? false,
 );
 
 Map<String, dynamic> _$SetupParamsToJson(_SetupParams instance) =>
@@ -21,6 +22,7 @@ Map<String, dynamic> _$SetupParamsToJson(_SetupParams instance) =>
       'selected-map': instance.selectedMap,
       'options': instance.options,
       'skip-dns-listen': instance.skipDnsListen,
+      'skip-external-controller': instance.skipExternalController,
     };
 
 _CoreOptions _$CoreOptionsFromJson(Map<String, dynamic> json) => _CoreOptions(

@@ -30,6 +30,8 @@ var (
 	configMu      sync.Mutex
 	currentConfig *config.Config
 
+	externalControllerSkipped bool
+
 	errConfigNotApplied = errors.New("config is not applied")
 	errNotInitialized   = errors.New("not initialized")
 )
@@ -160,6 +162,7 @@ func applyConfig(params *SetupParams) error {
 		cfg = fallback
 	}
 	skipDNSListen(params, cfg)
+	skipExternalController(params, cfg)
 
 	currentConfig = cfg
 	hub.ApplyConfig(cfg)
@@ -178,6 +181,13 @@ func applyConfig(params *SetupParams) error {
 func skipDNSListen(params *SetupParams, cfg *config.Config) {
 	if params.SkipDNSListen && cfg.DNS != nil {
 		cfg.DNS.Listen = ""
+	}
+}
+
+func skipExternalController(params *SetupParams, cfg *config.Config) {
+	externalControllerSkipped = params.SkipExternalController
+	if externalControllerSkipped && cfg.Controller != nil {
+		cfg.Controller.ExternalController = ""
 	}
 }
 
@@ -230,6 +240,10 @@ func updateConfig(params *UpdateParams) error {
 	}
 	if params.Tun != nil {
 		patchTun(&general.Tun, params.Tun)
+	}
+	if externalControllerSkipped {
+		empty := ""
+		params.ExternalController = &empty
 	}
 	patchController(params)
 	if params.Authentication != nil {
