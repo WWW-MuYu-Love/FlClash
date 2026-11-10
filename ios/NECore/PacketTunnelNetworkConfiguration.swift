@@ -46,6 +46,14 @@ final class PacketTunnelNetworkConfiguration {
     ipv4Settings.includedRoutes = ipv4Routes.isEmpty
       ? [.default()]
       : ipv4Routes
+    // Exclude loopback so the system proxy (127.0.0.1:mixed-port) reaches the
+    // local core instead of being captured by the tunnel.
+    ipv4Settings.excludedRoutes = [
+      NEIPv4Route(
+        destinationAddress: "127.0.0.1",
+        subnetMask: "255.255.255.255"
+      )
+    ]
     settings.ipv4Settings = ipv4Settings
 
     var ipv6RouteCount = 0
