@@ -51,12 +51,20 @@ final class PacketTunnelSharedStateStore {
     guard let sharedData = userDefaults?.data(forKey: sharedStateKey),
       let shared = try? JSONSerialization.jsonObject(with: sharedData) as? [String: Any],
       let rawOptions = shared["vpnOptions"] as? [String: Any],
-      let data = try? JSONSerialization.data(withJSONObject: rawOptions),
-      let options = try? JSONDecoder().decode(PacketTunnelVPNOptions.self, from: data)
+      let data = try? JSONSerialization.data(withJSONObject: rawOptions)
     else {
       return nil
     }
-    return (options, data)
+    do {
+      let options = try JSONDecoder().decode(
+        PacketTunnelVPNOptions.self,
+        from: data
+      )
+      return (options, data)
+    } catch {
+      saveLastError("VPN options decode failed: \(error.localizedDescription)")
+      return nil
+    }
   }
 
   func loadSetupParams() -> Data {
@@ -115,14 +123,20 @@ final class PacketTunnelSharedStateStore {
     guard let options,
       let vpnOptionsString = options[Self.forwardedVpnOptionsKey] as? String,
       let vpnOptionsData = vpnOptionsString.data(using: .utf8),
-      let vpnOptions = try? JSONDecoder().decode(
-        PacketTunnelVPNOptions.self,
-        from: vpnOptionsData
-      ),
       let setupParamsString = options[Self.forwardedSetupParamsKey]
         as? String,
       let initialSetupParamsData = setupParamsString.data(using: .utf8)
     else {
+      return nil
+    }
+    let vpnOptions: PacketTunnelVPNOptions
+    do {
+      vpnOptions = try JSONDecoder().decode(
+        PacketTunnelVPNOptions.self,
+        from: vpnOptionsData
+      )
+    } catch {
+      saveLastError("VPN options decode failed: \(error.localizedDescription)")
       return nil
     }
     var setupParamsData = initialSetupParamsData
@@ -252,15 +266,27 @@ struct PacketTunnelVPNOptions: Decodable {
 
   init(from decoder: Decoder) throws {
     let container = try decoder.container(keyedBy: CodingKeys.self)
-    port = try container.decode(Int.self, forKey: .port)
-    ipv6 = try container.decode(Bool.self, forKey: .ipv6)
-    captureDns = try container.decode(Bool.self, forKey: .dnsHijacking)
-    systemProxy = try container.decode(Bool.self, forKey: .systemProxy)
+    // A missing field falls back to the Dart-side default instead of
+    // failing the whole decode: an upstream rename must not break tunnel
+    // start with a misleading "missing VPN options" error.
+    port = try container.decodeIfPresent(Int.self, forKey: .port) ?? 7890
+    ipv6 = try container.decodeIfPresent(Bool.self, forKey: .ipv6) ?? false
+    captureDns = try container.decodeIfPresent(
+      Bool.self,
+      forKey: .dnsHijacking
+    ) ?? false
+    systemProxy = try container.decodeIfPresent(
+      Bool.self,
+      forKey: .systemProxy
+    ) ?? true
     bypassDomain = try container.decodeIfPresent(
       [String].self,
       forKey: .bypassDomain
     ) ?? []
-    stack = try container.decode(String.self, forKey: .stack)
+    stack = try container.decodeIfPresent(
+      String.self,
+      forKey: .stack
+    ) ?? "mips"
     mtu = try container.decodeIfPresent(Int.self, forKey: .mtu) ?? 9000
     routeAddress = try container.decodeIfPresent(
       [String].self,

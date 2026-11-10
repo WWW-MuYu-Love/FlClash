@@ -51,7 +51,11 @@ final class PacketTunnelProvider: NEPacketTunnelProvider {
       setupParams = sharedStateStore.loadSetupParams()
     } else {
       logger.error("startTunnel failed: missing vpn options")
-      sharedStateStore.saveLastError("missing VPN options")
+      // A decode failure above already saved the specific reason; only
+      // fall back to the generic message when nothing was recorded.
+      if sharedStateStore.loadLastError() == nil {
+        sharedStateStore.saveLastError("missing VPN options")
+      }
       completionHandler(PacketTunnelProviderError.missingVPNOptions)
       return
     }
