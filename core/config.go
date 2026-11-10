@@ -30,10 +30,6 @@ var (
 	configMu      sync.Mutex
 	currentConfig *config.Config
 
-	// Set by applyConfig from SetupParams; updateConfig re-applies it after
-	// merging the host's values, so a live patch cannot rebind the port.
-	mixedPortSkipped bool
-
 	errConfigNotApplied = errors.New("config is not applied")
 	errNotInitialized   = errors.New("not initialized")
 )
@@ -164,7 +160,6 @@ func applyConfig(params *SetupParams) error {
 		cfg = fallback
 	}
 	skipDNSListen(params, cfg)
-	skipMixedPort(params, cfg)
 
 	currentConfig = cfg
 	hub.ApplyConfig(cfg)
@@ -186,13 +181,6 @@ func skipDNSListen(params *SetupParams, cfg *config.Config) {
 	}
 }
 
-func skipMixedPort(params *SetupParams, cfg *config.Config) {
-	mixedPortSkipped = params.SkipMixedPort
-	if mixedPortSkipped && cfg.General != nil {
-		cfg.General.MixedPort = 0
-	}
-}
-
 func updateConfig(params *UpdateParams) error {
 	configMu.Lock()
 	defer configMu.Unlock()
@@ -203,9 +191,6 @@ func updateConfig(params *UpdateParams) error {
 	general := currentConfig.General
 	if params.MixedPort != nil {
 		general.MixedPort = *params.MixedPort
-	}
-	if mixedPortSkipped {
-		general.MixedPort = 0
 	}
 	if params.AllowLan != nil {
 		general.AllowLan = *params.AllowLan
