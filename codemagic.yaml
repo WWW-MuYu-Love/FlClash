@@ -6,10 +6,12 @@
 # kept as a Codemagic build artifact for sideloading.
 #
 # TWO workflows:
-#   1. flclash-ios (unsigned) — the baseline.
+#   1. flclash-ios (unsigned) — the baseline. Publishes the IPA to the
+#      v<version>-ios GitHub Release via .github/publish_codemagic.sh
+#      (needs GH_TOKEN; the script skips gracefully when it is unset).
 #   2. flclash-ios-signed — STAGED TEMPLATE, commented out. Uncomment
 #      only once the signing mechanism is decided (see the block below).
-#      No App Store, no release publishing in either workflow.
+#      No App Store in either workflow.
 #
 # Toolchain (pinned per workflow): Flutter 3.47.9, Xcode 26.3. Go and
 # Rust are installed by the scripts when missing (Go via brew, Rust via
@@ -26,8 +28,9 @@ workflows:
       flutter: 3.47.9
       xcode: 26.3
       cocoapods: default
-      # No `groups:` — this workflow needs NO secrets at all.
-      # (No GH_TOKEN, no signing credentials, no App Store key.)
+      # GH_TOKEN is an optional secret (default group): the publish step
+      # uses it to upload the IPA to GitHub Releases, and skips the
+      # upload when it is unset. No signing credentials, no App Store key.
     # No `triggering:` section on purpose: builds start MANUALLY from the
     # Codemagic UI or via the REST API only. Push auto-trigger would burn
     # the shared 500 min/month free allowance on every commit.
@@ -96,6 +99,9 @@ workflows:
           echo "Found IPA: $IPA_PATH"
           cp "$IPA_PATH" ./FlClash-unsigned.ipa
           ls -lh FlClash-unsigned.ipa
+      - name: Publish to GitHub Releases
+        script: |
+          bash .github/publish_codemagic.sh
     artifacts:
       - FlClash-unsigned.ipa
 
