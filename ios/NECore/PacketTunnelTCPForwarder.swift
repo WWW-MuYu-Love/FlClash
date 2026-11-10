@@ -34,7 +34,7 @@ final class PacketTunnelTCPForwarder {
 
   private func startOnQueue() {
     guard listener == nil else { return }
-    guard let listener = NWListener(using: .tcp, on: listenPort) else {
+    guard let listener = try? NWListener(using: .tcp, on: listenPort) else {
       logger.error("tcp forwarder failed to create listener")
       return
     }
