@@ -1138,3 +1138,56 @@ func TestUpdateConfigKeepsControllerClearedWhenSkipped(t *testing.T) {
 		t.Errorf("external controller = %q, want it cleared while skipped", currentConfig.Controller.ExternalController)
 	}
 }
+
+func TestSkipMixedPortClearsThePort(t *testing.T) {
+	previous := mixedPortSkipped
+	previousForward := forwardMixedPort
+	t.Cleanup(func() { mixedPortSkipped = previous; forwardMixedPort = previousForward })
+	skipped := &config.Config{General: &config.General{MixedPort: 7893}}
+	skipMixedPort(&SetupParams{SkipMixedPort: true}, skipped)
+	if skipped.General.MixedPort != 0 {
+		t.Fatalf("mixed port = %d, want it cleared", skipped.General.MixedPort)
+	}
+	if forwardMixedPort != 7893 {
+		t.Fatalf("forward mixed port = %d, want 7893", forwardMixedPort)
+	}
+	kept := &config.Config{General: &config.General{MixedPort: 7893}}
+	skipMixedPort(&SetupParams{}, kept)
+	if kept.General.MixedPort != 7893 {
+		t.Fatalf("mixed port = %d, want it kept", kept.General.MixedPort)
+	}
+	skipMixedPort(&SetupParams{SkipMixedPort: true}, &config.Config{})
+}
+
+func TestSetupParamsReadsSkipMixedPort(t *testing.T) {
+	params := &SetupParams{}
+	if err := json.Unmarshal(
+		[]byte(`{"selected-map":{},"options":{},"skip-mixed-port":true}`),
+		params,
+	); err != nil {
+		t.Fatalf("unmarshal setup params: %v", err)
+	}
+	if !params.SkipMixedPort {
+		t.Fatal("SkipMixedPort = false, want true")
+	}
+}
+
+func TestUpdateConfigKeepsMixedPortClearedWhenSkipped(t *testing.T) {
+	withCurrentConfig(t, &config.Config{General: &config.General{MixedPort: 7893}, Controller: &config.Controller{}})
+	previous := mixedPortSkipped
+	previousForward := forwardMixedPort
+	skipMixedPort(&SetupParams{SkipMixedPort: true}, currentConfig)
+	t.Cleanup(func() { mixedPortSkipped = previous; forwardMixedPort = previousForward })
+	port := 7893
+
+	if err := updateConfig(&UpdateParams{MixedPort: &port}); err != nil {
+		t.Fatalf("updateConfig error: %v", err)
+	}
+
+	if currentConfig.General.MixedPort != 0 {
+		t.Errorf("mixed port = %d, want it cleared while skipped", currentConfig.General.MixedPort)
+	}
+	if forwardMixedPort != 7893 {
+		t.Errorf("forward mixed port = %d, want 7893", forwardMixedPort)
+	}
+}

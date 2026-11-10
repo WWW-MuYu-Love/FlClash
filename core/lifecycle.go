@@ -49,6 +49,7 @@ func handleStartListener() {
 	defer configMu.Unlock()
 	setRunning(true)
 	updateListeners(currentConfig)
+	reconcilePortForwarders(currentConfig)
 	resolver.ResetConnection()
 	// A probe already out left before the TUN routes and over the DNS
 	// connections just dropped, so its answer must not stand for this route.
@@ -60,6 +61,7 @@ func handleStopListener() {
 	defer configMu.Unlock()
 	setRunning(false)
 	listener.StopListener()
+	stopPortForwarders()
 	resolver.ResetConnection()
 }
 
@@ -96,6 +98,7 @@ func handleShutdown() {
 	configMu.Lock()
 	setRunning(false)
 	listener.StopListener()
+	stopPortForwarders()
 	updater.StopGeoUpdater()
 	executor.Shutdown()
 	currentConfig = nil

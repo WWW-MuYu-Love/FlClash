@@ -163,12 +163,14 @@ func applyConfig(params *SetupParams) error {
 	}
 	skipDNSListen(params, cfg)
 	skipExternalController(params, cfg)
+	skipMixedPort(params, cfg)
 
 	currentConfig = cfg
 	hub.ApplyConfig(cfg)
 	patchSelectGroup(params.SelectedMap)
 	bumpRouteEpoch()
 	updateListeners(cfg)
+	reconcilePortForwarders(cfg)
 	reconcileGeoUpdater()
 	scheduleLoadMemoryRelease()
 	if err != nil {
@@ -187,7 +189,16 @@ func skipDNSListen(params *SetupParams, cfg *config.Config) {
 func skipExternalController(params *SetupParams, cfg *config.Config) {
 	externalControllerSkipped = params.SkipExternalController
 	if externalControllerSkipped && cfg.Controller != nil {
+		forwardController = cfg.Controller.ExternalController
 		cfg.Controller.ExternalController = ""
+	}
+}
+
+func skipMixedPort(params *SetupParams, cfg *config.Config) {
+	mixedPortSkipped = params.SkipMixedPort
+	if mixedPortSkipped && cfg.General != nil {
+		forwardMixedPort = cfg.General.MixedPort
+		cfg.General.MixedPort = 0
 	}
 }
 
@@ -201,6 +212,12 @@ func updateConfig(params *UpdateParams) error {
 	general := currentConfig.General
 	if params.MixedPort != nil {
 		general.MixedPort = *params.MixedPort
+	}
+	if mixedPortSkipped {
+		if params.MixedPort != nil {
+			forwardMixedPort = *params.MixedPort
+		}
+		general.MixedPort = 0
 	}
 	if params.AllowLan != nil {
 		general.AllowLan = *params.AllowLan
@@ -242,6 +259,9 @@ func updateConfig(params *UpdateParams) error {
 		patchTun(&general.Tun, params.Tun)
 	}
 	if externalControllerSkipped {
+		if params.ExternalController != nil {
+			forwardController = *params.ExternalController
+		}
 		empty := ""
 		params.ExternalController = &empty
 	}
@@ -254,6 +274,7 @@ func updateConfig(params *UpdateParams) error {
 	}
 
 	updateListeners(currentConfig)
+	reconcilePortForwarders(currentConfig)
 	for geoType, link := range params.GeoXUrl {
 		setGeoResourceUrl(geoType, link)
 	}

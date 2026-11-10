@@ -16,6 +16,7 @@ abstract class SetupParams with _$SetupParams {
     @Default(false)
     @JsonKey(name: 'skip-external-controller')
     bool skipExternalController,
+    @Default(false) @JsonKey(name: 'skip-mixed-port') bool skipMixedPort,
   }) = _SetupParams;
 
   factory SetupParams.fromJson(Map<String, dynamic> json) =>
