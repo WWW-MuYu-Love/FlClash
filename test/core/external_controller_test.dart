@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:fl_clash/core/external_controller.dart';
+import 'package:fl_clash/enum/enum.dart';
 import 'package:fl_clash/models/models.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -402,6 +403,90 @@ void main() {
       addTearDown(dead.close);
 
       expect(await dead.selectProxy('group', 'proxy'), isFalse);
+    });
+  });
+
+  group('ExternalControllerClient.setMode', () {
+    late HttpServer server;
+    late ExternalControllerClient client;
+
+    setUp(() async {
+      server = await _serve((request) async {
+        request.response.statusCode = HttpStatus.noContent;
+        await request.response.close();
+      });
+      client = ExternalControllerClient(
+        baseUri: Uri.parse('http://127.0.0.1:${server.port}'),
+      );
+    });
+
+    tearDown(() async {
+      client.close();
+      await server.close(force: true);
+    });
+
+    test('PATCHes the routing mode to /configs', () async {
+      var seenMethod = '';
+      var seenPath = '';
+      var seenBody = '';
+      var seenAuth = '';
+      await server.close(force: true);
+      server = await _serve((request) async {
+        seenMethod = request.method;
+        seenPath = request.uri.path;
+        seenAuth = request.headers.value(HttpHeaders.authorizationHeader) ?? '';
+        seenBody = await utf8.decodeStream(request);
+        request.response.statusCode = HttpStatus.noContent;
+        await request.response.close();
+      });
+      final authed = ExternalControllerClient(
+        baseUri: Uri.parse('http://127.0.0.1:${server.port}'),
+        secret: 's3cret',
+      );
+      addTearDown(authed.close);
+
+      expect(await authed.setMode(Mode.global), isTrue);
+      expect(seenMethod, 'PATCH');
+      expect(seenPath, '/configs');
+      expect(jsonDecode(seenBody), {'mode': 'global'});
+      expect(seenAuth, 'Bearer s3cret');
+    });
+
+    test('returns true on 200 as well as 204', () async {
+      await server.close(force: true);
+      server = await _serve((request) async {
+        request.response.statusCode = HttpStatus.ok;
+        await request.response.close();
+      });
+      client = ExternalControllerClient(
+        baseUri: Uri.parse('http://127.0.0.1:${server.port}'),
+      );
+
+      expect(await client.setMode(Mode.direct), isTrue);
+    });
+
+    test('returns false on a non-success status', () async {
+      await server.close(force: true);
+      server = await _serve((request) async {
+        request.response.statusCode = HttpStatus.badRequest;
+        await request.response.close();
+      });
+      client = ExternalControllerClient(
+        baseUri: Uri.parse('http://127.0.0.1:${server.port}'),
+      );
+
+      expect(await client.setMode(Mode.rule), isFalse);
+    });
+
+    test('returns false without throwing when nothing listens', () async {
+      final port = server.port;
+      await server.close(force: true);
+      final dead = ExternalControllerClient(
+        baseUri: Uri.parse('http://127.0.0.1:$port'),
+      );
+      addTearDown(dead.close);
+
+      expect(await dead.setMode(Mode.rule), isFalse);
     });
   });
 

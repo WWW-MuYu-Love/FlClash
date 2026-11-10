@@ -347,7 +347,27 @@ class SetupAction extends _$SetupAction {
           options: ref.read(coreOptionsProvider),
         ),
       );
+      await _syncModeToExternalController(patchConfig.mode);
     });
+  }
+
+  // The App core is not the routing core when the VPN is on: the extension
+  // core owns 9090 and keeps its own mode, so propagate the change. 9090
+  // is bound by the extension only, so with the tunnel down nothing
+  // listens; skip the attempt instead of warning on every change.
+  Future<void> _syncModeToExternalController(Mode mode) async {
+    if (ref.read(runningVpnOptionsProvider)?.enable != true) {
+      return;
+    }
+    final applied = await ref
+        .read(externalControllerClientProvider)
+        .setMode(mode);
+    if (!applied) {
+      commonPrint.log(
+        'updateConfig(mode: ${mode.name}) external controller sync failed',
+        logLevel: LogLevel.warning,
+      );
+    }
   }
 
   @protected

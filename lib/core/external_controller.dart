@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:fl_clash/enum/enum.dart';
 import 'package:fl_clash/models/models.dart';
 
 class ExternalControllerSnapshot {
@@ -161,6 +162,32 @@ class ExternalControllerClient {
       }
       request.headers.contentType = ContentType.json;
       request.write(jsonEncode({'name': proxyName}));
+      final response = await request.close().timeout(_fetchTimeout);
+      await response.drain<void>();
+      return response.statusCode == HttpStatus.noContent ||
+          response.statusCode == HttpStatus.ok;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  // PATCH /configs changes the routing mode on the core behind 9090.
+  // The extension core answers 204 on success, so a false return means
+  // the request itself failed (the tunnel is down or 9090 is unreachable).
+  Future<bool> setMode(Mode mode) async {
+    try {
+      final request = await _http
+          .patchUrl(
+            baseUri.replace(
+              pathSegments: [...baseUri.pathSegments, 'configs'],
+            ),
+          )
+          .timeout(_fetchTimeout);
+      if (secret.isNotEmpty) {
+        request.headers.set(HttpHeaders.authorizationHeader, 'Bearer $secret');
+      }
+      request.headers.contentType = ContentType.json;
+      request.write(jsonEncode({'mode': mode.name}));
       final response = await request.close().timeout(_fetchTimeout);
       await response.drain<void>();
       return response.statusCode == HttpStatus.noContent ||
