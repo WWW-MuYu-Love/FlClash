@@ -207,6 +207,7 @@ class ProxiesAction extends _$ProxiesAction {
     if (!result.changed) {
       return;
     }
+    await _syncSelectionToExternalController(groupName, proxyName);
     try {
       if (ref.read(appSettingProvider).closeConnections) {
         await _core.closeConnections();
@@ -217,6 +218,23 @@ class ProxiesAction extends _$ProxiesAction {
       commonPrint.log(
         'changeProxy($groupName -> $proxyName) connection reset failed: $error',
         logLevel: coreFailureLogLevel(error),
+      );
+    }
+  }
+
+  // The App core is not the routing core when the VPN is on: the extension
+  // core owns 9090 and keeps its own selection, so propagate the change.
+  Future<void> _syncSelectionToExternalController(
+    String groupName,
+    String proxyName,
+  ) async {
+    final applied = await ref
+        .read(externalControllerClientProvider)
+        .selectProxy(groupName, proxyName);
+    if (!applied) {
+      commonPrint.log(
+        'changeProxy($groupName -> $proxyName) external controller sync failed',
+        logLevel: LogLevel.warning,
       );
     }
   }

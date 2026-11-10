@@ -90,6 +90,29 @@ class ExternalControllerClient {
     }
   }
 
+  Future<bool> selectProxy(String groupName, String proxyName) async {
+    try {
+      final request = await _http
+          .putUrl(
+            baseUri.replace(
+              pathSegments: [...baseUri.pathSegments, 'proxies', groupName],
+            ),
+          )
+          .timeout(_fetchTimeout);
+      if (secret.isNotEmpty) {
+        request.headers.set(HttpHeaders.authorizationHeader, 'Bearer $secret');
+      }
+      request.headers.contentType = ContentType.json;
+      request.write(jsonEncode({'name': proxyName}));
+      final response = await request.close().timeout(_fetchTimeout);
+      await response.drain<void>();
+      return response.statusCode == HttpStatus.noContent ||
+          response.statusCode == HttpStatus.ok;
+    } catch (_) {
+      return false;
+    }
+  }
+
   void close() {
     _http.close(force: true);
   }
