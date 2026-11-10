@@ -464,6 +464,16 @@ class SetupAction extends _$SetupAction {
       silence: silence,
       preloadInvoke: preloadInvoke,
     );
+    // A profile rebuild only reaches the App core; when the tunnel is up
+    // the extension core keeps routing on its own copy, so push the mode
+    // to 9090 as well. Without this, a restart that starts the tunnel
+    // before the debounced rebuild runs leaves the extension on the
+    // previous mode until the next manual tunnel restart.
+    if (result != _SetupTaskResult.failed) {
+      await _syncModeToExternalController(
+        ref.read(patchClashConfigProvider).mode,
+      );
+    }
     return result != _SetupTaskResult.failed;
   }
 
