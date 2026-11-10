@@ -125,6 +125,9 @@ type SetupParams struct {
 	// The iOS app core never serves the mixed port: the system proxy is
 	// answered by the tunnel extension, which already binds it.
 	SkipMixedPort bool `json:"skip-mixed-port,omitempty"`
+	// The iOS app core never serves the external controller: the tunnel
+	// extension already binds it.
+	SkipExternalController bool `json:"skip-external-controller,omitempty"`
 }
 
 type CoreOptions struct {

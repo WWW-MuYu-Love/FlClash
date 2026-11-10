@@ -34,6 +34,8 @@ var (
 	// merging the host's values, so a live patch cannot rebind the port.
 	mixedPortSkipped bool
 
+	externalControllerSkipped bool
+
 	errConfigNotApplied = errors.New("config is not applied")
 	errNotInitialized   = errors.New("not initialized")
 )
@@ -165,6 +167,7 @@ func applyConfig(params *SetupParams) error {
 	}
 	skipDNSListen(params, cfg)
 	skipMixedPort(params, cfg)
+	skipExternalController(params, cfg)
 
 	currentConfig = cfg
 	hub.ApplyConfig(cfg)
@@ -190,6 +193,13 @@ func skipMixedPort(params *SetupParams, cfg *config.Config) {
 	mixedPortSkipped = params.SkipMixedPort
 	if mixedPortSkipped && cfg.General != nil {
 		cfg.General.MixedPort = 0
+	}
+}
+
+func skipExternalController(params *SetupParams, cfg *config.Config) {
+	externalControllerSkipped = params.SkipExternalController
+	if externalControllerSkipped && cfg.Controller != nil {
+		cfg.Controller.ExternalController = ""
 	}
 }
 
@@ -245,6 +255,10 @@ func updateConfig(params *UpdateParams) error {
 	}
 	if params.Tun != nil {
 		patchTun(&general.Tun, params.Tun)
+	}
+	if externalControllerSkipped {
+		empty := ""
+		params.ExternalController = &empty
 	}
 	patchController(params)
 	if params.Authentication != nil {

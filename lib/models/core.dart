@@ -14,6 +14,9 @@ abstract class SetupParams with _$SetupParams {
     required CoreOptions options,
     @Default(false) @JsonKey(name: 'skip-dns-listen') bool skipDnsListen,
     @Default(false) @JsonKey(name: 'skip-mixed-port') bool skipMixedPort,
+    @Default(false)
+    @JsonKey(name: 'skip-external-controller')
+    bool skipExternalController,
   }) = _SetupParams;
 
   factory SetupParams.fromJson(Map<String, dynamic> json) =>

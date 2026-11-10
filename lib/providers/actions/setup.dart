@@ -817,6 +817,7 @@ class SetupAction extends _$SetupAction {
               params: setupParams.copyWith(
                 skipDnsListen: system.isIOS,
                 skipMixedPort: system.isIOS,
+                skipExternalController: system.isIOS,
               ),
               preloadInvoke: preloadInvoke,
             );

@@ -1096,6 +1096,49 @@ func TestSetupParamsReadsSkipDNSListen(t *testing.T) {
 	}
 }
 
+func TestSkipExternalControllerClearsTheAddress(t *testing.T) {
+	skipped := &config.Config{Controller: &config.Controller{ExternalController: "127.0.0.1:9090"}}
+	skipExternalController(&SetupParams{SkipExternalController: true}, skipped)
+	if skipped.Controller.ExternalController != "" {
+		t.Fatalf("external controller = %q, want it cleared", skipped.Controller.ExternalController)
+	}
+	kept := &config.Config{Controller: &config.Controller{ExternalController: "127.0.0.1:9090"}}
+	skipExternalController(&SetupParams{}, kept)
+	if kept.Controller.ExternalController != "127.0.0.1:9090" {
+		t.Fatalf("external controller = %q, want it kept", kept.Controller.ExternalController)
+	}
+	skipExternalController(&SetupParams{SkipExternalController: true}, &config.Config{})
+}
+
+func TestSetupParamsReadsSkipExternalController(t *testing.T) {
+	params := &SetupParams{}
+	if err := json.Unmarshal(
+		[]byte(`{"selected-map":{},"options":{},"skip-external-controller":true}`),
+		params,
+	); err != nil {
+		t.Fatalf("unmarshal setup params: %v", err)
+	}
+	if !params.SkipExternalController {
+		t.Fatal("SkipExternalController = false, want true")
+	}
+}
+
+func TestUpdateConfigKeepsControllerClearedWhenSkipped(t *testing.T) {
+	withCurrentConfig(t, &config.Config{General: &config.General{}, Controller: &config.Controller{ExternalController: "127.0.0.1:9090"}})
+	previous := externalControllerSkipped
+	skipExternalController(&SetupParams{SkipExternalController: true}, currentConfig)
+	t.Cleanup(func() { externalControllerSkipped = previous })
+	address := "127.0.0.1:9090"
+
+	if err := updateConfig(&UpdateParams{ExternalController: &address}); err != nil {
+		t.Fatalf("updateConfig error: %v", err)
+	}
+
+	if currentConfig.Controller.ExternalController != "" {
+		t.Errorf("external controller = %q, want it cleared while skipped", currentConfig.Controller.ExternalController)
+	}
+}
+
 func TestSkipMixedPortClearsThePort(t *testing.T) {
 	skipped := &config.Config{General: &config.General{MixedPort: 7893}}
 	skipMixedPort(&SetupParams{SkipMixedPort: true}, skipped)
