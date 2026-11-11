@@ -1,8 +1,8 @@
+import 'package:fl_clash/ui/ui.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:prism_ui/prism_ui.dart';
 import '../helpers/host_scaffold.dart';
 import '../helpers/test_app.dart';
 
@@ -407,6 +407,46 @@ void main() {
       await dragAndCancel(tester);
     });
   });
+
+  testWidgets(
+    'a back-button tap while a cancelled drag back settles still pops the page',
+    (tester) async {
+      await _pumpOpener(tester, (context) {
+        Navigator.of(context).push(
+          CardPageRoute<void>(
+            builder: (_) => const ViewScope(
+              size: Size(800, 600),
+              isMobile: true,
+              child: BaseScaffold(
+                title: 'theme',
+                body: Center(child: Text('page')),
+              ),
+            ),
+          ),
+        );
+      });
+      expect(find.text('page'), findsOneWidget);
+      expect(find.byType(AppBarActionButton), findsOneWidget);
+
+      // Drag right about 40% of the width and let go halfway: the page
+      // snaps back instead of popping.
+      final gesture = await tester.startGesture(
+        tester.getCenter(find.text('page')),
+      );
+      for (var i = 0; i < 8; i++) {
+        await gesture.moveBy(const Offset(40, 0));
+        await tester.pump(const Duration(milliseconds: 16));
+      }
+      await gesture.up();
+      // Tap the back button while the page is still springing back to rest,
+      // as a finger does on a phone, instead of waiting for the settle.
+      await tester.pump(const Duration(milliseconds: 100));
+
+      await tester.tap(find.byType(AppBarActionButton));
+      await tester.pumpAndSettle();
+      expect(find.text('page'), findsNothing);
+    },
+  );
 
   group('a focused field on a page', () {
     late FocusNode focus;
