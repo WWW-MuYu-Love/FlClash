@@ -167,27 +167,31 @@ class _OnDemandViewState extends ConsumerState<OnDemandView>
     });
   }
 
-  Widget _swipeBackground({
+  // A round swipe button like the one on LiveContainer's app page: a solid
+  // circle with a white icon, and the action label beneath it.
+  Widget _swipeActionButton({
     required String label,
     required Glyph glyph,
-    required Color background,
+    required Color color,
     required Color foreground,
-    required bool alignStart,
   }) {
-    return Container(
-      color: background,
-      alignment: alignStart ? Alignment.centerLeft : Alignment.centerRight,
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: Row(
+    return SizedBox(
+      width: 70,
+      child: Column(
         mainAxisSize: MainAxisSize.min,
-        spacing: 8,
         children: [
-          GlyphIcon(glyph, size: 20, color: foreground),
+          Container(
+            width: 48,
+            height: 48,
+            decoration: ShapeDecoration(color: color, shape: AppShape.full),
+            child: Center(child: GlyphIcon(glyph, size: 20, color: foreground)),
+          ),
+          const SizedBox(height: 3),
           Text(
             label,
-            style: AppTextStyle.callout
-                .of(context, emphasized: true)
-                .copyWith(color: foreground),
+            style: AppTextStyle.caption2
+                .of(context)
+                .copyWith(color: context.colorScheme.onSurfaceVariant),
           ),
         ],
       ),
@@ -213,25 +217,34 @@ class _OnDemandViewState extends ConsumerState<OnDemandView>
         child: Dismissible(
           key: ValueKey('swipe-$ssid'),
           direction: DismissDirection.horizontal,
+          // The action fires once the round button is fully revealed.
+          dismissThresholds: const {
+            DismissDirection.startToEnd: 0.25,
+            DismissDirection.endToStart: 0.25,
+          },
           confirmDismiss: (direction) async {
             // Left swipe switches the SSID to direct mode, right swipe
             // switches it back to disconnecting the tunnel.
             _setSsidAction(ssid, direction == DismissDirection.endToStart);
             return false;
           },
-          background: _swipeBackground(
-            label: appLocalizations.disconnect,
-            glyph: AppGlyphs.wifiOff,
-            background: colorScheme.errorContainer,
-            foreground: colorScheme.onErrorContainer,
-            alignStart: true,
+          background: Align(
+            alignment: Alignment.centerLeft,
+            child: _swipeActionButton(
+              label: appLocalizations.disconnect,
+              glyph: AppGlyphs.wifiOff,
+              color: colorScheme.error,
+              foreground: colorScheme.onError,
+            ),
           ),
-          secondaryBackground: _swipeBackground(
-            label: appLocalizations.direct,
-            glyph: AppGlyphs.link,
-            background: colorScheme.primaryContainer,
-            foreground: colorScheme.onPrimaryContainer,
-            alignStart: false,
+          secondaryBackground: Align(
+            alignment: Alignment.centerRight,
+            child: _swipeActionButton(
+              label: appLocalizations.direct,
+              glyph: AppGlyphs.link,
+              color: colorScheme.primary,
+              foreground: colorScheme.onPrimary,
+            ),
           ),
           child: ItemPositionProvider(
             position: position,
