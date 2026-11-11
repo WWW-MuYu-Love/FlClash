@@ -64,19 +64,41 @@ public enum AppGroupResolver {
   }
 
   private static func readProfileAppGroups() -> [String] {
-    guard let path = Bundle.main.path(
+    for path in profilePaths() {
+      guard let data = try? Data(contentsOf: URL(fileURLWithPath: path)),
+        let plist = extractPlist(from: data),
+        let entitlements = plist["Entitlements"] as? [String: Any],
+        let groups = entitlements["com.apple.security.application-groups"]
+          as? [String]
+      else {
+        continue
+      }
+      return groups
+    }
+    return []
+  }
+
+  /// Candidate provisioning profiles: the containing app bundle first.
+  /// An extension at <App>.app/PlugIns/<Extension>.appex may not carry
+  /// its own profile, and the shared App Group lives in the app's profile.
+  private static func profilePaths() -> [String] {
+    var paths: [String] = []
+    let bundleURL = Bundle.main.bundleURL
+    if bundleURL.pathExtension == "appex" {
+      let appURL = bundleURL
+        .deletingLastPathComponent()
+        .deletingLastPathComponent()
+      paths.append(
+        appURL.appendingPathComponent("embedded.mobileprovision").path
+      )
+    }
+    if let own = Bundle.main.path(
       forResource: "embedded",
       ofType: "mobileprovision"
-    ),
-      let data = try? Data(contentsOf: URL(fileURLWithPath: path)),
-      let plist = extractPlist(from: data),
-      let entitlements = plist["Entitlements"] as? [String: Any],
-      let groups = entitlements["com.apple.security.application-groups"]
-        as? [String]
-    else {
-      return []
+    ) {
+      paths.append(own)
     }
-    return groups
+    return paths
   }
 
   /// The provisioning profile is a CMS envelope around a plist; extract
