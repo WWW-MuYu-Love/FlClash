@@ -25,11 +25,14 @@ final class BackgroundKeepAlive {
   private var mode: Mode = .off
   private var audioEngine: AVAudioEngine?
   private var audioPlayerNode: AVAudioPlayerNode?
-  private var pipPlayer: AVPlayer?
+  private var pipPlayer: AVQueuePlayer?
+  private var pipLooper: AVPlayerLooper?
   private var pipPlayerLayer: AVPlayerLayer?
   private var pipContainerView: UIView?
   private var pipController: AVPictureInPictureController?
-  private var pipObserver: NSObjectProtocol?
+  private var pipPossibleObserver: NSKeyValueObservation?
+  private var pipRetryTimer: Timer?
+  private var pipRetryCount = 0
   private var foregroundObserver: NSObjectProtocol?
   private var backgroundObserver: NSObjectProtocol?
 
@@ -57,9 +60,8 @@ final class BackgroundKeepAlive {
     if let foregroundObserver {
       NotificationCenter.default.removeObserver(foregroundObserver)
     }
-    if let pipObserver {
-      NotificationCenter.default.removeObserver(pipObserver)
-    }
+    pipPossibleObserver?.invalidate()
+    pipRetryTimer?.invalidate()
   }
 
   /// The mode name Dart sends: "off", "silentAudio", "pictureInPicture".
@@ -155,6 +157,23 @@ final class BackgroundKeepAlive {
 
   // MARK: - Picture-in-picture
 
+  /// A playback session so the video keeps playing after the app
+  /// backgrounds. Silent audio sets its own up; PiP needs the same one.
+  private func activatePlaybackSession() {
+    let session = AVAudioSession.sharedInstance()
+    do {
+      try session.setCategory(
+        .playback,
+        mode: .default,
+        options: [.mixWithOthers],
+      )
+      try session.setActive(true)
+    } catch {
+      // PiP can still start without it; the session only makes background
+      // playback reliable.
+    }
+  }
+
   private func startPictureInPicture() {
     guard AVPictureInPictureController.isPictureInPictureSupported() else {
       return
@@ -165,16 +184,12 @@ final class BackgroundKeepAlive {
     ) else {
       return
     }
-    let player = AVPlayer(url: videoURL)
-    player.actionAtItemEnd = .none
-    pipObserver = NotificationCenter.default.addObserver(
-      forName: .AVPlayerItemDidPlayToEndTime,
-      object: player.currentItem,
-      queue: .main,
-    ) { _ in
-      player.seek(to: .zero)
-      player.play()
-    }
+    activatePlaybackSession()
+    let item = AVPlayerItem(url: videoURL)
+    let player = AVQueuePlayer(playerItem: item)
+    // Loop seamlessly. The old seek-to-zero-and-play loop left the player
+    // paused between loops, which is exactly when PiP refuses to start.
+    let looper = AVPlayerLooper(player: player, templateItem: item)
     let layer = AVPlayerLayer(player: player)
     // PiP can only start when the layer is in a view hierarchy, so host it
     // in a 1x1 view in the key window. The view itself is invisible; the
@@ -190,10 +205,24 @@ final class BackgroundKeepAlive {
       window.addSubview(container)
     }
     let controller = AVPictureInPictureController(playerLayer: layer)
+    controller.delegate = self
     pipPlayer = player
+    pipLooper = looper
     pipPlayerLayer = layer
     pipContainerView = container
     pipController = controller
+    // The player is often not ready the instant the app backgrounds, so
+    // PiP is impossible at that moment and never retried. Watch for it
+    // becoming possible and start it then.
+    pipPossibleObserver = controller.observe(
+      \.isPictureInPicturePossible,
+      options: [.new],
+    ) { [weak self] _, change in
+      guard change.newValue == true else {
+        return
+      }
+      self?.startPipIfNeeded()
+    }
     player.play()
     // Already backgrounded (mode switched while the app was backgrounded):
     // open PiP right away instead of waiting for the next backgrounding.
@@ -203,19 +232,24 @@ final class BackgroundKeepAlive {
   }
 
   private func stopPictureInPicture() {
-    if let pipObserver {
-      NotificationCenter.default.removeObserver(pipObserver)
-      self.pipObserver = nil
-    }
+    pipPossibleObserver?.invalidate()
+    pipPossibleObserver = nil
+    pipRetryTimer?.invalidate()
+    pipRetryTimer = nil
+    pipRetryCount = 0
     if pipController?.isPictureInPictureActive == true {
       pipController?.stopPictureInPicture()
     }
     pipPlayer?.pause()
     pipPlayer = nil
+    pipLooper = nil
     pipPlayerLayer = nil
     pipContainerView?.removeFromSuperview()
     pipContainerView = nil
     pipController = nil
+    if mode != .pictureInPicture {
+      try? AVAudioSession.sharedInstance().setActive(false)
+    }
   }
 
   private func didEnterBackground() {
@@ -236,11 +270,39 @@ final class BackgroundKeepAlive {
 
   private func startPipIfNeeded() {
     guard let controller = pipController,
-      !controller.isPictureInPictureActive,
-      controller.isPictureInPicturePossible
+      !controller.isPictureInPictureActive
     else {
       return
     }
+    guard controller.isPictureInPicturePossible else {
+      schedulePipRetry()
+      return
+    }
+    pipRetryTimer?.invalidate()
+    pipRetryTimer = nil
+    pipRetryCount = 0
     controller.startPictureInPicture()
+  }
+
+  private func schedulePipRetry() {
+    guard pipRetryCount < 10 else {
+      return
+    }
+    pipRetryTimer?.invalidate()
+    pipRetryCount += 1
+    pipRetryTimer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: false) {
+      [weak self] _ in
+      self?.startPipIfNeeded()
+    }
+  }
+}
+
+extension BackgroundKeepAlive: AVPictureInPictureControllerDelegate {
+  func pictureInPictureController(
+    _ pictureInPictureController: AVPictureInPictureController,
+    failedToStartPictureInPictureWithError error: Error,
+  ) {
+    // The player is often not ready yet on the first attempt; retry shortly.
+    schedulePipRetry()
   }
 }
