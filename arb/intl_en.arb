@@ -200,6 +200,8 @@
   "appIconDesign": "App icon design",
   "autoCloseConnections": "Auto close connections",
   "onlyStatisticsProxy": "Only count proxy traffic",
+  "autoRefreshOutboundIp": "Auto-refresh outbound IP",
+  "zashboardPanel": "Zashboard panel",
   "showNotificationStopAction": "Stop button in notification",
   "pureBlackMode": "Pure black mode",
   "sidebar": "Sidebar",

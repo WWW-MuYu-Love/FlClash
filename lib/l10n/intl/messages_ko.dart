@@ -329,6 +329,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "autoCloseConnections": MessageLookupByLibrary.simpleMessage("연결 자동 종료"),
     "autoInclude": MessageLookupByLibrary.simpleMessage("자동 포함"),
     "autoLaunch": MessageLookupByLibrary.simpleMessage("자동 실행"),
+    "autoRefreshOutboundIp": MessageLookupByLibrary.simpleMessage(
+      "송신 IP 자동 새로고침",
+    ),
     "autoRun": MessageLookupByLibrary.simpleMessage("자동 시작"),
     "autoRunDesc": MessageLookupByLibrary.simpleMessage(
       "자동 시작은 앱을 열 때 프록시를 시작합니다.",
@@ -1823,6 +1826,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "yearsAgo": m100,
     "yearsAgoShort": m101,
     "yes": MessageLookupByLibrary.simpleMessage("예"),
+    "zashboardPanel": MessageLookupByLibrary.simpleMessage("Zashboard 패널"),
     "zhCN": MessageLookupByLibrary.simpleMessage("중국어 간체"),
   };
 }

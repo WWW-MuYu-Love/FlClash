@@ -66,6 +66,7 @@ _AppSettingProps _$AppSettingPropsFromJson(
           .toList() ??
       defaultFilters,
   hideIp: json['hideIp'] as bool? ?? false,
+  autoRefreshOutboundIp: json['autoRefreshOutboundIp'] as bool? ?? false,
   editorLineWrap: json['editorLineWrap'] as bool? ?? false,
   editorFontSize:
       $enumDecodeNullable(_$EditorFontSizeEnumMap, json['editorFontSize']) ??
@@ -127,6 +128,7 @@ Map<String, dynamic> _$AppSettingPropsToJson(_AppSettingProps instance) =>
       'userAgents': instance.userAgents,
       'filters': instance.filters,
       'hideIp': instance.hideIp,
+      'autoRefreshOutboundIp': instance.autoRefreshOutboundIp,
       'editorLineWrap': instance.editorLineWrap,
       'editorFontSize': _$EditorFontSizeEnumMap[instance.editorFontSize]!,
       'serviceOrder': instance.serviceOrder,

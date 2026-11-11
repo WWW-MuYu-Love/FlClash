@@ -403,6 +403,9 @@ class MessageLookup extends MessageLookupByLibrary {
       "Incluir automáticamente",
     ),
     "autoLaunch": MessageLookupByLibrary.simpleMessage("Inicio automático"),
+    "autoRefreshOutboundIp": MessageLookupByLibrary.simpleMessage(
+      "Actualizar IP de salida automáticamente",
+    ),
     "autoRun": MessageLookupByLibrary.simpleMessage("Ejecución automática"),
     "autoRunDesc": MessageLookupByLibrary.simpleMessage(
       "La ejecución automática inicia el proxy al abrir la app.",
@@ -1126,9 +1129,10 @@ class MessageLookup extends MessageLookupByLibrary {
     "installCertificateSuccess": MessageLookupByLibrary.simpleMessage(
       "Certificado instalado",
     ),
-    "installedAppsPermissionDeniedMessage": MessageLookupByLibrary.simpleMessage(
-      "Se denegó el permiso de lista de apps, por lo que no se pueden mostrar las apps instaladas. Concédelo manualmente en los ajustes del sistema.",
-    ),
+    "installedAppsPermissionDeniedMessage":
+        MessageLookupByLibrary.simpleMessage(
+          "Se denegó el permiso de lista de apps, por lo que no se pueden mostrar las apps instaladas. Concédelo manualmente en los ajustes del sistema.",
+        ),
     "installedAppsPermissionDesc": MessageLookupByLibrary.simpleMessage(
       "Este sistema oculta la lista de apps instaladas hasta que se concede el permiso. Autorízalo para configurar el proxy por app.",
     ),
@@ -2328,6 +2332,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "yearsAgo": m100,
     "yearsAgoShort": m101,
     "yes": MessageLookupByLibrary.simpleMessage("Sí"),
+    "zashboardPanel": MessageLookupByLibrary.simpleMessage(
+      "Panel de Zashboard",
+    ),
     "zhCN": MessageLookupByLibrary.simpleMessage("Chino simplificado"),
   };
 }

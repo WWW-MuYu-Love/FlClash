@@ -1556,6 +1556,26 @@ class AppLocalizations {
     );
   }
 
+  /// `Auto-refresh outbound IP`
+  String get autoRefreshOutboundIp {
+    return Intl.message(
+      'Auto-refresh outbound IP',
+      name: 'autoRefreshOutboundIp',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Zashboard panel`
+  String get zashboardPanel {
+    return Intl.message(
+      'Zashboard panel',
+      name: 'zashboardPanel',
+      desc: '',
+      args: [],
+    );
+  }
+
   /// `Stop button in notification`
   String get showNotificationStopAction {
     return Intl.message(
@@ -7668,8 +7688,7 @@ class AppLocalizations {
   String customImportDroppedSubRules(num count, Object label) {
     return Intl.plural(
       count,
-      one:
-          '1 SUB-RULE rule was dropped, since custom profiles do not support sub-rules',
+      one: '1 SUB-RULE rule was dropped, since custom profiles do not support sub-rules',
       other:
           '$label SUB-RULE rules were dropped, since custom profiles do not support sub-rules',
       name: 'customImportDroppedSubRules',

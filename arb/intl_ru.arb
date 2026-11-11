@@ -200,6 +200,8 @@
   "appIconDesign": "Дизайн значка приложения",
   "autoCloseConnections": "Автозакрытие соединений",
   "onlyStatisticsProxy": "Учитывать только трафик прокси",
+  "autoRefreshOutboundIp": "Автообновление исходящего IP",
+  "zashboardPanel": "Панель Zashboard",
   "showNotificationStopAction": "Кнопка остановки в уведомлении",
   "pureBlackMode": "Чисто чёрный режим",
   "sidebar": "Боковая панель",

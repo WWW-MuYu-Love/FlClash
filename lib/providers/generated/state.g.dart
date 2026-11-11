@@ -319,24 +319,15 @@ final class OverlayTopOffsetProvider
 
 String _$overlayTopOffsetHash() => r'65469afec2a8ea45bddf916c8e61c7d6cbfc3c85';
 
-/// The stack of restorable sub-pages open above the top-level page, as
-/// descriptors like `tools/general` or `mitmModule:<id>`. Surge restores the
-/// exact screen the app was killed on, not just its tab; this is the
-/// FlClash equivalent. The top-level page label is saved separately.
+/// The stack of restorable sub-pages open above the top-level page.
 
 @ProviderFor(NavigationPath)
 final navigationPathProvider = NavigationPathProvider._();
 
-/// The stack of restorable sub-pages open above the top-level page, as
-/// descriptors like `tools/general` or `mitmModule:<id>`. Surge restores the
-/// exact screen the app was killed on, not just its tab; this is the
-/// FlClash equivalent. The top-level page label is saved separately.
+/// The stack of restorable sub-pages open above the top-level page.
 final class NavigationPathProvider
     extends $NotifierProvider<NavigationPath, List<String>> {
-  /// The stack of restorable sub-pages open above the top-level page, as
-  /// descriptors like `tools/general` or `mitmModule:<id>`. Surge restores the
-  /// exact screen the app was killed on, not just its tab; this is the
-  /// FlClash equivalent. The top-level page label is saved separately.
+  /// The stack of restorable sub-pages open above the top-level page.
   NavigationPathProvider._()
     : super(
         from: null,
@@ -366,10 +357,7 @@ final class NavigationPathProvider
 
 String _$navigationPathHash() => r'15abdd2b5cad94c338bc59648374f2e5047dd174';
 
-/// The stack of restorable sub-pages open above the top-level page, as
-/// descriptors like `tools/general` or `mitmModule:<id>`. Surge restores the
-/// exact screen the app was killed on, not just its tab; this is the
-/// FlClash equivalent. The top-level page label is saved separately.
+/// The stack of restorable sub-pages open above the top-level page.
 
 abstract class _$NavigationPath extends $Notifier<List<String>> {
   List<String> build();

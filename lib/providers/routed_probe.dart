@@ -192,6 +192,11 @@ mixin RoutedProbe<K, V>
     state = RoutedProbeState(Map.of(state.entries)..remove(target));
   }
 
+  /// Targets with at least one watcher, i.e. the cards currently showing
+  /// them. A periodic refresh only re-probes these, never idle targets.
+  @protected
+  Iterable<K> get watchedTargets => _watchers.keys;
+
   /// A refresh is the user asking, so it runs for targets nobody watches
   /// too, and waits neither for the route to settle nor for the throttle;
   /// the answer lands in the cache and stays until the route moves.

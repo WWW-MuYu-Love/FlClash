@@ -200,6 +200,8 @@
   "appIconDesign": "应用图标设计",
   "autoCloseConnections": "自动关闭连接",
   "onlyStatisticsProxy": "仅统计代理流量",
+  "autoRefreshOutboundIp": "自动刷新出站 IP",
+  "zashboardPanel": "Zashboard 面板",
   "showNotificationStopAction": "通知栏显示停止按钮",
   "pureBlackMode": "纯黑模式",
   "sidebar": "侧边栏",
