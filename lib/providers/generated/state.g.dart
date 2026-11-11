@@ -715,7 +715,55 @@ final class SuspendProvider extends $FunctionalProvider<bool, bool, bool>
   }
 }
 
-String _$suspendHash() => r'9ab9210f4f3c70f63d9858d492a9c09b3fb24bf1';
+String _$suspendHash() => r'8f3b4e5f5f41f2a69537fd9b1158e64e9e7648f3';
+
+/// The current SSID is excluded with the direct action: the tunnel keeps
+/// running and the proxy mode switches to direct instead of suspending.
+
+@ProviderFor(isDirectSsid)
+final isDirectSsidProvider = IsDirectSsidProvider._();
+
+/// The current SSID is excluded with the direct action: the tunnel keeps
+/// running and the proxy mode switches to direct instead of suspending.
+
+final class IsDirectSsidProvider extends $FunctionalProvider<bool, bool, bool>
+    with $Provider<bool> {
+  /// The current SSID is excluded with the direct action: the tunnel keeps
+  /// running and the proxy mode switches to direct instead of suspending.
+  IsDirectSsidProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'isDirectSsidProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$isDirectSsidHash();
+
+  @$internal
+  @override
+  $ProviderElement<bool> $createElement($ProviderPointer pointer) =>
+      $ProviderElement(pointer);
+
+  @override
+  bool create(Ref ref) {
+    return isDirectSsid(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(bool value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<bool>(value),
+    );
+  }
+}
+
+String _$isDirectSsidHash() => r'8621684116e33ed547ada9e11e2d38563187b7e4';
 
 @ProviderFor(DynamicColor)
 final dynamicColorProvider = DynamicColorProvider._();
@@ -2021,7 +2069,7 @@ final class ProxyStateProvider
   }
 }
 
-String _$proxyStateHash() => r'd2079a9a47a469ed73351b796bba8e79e5694405';
+String _$proxyStateHash() => r'76a71ab5da07dca9aeb351282c5c03ab222d0760';
 
 /// Watching the delay map instead would drop nodes one probe at a time, and
 /// reading it on any other rebuild would drop them whenever something

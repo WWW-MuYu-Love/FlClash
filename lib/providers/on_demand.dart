@@ -14,6 +14,15 @@ import 'config.dart';
 part 'generated/on_demand.g.dart';
 
 @Riverpod(keepAlive: true)
+class DirectSsidRestoreMode extends _$DirectSsidRestoreMode
+    with AutoDisposeNotifierMixin {
+  /// The mode to restore when the phone leaves a direct-mode excluded SSID,
+  /// null while no direct-mode override is active.
+  @override
+  Mode? build() => null;
+}
+
+@Riverpod(keepAlive: true)
 class LocationPermissions extends _$LocationPermissions {
   bool _requesting = false;
   bool _autoRequested = false;

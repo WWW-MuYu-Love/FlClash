@@ -632,6 +632,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "본 소프트웨어는 “있는 그대로”, “이용 가능한 상태로” 제공되며, 상품성, 특정 목적에의 적합성, 비침해성, 중단 없는 이용 가능성, 오류 없음, 보안 취약점 없음에 대한 보증을 포함하되 이에 국한되지 않고 명시적이든 묵시적이든 어떠한 종류의 보증도 하지 않습니다.\n\n개발자는 본 소프트웨어가 사용자의 요구를 충족하거나 중단 및 오류 없이 실행될 것임을 보증하지 않습니다.",
     ),
     "disclaimerWarrantyTitle": MessageLookupByLibrary.simpleMessage("보증 부인"),
+    "disconnect": MessageLookupByLibrary.simpleMessage("연결 해제"),
     "disconnected": MessageLookupByLibrary.simpleMessage("연결 끊김"),
     "discoverNewVersion": MessageLookupByLibrary.simpleMessage("새 버전 발견"),
     "dnsCacheCleared": MessageLookupByLibrary.simpleMessage("DNS 캐시를 지웠습니다"),
@@ -676,7 +677,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "excludeSrcPort": MessageLookupByLibrary.simpleMessage("제외할 소스 포트"),
     "excludeSsids": MessageLookupByLibrary.simpleMessage("제외할 SSID"),
     "excludeSsidsDesc": MessageLookupByLibrary.simpleMessage(
-      "제외 SSID의 Wi-Fi에 연결되면 앱의 실행 상태가 자동으로 전환됩니다.",
+      "제외된 SSID의 Wi-Fi에 연결되면 해당 SSID의 설정에 따라 자동으로 연결이 해제되거나 다이렉트 모드로 전환됩니다.",
     ),
     "excludeUid": MessageLookupByLibrary.simpleMessage("제외할 사용자 ID"),
     "existsTip": m27,

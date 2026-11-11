@@ -574,6 +574,32 @@ void main() {
     expect(container.read(proxyStateProvider).isStart, isFalse);
   });
 
+  test(
+    'an excluded SSID set to direct keeps the tunnel up instead of suspending',
+    () {
+      container
+          .read(excludeSSIDsProvider.notifier)
+          .update((_) => ['Home', 'Office']);
+      container.read(directSSIDsProvider.notifier).update((_) => ['Home']);
+
+      container.read(currentSSIDProvider.notifier).update((_) => 'Office');
+      expect(container.read(suspendProvider), isTrue);
+      expect(container.read(isDirectSsidProvider), isFalse);
+
+      container.read(currentSSIDProvider.notifier).update((_) => 'Home');
+      expect(container.read(suspendProvider), isFalse);
+      expect(container.read(isDirectSsidProvider), isTrue);
+
+      container.read(currentSSIDProvider.notifier).update((_) => 'Cafe');
+      expect(container.read(suspendProvider), isFalse);
+      expect(container.read(isDirectSsidProvider), isFalse);
+
+      container.read(currentSSIDProvider.notifier).update((_) => null);
+      expect(container.read(suspendProvider), isFalse);
+      expect(container.read(isDirectSsidProvider), isFalse);
+    },
+  );
+
   test('safe mode keeps every host integration off', () async {
     await AppLocalizations.load(const Locale('en'));
     final scoped = ProviderContainer(

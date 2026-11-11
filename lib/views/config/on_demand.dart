@@ -138,6 +138,27 @@ class _OnDemandViewState extends ConsumerState<OnDemandView>
       }
       return [...newSSIDS, newSSID];
     });
+    // Renaming keeps the SSID's action.
+    if (ssid != null) {
+      ref.read(directSSIDsProvider.notifier).update((state) {
+        if (!state.contains(ssid)) {
+          return state;
+        }
+        return [...state.where((item) => item != ssid), newSSID];
+      });
+    }
+  }
+
+  void _setSsidAction(String ssid, bool direct) {
+    ref.read(directSSIDsProvider.notifier).update((state) {
+      final next = state.toSet();
+      if (direct) {
+        next.add(ssid);
+      } else {
+        next.remove(ssid);
+      }
+      return next.toList();
+    });
   }
 
   void _handleReorder(int oldIndex, newIndex) {
@@ -146,36 +167,95 @@ class _OnDemandViewState extends ConsumerState<OnDemandView>
     });
   }
 
+  Widget _swipeBackground({
+    required String label,
+    required Glyph glyph,
+    required Color background,
+    required Color foreground,
+    required bool alignStart,
+  }) {
+    return Container(
+      color: background,
+      alignment: alignStart ? Alignment.centerLeft : Alignment.centerRight,
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        spacing: 8,
+        children: [
+          GlyphIcon(glyph, size: 20, color: foreground),
+          Text(
+            label,
+            style: AppTextStyle.callout
+                .of(context, emphasized: true)
+                .copyWith(color: foreground),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildItem({
     required String ssid,
     required int index,
     required int length,
     required bool isSelected,
     required bool isEditing,
+    required bool isDirect,
   }) {
     final position = ItemPosition.get(index, length);
+    final appLocalizations = context.appLocalizations;
+    final colorScheme = context.colorScheme;
     return ReorderDragStartListener(
       key: ValueKey(ssid),
       index: index,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16),
-        child: ItemPositionProvider(
-          position: position,
-          child: SelectedDecorationListItem(
-            isEditing: isEditing,
-            title: TooltipText(
-              text: Text(ssid, maxLines: 2, overflow: TextOverflow.ellipsis),
+        child: Dismissible(
+          key: ValueKey('swipe-$ssid'),
+          direction: DismissDirection.horizontal,
+          confirmDismiss: (direction) async {
+            // Left swipe switches the SSID to direct mode, right swipe
+            // switches it back to disconnecting the tunnel.
+            _setSsidAction(ssid, direction == DismissDirection.endToStart);
+            return false;
+          },
+          background: _swipeBackground(
+            label: appLocalizations.disconnect,
+            glyph: AppGlyphs.wifiOff,
+            background: colorScheme.errorContainer,
+            foreground: colorScheme.onErrorContainer,
+            alignStart: true,
+          ),
+          secondaryBackground: _swipeBackground(
+            label: appLocalizations.direct,
+            glyph: AppGlyphs.link,
+            background: colorScheme.primaryContainer,
+            foreground: colorScheme.onPrimaryContainer,
+            alignStart: false,
+          ),
+          child: ItemPositionProvider(
+            position: position,
+            child: SelectedDecorationListItem(
+              isEditing: isEditing,
+              title: TooltipText(
+                text: Text(ssid, maxLines: 2, overflow: TextOverflow.ellipsis),
+              ),
+              subtitle: Text(
+                isDirect
+                    ? appLocalizations.direct
+                    : appLocalizations.disconnect,
+              ),
+              isSelected: isSelected,
+              onSelected: () {
+                ref.read(itemsProvider(key).notifier).update((state) {
+                  final newState = Set<String>.from(state)..addOrRemove(ssid);
+                  return newState;
+                });
+              },
+              onPressed: () {
+                _handleAddOrUpdate(ssid);
+              },
             ),
-            isSelected: isSelected,
-            onSelected: () {
-              ref.read(itemsProvider(key).notifier).update((state) {
-                final newState = Set<String>.from(state)..addOrRemove(ssid);
-                return newState;
-              });
-            },
-            onPressed: () {
-              _handleAddOrUpdate(ssid);
-            },
           ),
         ),
       ),
@@ -193,6 +273,11 @@ class _OnDemandViewState extends ConsumerState<OnDemandView>
     final selectedItems = ref.read(itemsProvider(key));
     ref.read(excludeSSIDsProvider.notifier).update((excludeSSIDs) {
       return excludeSSIDs
+          .where((item) => !selectedItems.contains(item))
+          .toList();
+    });
+    ref.read(directSSIDsProvider.notifier).update((directSSIDs) {
+      return directSSIDs
           .where((item) => !selectedItems.contains(item))
           .toList();
     });
@@ -337,6 +422,7 @@ class _OnDemandViewState extends ConsumerState<OnDemandView>
   Widget _buildExcludeSsidsList(
     List<String> excludeSSIDs,
     Set<dynamic> selectedItems,
+    Set<String> directSSIDs,
   ) {
     if (excludeSSIDs.isEmpty) {
       return SliverPadding(
@@ -358,6 +444,7 @@ class _OnDemandViewState extends ConsumerState<OnDemandView>
       index: index,
       isSelected: selectedItems.contains(excludeSSIDs[index]),
       length: excludeSSIDs.length,
+      isDirect: directSSIDs.contains(excludeSSIDs[index]),
     );
     return SliverPadding(
       padding: const EdgeInsets.only(top: 12),
@@ -374,6 +461,7 @@ class _OnDemandViewState extends ConsumerState<OnDemandView>
   @override
   Widget build(BuildContext context) {
     final excludeSSIDs = ref.watch(excludeSSIDsProvider);
+    final directSSIDs = ref.watch(directSSIDsProvider).toSet();
     final selectedItems = ref.watch(itemsProvider(key));
     return Scaffold(
       body: CustomScrollView(
@@ -388,7 +476,7 @@ class _OnDemandViewState extends ConsumerState<OnDemandView>
             padding: const EdgeInsets.symmetric(horizontal: 16),
             sliver: SliverToBoxAdapter(child: _buildExcludeSsidsHeader()),
           ),
-          _buildExcludeSsidsList(excludeSSIDs, selectedItems),
+          _buildExcludeSsidsList(excludeSSIDs, selectedItems, directSSIDs),
           SliverPadding(
             padding: const EdgeInsets.symmetric(
               horizontal: 16,
