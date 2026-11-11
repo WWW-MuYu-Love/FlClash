@@ -1,6 +1,7 @@
 package core
 
 import (
+	"core/mitm"
 	"errors"
 	"os"
 	"path/filepath"
@@ -166,6 +167,7 @@ func applyConfig(params *SetupParams) error {
 
 	currentConfig = cfg
 	hub.ApplyConfig(cfg)
+	applyMitmConfig(cfg)
 	patchSelectGroup(params.SelectedMap)
 	bumpRouteEpoch()
 	updateListeners(cfg)
@@ -268,6 +270,7 @@ func applyOptions(options CoreOptions) {
 	setTestURL(options.TestURL)
 	provider.SetDefaultTestTimeout(timeoutFromMillis(options.DelayTestTimeout, 0))
 	skipCertVerify.Store(options.SkipCertVerify)
+	mitm.Default().SetCapture(options.MITMCapture)
 }
 
 func patchTun(target *LC.Tun, params *tunSchema) {

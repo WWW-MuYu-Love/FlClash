@@ -150,20 +150,10 @@ func coreMethodConstants(t *testing.T) []CoreMethod {
 	return methods
 }
 
-const mitmAbsent = "this core has no MITM, so it answers not_implemented"
-
 func TestEveryCoreMethodConstantIsDispatchable(t *testing.T) {
 	notDispatched := map[CoreMethod]string{
-		messageMethod:                 "core-to-host event envelope, never received",
-		coreCrashMethod:               "handled by the dispatcher so it bypasses panic recovery",
-		mitmCertificateMethod:         mitmAbsent,
-		mitmGenerateCertificateMethod: mitmAbsent,
-		mitmValidateMethod:            mitmAbsent,
-		mitmIssueCertificateMethod:    mitmAbsent,
-		mitmRunScriptMethod:           mitmAbsent,
-		mitmExchangesMethod:           mitmAbsent,
-		mitmExchangeMethod:            mitmAbsent,
-		mitmBodyMethod:                mitmAbsent,
+		messageMethod:   "core-to-host event envelope, never received",
+		coreCrashMethod: "handled by the dispatcher so it bypasses panic recovery",
 	}
 
 	for _, method := range coreMethodConstants(t) {

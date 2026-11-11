@@ -237,6 +237,15 @@ var methodHandlers = map[CoreMethod]methodHandler{
 
 	probeOutboundIPMethod: withArguments(handleOutboundIp),
 	probeServicesMethod:   withArguments(handleServiceCheck),
+
+	mitmCertificateMethod:         withoutArguments(handleMitmCertificate),
+	mitmGenerateCertificateMethod: fallibleWithoutArguments(handleGenerateMitmCertificate),
+	mitmValidateMethod:            withArguments(handleValidateMitm),
+	mitmIssueCertificateMethod:    withFallible(handleIssueMitmCertificate),
+	mitmRunScriptMethod:           withFallible(handleRunMitmScript),
+	mitmExchangesMethod:           withArguments(handleMitmExchanges),
+	mitmExchangeMethod:            withArguments(handleMitmExchange),
+	mitmBodyMethod:                withArguments(handleMitmBody),
 }
 
 func watchRouteHandler(call *MethodCall) (any, error) {

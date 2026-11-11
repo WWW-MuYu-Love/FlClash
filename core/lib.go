@@ -3,6 +3,7 @@
 package core
 
 import (
+	"core/mitm"
 	"core/platform"
 	t "core/tun"
 	"encoding/json"
@@ -382,8 +383,11 @@ func ForceGC() {
 }
 
 // SetMitmPressure stays for the Android service, which reports memory pressure
-// whatever the core; this core keeps nothing to release.
-func SetMitmPressure(level int32) {}
+// whatever the core; the engine drops its recorded exchanges to free memory.
+func SetMitmPressure(level int32) {
+	_ = level
+	mitm.Default().ReleasePressure()
+}
 
 func UpdateDns(value string) {
 	defer recoverExport("updateDns")
