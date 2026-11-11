@@ -10,7 +10,7 @@ import 'package:fl_clash/common/common.dart';
 import 'package:fl_clash/enum/enum.dart';
 import 'package:fl_clash/models/models.dart';
 import 'package:fl_clash/plugins/app.dart';
-import 'package:flutter/services.dart' show PlatformException;
+import 'package:flutter/services.dart' show MethodChannel, PlatformException;
 import 'package:path/path.dart';
 
 /// The name of the leaf the Core signs for a trust store to verify.
@@ -62,6 +62,9 @@ abstract interface class MitmTrustStore {
 }
 
 MitmTrustStore? mitmTrustStoreForPlatform() {
+  if (system.isIOS) {
+    return IOSMitmTrustStore();
+  }
   if (system.isMacOS) {
     return MacOSMitmTrustStore(home: Platform.environment['HOME'] ?? '');
   }
@@ -133,6 +136,50 @@ Future<ProcessResult> _runChecked(
     );
   }
   return result;
+}
+
+/// iOS verifies the CA through the system trust store with SecTrust: the
+/// leaf issued for [mitmCheckHost] only validates when the CA is installed
+/// and fully trusted. Install shares the CA file; the user installs it from
+/// Files and enables trust in Settings.
+class IOSMitmTrustStore implements MitmTrustStore {
+  IOSMitmTrustStore({MethodChannel? channel})
+    : _channel = channel ?? const MethodChannel('$packageName/service');
+
+  final MethodChannel _channel;
+
+  @override
+  Future<MitmTrustCheck> check(
+    MitmCertificate ca,
+    Future<String> Function() issueLeaf,
+  ) async {
+    final leaf = await issueLeaf();
+    final trust = await _channel.invokeMethod<String>(
+      'checkMitmCertificateTrust',
+      {'leafPem': leaf, 'caPem': ca.pem, 'host': mitmCheckHost},
+    );
+    return MitmTrustCheck(switch (trust) {
+      'ready' => MitmTrust.ready,
+      'untrusted' => MitmTrust.untrusted,
+      _ => MitmTrust.notInstalled,
+    });
+  }
+
+  @override
+  Future<MitmInstallOutcome> install(MitmCertificate ca) async {
+    final shared = await _channel.invokeMethod<bool>('shareMitmCertificate', {
+      'pem': ca.pem,
+      'fileName': mitmSavedFileName(ca),
+    });
+    if (shared != true) {
+      throw MessageException(currentAppLocalizations.mitmSystemStoreFailed);
+    }
+    return MitmInstallOutcome.prompted;
+  }
+
+  /// An app cannot remove a user certificate on iOS.
+  @override
+  Future<bool> remove(MitmCertificate ca) async => false;
 }
 
 class MacOSMitmTrustStore implements MitmTrustStore {
