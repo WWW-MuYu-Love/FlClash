@@ -36,7 +36,7 @@ final class BackgroundKeepAlive: NSObject {
   private var foregroundObserver: NSObjectProtocol?
   private var backgroundObserver: NSObjectProtocol?
 
-  private init() {
+  override private init() {
     backgroundObserver = NotificationCenter.default.addObserver(
       forName: UIApplication.didEnterBackgroundNotification,
       object: nil,
