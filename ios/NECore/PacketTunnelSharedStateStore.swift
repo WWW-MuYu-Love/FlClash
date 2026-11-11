@@ -364,6 +364,23 @@ final class PacketTunnelSharedStateStore {
     )
   }
 
+  // The direct-mode SSIDs and the external-controller secret, synced by the
+  // app into the shared state. The extension reads them to switch the core
+  // to direct on a direct SSID and restore the previous mode on leaving,
+  // without the main app running.
+  func loadDirectModeSettings() -> (directSSIDs: [String], controllerSecret: String) {
+    guard let sharedData = userDefaults?.data(forKey: sharedStateKey),
+      let shared = try? JSONSerialization.jsonObject(with: sharedData)
+        as? [String: Any]
+    else {
+      return ([], "")
+    }
+    return (
+      shared["directSSIDs"] as? [String] ?? [],
+      shared["controllerSecret"] as? String ?? ""
+    )
+  }
+
   private var userDefaults: UserDefaults? {
     UserDefaults(
       suiteName: PacketTunnelEnvironment.appGroupIdentifier
