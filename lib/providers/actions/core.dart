@@ -110,6 +110,10 @@ class CoreAction extends _$CoreAction {
 
   Future<bool> _runRestartWorker() async {
     try {
+      // A manual restart asks for a live answer, so the cached outbound
+      // IP is dropped before the core restarts and the route moves; the
+      // probe that follows then looks the address up over the network.
+      await ref.read(outboundIpProbeProvider.notifier).evictDiskCache();
       ref.read(coreStatusProvider.notifier).value = CoreStatus.connecting;
       final result = await restartLifecycle();
       if (!await _applyLifecycleResult(result, statusFirst: true)) {

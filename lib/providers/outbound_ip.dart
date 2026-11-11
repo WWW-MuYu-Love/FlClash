@@ -109,6 +109,19 @@ class OutboundIpProbe extends _$OutboundIpProbe
     super.refresh(targets);
   }
 
+  /// Drops every disk-cached outbound IP, so the next probe does a live
+  /// lookup. Used when the user manually restarts the core: the restart
+  /// moves the route and re-probes, and that probe must see a live answer
+  /// rather than the address cached before the restart.
+  Future<void> evictDiskCache() async {
+    final cache = await _cache();
+    if (cache.isEmpty) {
+      return;
+    }
+    cache.clear();
+    await _persistCache(cache);
+  }
+
   String _proxyNameOf(String target, RouteState route) =>
       target == routedOutbound && !route.proxied ? directOutbound : target;
 

@@ -263,5 +263,34 @@ void main() {
         '3.3.3.3',
       );
     });
+
+    test('evicting the disk cache makes the next probe ask the Core', () async {
+      await mockPreferences({
+        outboundIpCacheKey: json.encode({
+          routedOutbound: {
+            'ip': '1.1.1.1',
+            'countryCode': 'US',
+            'checkedAt': DateTime.now().millisecondsSinceEpoch,
+          },
+        }),
+      });
+      when(() => core.outboundIp(any())).thenAnswer((_) async => _answer);
+      final container = build();
+      final probe = container.read(outboundIpProbeProvider.notifier);
+
+      await probe.evictDiskCache();
+      probe.watch(routedOutbound);
+      await pumpEventQueue();
+
+      verify(() => core.outboundIp(any())).called(1);
+      expect(
+        container
+            .read(outboundIpProbeProvider)
+            .entryOf(routedOutbound)
+            .value
+            ?.ip,
+        '2.2.2.2',
+      );
+    });
   });
 }
