@@ -531,13 +531,14 @@ class _MitmCaptureItem extends ConsumerWidget {
       subtitle: Text(
         capture ? appLocalizations.enabled : appLocalizations.disabled,
       ),
-      widget: _MitmCaptureView(isAndroid: isAndroid),
+      widget: MitmCaptureView(isAndroid: isAndroid),
+      restorationId: 'tools/advanced/mitm/capture',
     );
   }
 }
 
-class _MitmCaptureView extends ConsumerWidget {
-  const _MitmCaptureView({required this.isAndroid});
+class MitmCaptureView extends ConsumerWidget {
+  const MitmCaptureView({super.key, required this.isAndroid});
 
   final bool isAndroid;
 
@@ -635,13 +636,14 @@ class _MitmHostnameItem extends ConsumerWidget {
         (_, 0) => appLocalizations.itemsCount(count),
         _ => appLocalizations.invalidOfCount(invalid, count),
       }),
-      widget: const _MitmHostnameView(),
+      widget: const MitmHostnameView(),
+      restorationId: 'tools/advanced/mitm/hostname',
     );
   }
 }
 
-class _MitmHostnameView extends ConsumerWidget {
-  const _MitmHostnameView();
+class MitmHostnameView extends ConsumerWidget {
+  const MitmHostnameView({super.key});
 
   List<String> _linesOf(WidgetRef ref) =>
       ref.read(patchClashConfigProvider).mitm.hostname;

@@ -1,3 +1,4 @@
+import 'package:collection/collection.dart';
 import 'package:fl_clash/common/common.dart';
 import 'package:fl_clash/enum/enum.dart';
 import 'package:fl_clash/features/form/form.dart';
@@ -118,28 +119,40 @@ class _SnifferOverrideSpec extends OverrideSpec<SnifferOverrideKey, Sniffer>
       (sniffer) => sniffer.forceDomain,
       (sniffer, value) => sniffer.copyWith(forceDomain: value),
       itemMaxLength: TextInputLimits.domain,
+      restorationId: _listRestorationId(SnifferOverrideKey.forceDomain),
     ),
     SnifferOverrideKey.skipDomain => ListOverrideField(
       (sniffer) => sniffer.skipDomain,
       (sniffer, value) => sniffer.copyWith(skipDomain: value),
       itemMaxLength: TextInputLimits.domain,
+      restorationId: _listRestorationId(SnifferOverrideKey.skipDomain),
     ),
     SnifferOverrideKey.skipSrcAddress => ListOverrideField(
       (sniffer) => sniffer.skipSrcAddress,
       (sniffer, value) => sniffer.copyWith(skipSrcAddress: value),
       itemMaxLength: TextInputLimits.cidr,
       itemValidator: validateIpMatcher,
+      restorationId: _listRestorationId(SnifferOverrideKey.skipSrcAddress),
     ),
     SnifferOverrideKey.skipDstAddress => ListOverrideField(
       (sniffer) => sniffer.skipDstAddress,
       (sniffer, value) => sniffer.copyWith(skipDstAddress: value),
       itemMaxLength: TextInputLimits.cidr,
       itemValidator: validateIpMatcher,
+      restorationId: _listRestorationId(SnifferOverrideKey.skipDstAddress),
     ),
     SnifferOverrideKey.sniffHttp ||
     SnifferOverrideKey.sniffTls ||
     SnifferOverrideKey.sniffQuic => _SniffField(key),
   };
+
+  String _listRestorationId(SnifferOverrideKey key) {
+    final target = this.target;
+    if (target is ProfileOverrideTarget<SnifferOverrideKey, Sniffer>) {
+      return 'overrideList:sniffer:profile:${target.profileId}:${key.name}';
+    }
+    return 'overrideList:sniffer:patch:${key.name}';
+  }
 }
 
 class _SniffField extends OverrideField<Sniffer> {
@@ -183,6 +196,11 @@ class _SniffItem extends ConsumerWidget {
     final ports = ref.watch(
       model.selectModel((sniffer) => sniffer.sniffOf(overrideKey).ports),
     );
+    final target = model;
+    final profileId =
+        target is ProfileOverrideTarget<SnifferOverrideKey, Sniffer>
+        ? target.profileId
+        : null;
     return ListItem.open(
       leading: leading,
       title: Text(overrideKey.label(appLocalizations)),
@@ -192,6 +210,9 @@ class _SniffItem extends ConsumerWidget {
         overflow: TextOverflow.ellipsis,
       ),
       widget: _SniffView(model: model, overrideKey: overrideKey),
+      restorationId: profileId == null
+          ? null
+          : 'sniffer:$profileId:${overrideKey.name}',
     );
   }
 }
@@ -214,6 +235,18 @@ enum _SniffDestination {
     _SniffDestination.enabled => l.enabled,
     _SniffDestination.disabled => l.disabled,
   };
+}
+
+/// Rebuilds one protocol's sniffer editor for navigation restore.
+Widget snifferFieldView(int profileId, SnifferOverrideKey key) {
+  return _SniffView(
+    model: ProfileOverrideTarget(
+      profileId,
+      get: _profileSniffer,
+      set: _setProfileSniffer,
+    ),
+    overrideKey: key,
+  );
 }
 
 class _SniffView extends ConsumerWidget {
@@ -280,4 +313,26 @@ class _SniffView extends ConsumerWidget {
       ),
     );
   }
+}
+
+/// Rebuilds a sniffer list-editing page for navigation restore.
+RestorablePage? snifferListEditPage(
+  WidgetRef ref,
+  String keyName, {
+  int? profileId,
+}) {
+  final key = SnifferOverrideKey.values
+      .where((item) => item.name == keyName)
+      .firstOrNull;
+  if (key == null || profileId == null) {
+    return null;
+  }
+  final spec = _SnifferOverrideSpec(
+    ProfileOverrideTarget(
+      profileId,
+      get: _profileSniffer,
+      set: _setProfileSniffer,
+    ),
+  );
+  return overrideListEditPage(ref, spec, key);
 }

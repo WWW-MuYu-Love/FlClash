@@ -89,6 +89,10 @@ Future<MemorySnapshot?> _readMemory(WidgetRef ref, MemoryReader? reader) async {
   }
 }
 
+/// Reads the current memory snapshot for navigation restore.
+Future<MemorySnapshot?> readMemorySnapshot(WidgetRef ref) =>
+    _readMemory(ref, null);
+
 Future<MemorySnapshot> _readSnapshot(WidgetRef ref) async {
   final rss = ProcessInfo.currentRss;
   final coreConnected = ref.read(coreStatusProvider) == CoreStatus.connected;
@@ -154,6 +158,7 @@ class _MemoryInfoState extends ConsumerState<MemoryInfo>
     }
     _detailOpen = true;
     stopPolling();
+    NavigationRestorationHooks.onPush?.call('memoryDetail');
     await showSheet(
       context: context,
       builder: (_) => MemoryDetailSheet(
@@ -161,6 +166,7 @@ class _MemoryInfoState extends ConsumerState<MemoryInfo>
         memoryReader: widget.memoryReader,
       ),
     );
+    NavigationRestorationHooks.onPop?.call('memoryDetail');
     if (!mounted) {
       return;
     }

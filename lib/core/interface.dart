@@ -406,6 +406,18 @@ abstract class CoreHandlerInterface {
     );
   }
 
+  Future<MitmDecryptedHosts> getMitmDecryptedHosts() {
+    return _query(CoreMethod.mitmHosts, _model(MitmDecryptedHosts.fromJson));
+  }
+
+  Future<MitmExchangeList> getMitmExchangesByHost(String host) {
+    return _query(
+      CoreMethod.mitmExchangesByHost,
+      _model(MitmExchangeList.fromJson),
+      arguments: {'host': host},
+    );
+  }
+
   /// Null once the Core no longer keeps the request.
   Future<MitmExchange?> getMitmExchange(int id) {
     return _find(

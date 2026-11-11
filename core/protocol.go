@@ -80,6 +80,8 @@ const (
 	mitmExchangesMethod           CoreMethod = "mitm.exchanges"
 	mitmExchangeMethod            CoreMethod = "mitm.exchange"
 	mitmBodyMethod                CoreMethod = "mitm.body"
+	mitmHostsMethod               CoreMethod = "mitm.hosts"
+	mitmExchangesByHostMethod     CoreMethod = "mitm.exchangesByHost"
 
 	// The envelope of a batch of events, which the Core sends and never receives.
 	messageMethod CoreMethod = "message"

@@ -34,12 +34,17 @@ void showCustomProfileSheet(BuildContext context, int profileId) {
   );
 }
 
-void _push(BuildContext context, Widget view) {
+void _push(BuildContext context, Widget view, String restorationId) {
   if (isSheetPage(context)) {
-    Navigator.of(context).push(PagedSheetRoute<void>(builder: (_) => view));
+    NavigationRestorationHooks.onPush?.call(restorationId);
+    Navigator.of(
+      context,
+    ).push(PagedSheetRoute<void>(builder: (_) => view)).then((_) {
+      NavigationRestorationHooks.onPop?.call(restorationId);
+    });
     return;
   }
-  BaseNavigator.push(context, view);
+  unawaited(pushRestorable(context, view, restorationId));
 }
 
 Widget _sectionRow(
@@ -48,6 +53,7 @@ Widget _sectionRow(
   String title,
   Widget state,
   Widget view,
+  String restorationId,
 ) {
   return ListItem(
     leading: GlyphIcon(glyph),
@@ -69,7 +75,7 @@ Widget _sectionRow(
         const GlyphIcon(AppGlyphs.chevronForward),
       ],
     ),
-    onTap: () => _push(context, view),
+    onTap: () => _push(context, view, restorationId),
   );
 }
 
@@ -246,7 +252,11 @@ class _CustomProfileViewState extends ConsumerState<CustomProfileView> {
   void _handlePreview() {
     final profile = ref.read(profileProvider(widget.profileId));
     if (profile != null) {
-      _push(context, PreviewProfileView(profile: profile));
+      _push(
+        context,
+        PreviewProfileView(profile: profile),
+        'profilePreview:${profile.id}',
+      );
     }
   }
 
@@ -405,22 +415,34 @@ class _Overview extends ConsumerWidget {
     final appLocalizations = context.appLocalizations;
     final profileId = ProfileIdProvider.of(context)!.profileId;
     final sections = [
-      (AppGlyphs.rules, appLocalizations.rule, CustomRulesView(profileId)),
+      (
+        AppGlyphs.rules,
+        appLocalizations.rule,
+        CustomRulesView(profileId),
+        'profileCustomRules:$profileId',
+      ),
       (
         AppGlyphs.resources,
         appLocalizations.providers,
         CustomProvidersView(profileId),
+        'profileCustomProviders:$profileId',
       ),
-      (AppGlyphs.dns, 'DNS', DnsView.profile(profileId)),
+      (
+        AppGlyphs.dns,
+        'DNS',
+        DnsView.profile(profileId),
+        'profileDnsView:$profileId',
+      ),
       (
         AppGlyphs.sliders,
         appLocalizations.more,
-        _MoreSectionsView(profileId, showsTun: showsTun),
+        MoreSectionsView(profileId, showsTun: showsTun),
+        'profileCustomMore:$profileId',
       ),
     ];
     Widget row(int index, Widget state) {
-      final (glyph, title, view) = sections[index];
-      return _sectionRow(context, glyph, title, state, view);
+      final (glyph, title, view, restorationId) = sections[index];
+      return _sectionRow(context, glyph, title, state, view, restorationId);
     }
 
     ref.listen(customProfileDataProvider(profileId), (_, _) {});
@@ -531,8 +553,8 @@ ProviderListenable<int> _dialerCount(int profileId) =>
 String _enabledText(AppLocalizations l, bool enabled) =>
     enabled ? l.enabled : l.disabled;
 
-class _MoreSectionsView extends ConsumerWidget {
-  const _MoreSectionsView(this.profileId, {required this.showsTun});
+class MoreSectionsView extends ConsumerWidget {
+  const MoreSectionsView(this.profileId, {super.key, required this.showsTun});
 
   final int profileId;
   final bool showsTun;
@@ -576,6 +598,7 @@ class _MoreSectionsView extends ConsumerWidget {
                       : null,
                 ),
                 CustomProxyDialersView(profileId),
+                'profileCustomDialers:$profileId',
               ),
               _sectionRow(
                 context,
@@ -588,6 +611,7 @@ class _MoreSectionsView extends ConsumerWidget {
                       : null,
                 ),
                 NtpView(profileId),
+                'profileCustomNtp:$profileId',
               ),
               _sectionRow(
                 context,
@@ -595,6 +619,7 @@ class _MoreSectionsView extends ConsumerWidget {
                 appLocalizations.sniffer,
                 Text(_enabledText(appLocalizations, status.sniffer)),
                 SnifferView(profileId),
+                'snifferView:$profileId',
               ),
               if (showsTun)
                 _sectionRow(
@@ -607,6 +632,7 @@ class _MoreSectionsView extends ConsumerWidget {
                         : appLocalizations.defaultText,
                   ),
                   TunView(profileId),
+                  'profileCustomTun:$profileId',
                 ),
             ],
           ),

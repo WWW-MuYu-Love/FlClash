@@ -27,27 +27,32 @@ class AdvancedConfigView extends StatelessWidget {
           title: appLocalizations.network,
           body: const NetworkListView(),
         ),
+        restorationId: 'tools/advanced/network',
       ),
       ListItem.open(
         title: const Text('DNS'),
         leading: const GlyphIcon(AppGlyphs.dns),
         widget: const DnsView(),
+        restorationId: 'tools/advanced/dns',
       ),
       ListItem.open(
         title: Text(appLocalizations.addedRules),
         leading: const GlyphIcon(AppGlyphs.rules),
         widget: const AddedRulesView(),
+        restorationId: 'tools/advanced/rules',
       ),
       ListItem.open(
         title: Text(appLocalizations.script),
         leading: const GlyphIcon(AppGlyphs.code),
         widget: const ScriptsView(),
+        restorationId: 'tools/advanced/scripts',
       ),
       if (mitmFeature)
         ListItem.open(
           title: Text(appLocalizations.mitm),
           leading: const GlyphIcon(AppGlyphs.lockOpen),
           widget: MitmView(isAndroid: system.isAndroid),
+          restorationId: 'tools/advanced/mitm',
         ),
     ];
     final customItems = [
@@ -55,21 +60,25 @@ class AdvancedConfigView extends StatelessWidget {
         title: Text(appLocalizations.proxies),
         leading: const GlyphIcon(AppGlyphs.proxies),
         widget: const CustomProxiesView(),
+        restorationId: 'tools/advanced/customProxies',
       ),
       ListItem.open(
         title: Text(appLocalizations.ruleProviders),
         leading: const GlyphIcon(AppGlyphs.resources),
         widget: const ClashProvidersView(),
+        restorationId: 'tools/advanced/providers',
       ),
       ListItem.open(
         title: Text(appLocalizations.filters),
         leading: const GlyphIcon(AppGlyphs.filter),
         widget: const FiltersView(),
+        restorationId: 'tools/advanced/filters',
       ),
       ListItem.open(
         title: Text(appLocalizations.iconSets),
         leading: const GlyphIcon(AppGlyphs.photos),
         widget: const IconSetsView(),
+        restorationId: 'tools/advanced/iconSets',
       ),
     ];
     return BaseScaffold(

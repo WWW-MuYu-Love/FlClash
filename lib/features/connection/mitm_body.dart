@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:fl_clash/common/common.dart';
@@ -5,11 +6,13 @@ import 'package:fl_clash/common/mitm_body.dart';
 import 'package:fl_clash/l10n/l10n.dart';
 import 'package:fl_clash/models/models.dart';
 import 'package:fl_clash/pages/editor.dart';
+import 'package:fl_clash/providers/mitm.dart';
 import 'package:fl_clash/ui/icons/icons.dart';
 import 'package:fl_clash/widgets/widgets.dart';
 import 'package:flutter/foundation.dart' show compute;
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 const _imageMaxHeight = 240.0;
 const _hexMaxPerLine = 16;
@@ -20,20 +23,27 @@ const _hexLineGap = 4.0;
 class MitmBodySection extends StatelessWidget {
   final String title;
   final MitmBodyContent content;
+  final int exchangeId;
+  final bool response;
 
   const MitmBodySection({
     super.key,
     required this.title,
     required this.content,
+    required this.exchangeId,
+    required this.response,
   });
 
   void _open(BuildContext context) {
-    BaseNavigator.push(
-      context,
-      EditorPage(
-        title: title,
-        content: content.text,
-        language: content.language,
+    unawaited(
+      pushRestorable(
+        context,
+        EditorPage(
+          title: title,
+          content: content.text,
+          language: content.language,
+        ),
+        'mitmBodyEditor:$exchangeId:${response ? 1 : 0}',
       ),
     );
   }
@@ -87,6 +97,7 @@ class MitmBodySection extends StatelessWidget {
             title: Text(appLocalizations.hex),
             trailing: size,
             widget: hex,
+            restorationId: 'mitmBodyHex:$exchangeId:${response ? 1 : 0}',
           ),
         ],
         MitmBodyKind.image => [
@@ -107,6 +118,7 @@ class MitmBodySection extends StatelessWidget {
             title: Text(appLocalizations.hex),
             trailing: size,
             widget: hex,
+            restorationId: 'mitmBodyHex:$exchangeId:${response ? 1 : 0}',
           ),
         ],
         MitmBodyKind.binary => [
@@ -114,6 +126,7 @@ class MitmBodySection extends StatelessWidget {
             title: Text(appLocalizations.binaryData),
             trailing: size,
             widget: hex,
+            restorationId: 'mitmBodyHex:$exchangeId:${response ? 1 : 0}',
           ),
         ],
       },
@@ -216,6 +229,105 @@ class _MitmHexView extends StatelessWidget {
           );
         },
       ),
+    );
+  }
+}
+
+/// Rebuilds a captured body page for navigation restore. The body is
+/// refetched from the Core; a body the Core has already evicted shows empty.
+class MitmBodyEditorPage extends ConsumerWidget {
+  const MitmBodyEditorPage({
+    super.key,
+    required this.exchangeId,
+    required this.response,
+  });
+
+  final int exchangeId;
+  final bool response;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final content = _bodyContent(context, ref);
+    if (content == null) {
+      return _MitmBodyLoading(title: _bodyTitle(context));
+    }
+    return EditorPage(
+      title: _bodyTitle(context),
+      content: content.text,
+      language: content.language,
+    );
+  }
+
+  String _bodyTitle(BuildContext context) => response
+      ? context.appLocalizations.responseBody
+      : context.appLocalizations.requestBody;
+
+  MitmBodyContent? _bodyContent(BuildContext context, WidgetRef ref) {
+    final exchange = ref.watch(mitmExchangeProvider(exchangeId)).value;
+    if (exchange == null) {
+      return null;
+    }
+    final header = response ? exchange.responseHeader : exchange.requestHeader;
+    return ref
+        .watch(
+          mitmBodyProvider(
+            exchangeId,
+            response: response,
+            contentType: mitmHeaderValue(header, 'Content-Type'),
+          ),
+        )
+        .value;
+  }
+}
+
+/// Rebuilds a captured body hex page for navigation restore.
+class MitmBodyHexPage extends ConsumerWidget {
+  const MitmBodyHexPage({
+    super.key,
+    required this.exchangeId,
+    required this.response,
+  });
+
+  final int exchangeId;
+  final bool response;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final exchange = ref.watch(mitmExchangeProvider(exchangeId)).value;
+    if (exchange == null) {
+      return _MitmBodyLoading(title: _bodyTitle(context));
+    }
+    final header = response ? exchange.responseHeader : exchange.requestHeader;
+    final content = ref
+        .watch(
+          mitmBodyProvider(
+            exchangeId,
+            response: response,
+            contentType: mitmHeaderValue(header, 'Content-Type'),
+          ),
+        )
+        .value;
+    if (content == null) {
+      return _MitmBodyLoading(title: _bodyTitle(context));
+    }
+    return _MitmHexView(title: _bodyTitle(context), content: content);
+  }
+
+  String _bodyTitle(BuildContext context) => response
+      ? context.appLocalizations.responseBody
+      : context.appLocalizations.requestBody;
+}
+
+class _MitmBodyLoading extends StatelessWidget {
+  const _MitmBodyLoading({required this.title});
+
+  final String title;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      title: title,
+      body: const Center(child: ActivityIndicator()),
     );
   }
 }

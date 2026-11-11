@@ -18,6 +18,82 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 enum _ProfileField { label, url, autoUpdateInterval }
 
+/// File content staged by the profile file editor, keyed by profile id.
+/// The editor pops with its content; the edit view below picks it up as its
+/// unsaved file data. The staging lives outside the view so a restored
+/// editor's pop reaches the view even though the restore loop, not the view,
+/// opened it.
+final stagedProfileFileEdits = ValueNotifier<Map<int, Uint8List>>(const {});
+
+Future<void> saveProfileFileEditor(
+  BuildContext context,
+  WidgetRef ref,
+  EditorContent content,
+) async {
+  final data = await content.readBytes();
+  final issue = await globalState.safeRun(
+    () =>
+        ref.read(profilesActionProvider.notifier).validateConfigWithData(data),
+    silence: false,
+  );
+  if (issue != null) {
+    unawaited(
+      dialogs.showAlert(
+        title: currentAppLocalizations.tip,
+        message: TextSpan(text: issue),
+      ),
+    );
+    return;
+  }
+  if (context.mounted) {
+    Navigator.of(context).pop(data);
+  }
+}
+
+Future<bool> popProfileFileEditor(
+  BuildContext context,
+  WidgetRef ref,
+  String title,
+  EditorContent content,
+) async {
+  final res = await dialogs.showMessage(
+    title: title,
+    message: TextSpan(text: context.appLocalizations.hasCacheChange),
+  );
+  if (res != true || !context.mounted) {
+    return true;
+  }
+  unawaited(saveProfileFileEditor(context, ref, content));
+  return false;
+}
+
+/// Rebuilds a profile file editor for navigation restore. A staged edit
+/// loads first, so reopening the editor after staging shows the staged
+/// content instead of the file on disk.
+Widget profileFileEditorPage(
+  BuildContext context,
+  WidgetRef ref,
+  Profile profile,
+) {
+  final title = profile.label.takeFirstValid([profile.id.toString()]);
+  return EditorPage(
+    title: title,
+    load: () async {
+      final staged = stagedProfileFileEdits.value[profile.id];
+      if (staged != null) {
+        return CodeForgeDocument.fromUtf8(staged);
+      }
+      return openEditorFile(
+        await appPath.getProfilePath(profile.id.toString()),
+      );
+    },
+    onSave: (context, _, content) =>
+        saveProfileFileEditor(context, ref, content),
+    onPop: (context, _, content) =>
+        popProfileFileEditor(context, ref, title, content),
+  );
+}
+
 class EditProfileView extends ConsumerStatefulWidget {
   final Profile profile;
 
@@ -33,7 +109,6 @@ class _EditProfileViewState extends ConsumerState<EditProfileView> {
   late final TextEditingController _ageSecretKeyController;
   late final TextEditingController _autoUpdateDurationController;
   late bool _autoUpdate;
-  Uint8List? _editedData;
   bool _attempted = false;
   final _fileInfoNotifier = ValueNotifier<FileInfo?>(null);
   late SetupAction _setupAction;
@@ -53,6 +128,23 @@ class _EditProfileViewState extends ConsumerState<EditProfileView> {
     );
     _setupAction = ref.read(setupActionProvider.notifier);
     _updateFileInfo();
+    stagedProfileFileEdits.addListener(_applyStagedFileEdit);
+  }
+
+  void _applyStagedFileEdit() {
+    final data = stagedProfileFileEdits.value[widget.profile.id];
+    if (data == null || !mounted) {
+      return;
+    }
+    stagedProfileFileEdits.value = {...stagedProfileFileEdits.value}
+      ..remove(widget.profile.id);
+    setState(() {
+      _fileData = data;
+    });
+    _fileInfoNotifier.value = _fileInfoNotifier.value?.copyWith(
+      size: _fileData?.length ?? 0,
+      lastModified: DateTime.now(),
+    );
   }
 
   Future<void> _updateFileInfo() async {
@@ -186,71 +278,23 @@ class _EditProfileViewState extends ConsumerState<EditProfileView> {
     });
   }
 
-  Future<void> _handleSaveEdit(BuildContext context, Uint8List data) async {
-    final issue = await globalState.safeRun(
-      () => ref
-          .read(profilesActionProvider.notifier)
-          .validateConfigWithData(data),
-      silence: false,
-    );
-    if (issue != null) {
-      unawaited(
-        dialogs.showAlert(
-          title: currentAppLocalizations.tip,
-          message: TextSpan(text: issue),
-        ),
-      );
-      return;
-    }
-    if (context.mounted) {
-      Navigator.of(context).pop(data);
-    }
-  }
-
   Future<void> _editProfileFile() async {
-    final title = widget.profile.label.takeFirstValid([
-      widget.profile.id.toString(),
-    ]);
-    final editedData = _editedData;
-    final editorPage = EditorPage(
-      title: title,
-      load: () async => editedData != null
-          ? CodeForgeDocument.fromUtf8(editedData)
-          : openEditorFile(
-              await appPath.getProfilePath(widget.profile.id.toString()),
-            ),
-      onSave: (context, _, content) async {
-        final data = await content.readBytes();
-        if (context.mounted) {
-          await _handleSaveEdit(context, data);
-        }
-      },
-      onPop: (context, _, content) async {
-        final res = await dialogs.showMessage(
-          title: title,
-          message: TextSpan(text: context.appLocalizations.hasCacheChange),
-        );
-        if (res != true || !context.mounted) {
-          return true;
-        }
-        final data = await content.readBytes();
-        if (context.mounted) {
-          unawaited(_handleSaveEdit(context, data));
-        }
-        return false;
-      },
-    );
-    final data = await BaseNavigator.push<Uint8List>(context, editorPage);
-    if (data == null || !mounted) {
-      return;
-    }
-    _editedData = data;
-    setState(() {
-      _fileData = data;
-    });
-    _fileInfoNotifier.value = _fileInfoNotifier.value?.copyWith(
-      size: _fileData?.length ?? 0,
-      lastModified: DateTime.now(),
+    final profile = widget.profile;
+    unawaited(
+      pushRestorable<Uint8List>(
+        context,
+        profileFileEditorPage(context, ref, profile),
+        'profileFileEditor:${profile.id}',
+        onResult: (data) {
+          if (data == null) {
+            return;
+          }
+          stagedProfileFileEdits.value = {
+            ...stagedProfileFileEdits.value,
+            profile.id: data,
+          };
+        },
+      ),
     );
   }
 
@@ -292,6 +336,7 @@ class _EditProfileViewState extends ConsumerState<EditProfileView> {
     _ageSecretKeyController.dispose();
     _fileInfoNotifier.dispose();
     _autoUpdateDurationController.dispose();
+    stagedProfileFileEdits.removeListener(_applyStagedFileEdit);
     super.dispose();
     _setupAction.autoApplyProfile();
   }

@@ -72,7 +72,9 @@ class MitmExchangesView extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final appLocalizations = context.appLocalizations;
     final (list, loading, error) = ref.watch(
-      mitmExchangesProvider(trackerInfo.id).select(
+      mitmExchangesProvider(
+        normalizeMitmHost(trackerInfo.metadata.host),
+      ).select(
         (value) => (
           value.value,
           value.isLoading && !value.hasValue && !value.hasError,
@@ -159,10 +161,16 @@ class _MitmExchangeItem extends ConsumerWidget {
               .of(context)
               .copyWith(color: colorScheme.onSurfaceVariant),
         ),
-        onTap: () => showInSheet<void>(
-          context,
-          builder: (_) => MitmExchangeView(id: exchange.id),
-        ),
+        onTap: () {
+          final descriptor = 'mitmExchange:${exchange.id}';
+          NavigationRestorationHooks.onPush?.call(descriptor);
+          showInSheet<void>(
+            context,
+            builder: (_) => MitmExchangeView(id: exchange.id),
+          ).then((_) {
+            NavigationRestorationHooks.onPop?.call(descriptor);
+          });
+        },
       ),
     );
   }
@@ -353,7 +361,13 @@ class _MitmSideView extends ConsumerWidget {
               title: bodyTitle,
               items: [ListItem(title: Text(appLocalizations.inProgress))],
             ),
-          if (kept) MitmBodySection(title: bodyTitle, content: content),
+          if (kept)
+            MitmBodySection(
+              title: bodyTitle,
+              content: content,
+              exchangeId: exchange.id,
+              response: response,
+            ),
           if (bodyError != null)
             generateSection(
               title: bodyTitle,

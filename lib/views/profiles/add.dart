@@ -117,9 +117,10 @@ class AddProfileMenu extends ConsumerWidget {
         .read(profilesActionProvider.notifier)
         .addCustomProfile(context.appLocalizations.unnamed);
     unawaited(
-      BaseNavigator.push(
+      pushRestorable(
         context,
         CustomProfileView(profileId: profileId, isNew: true),
+        'profileCustomNew:$profileId',
       ),
     );
   }

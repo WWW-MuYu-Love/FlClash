@@ -55,6 +55,28 @@ PopupMenuItem? mitmRunScriptItem(WidgetRef ref, String line) {
 
 String _runKey(String name) => 'mitm_script_$name';
 
+String skipReason(AppLocalizations appLocalizations, MitmModuleSkip skip) {
+  return switch (skip.reason) {
+    MitmModuleSkipReason.section => appLocalizations.mitmSkipSection(
+      skip.section,
+    ),
+    MitmModuleSkipReason.setting => appLocalizations.mitmSkipSetting,
+    MitmModuleSkipReason.scriptType => appLocalizations.mitmSkipScriptType,
+    MitmModuleSkipReason.event => appLocalizations.mitmSkipEvent,
+    MitmModuleSkipReason.disabled => appLocalizations.mitmSkipDisabled,
+    MitmModuleSkipReason.rule => appLocalizations.mitmSkipRule,
+    MitmModuleSkipReason.policy => appLocalizations.mitmSkipPolicy,
+    MitmModuleSkipReason.jq => appLocalizations.mitmSkipJq,
+    MitmModuleSkipReason.jsonBody => appLocalizations.mitmSkipJsonBody,
+    MitmModuleSkipReason.rawHeader => appLocalizations.mitmSkipRawHeader,
+    MitmModuleSkipReason.conditional => appLocalizations.mitmSkipConditional,
+    MitmModuleSkipReason.relativeData => appLocalizations.mitmSkipRelativeData,
+    MitmModuleSkipReason.notDownloaded =>
+      appLocalizations.mitmSkipNotDownloaded,
+    MitmModuleSkipReason.unreadable => appLocalizations.mitmSkipUnreadable,
+  };
+}
+
 class MitmTaskRunning extends ConsumerWidget {
   const MitmTaskRunning({super.key, required this.line, required this.builder});
 
@@ -150,6 +172,7 @@ class MitmModulesItem extends ConsumerWidget {
         count == 0 ? appLocalizations.none : appLocalizations.itemsCount(count),
       ),
       widget: const MitmModulesView(),
+      restorationId: 'tools/advanced/mitm/modules',
     );
   }
 }
@@ -376,29 +399,6 @@ class MitmModuleView extends ConsumerWidget {
 
   final int id;
 
-  String _skipReason(AppLocalizations appLocalizations, MitmModuleSkip skip) {
-    return switch (skip.reason) {
-      MitmModuleSkipReason.section => appLocalizations.mitmSkipSection(
-        skip.section,
-      ),
-      MitmModuleSkipReason.setting => appLocalizations.mitmSkipSetting,
-      MitmModuleSkipReason.scriptType => appLocalizations.mitmSkipScriptType,
-      MitmModuleSkipReason.event => appLocalizations.mitmSkipEvent,
-      MitmModuleSkipReason.disabled => appLocalizations.mitmSkipDisabled,
-      MitmModuleSkipReason.rule => appLocalizations.mitmSkipRule,
-      MitmModuleSkipReason.policy => appLocalizations.mitmSkipPolicy,
-      MitmModuleSkipReason.jq => appLocalizations.mitmSkipJq,
-      MitmModuleSkipReason.jsonBody => appLocalizations.mitmSkipJsonBody,
-      MitmModuleSkipReason.rawHeader => appLocalizations.mitmSkipRawHeader,
-      MitmModuleSkipReason.conditional => appLocalizations.mitmSkipConditional,
-      MitmModuleSkipReason.relativeData =>
-        appLocalizations.mitmSkipRelativeData,
-      MitmModuleSkipReason.notDownloaded =>
-        appLocalizations.mitmSkipNotDownloaded,
-      MitmModuleSkipReason.unreadable => appLocalizations.mitmSkipUnreadable,
-    };
-  }
-
   /// A module written for Apple systems still applies, so this only warns.
   String? _systemTip(AppLocalizations appLocalizations, String? target) {
     final current = switch (true) {
@@ -415,7 +415,8 @@ class MitmModuleView extends ConsumerWidget {
 
   Widget _linesItem(
     String title,
-    List<String> lines, {
+    List<String> lines,
+    String restorationId, {
     Map<String, String> issues = const {},
     List<PopupMenuItem> Function(String line)? menuItemsOf,
   }) {
@@ -435,6 +436,7 @@ class MitmModuleView extends ConsumerWidget {
             lines: [for (final line in lines) (line, issues[line])],
             menuItemsOf: menuItemsOf,
           ),
+          restorationId: restorationId,
         );
       },
     );
@@ -651,6 +653,7 @@ class MitmModuleView extends ConsumerWidget {
                             _linesItem(
                               list.label,
                               lines,
+                              'mitmModuleLines:$id:${list.name}',
                               issues: issues[list] ?? const {},
                               menuItemsOf:
                                   list == MitmList.script && module.enabled
@@ -661,6 +664,7 @@ class MitmModuleView extends ConsumerWidget {
                           _linesItem(
                             appLocalizations.mitmRoutingRules,
                             content.rules,
+                            'mitmModuleLines:$id:routingRules',
                           ),
                         if (content.skipped.isNotEmpty)
                           ListItem.open(
@@ -677,10 +681,11 @@ class MitmModuleView extends ConsumerWidget {
                                 for (final skip in content.skipped)
                                   (
                                     skip.line,
-                                    _skipReason(appLocalizations, skip),
+                                    skipReason(appLocalizations, skip),
                                   ),
                               ],
                             ),
+                            restorationId: 'mitmModuleIgnored:$id',
                           ),
                       ],
                       footer: appLocalizations.mitmModuleRulesDesc,
@@ -744,4 +749,69 @@ class _MitmModuleLinesView extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Rebuilds one module list page for navigation restore.
+Widget? mitmModuleLinesView(
+  BuildContext context,
+  WidgetRef ref,
+  int id,
+  String listKey,
+) {
+  final details = ref.read(mitmModuleDetailsProvider(id));
+  final content = details.value?.content;
+  if (content == null) {
+    return null;
+  }
+  final issues = details.value?.issues ?? const {};
+  final appLocalizations = context.appLocalizations;
+  if (listKey == 'routingRules') {
+    if (content.rules.isEmpty) {
+      return null;
+    }
+    return _MitmModuleLinesView(
+      title: appLocalizations.mitmRoutingRules,
+      lines: [for (final line in content.rules) (line, null)],
+    );
+  }
+  final list = MitmList.values
+      .where((element) => element.name == listKey)
+      .firstOrNull;
+  if (list == null) {
+    return null;
+  }
+  final lines = content.mitm.linesOf(list);
+  if (lines.isEmpty) {
+    return null;
+  }
+  final listIssues = issues[list] ?? const {};
+  final module = ref
+      .read(mitmModulesProvider)
+      .value
+      ?.firstWhereOrNull((item) => item.id == id);
+  return _MitmModuleLinesView(
+    title: list.label,
+    lines: [for (final line in lines) (line, listIssues[line])],
+    menuItemsOf: list == MitmList.script && (module?.enabled ?? false)
+        ? (line) => [?mitmRunScriptItem(ref, line)]
+        : null,
+  );
+}
+
+/// Rebuilds the ignored-lines page of a module for navigation restore.
+Widget? mitmModuleIgnoredView(BuildContext context, WidgetRef ref, int id) {
+  final details = ref.read(mitmModuleDetailsProvider(id));
+  final content = details.value?.content;
+  if (content == null || content.skipped.isEmpty) {
+    return null;
+  }
+  final appLocalizations = context.appLocalizations;
+  return _MitmModuleLinesView(
+    title: appLocalizations.mitmIgnoredLines,
+    notes: true,
+    lines: [
+      for (final skip in content.skipped)
+        (skip.line, skipReason(appLocalizations, skip)),
+    ],
+  );
 }

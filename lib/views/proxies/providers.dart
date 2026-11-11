@@ -170,9 +170,10 @@ class _ProviderItemState extends ConsumerState<ProviderItem> {
     final path = provider.path;
     if (path == null || path.isEmpty) return;
     unawaited(
-      BaseNavigator.push<void>(
+      pushRestorable(
         context,
-        _EditProviderView(provider: provider, path: path),
+        EditProviderView(provider: provider, path: path),
+        'proxyProviderEdit:${Uri.encodeComponent(provider.name)}',
       ),
     );
   }
@@ -180,19 +181,12 @@ class _ProviderItemState extends ConsumerState<ProviderItem> {
   void _handlePreviewProvider(BuildContext context) {
     final path = provider.path;
     if (path == null || path.isEmpty) return;
-    final core = ref.read(coreHandlerProvider);
     final isRuleSet = _file == _ProviderFile.ruleSet;
     unawaited(
-      BaseNavigator.push<void>(
+      pushRestorable(
         context,
-        EditorPage(
-          title: provider.name,
-          load: isRuleSet
-              ? () async =>
-                    CodeForgeDocument.fromText(await core.dumpRuleSet(path))
-              : () => _openProviderText(path),
-          schema: EditorSchema.provider,
-        ),
+        providerPreviewPage(ref, path, isRuleSet),
+        'providerPreview:${isRuleSet ? 1 : 0}:${Uri.encodeComponent(path)}',
       ),
     );
   }
@@ -373,6 +367,23 @@ Future<CodeForgeDocument> _openProviderText(String path) async {
   }
 }
 
+/// Rebuilds a provider file preview for navigation restore.
+Widget providerPreviewPage(WidgetRef ref, String path, bool isRuleSet) {
+  final core = ref.read(coreHandlerProvider);
+  final name = ref
+      .read(providersProvider)
+      .where((provider) => provider.path == path)
+      .firstOrNull
+      ?.name;
+  return EditorPage(
+    title: name ?? path.split('/').lastOrNull ?? path,
+    load: isRuleSet
+        ? () async => CodeForgeDocument.fromText(await core.dumpRuleSet(path))
+        : () => _openProviderText(path),
+    schema: EditorSchema.provider,
+  );
+}
+
 const _zstdMagic = [0x28, 0xB5, 0x2F, 0xFD];
 const _probeLength = 512;
 
@@ -424,17 +435,21 @@ Future<void> _sideLoadProvider(
   await File(path).safeWriteAsBytes(bytes);
 }
 
-class _EditProviderView extends ConsumerStatefulWidget {
+class EditProviderView extends ConsumerStatefulWidget {
   final ExternalProvider provider;
   final String path;
 
-  const _EditProviderView({required this.provider, required this.path});
+  const EditProviderView({
+    super.key,
+    required this.provider,
+    required this.path,
+  });
 
   @override
-  ConsumerState<_EditProviderView> createState() => _EditProviderViewState();
+  ConsumerState<EditProviderView> createState() => _EditProviderViewState();
 }
 
-class _EditProviderViewState extends ConsumerState<_EditProviderView> {
+class _EditProviderViewState extends ConsumerState<EditProviderView> {
   Future<void> _handleSave(BuildContext context, EditorContent content) async {
     final proxiesAction = ref.read(proxiesActionProvider.notifier);
     final saved = await globalState.safeRun<bool>(() async {

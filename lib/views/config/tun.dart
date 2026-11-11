@@ -1,9 +1,11 @@
+import 'package:collection/collection.dart';
 import 'package:fl_clash/common/common.dart';
 import 'package:fl_clash/enum/enum.dart';
 import 'package:fl_clash/l10n/l10n.dart';
 import 'package:fl_clash/models/models.dart';
 import 'package:fl_clash/views/config/override.dart';
 import 'package:fl_clash/widgets/widgets.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 extension on TunOverrideKey {
   String label(AppLocalizations l) => switch (this) {
@@ -126,6 +128,7 @@ ListOverrideField<ProfileTun> _numbersField(
   required ConfigLabel label,
   required int min,
   required int max,
+  String? restorationId,
 }) {
   return ListOverrideField(
     (tun) => [for (final number in select(tun)) '$number'],
@@ -141,6 +144,7 @@ ListOverrideField<ProfileTun> _numbersField(
           ? l.numberRangeTip(label(l), '$min', '$max')
           : null;
     },
+    restorationId: restorationId,
   );
 }
 
@@ -198,17 +202,20 @@ class _TunOverrideSpec extends OverrideSpec<TunOverrideKey, ProfileTun> {
       (tun, value) => tun.copyWith(routeAddress: value),
       itemMaxLength: TextInputLimits.cidr,
       itemValidator: validateCidr,
+      restorationId: _listRestorationId(TunOverrideKey.routeAddress),
     ),
     TunOverrideKey.routeExcludeAddress => ListOverrideField(
       (tun) => tun.routeExcludeAddress,
       (tun, value) => tun.copyWith(routeExcludeAddress: value),
       itemMaxLength: TextInputLimits.cidr,
       itemValidator: validateCidr,
+      restorationId: _listRestorationId(TunOverrideKey.routeExcludeAddress),
     ),
     TunOverrideKey.dnsHijack => ListOverrideField(
       (tun) => tun.dnsHijack,
       (tun, value) => tun.copyWith(dnsHijack: value),
       itemMaxLength: TextInputLimits.dnsListen,
+      restorationId: _listRestorationId(TunOverrideKey.dnsHijack),
     ),
     TunOverrideKey.udpTimeout => NumberOverrideField(
       (tun) => tun.udpTimeout,
@@ -227,11 +234,13 @@ class _TunOverrideSpec extends OverrideSpec<TunOverrideKey, ProfileTun> {
       (tun) => tun.includeInterface,
       (tun, value) => tun.copyWith(includeInterface: value),
       itemMaxLength: TextInputLimits.name,
+      restorationId: _listRestorationId(TunOverrideKey.includeInterface),
     ),
     TunOverrideKey.excludeInterface => ListOverrideField(
       (tun) => tun.excludeInterface,
       (tun, value) => tun.copyWith(excludeInterface: value),
       itemMaxLength: TextInputLimits.name,
+      restorationId: _listRestorationId(TunOverrideKey.excludeInterface),
     ),
     TunOverrideKey.includeUid => _numbersField(
       (tun) => tun.includeUid,
@@ -239,6 +248,7 @@ class _TunOverrideSpec extends OverrideSpec<TunOverrideKey, ProfileTun> {
       label: key.label,
       min: 0,
       max: _maxUid,
+      restorationId: _listRestorationId(TunOverrideKey.includeUid),
     ),
     TunOverrideKey.excludeUid => _numbersField(
       (tun) => tun.excludeUid,
@@ -246,6 +256,7 @@ class _TunOverrideSpec extends OverrideSpec<TunOverrideKey, ProfileTun> {
       label: key.label,
       min: 0,
       max: _maxUid,
+      restorationId: _listRestorationId(TunOverrideKey.excludeUid),
     ),
     TunOverrideKey.excludeSrcPort => _numbersField(
       (tun) => tun.excludeSrcPort,
@@ -253,6 +264,7 @@ class _TunOverrideSpec extends OverrideSpec<TunOverrideKey, ProfileTun> {
       label: key.label,
       min: 1,
       max: _maxPort,
+      restorationId: _listRestorationId(TunOverrideKey.excludeSrcPort),
     ),
     TunOverrideKey.excludeDstPort => _numbersField(
       (tun) => tun.excludeDstPort,
@@ -260,6 +272,42 @@ class _TunOverrideSpec extends OverrideSpec<TunOverrideKey, ProfileTun> {
       label: key.label,
       min: 1,
       max: _maxPort,
+      restorationId: _listRestorationId(TunOverrideKey.excludeDstPort),
     ),
   };
+
+  String _listRestorationId(TunOverrideKey key) {
+    final target = this.target;
+    if (target is ProfileOverrideTarget<TunOverrideKey, ProfileTun>) {
+      return 'overrideList:tun:profile:${target.profileId}:${key.name}';
+    }
+    return 'overrideList:tun:patch:${key.name}';
+  }
+}
+
+/// Rebuilds a TUN list-editing page for navigation restore.
+RestorablePage? tunListEditPage(
+  WidgetRef ref,
+  String keyName, {
+  int? profileId,
+}) {
+  final key = TunOverrideKey.values
+      .where((item) => item.name == keyName)
+      .firstOrNull;
+  if (key == null) {
+    return null;
+  }
+  final spec = profileId == null
+      ? appTunOverrideSpec(isLinux: system.isLinux, isWindows: system.isWindows)
+      : _TunOverrideSpec(
+          ProfileOverrideTarget(
+            profileId,
+            get: _profileTun,
+            set: _setProfileTun,
+            description: _profileTunDescription,
+          ),
+          isLinux: system.isLinux,
+          isWindows: system.isWindows,
+        );
+  return overrideListEditPage(ref, spec, key);
 }

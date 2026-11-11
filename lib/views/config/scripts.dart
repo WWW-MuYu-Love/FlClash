@@ -23,6 +23,109 @@ class ScriptsView extends ConsumerStatefulWidget {
   ConsumerState<ScriptsView> createState() => _ScriptsViewState();
 }
 
+Script? scriptOf(WidgetRef ref, int id) =>
+    ref.read(scriptsProvider).value?.where((item) => item.id == id).firstOrNull;
+
+Future<String?> showScriptNameDialog(
+  BuildContext context,
+  WidgetRef ref, {
+  Script? script,
+}) async {
+  final appLocalizations = context.appLocalizations;
+  final res = await dialogs.showCommonDialog<String>(
+    child: InputDialog(
+      title: appLocalizations.save,
+      value: '',
+      hintText: appLocalizations.pleaseEnterScriptName,
+      inputFormatters: TextInputLimits.limit(TextInputLimits.name),
+      validator: (value) {
+        final label = value?.trim() ?? '';
+        if (label.isEmpty) {
+          return appLocalizations.emptyTip(appLocalizations.name);
+        }
+        final scripts = ref.read(scriptsProvider).value ?? const <Script>[];
+        if (scripts.hasLabel(label, except: script)) {
+          return appLocalizations.existsTip(appLocalizations.name);
+        }
+        return null;
+      },
+    ),
+  );
+  return res?.trim().value;
+}
+
+Future<void> saveScriptEditor(
+  BuildContext context,
+  WidgetRef ref,
+  String title,
+  EditorContent content, {
+  Script? script,
+}) async {
+  final appLocalizations = context.appLocalizations;
+  var label = title.trim();
+  if (label.isEmpty) {
+    final res = await showScriptNameDialog(context, ref, script: script);
+    if (res == null) {
+      return;
+    }
+    label = res;
+  }
+  final scripts = ref.read(scriptsProvider).value ?? const <Script>[];
+  if (scripts.hasLabel(label, except: script)) {
+    unawaited(
+      dialogs.showAlert(
+        message: TextSpan(
+          text: appLocalizations.existsTip(appLocalizations.name),
+        ),
+      ),
+    );
+    return;
+  }
+  final newScript =
+      await (script?.copyWith(label: label) ?? Script.create(label: label))
+          .save(await content.readText());
+  ref.read(scriptsActionProvider.notifier).putScript(newScript);
+  if (context.mounted) {
+    Navigator.of(context).pop();
+  }
+}
+
+Future<bool> popScriptEditor(
+  BuildContext context,
+  WidgetRef ref,
+  String title,
+  EditorContent content, {
+  Script? script,
+}) async {
+  final res = await dialogs.showSaveChanges();
+  if (res == null) {
+    return false;
+  }
+  if (res && context.mounted) {
+    unawaited(saveScriptEditor(context, ref, title, content, script: script));
+  } else {
+    return true;
+  }
+  return false;
+}
+
+/// Rebuilds a script editor for navigation restore.
+Widget scriptEditorPage(BuildContext context, WidgetRef ref, {int? id}) {
+  final script = id == null ? null : scriptOf(ref, id);
+  return EditorPage(
+    titleEditable: true,
+    title: script?.label ?? '',
+    onSave: (context, title, content) =>
+        saveScriptEditor(context, ref, title, content, script: script),
+    onPop: (context, title, content) =>
+        popScriptEditor(context, ref, title, content, script: script),
+    language: Language.javaScript,
+    load: () async => script == null
+        ? CodeForgeDocument.fromText(scriptTemplate)
+        : openEditorFile(await script.path, ifMissing: scriptTemplate),
+  );
+}
+
 class _ScriptsViewState extends ConsumerState<ScriptsView> {
   late final ScriptsAction _scriptsAction;
 
@@ -176,101 +279,12 @@ class _ScriptsViewState extends ConsumerState<ScriptsView> {
 
   List<Script> get _scripts => ref.read(scriptsProvider).value ?? [];
 
-  String? _validateName(String? value, {Script? script}) {
-    final appLocalizations = context.appLocalizations;
-    final label = value?.trim() ?? '';
-    if (label.isEmpty) {
-      return appLocalizations.emptyTip(appLocalizations.name);
-    }
-    if (_scripts.hasLabel(label, except: script)) {
-      return appLocalizations.existsTip(appLocalizations.name);
-    }
-    return null;
-  }
-
-  Future<String?> _showNameDialog({Script? script}) async {
-    final appLocalizations = context.appLocalizations;
-    final res = await dialogs.showCommonDialog<String>(
-      child: InputDialog(
-        title: appLocalizations.save,
-        value: '',
-        hintText: appLocalizations.pleaseEnterScriptName,
-        inputFormatters: TextInputLimits.limit(TextInputLimits.name),
-        validator: (value) => _validateName(value, script: script),
-      ),
-    );
-    return res?.trim().value;
-  }
-
-  Future<void> _handleEditorSave(
-    BuildContext _,
-    String title,
-    EditorContent content, {
-    Script? script,
-  }) async {
-    final appLocalizations = context.appLocalizations;
-    var label = title.trim();
-    if (label.isEmpty) {
-      final res = await _showNameDialog(script: script);
-      if (res == null) {
-        return;
-      }
-      label = res;
-    }
-    if (_scripts.hasLabel(label, except: script)) {
-      unawaited(
-        dialogs.showAlert(
-          message: TextSpan(
-            text: appLocalizations.existsTip(appLocalizations.name),
-          ),
-        ),
-      );
-      return;
-    }
-    final newScript =
-        await (script?.copyWith(label: label) ?? Script.create(label: label))
-            .save(await content.readText());
-    _scriptsAction.putScript(newScript);
-    if (mounted) {
-      Navigator.of(context).pop();
-    }
-  }
-
-  Future<bool> _handleEditorPop(
-    BuildContext _,
-    String title,
-    EditorContent content, {
-    Script? script,
-  }) async {
-    final res = await dialogs.showSaveChanges();
-    if (res == null) {
-      return false;
-    }
-    if (res && mounted) {
-      unawaited(_handleEditorSave(context, title, content, script: script));
-    } else {
-      return true;
-    }
-    return false;
-  }
-
   void _handleToEditor([Script? script]) {
     unawaited(
-      BaseNavigator.push(
+      pushRestorable(
         context,
-        EditorPage(
-          titleEditable: true,
-          title: script?.label ?? '',
-          onSave: (context, title, content) =>
-              _handleEditorSave(context, title, content, script: script),
-          onPop: (context, title, content) {
-            return _handleEditorPop(context, title, content, script: script);
-          },
-          language: Language.javaScript,
-          load: () async => script == null
-              ? CodeForgeDocument.fromText(scriptTemplate)
-              : openEditorFile(await script.path, ifMissing: scriptTemplate),
-        ),
+        scriptEditorPage(context, ref, id: script?.id),
+        'scriptEditor:${script?.id ?? 'new'}',
       ),
     );
   }

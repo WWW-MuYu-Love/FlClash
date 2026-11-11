@@ -2702,6 +2702,282 @@ as bool,
 
 
 /// @nodoc
+mixin _$MitmDecryptedHosts {
+
+ List<String> get hosts;
+/// Create a copy of MitmDecryptedHosts
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$MitmDecryptedHostsCopyWith<MitmDecryptedHosts> get copyWith => _$MitmDecryptedHostsCopyWithImpl<MitmDecryptedHosts>(this as MitmDecryptedHosts, _$identity);
+
+  /// Serializes this MitmDecryptedHosts to a JSON map.
+  Map<String, dynamic> toJson();
+
+
+@override
+bool operator ==(Object other) {
+  final _this = this as MitmDecryptedHosts;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is MitmDecryptedHosts&&const DeepCollectionEquality().equals(other.hosts, _this.hosts));
+}
+
+@JsonKey(includeFromJson: false, includeToJson: false)
+@override
+int get hashCode {
+  final _this = this as MitmDecryptedHosts;
+  return Object.hash(runtimeType,const DeepCollectionEquality().hash(_this.hosts));
+}
+
+@override
+String toString() {
+  final _this = this as MitmDecryptedHosts;
+  return 'MitmDecryptedHosts(hosts: ${_this.hosts})';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $MitmDecryptedHostsCopyWith<$Res>  {
+  factory $MitmDecryptedHostsCopyWith(MitmDecryptedHosts value, $Res Function(MitmDecryptedHosts) _then) = _$MitmDecryptedHostsCopyWithImpl;
+@useResult
+$Res call({
+ List<String> hosts
+});
+
+
+
+
+}
+/// @nodoc
+class _$MitmDecryptedHostsCopyWithImpl<$Res>
+    implements $MitmDecryptedHostsCopyWith<$Res> {
+  _$MitmDecryptedHostsCopyWithImpl(this._self, this._then);
+
+  final MitmDecryptedHosts _self;
+  final $Res Function(MitmDecryptedHosts) _then;
+
+/// Create a copy of MitmDecryptedHosts
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') @override $Res call({Object? hosts = null,}) {
+  return _then(MitmDecryptedHosts(
+hosts: null == hosts ? _self.hosts : hosts // ignore: cast_nullable_to_non_nullable
+as List<String>,
+  ));
+}
+
+}
+
+
+/// Adds pattern-matching-related methods to [MitmDecryptedHosts].
+extension MitmDecryptedHostsPatterns on MitmDecryptedHosts {
+/// A variant of `map` that fallback to returning `orElse`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
+
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>(TResult Function( _MitmDecryptedHosts value)?  $default,{required TResult orElse(),}){
+final _that = this;
+switch (_that) {
+case _MitmDecryptedHosts() when $default != null:
+return $default(_that);case _:
+  return orElse();
+
+}
+}
+/// A `switch`-like method, using callbacks.
+///
+/// Callbacks receives the raw object, upcasted.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case final Subclass2 value:
+///     return ...;
+/// }
+/// ```
+
+@optionalTypeArgs TResult map<TResult extends Object?>(TResult Function( _MitmDecryptedHosts value)  $default,){
+final _that = this;
+switch (_that) {
+case _MitmDecryptedHosts():
+return $default(_that);case _:
+  throw StateError('Unexpected subclass');
+
+}
+}
+/// A variant of `map` that fallback to returning `null`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
+
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>(TResult? Function( _MitmDecryptedHosts value)?  $default,){
+final _that = this;
+switch (_that) {
+case _MitmDecryptedHosts() when $default != null:
+return $default(_that);case _:
+  return null;
+
+}
+}
+/// A variant of `when` that fallback to an `orElse` callback.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
+
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( List<String> hosts)?  $default,{required TResult orElse(),}) {final _that = this;
+switch (_that) {
+case _MitmDecryptedHosts() when $default != null:
+return $default(_that.hosts);case _:
+  return orElse();
+
+}
+}
+/// A `switch`-like method, using callbacks.
+///
+/// As opposed to `map`, this offers destructuring.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case Subclass2(:final field2):
+///     return ...;
+/// }
+/// ```
+
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( List<String> hosts)  $default,) {final _that = this;
+switch (_that) {
+case _MitmDecryptedHosts():
+return $default(_that.hosts);case _:
+  throw StateError('Unexpected subclass');
+
+}
+}
+/// A variant of `when` that fallback to returning `null`
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
+
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( List<String> hosts)?  $default,) {final _that = this;
+switch (_that) {
+case _MitmDecryptedHosts() when $default != null:
+return $default(_that.hosts);case _:
+  return null;
+
+}
+}
+
+}
+
+/// @nodoc
+@JsonSerializable()
+
+class _MitmDecryptedHosts implements MitmDecryptedHosts {
+  const _MitmDecryptedHosts({ List<String> hosts = const []}): _hosts = hosts;
+  factory _MitmDecryptedHosts.fromJson(Map<String, dynamic> json) => _$MitmDecryptedHostsFromJson(json);
+
+ final  List<String> _hosts;
+@override@JsonKey() List<String> get hosts {
+  if (_hosts is EqualUnmodifiableListView) return _hosts;
+  // ignore: implicit_dynamic_type
+  return EqualUnmodifiableListView(_hosts);
+}
+
+
+/// Create a copy of MitmDecryptedHosts
+/// with the given fields replaced by the non-null parameter values.
+@override @JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+_$MitmDecryptedHostsCopyWith<_MitmDecryptedHosts> get copyWith => __$MitmDecryptedHostsCopyWithImpl<_MitmDecryptedHosts>(this, _$identity);
+
+@override
+Map<String, dynamic> toJson() {
+  return _$MitmDecryptedHostsToJson(this, );
+}
+
+@override
+bool operator ==(Object other) {
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _MitmDecryptedHosts&&const DeepCollectionEquality().equals(other.hosts, _hosts));
+}
+
+@JsonKey(includeFromJson: false, includeToJson: false)
+@override
+int get hashCode {
+    return Object.hash(runtimeType,const DeepCollectionEquality().hash(_hosts));
+}
+
+@override
+String toString() {
+    return 'MitmDecryptedHosts(hosts: $hosts)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class _$MitmDecryptedHostsCopyWith<$Res> implements $MitmDecryptedHostsCopyWith<$Res> {
+  factory _$MitmDecryptedHostsCopyWith(_MitmDecryptedHosts value, $Res Function(_MitmDecryptedHosts) _then) = __$MitmDecryptedHostsCopyWithImpl;
+@override @useResult
+$Res call({
+ List<String> hosts
+});
+
+
+
+
+}
+/// @nodoc
+class __$MitmDecryptedHostsCopyWithImpl<$Res>
+    implements _$MitmDecryptedHostsCopyWith<$Res> {
+  __$MitmDecryptedHostsCopyWithImpl(this._self, this._then);
+
+  final _MitmDecryptedHosts _self;
+  final $Res Function(_MitmDecryptedHosts) _then;
+
+/// Create a copy of MitmDecryptedHosts
+/// with the given fields replaced by the non-null parameter values.
+@override @pragma('vm:prefer-inline') $Res call({Object? hosts = null,}) {
+  return _then(_MitmDecryptedHosts(
+hosts: null == hosts ? _self._hosts : hosts // ignore: cast_nullable_to_non_nullable
+as List<String>,
+  ));
+}
+
+
+}
+
+
+/// @nodoc
 mixin _$MitmAction {
 
  String get kind; String get phase; String get detail;

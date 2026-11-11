@@ -5,6 +5,7 @@ import 'dart:typed_data';
 import 'package:collection/collection.dart';
 import 'package:fl_clash/common/common.dart';
 import 'package:fl_clash/common/mitm_body.dart';
+import 'package:fl_clash/common/mitm_capture_disk.dart';
 import 'package:fl_clash/common/mitm_module.dart';
 import 'package:fl_clash/common/mitm_trust.dart';
 import 'package:fl_clash/enum/enum.dart';
@@ -23,6 +24,46 @@ import 'database.dart';
 part 'generated/mitm.g.dart';
 
 const _exchangesRefreshInterval = Duration(seconds: 2);
+
+/// Lowercases a connection host and strips a port, matching the core's
+/// decrypted-hosts normalization.
+String normalizeMitmHost(String host) {
+  final trimmed = host.trim().toLowerCase();
+  final port = trimmed.lastIndexOf(':');
+  if (port < 0) {
+    return trimmed;
+  }
+  return trimmed.substring(0, port);
+}
+
+/// Hosts with recorded decrypted exchanges. On iOS the persisted
+/// captures on the shared disk are read first, so hosts stay listed
+/// after the tunnel stops; the live core only adds in-flight hosts.
+@riverpod
+Future<Set<String>> mitmDecryptedHosts(Ref ref) async {
+  if (system.isIOS) {
+    final hosts = mitmCaptureHosts(
+      await readMitmCaptureExchanges(await appPath.mitmCapturesDirPath),
+    );
+    if (ref.read(coreStatusProvider) != CoreStatus.connected) {
+      return hosts;
+    }
+    final live = await ref
+        .read(externalControllerClientProvider)
+        .fetchMitmDecryptedHosts();
+    return {
+      ...hosts,
+      for (final host in live?.hosts ?? const <String>[])
+        normalizeMitmHost(host),
+    };
+  }
+  // No core, no decrypted hosts: never call into the core while it is down.
+  if (ref.read(coreStatusProvider) != CoreStatus.connected) {
+    return const {};
+  }
+  final hosts = await ref.read(coreHandlerProvider).getMitmDecryptedHosts();
+  return {for (final host in hosts.hosts) normalizeMitmHost(host)};
+}
 
 @Riverpod(keepAlive: true)
 class MitmCa extends _$MitmCa {
@@ -157,13 +198,44 @@ class MitmTrustState extends _$MitmTrustState {
   }
 }
 
+/// Completed exchanges from the persisted captures, merged with the live
+/// core's in-flight ones: the disk copy wins once settled, the live
+/// copy while pending.
+Future<MitmExchangeList> _mitmExchangesIOS(Ref ref, String host) async {
+  final disk = await readMitmCaptureExchanges(
+    await appPath.mitmCapturesDirPath,
+  );
+  final byId = <int, MitmExchangeSummary>{
+    for (final exchange in disk)
+      if (normalizeMitmHost(Uri.tryParse(exchange.url)?.host ?? '') == host)
+        exchange.id: mitmCaptureSummary(exchange),
+  };
+  final live = await ref
+      .read(externalControllerClientProvider)
+      .fetchMitmExchangesByHost(host);
+  for (final summary in live?.exchanges ?? const <MitmExchangeSummary>[]) {
+    final existing = byId[summary.id];
+    if (existing == null || summary.pending) {
+      byId[summary.id] = summary;
+    }
+  }
+  final exchanges = byId.values.toList()..sort((a, b) => a.id.compareTo(b.id));
+  return MitmExchangeList(
+    capturing: live?.capturing ?? exchanges.isNotEmpty,
+    since: live?.since ?? (exchanges.isEmpty ? null : exchanges.first.start),
+    exchanges: exchanges,
+    closed: live?.closed ?? false,
+  );
+}
+
 /// Fetched again while shown, until the connection has closed and none of its
-/// requests is pending.
+/// requests is pending. Keyed by host: the capture store never sees the
+/// tracker's ids, and on iOS it lives in the extension core behind 9090.
 @riverpod
-Future<MitmExchangeList> mitmExchanges(Ref ref, String connectionId) async {
-  final list = await ref
-      .read(coreHandlerProvider)
-      .getMitmExchanges(connectionId);
+Future<MitmExchangeList> mitmExchanges(Ref ref, String host) async {
+  final list = system.isIOS
+      ? await _mitmExchangesIOS(ref, host)
+      : await ref.read(coreHandlerProvider).getMitmExchangesByHost(host);
   final settled =
       list.closed && !list.exchanges.any((exchange) => exchange.pending);
   if (!settled && ref.mounted) {
@@ -175,7 +247,18 @@ Future<MitmExchangeList> mitmExchanges(Ref ref, String connectionId) async {
 
 @riverpod
 Future<MitmExchange?> mitmExchange(Ref ref, int id) async {
-  final exchange = await ref.read(coreHandlerProvider).getMitmExchange(id);
+  if (system.isIOS) {
+    final disk = await readMitmCaptureExchange(
+      await appPath.mitmCapturesDirPath,
+      id,
+    );
+    if (disk != null && !disk.pending) {
+      return disk;
+    }
+  }
+  final exchange = system.isIOS
+      ? await ref.read(externalControllerClientProvider).fetchMitmExchange(id)
+      : await ref.read(coreHandlerProvider).getMitmExchange(id);
   if (exchange != null && exchange.pending && ref.mounted) {
     final timer = Timer(_exchangesRefreshInterval, ref.invalidateSelf);
     ref.onDispose(timer.cancel);
@@ -190,9 +273,22 @@ Future<MitmBodyContent?> mitmBody(
   required bool response,
   required String contentType,
 }) async {
-  final body = await ref
-      .read(coreHandlerProvider)
-      .getMitmBody(id, response: response);
+  final MitmBody? body;
+  if (system.isIOS) {
+    body =
+        await readMitmCaptureBody(
+          await appPath.mitmCapturesDirPath,
+          id,
+          response: response,
+        ) ??
+        await ref
+            .read(externalControllerClientProvider)
+            .fetchMitmBody(id, response: response);
+  } else {
+    body = await ref
+        .read(coreHandlerProvider)
+        .getMitmBody(id, response: response);
+  }
   if (body == null) {
     return null;
   }

@@ -227,6 +227,30 @@ class Preferences {
     await preferences?.setString(lastNavigationPathKey, json.encode(path));
   }
 
+  /// The connection detail sheet open when the app was killed: the
+  /// tracker's snapshot plus the sheet title, so the sheet can reopen.
+  Future<Map<String, Object?>> getLastTrackerDetail() async {
+    try {
+      final preferences = await _store.value;
+      final raw = preferences?.getString(lastTrackerDetailKey);
+      if (raw == null) {
+        return const {};
+      }
+      final decoded = json.decode(raw);
+      if (decoded is! Map<String, Object?>) {
+        return const {};
+      }
+      return decoded;
+    } catch (_) {
+      return const {};
+    }
+  }
+
+  Future<void> saveLastTrackerDetail(Map<String, Object?> detail) async {
+    final preferences = await _store.value;
+    await preferences?.setString(lastTrackerDetailKey, json.encode(detail));
+  }
+
   /// The outbound-IP answers cached on disk, keyed by the proxy name the
   /// lookup pinned. Each entry holds the address, its country code and the
   /// lookup time in milliseconds since the epoch, so a cold start after

@@ -48,6 +48,18 @@ func handleMitmExchanges(params struct {
 	return mitm.Default().Exchanges(params.ID)
 }
 
+// handleMitmDecryptedHosts lists the hosts with recorded exchanges.
+func handleMitmDecryptedHosts() *mitm.HostList {
+	return mitm.Default().DecryptedHosts()
+}
+
+// handleMitmExchangesByHost lists the recorded exchanges for one host.
+func handleMitmExchangesByHost(params struct {
+	Host string `json:"host"`
+}) *mitm.ExchangeList {
+	return mitm.Default().ExchangesByHost(params.Host)
+}
+
 // handleMitmExchange returns one recorded exchange, or nil.
 func handleMitmExchange(params struct {
 	ID int `json:"id"`

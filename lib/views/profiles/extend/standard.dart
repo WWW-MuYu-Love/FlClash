@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:fl_clash/common/common.dart';
 import 'package:fl_clash/enum/enum.dart';
 import 'package:fl_clash/features/form/form.dart';
@@ -88,7 +90,13 @@ class _StandardContentState extends ConsumerState<StandardContent> {
   }
 
   void _handleToEditGlobalAddedRules() {
-    BaseNavigator.push(context, _EditGlobalAddedRules(_profileId));
+    unawaited(
+      pushRestorable(
+        context,
+        EditGlobalAddedRules(_profileId),
+        'profileExtendRules:$_profileId',
+      ),
+    );
   }
 
   Widget _buildRuleItem(List<Rule> rules, int index, Set<dynamic> selected) {
@@ -286,17 +294,17 @@ class _MatchTargetItem extends ConsumerWidget {
   }
 }
 
-class _EditGlobalAddedRules extends ConsumerStatefulWidget {
+class EditGlobalAddedRules extends ConsumerStatefulWidget {
   final int profileId;
 
-  const _EditGlobalAddedRules(this.profileId);
+  const EditGlobalAddedRules(this.profileId, {super.key});
 
   @override
-  ConsumerState<_EditGlobalAddedRules> createState() =>
+  ConsumerState<EditGlobalAddedRules> createState() =>
       _EditGlobalAddedRulesState();
 }
 
-class _EditGlobalAddedRulesState extends ConsumerState<_EditGlobalAddedRules> {
+class _EditGlobalAddedRulesState extends ConsumerState<EditGlobalAddedRules> {
   var _query = SearchQuery('');
   final _searchTexts = Expando<String>();
 

@@ -135,6 +135,7 @@ const bootRecordKey = 'boot_record';
 const appliedConfigMd5Key = 'applied_config_md5';
 const lastPageLabelKey = 'last_page_label';
 const lastNavigationPathKey = 'last_navigation_path';
+const lastTrackerDetailKey = 'last_tracker_detail';
 const outboundIpCacheKey = 'outbound_ip_cache';
 const defaultSystemDnsFallback = '223.5.5.5';
 const repository = 'chen08209/FlClash';

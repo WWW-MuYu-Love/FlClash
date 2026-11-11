@@ -20,6 +20,182 @@ class ClashProvidersView extends ConsumerStatefulWidget {
   ConsumerState<ClashProvidersView> createState() => _ClashProvidersViewState();
 }
 
+Set<String> reservedClashProviderLabels(
+  WidgetRef ref, {
+  ClashProvider? except,
+}) {
+  return {
+    for (final item
+        in ref.read(clashProvidersProvider).value ?? const <ClashProvider>[])
+      if (item.id != except?.id) item.label,
+  };
+}
+
+Future<bool> putClashProvider(
+  WidgetRef ref,
+  ClashProvider provider, {
+  ClashProvider? previous,
+  List<int>? content,
+  bool refresh = false,
+}) async {
+  final saved = await globalState.loadingRun(
+    () => ref
+        .read(clashProvidersActionProvider.notifier)
+        .putProvider(
+          provider,
+          previous: previous,
+          content: content,
+          refresh: refresh,
+        ),
+    title: provider.label,
+    tag: LoadingTag.ruleProviders,
+  );
+  return saved != null;
+}
+
+Future<String?> showClashProviderNameDialog(
+  BuildContext context,
+  WidgetRef ref, {
+  ClashProvider? except,
+}) async {
+  final appLocalizations = context.appLocalizations;
+  final res = await dialogs.showCommonDialog<String>(
+    child: InputDialog(
+      title: appLocalizations.save,
+      value: '',
+      labelText: appLocalizations.name,
+      inputFormatters: TextInputLimits.limit(TextInputLimits.name),
+      validator: (value) {
+        final label = value?.trim() ?? '';
+        if (label.isEmpty) {
+          return appLocalizations.emptyTip(appLocalizations.name);
+        }
+        if (reservedClashProviderLabels(ref, except: except).contains(label)) {
+          return appLocalizations.existsTip(appLocalizations.name);
+        }
+        return null;
+      },
+    ),
+  );
+  return res?.trim().value;
+}
+
+Future<void> saveClashProviderEditor(
+  BuildContext context,
+  WidgetRef ref,
+  String title,
+  EditorContent content, {
+  ClashProvider? provider,
+}) async {
+  final appLocalizations = context.appLocalizations;
+  var label = title.trim();
+  if (label.isEmpty) {
+    final res = await showClashProviderNameDialog(
+      context,
+      ref,
+      except: provider,
+    );
+    if (res == null) {
+      return;
+    }
+    label = res;
+  }
+  if (reservedClashProviderLabels(ref, except: provider).contains(label)) {
+    unawaited(
+      dialogs.showAlert(
+        message: TextSpan(
+          text: appLocalizations.existsTip(appLocalizations.name),
+        ),
+      ),
+    );
+    return;
+  }
+  final next =
+      provider?.copyWith(label: label) ?? ClashProvider.create(label: label);
+  if (!await putClashProvider(
+    ref,
+    next,
+    previous: provider,
+    content: await content.readBytes(),
+  )) {
+    return;
+  }
+  if (context.mounted) {
+    Navigator.of(context).pop();
+  }
+}
+
+Future<bool> popClashProviderEditor(
+  BuildContext context,
+  WidgetRef ref,
+  String title,
+  EditorContent content, {
+  ClashProvider? provider,
+}) async {
+  final res = await dialogs.showSaveChanges();
+  if (res == null) {
+    return false;
+  }
+  if (!res || !context.mounted) {
+    return true;
+  }
+  unawaited(
+    saveClashProviderEditor(context, ref, title, content, provider: provider),
+  );
+  return false;
+}
+
+ClashProvider? clashProviderOf(WidgetRef ref, int id) => ref
+    .read(clashProvidersProvider)
+    .value
+    ?.where((item) => item.id == id)
+    .firstOrNull;
+
+/// Rebuilds a Clash provider editor for navigation restore.
+Widget clashProviderEditorPage(BuildContext context, WidgetRef ref, {int? id}) {
+  final provider = id == null ? null : clashProviderOf(ref, id);
+  return EditorPage(
+    titleEditable: true,
+    title: provider?.label ?? '',
+    load: () async => provider == null
+        ? CodeForgeDocument.fromText('')
+        : openEditorFile(await provider.path),
+    schema: EditorSchema.provider,
+    onSave: (_, title, content) => saveClashProviderEditor(
+      context,
+      ref,
+      title,
+      content,
+      provider: provider,
+    ),
+    onPop: (_, title, content) => popClashProviderEditor(
+      context,
+      ref,
+      title,
+      content,
+      provider: provider,
+    ),
+  );
+}
+
+/// Rebuilds a Clash provider preview for navigation restore.
+Widget? clashProviderPreviewPage(WidgetRef ref, int id) {
+  final provider = clashProviderOf(ref, id);
+  if (provider == null) {
+    return null;
+  }
+  final core = ref.read(coreHandlerProvider);
+  return EditorPage(
+    title: provider.label,
+    load: () async => provider.isTextContent
+        ? openEditorFile(await provider.path)
+        : CodeForgeDocument.fromText(
+            await core.dumpRuleSet(await provider.path),
+          ),
+    schema: EditorSchema.provider,
+  );
+}
+
 class _ClashProvidersViewState extends ConsumerState<ClashProvidersView> {
   late final ClashProvidersAction _providersAction;
 
@@ -29,13 +205,8 @@ class _ClashProvidersViewState extends ConsumerState<ClashProvidersView> {
     _providersAction = ref.read(clashProvidersActionProvider.notifier);
   }
 
-  Set<String> _reservedLabels({ClashProvider? except}) {
-    return {
-      for (final item
-          in ref.read(clashProvidersProvider).value ?? const <ClashProvider>[])
-        if (item.id != except?.id) item.label,
-    };
-  }
+  Set<String> _reservedLabels({ClashProvider? except}) =>
+      reservedClashProviderLabels(ref, except: except);
 
   String? _validateLabel(
     String? value, {
@@ -66,19 +237,13 @@ class _ClashProvidersViewState extends ConsumerState<ClashProvidersView> {
     ClashProvider? previous,
     List<int>? content,
     bool refresh = false,
-  }) async {
-    final saved = await globalState.loadingRun(
-      () => _providersAction.putProvider(
-        provider,
-        previous: previous,
-        content: content,
-        refresh: refresh,
-      ),
-      title: provider.label,
-      tag: LoadingTag.ruleProviders,
-    );
-    return saved != null;
-  }
+  }) => putClashProvider(
+    ref,
+    provider,
+    previous: previous,
+    content: content,
+    refresh: refresh,
+  );
 
   Future<void> _handleImportFromUrl() async {
     final appLocalizations = context.appLocalizations;
@@ -135,109 +300,23 @@ class _ClashProvidersViewState extends ConsumerState<ClashProvidersView> {
     );
   }
 
-  Future<String?> _showNameDialog({ClashProvider? except}) async {
-    final appLocalizations = context.appLocalizations;
-    final res = await dialogs.showCommonDialog<String>(
-      child: InputDialog(
-        title: appLocalizations.save,
-        value: '',
-        labelText: appLocalizations.name,
-        inputFormatters: TextInputLimits.limit(TextInputLimits.name),
-        validator: (value) => _validateLabel(value, except: except),
-      ),
-    );
-    return res?.trim().value;
-  }
-
-  Future<void> _handleEditorSave(
-    String title,
-    EditorContent content, {
-    ClashProvider? provider,
-  }) async {
-    final appLocalizations = context.appLocalizations;
-    var label = title.trim();
-    if (label.isEmpty) {
-      final res = await _showNameDialog(except: provider);
-      if (res == null) {
-        return;
-      }
-      label = res;
-    }
-    if (_reservedLabels(except: provider).contains(label)) {
-      unawaited(
-        dialogs.showAlert(
-          message: TextSpan(
-            text: appLocalizations.existsTip(appLocalizations.name),
-          ),
-        ),
-      );
-      return;
-    }
-    final next =
-        provider?.copyWith(label: label) ?? ClashProvider.create(label: label);
-    if (!await _put(
-      next,
-      previous: provider,
-      content: await content.readBytes(),
-    )) {
-      return;
-    }
-    if (mounted) {
-      Navigator.of(context).pop();
-    }
-  }
-
-  Future<bool> _handleEditorPop(
-    String title,
-    EditorContent content, {
-    ClashProvider? provider,
-  }) async {
-    final res = await dialogs.showSaveChanges();
-    if (res == null) {
-      return false;
-    }
-    if (!res || !mounted) {
-      return true;
-    }
-    unawaited(_handleEditorSave(title, content, provider: provider));
-    return false;
-  }
-
   void _handleToEditor([ClashProvider? provider]) {
     unawaited(
-      BaseNavigator.push(
+      pushRestorable(
         context,
-        EditorPage(
-          titleEditable: true,
-          title: provider?.label ?? '',
-          load: () async => provider == null
-              ? CodeForgeDocument.fromText('')
-              : openEditorFile(await provider.path),
-          schema: EditorSchema.provider,
-          onSave: (_, title, content) =>
-              _handleEditorSave(title, content, provider: provider),
-          onPop: (_, title, content) =>
-              _handleEditorPop(title, content, provider: provider),
-        ),
+        clashProviderEditorPage(context, ref, id: provider?.id),
+        'clashProviderEditor:${provider?.id ?? 'new'}',
       ),
     );
   }
 
   void _handlePreview(ClashProvider provider) {
-    final core = ref.read(coreHandlerProvider);
+    final page = clashProviderPreviewPage(ref, provider.id);
+    if (page == null) {
+      return;
+    }
     unawaited(
-      BaseNavigator.push(
-        context,
-        EditorPage(
-          title: provider.label,
-          load: () async => provider.isTextContent
-              ? openEditorFile(await provider.path)
-              : CodeForgeDocument.fromText(
-                  await core.dumpRuleSet(await provider.path),
-                ),
-          schema: EditorSchema.provider,
-        ),
-      ),
+      pushRestorable(context, page, 'clashProviderPreview:${provider.id}'),
     );
   }
 

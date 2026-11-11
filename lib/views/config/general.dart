@@ -71,6 +71,7 @@ class UaItem extends ConsumerWidget {
       title: Text(appLocalizations.userAgent),
       subtitle: Text(globalUa ?? appLocalizations.defaultText),
       widget: const UserAgentsView(),
+      restorationId: 'tools/general/userAgents',
     );
   }
 }
@@ -134,14 +135,8 @@ class HostsItem extends ConsumerWidget {
             ? appLocalizations.none
             : appLocalizations.itemsCount(hosts.length),
       ),
-      widget: MapEditView(
-        title: 'Hosts',
-        entries: hosts,
-        keyMaxLength: TextInputLimits.domain,
-        valueMaxLength: TextInputLimits.hostValue,
-        titleBuilder: (item) => Text(item.key),
-        subtitleBuilder: (item) => Text(item.value),
-      ),
+      widget: const HostsView(),
+      restorationId: 'tools/general/hosts',
       onChanged: (value) {
         if (value is! Map<String, String>) {
           return;
@@ -150,6 +145,28 @@ class HostsItem extends ConsumerWidget {
             .read(patchClashConfigProvider.notifier)
             .update((state) => state.copyWith(hosts: value));
       },
+    );
+  }
+}
+
+/// The Hosts map editor page, also rebuilt for navigation restore.
+/// Edits are saved by the row's onChanged (or the restore onResult) from
+/// the map the page pops with.
+class HostsView extends ConsumerWidget {
+  const HostsView({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final hosts = ref.watch(
+      patchClashConfigProvider.select((state) => state.hosts),
+    );
+    return MapEditView(
+      title: 'Hosts',
+      entries: hosts,
+      keyMaxLength: TextInputLimits.domain,
+      valueMaxLength: TextInputLimits.hostValue,
+      titleBuilder: (item) => Text(item.key),
+      subtitleBuilder: (item) => Text(item.value),
     );
   }
 }

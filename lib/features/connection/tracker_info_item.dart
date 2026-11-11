@@ -1,7 +1,10 @@
+import 'dart:async';
+
 import 'package:fl_clash/common/common.dart';
 import 'package:fl_clash/enum/enum.dart';
 import 'package:fl_clash/models/models.dart';
 import 'package:fl_clash/providers/config.dart';
+import 'package:fl_clash/providers/mitm.dart';
 import 'package:fl_clash/ui/icons/icons.dart';
 import 'package:fl_clash/widgets/widgets.dart';
 import 'package:flutter/services.dart';
@@ -26,6 +29,14 @@ void showTrackerInfoDetail(
   TrackerInfo trackerInfo,
   String title,
 ) {
+  final descriptor = 'connectionDetail:${trackerInfo.id}';
+  NavigationRestorationHooks.onPush?.call(descriptor);
+  unawaited(
+    Preferences().saveLastTrackerDetail({
+      'tracker': trackerInfo.toJson(),
+      'title': title,
+    }),
+  );
   showSheet<void>(
     context: context,
     props: nestedPagedSheetProps,
@@ -35,7 +46,9 @@ void showTrackerInfoDetail(
         title: title,
       ),
     ),
-  );
+  ).then((_) {
+    NavigationRestorationHooks.onPop?.call(descriptor);
+  });
 }
 
 List<PopupMenuItem> trackerInfoMenuItems(
@@ -103,6 +116,15 @@ class TrackerInfoItem extends ConsumerWidget {
             state.findProcessMode == FindProcessMode.always && system.isAndroid,
       ),
     );
+    // The core never reports the MITM flag on a connection, so the marker
+    // also consults the hosts with recorded decrypted exchanges.
+    final decrypted =
+        trackerInfo.metadata.mitm ||
+        (ref
+                .watch(mitmDecryptedHostsProvider)
+                .value
+                ?.contains(normalizeMitmHost(trackerInfo.metadata.host)) ??
+            false);
     return ContextMenuRegion(
       menuItems: trackerInfoMenuItems(context, trackerInfo, onClose: onClose),
       child: RecordListItem(
@@ -111,26 +133,25 @@ class TrackerInfoItem extends ConsumerWidget {
           latest?.call() ?? trackerInfo,
           detailTitle,
         ),
-        header: _buildHeader(context),
+        header: _buildHeader(context, decrypted),
         body: _TrackerInfoBody(trackerInfo: trackerInfo, showIcon: showIcon),
       ),
     );
   }
 
-  Widget _buildHeader(BuildContext context) {
+  Widget _buildHeader(BuildContext context, bool decrypted) {
     final network = Text(
       trackerInfo.metadata.network.toUpperCase(),
       style: AppTextStyle.caption1
           .of(context, emphasized: true)
           .copyWith(color: context.colorScheme.onSurfaceVariant),
     );
-    final mitm = trackerInfo.metadata.mitm;
     if (!isLive) {
       return RecordHeader(
         children: [
           RecordTimestamp(trackerInfo.start.showFull),
           network,
-          if (mitm) const RecordLabel(label: 'MITM'),
+          if (decrypted) const RecordLabel(label: 'MITM'),
         ],
       );
     }
@@ -157,7 +178,7 @@ class TrackerInfoItem extends ConsumerWidget {
       children: [
         Text(trackerInfo.start.getLastUpdateTimeDesc(context, compact: true)),
         network,
-        if (mitm) const RecordLabel(label: 'MITM'),
+        if (decrypted) const RecordLabel(label: 'MITM'),
       ],
     );
   }
@@ -291,7 +312,14 @@ class _MitmHostSection extends ConsumerWidget {
       return const SizedBox.shrink();
     }
     final appLocalizations = context.appLocalizations;
-    final decrypted = metadata.mitm || metadata.mitmRefused;
+    final decrypted =
+        metadata.mitm ||
+        metadata.mitmRefused ||
+        (ref
+                .watch(mitmDecryptedHostsProvider)
+                .value
+                ?.contains(normalizeMitmHost(host)) ??
+            false);
     final excludes =
         !hostname.contains('-$host') && (decrypted || hostname.contains(host));
     final title = excludes
@@ -415,8 +443,15 @@ class TrackerInfoDetailView extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final appLocalizations = context.appLocalizations;
+    final decrypted =
+        trackerInfo.metadata.mitm ||
+        (ref
+                .watch(mitmDecryptedHostsProvider)
+                .value
+                ?.contains(normalizeMitmHost(trackerInfo.metadata.host)) ??
+            false);
     final capturing =
-        trackerInfo.metadata.mitm &&
+        decrypted &&
         ref.watch(
           patchClashConfigProvider.select(
             (state) => state.mitm.enable && state.mitm.capture,

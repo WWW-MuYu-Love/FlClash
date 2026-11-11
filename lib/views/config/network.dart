@@ -8,6 +8,7 @@ import 'package:fl_clash/providers/config.dart';
 import 'package:fl_clash/views/config/override.dart';
 import 'package:fl_clash/views/config/tun.dart';
 import 'package:fl_clash/widgets/widgets.dart';
+import 'package:flutter/foundation.dart' show listEquals;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path/path.dart' show dirname, join;
@@ -247,6 +248,7 @@ class BypassDomainItem extends ConsumerWidget {
       onChanged: _networkWriter(
         (state, value) => state.copyWith(bypassDomain: value),
       ),
+      restorationId: 'networkList:bypassDomain',
     );
   }
 }
@@ -266,6 +268,7 @@ class RouteAddressItem extends ConsumerWidget {
       onChanged: _tunWriter(
         (state, value) => state.copyWith.tun(routeAddress: value),
       ),
+      restorationId: 'networkList:routeAddress',
     );
   }
 }
@@ -378,6 +381,7 @@ List<Widget> tunItems({required bool isMipsStack}) {
       onChanged: _tunWriter(
         (state, value) => state.copyWith.tun(routeExcludeAddress: value),
       ),
+      restorationId: 'networkList:routeExcludeAddress',
     ),
   ];
 }
@@ -572,4 +576,62 @@ class NetworkListView extends StatelessWidget {
       ],
     );
   }
+}
+
+/// Rebuilds a network list-editing page for navigation restore.
+RestorablePage? networkListEditPage(WidgetRef ref, String key) {
+  late final ProviderListenable<List<String>> selector;
+  late final ConfigLabel title;
+  late final ConfigWriter<List<String>> onChanged;
+  late final int? itemMaxLength;
+  late final ConfigValidator? itemValidator;
+  switch (key) {
+    case 'bypassDomain':
+      selector = networkSettingProvider.select((state) => state.bypassDomain);
+      title = (l) => l.bypassDomain;
+      onChanged = _networkWriter(
+        (state, value) => state.copyWith(bypassDomain: value),
+      );
+      itemMaxLength = TextInputLimits.domain;
+      itemValidator = null;
+    case 'routeAddress':
+      selector = patchClashConfigProvider.select(
+        (state) => state.tun.routeAddress,
+      );
+      title = (l) => l.routeAddress;
+      onChanged = _tunWriter(
+        (state, value) => state.copyWith.tun(routeAddress: value),
+      );
+      itemMaxLength = TextInputLimits.cidr;
+      itemValidator = validateCidr;
+    case 'routeExcludeAddress':
+      selector = patchClashConfigProvider.select(
+        (state) => state.tun.routeExcludeAddress,
+      );
+      title = (l) => l.routeExcludeAddress;
+      onChanged = _tunWriter(
+        (state, value) => state.copyWith.tun(routeExcludeAddress: value),
+      );
+      itemMaxLength = TextInputLimits.cidr;
+      itemValidator = validateCidr;
+    default:
+      return null;
+  }
+  return (
+    page: ConfigListEditPage(
+      selector: selector,
+      title: title,
+      itemMaxLength: itemMaxLength,
+      itemValidator: itemValidator,
+    ),
+    onResult: (result) {
+      if (result is! List) {
+        return;
+      }
+      final next = List<String>.from(result);
+      if (!listEquals(next, ref.read(selector))) {
+        onChanged(ref, next);
+      }
+    },
+  );
 }

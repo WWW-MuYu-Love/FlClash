@@ -9,6 +9,7 @@ import 'package:fl_clash/providers/database.dart';
 import 'package:fl_clash/providers/state.dart';
 import 'package:fl_clash/ui/icons/icons.dart';
 import 'package:fl_clash/widgets/widgets.dart';
+import 'package:flutter/foundation.dart' show listEquals;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -331,6 +332,7 @@ class ListOverrideField<M> extends ValueOverrideField<M, List<String>> {
     required this.itemMaxLength,
     this.itemValidator,
     this.description,
+    this.restorationId,
   });
 
   final int itemMaxLength;
@@ -338,6 +340,8 @@ class ListOverrideField<M> extends ValueOverrideField<M, List<String>> {
 
   /// Shown on the list's own page, so long lists do not crowd the section.
   final ConfigLabel? description;
+
+  final String? restorationId;
 
   @override
   Widget build(
@@ -353,6 +357,7 @@ class ListOverrideField<M> extends ValueOverrideField<M, List<String>> {
       itemMaxLength: itemMaxLength,
       itemValidator: itemValidator,
       description: description,
+      restorationId: restorationId,
     );
   }
 }
@@ -412,6 +417,39 @@ mixin OverrideQuickEdit<K extends OverrideKey, M> on OverrideSpec<K, M> {
   OverrideState<K, M> applyOverrideYaml(M model, String content);
 
   EditorSchema get schema;
+}
+
+/// Rebuilds a list-editing page for navigation restore from a spec and key.
+/// Returns null when the key is not a list field.
+RestorablePage? overrideListEditPage<K extends OverrideKey, M>(
+  WidgetRef ref,
+  OverrideSpec<K, M> spec,
+  K key,
+) {
+  final field = spec.fieldOf(key);
+  if (field is! ListOverrideField<M>) {
+    return null;
+  }
+  final model = spec.target;
+  return (
+    page: ConfigListEditPage(
+      selector: model.selectModel(field.select),
+      title: (l) => spec.label(key, l),
+      itemMaxLength: field.itemMaxLength,
+      itemValidator: field.itemValidator,
+      description: field.description,
+    ),
+    onResult: (result) {
+      if (result is! List) {
+        return;
+      }
+      final next = List<String>.from(result);
+      final current = field.select(model.read(ref).model);
+      if (!listEquals(next, current)) {
+        model.modelWriter(field.update)(ref, next);
+      }
+    },
+  );
 }
 
 void showOverrideAddSheet<K extends OverrideKey, M>(

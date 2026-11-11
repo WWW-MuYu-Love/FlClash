@@ -6,7 +6,6 @@ import 'package:fl_clash/models/models.dart';
 import 'package:fl_clash/pages/editor.dart';
 import 'package:fl_clash/providers/action.dart';
 import 'package:fl_clash/state.dart';
-import 'package:fl_clash/widgets/widgets.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path/path.dart' show join;
@@ -52,9 +51,33 @@ Future<void> openMitmModuleEditor(
   String Function(String text)? edit,
   Map<String, List<int>> attachments = const {},
 }) async {
+  if (!context.mounted) {
+    return;
+  }
+  await pushRestorable(
+    context,
+    mitmModuleEditorPage(
+      context,
+      ref,
+      module: module,
+      edit: edit,
+      attachments: attachments,
+    ),
+    'moduleEditor:${module?.fileName ?? 'new'}',
+  );
+}
+
+/// The module editor page, also rebuilt for navigation restore.
+Widget mitmModuleEditorPage(
+  BuildContext context,
+  WidgetRef ref, {
+  MitmModule? module,
+  String Function(String text)? edit,
+  Map<String, List<int>> attachments = const {},
+}) {
   final appLocalizations = context.appLocalizations;
   final action = ref.read(mitmModulesActionProvider.notifier);
-  final path = module == null
+  Future<String?> path() async => module == null
       ? null
       : join(await appPath.mitmModulesDirPath, module.fileName);
   Future<void> save(BuildContext context, EditorContent content) async {
@@ -77,28 +100,25 @@ Future<void> openMitmModuleEditor(
     await offerMitmScripts(ref, saved);
   }
 
-  if (!context.mounted) {
-    return;
-  }
-  await BaseNavigator.push(
-    context,
-    EditorPage(
-      title: module?.name ?? appLocalizations.mitmNewModule,
-      language: Language.ini,
-      load: () async => path == null
+  return EditorPage(
+    title: module?.name ?? appLocalizations.mitmNewModule,
+    language: Language.ini,
+    load: () async {
+      final file = await path();
+      return file == null
           ? CodeForgeDocument.fromText(
               _moduleTemplate(appLocalizations.mitmModule),
             )
-          : openEditorFile(path),
-      edit: edit,
-      onSave: (context, _, content) => save(context, content),
-      onPop: (context, _, content) async {
-        final res = await dialogs.showSaveChanges();
-        if (res == true && context.mounted) {
-          unawaited(save(context, content));
-        }
-        return res == false;
-      },
-    ),
+          : openEditorFile(file);
+    },
+    edit: edit,
+    onSave: (context, _, content) => save(context, content),
+    onPop: (context, _, content) async {
+      final res = await dialogs.showSaveChanges();
+      if (res == true && context.mounted) {
+        unawaited(save(context, content));
+      }
+      return res == false;
+    },
   );
 }

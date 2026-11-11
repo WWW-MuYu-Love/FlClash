@@ -32,6 +32,7 @@ class _ToolViewState extends ConsumerState<ToolsView> {
       title: Text(navigationItem.label.label),
       widget: navigationItem.builder(context),
       forceFull: navigationItem.modes.contains(NavigationItemMode.moreFull),
+      restorationId: 'toolItem:${navigationItem.label.name}',
     );
   }
 
@@ -138,6 +139,7 @@ class _ThemeItem extends StatelessWidget {
       leading: const GlyphIcon(AppGlyphs.paintbrush),
       title: Text(context.appLocalizations.theme),
       widget: const ThemeView(),
+      restorationId: 'tools/theme',
     );
   }
 }
@@ -151,6 +153,7 @@ class _BackupItem extends StatelessWidget {
       leading: const GlyphIcon(AppGlyphs.cloudSync),
       title: Text(context.appLocalizations.backupAndRestore),
       widget: const BackupAndRestore(),
+      restorationId: 'tools/backup',
     );
   }
 }
@@ -164,6 +167,7 @@ class _HotkeyItem extends StatelessWidget {
       leading: const GlyphIcon(AppGlyphs.keyboard),
       title: Text(context.appLocalizations.hotkeyManagement),
       widget: const HotKeyView(),
+      restorationId: 'tools/hotkey',
     );
   }
 }
@@ -177,6 +181,7 @@ class _AccessItem extends StatelessWidget {
       leading: const GlyphIcon(AppGlyphs.appsList),
       title: Text(context.appLocalizations.accessControl),
       widget: const AccessView(),
+      restorationId: 'tools/access',
     );
   }
 }
@@ -218,6 +223,7 @@ class _DisclaimerItem extends StatelessWidget {
       leading: const GlyphIcon(AppGlyphs.gavel),
       title: Text(context.appLocalizations.disclaimer),
       widget: const DisclaimerView(),
+      restorationId: 'tools/disclaimer',
     );
   }
 }
@@ -231,6 +237,7 @@ class _InfoItem extends StatelessWidget {
       leading: const GlyphIcon(AppGlyphs.info),
       title: Text(context.appLocalizations.about),
       widget: const AboutView(),
+      restorationId: 'tools/about',
     );
   }
 }
@@ -244,6 +251,7 @@ class _DeveloperItem extends StatelessWidget {
       leading: const GlyphIcon(AppGlyphs.cpu),
       title: Text(context.appLocalizations.developerMode),
       widget: const DeveloperView(),
+      restorationId: 'tools/developer',
     );
   }
 }

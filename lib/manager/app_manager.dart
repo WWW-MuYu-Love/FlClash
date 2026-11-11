@@ -119,12 +119,33 @@ class _AppStateManagerState extends ConsumerState<AppStateManager>
       if (!mounted) {
         return;
       }
-      final page = navigationPathPage(ref, descriptor);
-      if (page == null) {
+      final isSheet = await restoreSheet(context, ref, descriptor);
+      if (!mounted) {
+        return;
+      }
+      if (isSheet) {
+        await SchedulerBinding.instance.endOfFrame;
+        if (!mounted) {
+          return;
+        }
         continue;
       }
-      unawaited(pushRestorable(context, page, descriptor));
+      final restored = navigationPathPage(context, ref, descriptor);
+      if (restored == null) {
+        continue;
+      }
+      unawaited(
+        pushRestorable(
+          context,
+          restored.page,
+          descriptor,
+          onResult: restored.onResult,
+        ),
+      );
       await SchedulerBinding.instance.endOfFrame;
+      if (!mounted) {
+        return;
+      }
     }
   }
 

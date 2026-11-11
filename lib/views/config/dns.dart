@@ -1,3 +1,4 @@
+import 'package:collection/collection.dart';
 import 'package:fl_clash/common/common.dart';
 import 'package:fl_clash/enum/enum.dart';
 import 'package:fl_clash/features/form/form.dart';
@@ -248,6 +249,7 @@ class _DnsOverrideSpec extends OverrideSpec<DnsOverrideKey, Dns> {
       (dns, value) => dns.copyWith(fakeIpFilter: value),
       itemMaxLength: TextInputLimits.domain,
       description: (l) => l.fakeipFilterDesc,
+      restorationId: _listRestorationId(DnsOverrideKey.fakeIpFilter),
     ),
     DnsOverrideKey.fakeIpFilterMode => OptionsOverrideField(
       FakeIpFilterMode.values,
@@ -263,23 +265,27 @@ class _DnsOverrideSpec extends OverrideSpec<DnsOverrideKey, Dns> {
       (dns, value) => dns.copyWith(defaultNameserver: value),
       itemMaxLength: TextInputLimits.dnsServer,
       description: (l) => l.defaultNameserverDesc,
+      restorationId: _listRestorationId(DnsOverrideKey.defaultNameserver),
     ),
     DnsOverrideKey.nameserverPolicy => _PolicyField(
       (dns) => dns.nameserverPolicy,
       (dns, value) => dns.copyWith(nameserverPolicy: value),
       description: (l) => l.nameserverPolicyDesc,
+      restorationId: _policyRestorationId(DnsOverrideKey.nameserverPolicy),
     ),
     DnsOverrideKey.nameserver => ListOverrideField(
       (dns) => dns.nameserver,
       (dns, value) => dns.copyWith(nameserver: value),
       itemMaxLength: TextInputLimits.dnsServer,
       description: (l) => l.nameserverDesc,
+      restorationId: _listRestorationId(DnsOverrideKey.nameserver),
     ),
     DnsOverrideKey.fallback => ListOverrideField(
       (dns) => dns.fallback,
       (dns, value) => dns.copyWith(fallback: value),
       itemMaxLength: TextInputLimits.dnsServer,
       description: (l) => l.fallbackDesc,
+      restorationId: _listRestorationId(DnsOverrideKey.fallback),
     ),
     DnsOverrideKey.fallbackLazyQuery => ToggleOverrideField(
       (dns) => dns.fallbackLazyQuery,
@@ -290,17 +296,22 @@ class _DnsOverrideSpec extends OverrideSpec<DnsOverrideKey, Dns> {
       (dns, value) => dns.copyWith(proxyServerNameserver: value),
       itemMaxLength: TextInputLimits.dnsServer,
       description: (l) => l.proxyServerNameserverDesc,
+      restorationId: _listRestorationId(DnsOverrideKey.proxyServerNameserver),
     ),
     DnsOverrideKey.proxyServerNameserverPolicy => _PolicyField(
       (dns) => dns.proxyServerNameserverPolicy,
       (dns, value) => dns.copyWith(proxyServerNameserverPolicy: value),
       description: (l) => l.proxyServerNameserverPolicyDesc,
+      restorationId: _policyRestorationId(
+        DnsOverrideKey.proxyServerNameserverPolicy,
+      ),
     ),
     DnsOverrideKey.directNameserver => ListOverrideField(
       (dns) => dns.directNameserver,
       (dns, value) => dns.copyWith(directNameserver: value),
       itemMaxLength: TextInputLimits.dnsServer,
       description: (l) => l.directNameserverDesc,
+      restorationId: _listRestorationId(DnsOverrideKey.directNameserver),
     ),
     DnsOverrideKey.directNameserverFollowPolicy => ToggleOverrideField(
       (dns) => dns.directNameserverFollowPolicy,
@@ -320,6 +331,7 @@ class _DnsOverrideSpec extends OverrideSpec<DnsOverrideKey, Dns> {
       (dns, value) => dns.copyWith.fallbackFilter(geosite: value),
       itemMaxLength: TextInputLimits.geoSite,
       description: (l) => l.fallbackFilterGeositeDesc,
+      restorationId: _listRestorationId(DnsOverrideKey.fallbackFilterGeosite),
     ),
     DnsOverrideKey.fallbackFilterIpcidr => ListOverrideField(
       (dns) => dns.fallbackFilter.ipcidr,
@@ -327,14 +339,32 @@ class _DnsOverrideSpec extends OverrideSpec<DnsOverrideKey, Dns> {
       itemMaxLength: TextInputLimits.cidr,
       itemValidator: validateCidr,
       description: (l) => l.fallbackFilterIpcidrDesc,
+      restorationId: _listRestorationId(DnsOverrideKey.fallbackFilterIpcidr),
     ),
     DnsOverrideKey.fallbackFilterDomain => ListOverrideField(
       (dns) => dns.fallbackFilter.domain,
       (dns, value) => dns.copyWith.fallbackFilter(domain: value),
       itemMaxLength: TextInputLimits.domain,
       description: (l) => l.fallbackFilterDomainDesc,
+      restorationId: _listRestorationId(DnsOverrideKey.fallbackFilterDomain),
     ),
   };
+
+  String _policyRestorationId(DnsOverrideKey key) {
+    final target = this.target;
+    if (target is ProfileOverrideTarget<DnsOverrideKey, Dns>) {
+      return 'profileDns:${target.profileId}:${key.name}';
+    }
+    return 'tools/advanced/dns:${key.name}';
+  }
+
+  String _listRestorationId(DnsOverrideKey key) {
+    final target = this.target;
+    if (target is ProfileOverrideTarget<DnsOverrideKey, Dns>) {
+      return 'overrideList:dns:profile:${target.profileId}:${key.name}';
+    }
+    return 'overrideList:dns:patch:${key.name}';
+  }
 }
 
 class _ProfileDnsOverrideSpec extends _DnsOverrideSpec
@@ -356,9 +386,15 @@ class _ProfileDnsOverrideSpec extends _DnsOverrideSpec
 }
 
 class _PolicyField extends ValueOverrideField<Dns, Map<String, String>> {
-  const _PolicyField(super.select, super.update, {required this.description});
+  const _PolicyField(
+    super.select,
+    super.update, {
+    required this.description,
+    required this.restorationId,
+  });
 
   final ConfigLabel description;
+  final String restorationId;
 
   @override
   Widget build(
@@ -373,6 +409,7 @@ class _PolicyField extends ValueOverrideField<Dns, Map<String, String>> {
       leading: leading,
       select: select,
       update: update,
+      restorationId: restorationId,
     );
   }
 }
@@ -385,6 +422,7 @@ class _PolicyItem extends ConsumerWidget {
     required this.leading,
     required this.select,
     required this.update,
+    required this.restorationId,
   });
 
   final OverrideModel<Dns> model;
@@ -393,6 +431,7 @@ class _PolicyItem extends ConsumerWidget {
   final Widget leading;
   final Map<String, String> Function(Dns dns) select;
   final Dns Function(Dns dns, Map<String, String> value) update;
+  final String restorationId;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -407,15 +446,13 @@ class _PolicyItem extends ConsumerWidget {
             ? appLocalizations.none
             : appLocalizations.itemsCount(policy.length),
       ),
-      widget: MapEditView(
+      widget: _DnsPolicyPage(
+        model: model,
         title: title,
         description: description(appLocalizations),
-        entries: policy,
-        keyMaxLength: TextInputLimits.domain,
-        valueMaxLength: TextInputLimits.dnsServer,
-        titleBuilder: (item) => Text(item.key),
-        subtitleBuilder: (item) => Text(item.value),
+        select: select,
       ),
+      restorationId: restorationId,
       onChanged: (value) {
         if (value is! Map) {
           return;
@@ -427,4 +464,123 @@ class _PolicyItem extends ConsumerWidget {
       },
     );
   }
+}
+
+/// The DNS policy map editor page, also rebuilt for navigation restore.
+/// Edits are saved by the row's onChanged (or the restore onResult) from
+/// the map the page pops with.
+class _DnsPolicyPage extends ConsumerWidget {
+  const _DnsPolicyPage({
+    required this.model,
+    required this.title,
+    required this.description,
+    required this.select,
+  });
+
+  final OverrideModel<Dns> model;
+  final String title;
+  final String? description;
+  final Map<String, String> Function(Dns dns) select;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final entries = ref.watch(model.selectModel(select));
+    return MapEditView(
+      title: title,
+      description: description,
+      entries: entries,
+      keyMaxLength: TextInputLimits.domain,
+      valueMaxLength: TextInputLimits.dnsServer,
+      titleBuilder: (item) => Text(item.key),
+      subtitleBuilder: (item) => Text(item.value),
+    );
+  }
+}
+
+/// Rebuilds one DNS policy map editor for navigation restore.
+RestorablePage? dnsPolicyPage(
+  BuildContext context,
+  WidgetRef ref,
+  DnsOverrideKey key, {
+  int? profileId,
+}) {
+  final OverrideTarget<DnsOverrideKey, Dns> target;
+  final OverrideSpec<DnsOverrideKey, Dns> spec;
+  if (profileId == null) {
+    target = const PatchOverrideTarget(
+      get: _patchDns,
+      set: _setPatchDns,
+      description: _patchDnsDescription,
+    );
+    spec = _DnsOverrideSpec(target);
+  } else {
+    target = ProfileOverrideTarget(
+      profileId,
+      get: _profileDns,
+      set: _setProfileDns,
+      issues: customProfileIssuesProvider(
+        profileId,
+      ).select((state) => state.dns),
+    );
+    spec = _ProfileDnsOverrideSpec(target);
+  }
+  final field = spec.fieldOf(key);
+  if (field is! _PolicyField) {
+    return null;
+  }
+  final appLocalizations = context.appLocalizations;
+  return (
+    page: _DnsPolicyPage(
+      model: target,
+      title: spec.label(key, appLocalizations),
+      description: field.description(appLocalizations),
+      select: field.select,
+    ),
+    onResult: (value) {
+      if (value is! Map) {
+        return;
+      }
+      final next = Map<String, String>.from(value);
+      final current = field.select(target.read(ref).model);
+      if (!mapEquals(next, current)) {
+        target.modelWriter(field.update)(ref, next);
+      }
+    },
+  );
+}
+
+/// Rebuilds a DNS list-editing page for navigation restore.
+RestorablePage? dnsListEditPage(
+  WidgetRef ref,
+  String keyName, {
+  int? profileId,
+}) {
+  final key = DnsOverrideKey.values
+      .where((item) => item.name == keyName)
+      .firstOrNull;
+  if (key == null) {
+    return null;
+  }
+  final OverrideSpec<DnsOverrideKey, Dns> spec;
+  if (profileId == null) {
+    spec = const _DnsOverrideSpec(
+      PatchOverrideTarget(
+        get: _patchDns,
+        set: _setPatchDns,
+        description: _patchDnsDescription,
+      ),
+    );
+  } else {
+    spec = _ProfileDnsOverrideSpec(
+      ProfileOverrideTarget(
+        profileId,
+        get: _profileDns,
+        set: _setProfileDns,
+        issues: customProfileIssuesProvider(
+          profileId,
+        ).select((state) => state.dns),
+      ),
+    );
+  }
+  return overrideListEditPage(ref, spec, key);
 }

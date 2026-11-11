@@ -60,6 +60,8 @@ enum CoreMethod {
   mitmExchanges('mitm.exchanges'),
   mitmExchange('mitm.exchange'),
   mitmBody('mitm.body'),
+  mitmHosts('mitm.hosts'),
+  mitmExchangesByHost('mitm.exchangesByHost'),
 
   /// The envelope of the Core's event batches, never called.
   message('message');

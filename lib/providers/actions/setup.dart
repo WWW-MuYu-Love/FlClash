@@ -56,9 +56,7 @@ class SetupAction extends _$SetupAction {
       (_, _) => _syncRuntimeTicker(),
     );
     ref.listen(
-      appSettingProvider.select(
-        (state) => state.backgroundKeepAliveMode,
-      ),
+      appSettingProvider.select((state) => state.backgroundKeepAliveMode),
       (_, mode) => _applyBackgroundKeepAlive(mode),
     );
   }

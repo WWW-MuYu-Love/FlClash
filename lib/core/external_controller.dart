@@ -194,6 +194,125 @@ class ExternalControllerClient {
     }
   }
 
+  // GET /mitm/hosts returns the hosts with recorded decrypted exchanges.
+  Future<MitmDecryptedHosts?> fetchMitmDecryptedHosts() async {
+    try {
+      final request = await _http
+          .getUrl(baseUri.replace(path: '/mitm/hosts'))
+          .timeout(_fetchTimeout);
+      if (secret.isNotEmpty) {
+        request.headers.set(HttpHeaders.authorizationHeader, 'Bearer $secret');
+      }
+      final response = await request.close().timeout(_fetchTimeout);
+      if (response.statusCode != HttpStatus.ok) {
+        await response.drain<void>();
+        return null;
+      }
+      final body = await response
+          .transform(utf8.decoder)
+          .join()
+          .timeout(_fetchTimeout);
+      final json = jsonDecode(body);
+      return json is Map<String, Object?>
+          ? MitmDecryptedHosts.fromJson(json)
+          : null;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  // GET /mitm/exchanges returns the recorded exchanges for one host.
+  Future<MitmExchangeList?> fetchMitmExchangesByHost(String host) async {
+    try {
+      final request = await _http
+          .getUrl(
+            baseUri.replace(
+              path: '/mitm/exchanges',
+              queryParameters: {'host': host},
+            ),
+          )
+          .timeout(_fetchTimeout);
+      if (secret.isNotEmpty) {
+        request.headers.set(HttpHeaders.authorizationHeader, 'Bearer $secret');
+      }
+      final response = await request.close().timeout(_fetchTimeout);
+      if (response.statusCode != HttpStatus.ok) {
+        await response.drain<void>();
+        return null;
+      }
+      final body = await response
+          .transform(utf8.decoder)
+          .join()
+          .timeout(_fetchTimeout);
+      final json = jsonDecode(body);
+      return json is Map<String, Object?>
+          ? MitmExchangeList.fromJson(json)
+          : null;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  // GET /mitm/exchange returns one recorded exchange, or null.
+  Future<MitmExchange?> fetchMitmExchange(int id) async {
+    try {
+      final request = await _http
+          .getUrl(
+            baseUri.replace(
+              path: '/mitm/exchange',
+              queryParameters: {'id': '$id'},
+            ),
+          )
+          .timeout(_fetchTimeout);
+      if (secret.isNotEmpty) {
+        request.headers.set(HttpHeaders.authorizationHeader, 'Bearer $secret');
+      }
+      final response = await request.close().timeout(_fetchTimeout);
+      if (response.statusCode != HttpStatus.ok) {
+        await response.drain<void>();
+        return null;
+      }
+      final body = await response
+          .transform(utf8.decoder)
+          .join()
+          .timeout(_fetchTimeout);
+      final json = jsonDecode(body);
+      return json is Map<String, Object?> ? MitmExchange.fromJson(json) : null;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  // GET /mitm/body returns one side of a recorded exchange, or null.
+  Future<MitmBody?> fetchMitmBody(int id, {required bool response}) async {
+    try {
+      final request = await _http
+          .getUrl(
+            baseUri.replace(
+              path: '/mitm/body',
+              queryParameters: {'id': '$id', 'response': '$response'},
+            ),
+          )
+          .timeout(_fetchTimeout);
+      if (secret.isNotEmpty) {
+        request.headers.set(HttpHeaders.authorizationHeader, 'Bearer $secret');
+      }
+      final httpResponse = await request.close().timeout(_fetchTimeout);
+      if (httpResponse.statusCode != HttpStatus.ok) {
+        await httpResponse.drain<void>();
+        return null;
+      }
+      final body = await httpResponse
+          .transform(utf8.decoder)
+          .join()
+          .timeout(_fetchTimeout);
+      final json = jsonDecode(body);
+      return json is Map<String, Object?> ? MitmBody.fromJson(json) : null;
+    } catch (_) {
+      return null;
+    }
+  }
+
   Future<bool> selectProxy(String groupName, String proxyName) async {
     try {
       final request = await _http

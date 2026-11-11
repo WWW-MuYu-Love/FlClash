@@ -320,10 +320,14 @@ class ProfileItem extends ConsumerWidget {
   }
 
   void _handleShowEditExtendPage(BuildContext context) {
+    final descriptor = 'profileEdit:${profile.id}';
+    NavigationRestorationHooks.onPush?.call(descriptor);
     showExtend(
       context,
       builder: (context) => EditProfileView(profile: profile),
-    );
+    ).then((_) {
+      NavigationRestorationHooks.onPop?.call(descriptor);
+    });
   }
 
   SubscriptionInfo? get _subscriptionInfo =>

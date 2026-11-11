@@ -272,6 +272,42 @@ abstract class EditViewState<W extends ConsumerStatefulWidget, T>
   }
 }
 
+/// The list-editing page behind a [ConfigListEditItem] row. Pops with the
+/// edited list; the row and the navigation-restore builders share it.
+class ConfigListEditPage extends ConsumerWidget {
+  const ConfigListEditPage({
+    super.key,
+    required this.selector,
+    required this.title,
+    this.itemMaxLength,
+    this.itemValidator,
+    this.description,
+  });
+
+  final ProviderListenable<List<String>> selector;
+  final ConfigLabel title;
+  final int? itemMaxLength;
+  final ConfigValidator? itemValidator;
+  final ConfigLabel? description;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final appLocalizations = context.appLocalizations;
+    final value = ref.watch(selector);
+    final itemValidator = this.itemValidator;
+    return ListEditView(
+      title: title(appLocalizations),
+      description: description?.call(appLocalizations),
+      items: value,
+      itemMaxLength: itemMaxLength,
+      itemValidator: itemValidator == null
+          ? null
+          : (item) => itemValidator(item, appLocalizations),
+      titleBuilder: (item) => Text(item),
+    );
+  }
+}
+
 class ConfigListEditItem extends ConsumerWidget {
   const ConfigListEditItem({
     super.key,
@@ -283,6 +319,7 @@ class ConfigListEditItem extends ConsumerWidget {
     this.description,
     this.subtitle,
     this.leading,
+    this.restorationId,
   });
 
   final ProviderListenable<List<String>> selector;
@@ -293,6 +330,7 @@ class ConfigListEditItem extends ConsumerWidget {
   final ConfigLabel? description;
   final ConfigLabel? subtitle;
   final Widget? leading;
+  final String? restorationId;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -300,7 +338,6 @@ class ConfigListEditItem extends ConsumerWidget {
     final value = ref.watch(selector);
     final subtitle = this.subtitle;
     final label = title(appLocalizations);
-    final itemValidator = this.itemValidator;
     return ListItem.open(
       leading: leading,
       title: Text(label),
@@ -311,16 +348,14 @@ class ConfigListEditItem extends ConsumerWidget {
             ? appLocalizations.none
             : appLocalizations.itemsCount(value.length),
       ),
-      widget: ListEditView(
-        title: label,
-        description: description?.call(appLocalizations),
-        items: value,
+      widget: ConfigListEditPage(
+        selector: selector,
+        title: title,
         itemMaxLength: itemMaxLength,
-        itemValidator: itemValidator == null
-            ? null
-            : (item) => itemValidator(item, appLocalizations),
-        titleBuilder: (item) => Text(item),
+        itemValidator: itemValidator,
+        description: description,
       ),
+      restorationId: restorationId,
       onChanged: (items) {
         if (items is! List) {
           return;

@@ -116,7 +116,13 @@ class _IconSetsViewState extends ConsumerState<IconSetsView> {
   }
 
   void _handlePreview(IconSet iconSet) {
-    unawaited(BaseNavigator.push(context, _IconSetPreviewView(iconSet.id)));
+    unawaited(
+      pushRestorable(
+        context,
+        IconSetPreviewView(iconSet.id),
+        'iconSet:${iconSet.id}',
+      ),
+    );
   }
 
   List<PopupMenuItem> _buildMenuItems(IconSet iconSet) {
@@ -254,17 +260,16 @@ class _IconSetsViewState extends ConsumerState<IconSetsView> {
   }
 }
 
-class _IconSetPreviewView extends ConsumerStatefulWidget {
-  const _IconSetPreviewView(this.iconSetId);
+class IconSetPreviewView extends ConsumerStatefulWidget {
+  const IconSetPreviewView(this.iconSetId, {super.key});
 
   final int iconSetId;
 
   @override
-  ConsumerState<_IconSetPreviewView> createState() =>
-      _IconSetPreviewViewState();
+  ConsumerState<IconSetPreviewView> createState() => _IconSetPreviewViewState();
 }
 
-class _IconSetPreviewViewState extends ConsumerState<_IconSetPreviewView> {
+class _IconSetPreviewViewState extends ConsumerState<IconSetPreviewView> {
   var _query = SearchQuery('');
 
   @override
