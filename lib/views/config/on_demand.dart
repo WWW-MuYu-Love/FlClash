@@ -460,7 +460,10 @@ class _SsidSwipeCard extends StatefulWidget {
 
 class _SsidSwipeCardState extends State<_SsidSwipeCard>
     with SingleTickerProviderStateMixin {
-  static const _revealWidth = 76.0;
+  // Wide enough for the longest action label ("Disconnect") on one line;
+  // a wrapped label makes the button column taller than the card.
+  static const _revealWidth = 88.0;
+  static const _buttonWidth = 84.0;
 
   late final AnimationController _controller;
   Animation<double>? _offsetAnimation;
@@ -509,6 +512,17 @@ class _SsidSwipeCardState extends State<_SsidSwipeCard>
     });
   }
 
+  void _settle() {
+    // Snap to the nearest resting position without running an action.
+    if (_offset >= _revealWidth / 2) {
+      _animateTo(_revealWidth);
+    } else if (_offset <= -_revealWidth / 2) {
+      _animateTo(-_revealWidth);
+    } else {
+      _animateTo(0);
+    }
+  }
+
   void _onDragEnd(DragEndDetails details) {
     if (_width <= 0) {
       _animateTo(0);
@@ -519,17 +533,22 @@ class _SsidSwipeCardState extends State<_SsidSwipeCard>
       _execute(false);
     } else if (_offset <= -halfWidth) {
       _execute(true);
-    } else if (_offset >= _revealWidth / 2) {
-      _animateTo(_revealWidth);
-    } else if (_offset <= -_revealWidth / 2) {
-      _animateTo(-_revealWidth);
     } else {
-      _animateTo(0);
+      _settle();
     }
   }
 
+  // A drag can be cancelled instead of ended when the list's vertical scroll
+  // wins the gesture arena; without this the card is left wherever the drag
+  // stopped, with no snap-back.
+  void _onDragCancel() {
+    _settle();
+  }
+
   // A round swipe button like the one on LiveContainer's app page: a solid
-  // circle with a white icon, and the action label beneath it.
+  // circle with a white icon, and the action label beneath it. The circle is
+  // 40, not 48: circle + gap + label must fit inside the two-line card
+  // (~62), or the label spills below the card.
   Widget _swipeActionButton({
     required String label,
     required Glyph glyph,
@@ -540,13 +559,13 @@ class _SsidSwipeCardState extends State<_SsidSwipeCard>
     return GestureDetector(
       onTap: onTap,
       child: SizedBox(
-        width: 70,
+        width: _buttonWidth,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(
-              width: 48,
-              height: 48,
+              width: 40,
+              height: 40,
               decoration: ShapeDecoration(color: color, shape: AppShape.full),
               child: Center(
                 child: GlyphIcon(glyph, size: 20, color: foreground),
@@ -555,6 +574,8 @@ class _SsidSwipeCardState extends State<_SsidSwipeCard>
             const SizedBox(height: 3),
             Text(
               label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
               style: AppTextStyle.caption2
                   .of(context)
                   .copyWith(color: context.colorScheme.onSurfaceVariant),
@@ -601,6 +622,7 @@ class _SsidSwipeCardState extends State<_SsidSwipeCard>
               child: GestureDetector(
                 onHorizontalDragUpdate: _onDragUpdate,
                 onHorizontalDragEnd: _onDragEnd,
+                onHorizontalDragCancel: _onDragCancel,
                 onTap: _isOpen ? () => _animateTo(0) : null,
                 child: IgnorePointer(ignoring: _isOpen, child: widget.child),
               ),
