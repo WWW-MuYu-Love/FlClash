@@ -588,6 +588,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "本软件按“现状”和“可用”的原则提供，不附带任何明示或默示的担保，包括但不限于适销性、特定用途适用性、不侵权以及持续可用、无错误、无安全漏洞的担保。\n\n开发者不保证本软件能满足你的需求，也不保证本软件的运行不会中断或不会出现错误。",
     ),
     "disclaimerWarrantyTitle": MessageLookupByLibrary.simpleMessage("无担保声明"),
+    "disconnect": MessageLookupByLibrary.simpleMessage("断开"),
     "disconnected": MessageLookupByLibrary.simpleMessage("已断开"),
     "discoverNewVersion": MessageLookupByLibrary.simpleMessage("发现新版本"),
     "dnsCacheCleared": MessageLookupByLibrary.simpleMessage("DNS缓存已清除"),
@@ -631,7 +632,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "excludeSrcPort": MessageLookupByLibrary.simpleMessage("排除源端口"),
     "excludeSsids": MessageLookupByLibrary.simpleMessage("排除SSIDs"),
     "excludeSsidsDesc": MessageLookupByLibrary.simpleMessage(
-      "连接到被排除 SSID 的 Wi-Fi 时，将会自动切换应用运行状态。",
+      "连接到被排除 SSID 的 Wi-Fi 时，会按该 SSID 的设置自动断开或切换为直连。",
     ),
     "excludeUid": MessageLookupByLibrary.simpleMessage("排除用户 ID"),
     "existsTip": m27,

@@ -308,5 +308,21 @@ class AccessControlState extends _$AccessControlState
 bool suspend(Ref ref) {
   final currentSSID = ref.watch(currentSSIDProvider);
   final excludeSSIDs = ref.watch(excludeSSIDsProvider);
-  return excludeSSIDs.contains(currentSSID);
+  final directSSIDs = ref.watch(directSSIDsProvider);
+  return excludeSSIDs.contains(currentSSID) &&
+      !directSSIDs.contains(currentSSID);
+}
+
+/// The current SSID is excluded with the direct action: the tunnel keeps
+/// running and the proxy mode switches to direct instead of suspending.
+@riverpod
+bool isDirectSsid(Ref ref) {
+  final currentSSID = ref.watch(currentSSIDProvider);
+  if (currentSSID == null) {
+    return false;
+  }
+  final excludeSSIDs = ref.watch(excludeSSIDsProvider);
+  final directSSIDs = ref.watch(directSSIDsProvider);
+  return excludeSSIDs.contains(currentSSID) &&
+      directSSIDs.contains(currentSSID);
 }

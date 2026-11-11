@@ -62,6 +62,27 @@ class _AppStateManagerState extends ConsumerState<AppStateManager>
         ref.read(setupActionProvider.notifier).syncSuspend();
       }
     });
+    ref.listenManual(isDirectSsidProvider, (prev, next) {
+      if (prev == next) {
+        return;
+      }
+      final setupAction = ref.read(setupActionProvider.notifier);
+      if (next) {
+        final currentMode = ref.read(patchClashConfigProvider).mode;
+        if (currentMode != Mode.direct) {
+          ref.read(directSsidRestoreModeProvider.notifier).value = currentMode;
+        }
+        setupAction.changeMode(Mode.direct);
+        return;
+      }
+      final restoreMode = ref.read(directSsidRestoreModeProvider);
+      ref.read(directSsidRestoreModeProvider.notifier).value = null;
+      // Only restore when the user has not changed the mode themselves.
+      if (restoreMode != null &&
+          ref.read(patchClashConfigProvider).mode == Mode.direct) {
+        setupAction.changeMode(restoreMode);
+      }
+    });
     final systemDns = systemDnsCoordinator;
     if (systemDns != null) {
       ref.listenManual(shouldPatchSystemDnsProvider, (prev, next) {
