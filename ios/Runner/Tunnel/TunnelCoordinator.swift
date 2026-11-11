@@ -9,6 +9,7 @@ final class TunnelCoordinator {
   private let onTunnelStateChanged: (TunnelTarget) -> Void
   private let onConnectionStateChanged: (String) -> Void
   private let onTunnelFailure: (String) -> Void
+  private let onTunnelDiagnostics: (String) -> Void
   private let onExternalStart: () -> Void
   private let onExternalStop: () -> Void
   private let logger = Logger(
@@ -21,6 +22,7 @@ final class TunnelCoordinator {
   private var publishedTunnelState: TunnelTarget?
   private var lastStartError: String?
   private var lastStartOptionsSummary: String?
+  private var lastManagerProviderIdentifier: String?
 
   private var requestGeneration: UInt64 = 0
   private var tunnelRequest: TunnelRequest?
@@ -39,6 +41,7 @@ final class TunnelCoordinator {
     onTunnelStateChanged: @escaping (TunnelTarget) -> Void,
     onConnectionStateChanged: @escaping (String) -> Void,
     onTunnelFailure: @escaping (String) -> Void,
+    onTunnelDiagnostics: @escaping (String) -> Void,
     onExternalStart: @escaping () -> Void,
     onExternalStop: @escaping () -> Void
   ) {
@@ -46,6 +49,7 @@ final class TunnelCoordinator {
     self.onTunnelStateChanged = onTunnelStateChanged
     self.onConnectionStateChanged = onConnectionStateChanged
     self.onTunnelFailure = onTunnelFailure
+    self.onTunnelDiagnostics = onTunnelDiagnostics
     self.onExternalStart = onExternalStart
     self.onExternalStop = onExternalStop
   }
@@ -237,6 +241,11 @@ final class TunnelCoordinator {
       managerStore.clearTunnelLastError()
       lastStartOptionsSummary = nil
       let loadedManager = try await managerStore.loadManager()
+      if let providerIdentifier = (loadedManager?.protocolConfiguration
+        as? NETunnelProviderProtocol)?.providerBundleIdentifier
+      {
+        lastManagerProviderIdentifier = providerIdentifier
+      }
       guard isCurrent(request) else {
         return
       }
@@ -671,6 +680,11 @@ final class TunnelCoordinator {
     } else {
       onTunnelFailure(parts.joined(separator: " / ") + " #24")
     }
+    onTunnelDiagnostics(
+      TunnelDiagnostics.collect(
+        managerProviderIdentifier: lastManagerProviderIdentifier
+      )
+    )
   }
 
   private func reportTunnelState(_ state: TunnelTarget) {
@@ -742,5 +756,90 @@ final class TunnelCoordinator {
 
   private func log(_ message: String) {
     logger.debug("\(message, privacy: .public)")
+  }
+}
+
+/// Reads the install's tunnel wiring when a start fails, so the exported
+/// log shows what the extension never reports back: the App Group this
+/// process resolves to, the extension bundles installed under PlugIns, and
+/// any stage or error each candidate group holds.
+private enum TunnelDiagnostics {
+  static func collect(managerProviderIdentifier: String?) -> String {
+    let appBundleId = Bundle.main.bundleIdentifier ?? ""
+    var lines = [
+      "appGroup=\(NEHelper.appGroupIdentifier)",
+      "profileGroups=\(AppGroupResolver.profileAppGroups())",
+      "expectedProvider=\(appBundleId).NECore",
+      "managerProvider=\(managerProviderIdentifier ?? "unknown")",
+    ]
+    lines += installedExtensions()
+    lines += groupProbes(bundleIdentifier: appBundleId)
+    return lines.joined(separator: "\n")
+  }
+
+  private static func installedExtensions() -> [String] {
+    guard
+      let plugIns = try? FileManager.default.contentsOfDirectory(
+        at: Bundle.main.bundleURL.appendingPathComponent("PlugIns"),
+        includingPropertiesForKeys: nil
+      )
+    else {
+      return ["appex=PlugIns unreadable"]
+    }
+    let appexURLs = plugIns.filter { $0.pathExtension == "appex" }
+    if appexURLs.isEmpty {
+      return ["appex=none installed"]
+    }
+    return appexURLs.map { url in
+      let bundleId =
+        Bundle(url: url)?.infoDictionary?["CFBundleIdentifier"] as? String
+        ?? url.deletingPathExtension().lastPathComponent
+      guard
+        let data = try? Data(
+          contentsOf: url.appendingPathComponent("embedded.mobileprovision")
+        ),
+        let entitlements = extractEntitlements(from: data)
+      else {
+        return "appex=\(bundleId) profile=missing"
+      }
+      let networkExtension =
+        entitlements["com.apple.developer.networking.networkextension"]
+        as? [String] ?? []
+      let groups =
+        entitlements["com.apple.security.application-groups"] as? [String]
+        ?? []
+      return
+        "appex=\(bundleId) packetTunnel=\(networkExtension.contains("packet-tunnel-provider")) groups=\(groups)"
+    }
+  }
+
+  private static func groupProbes(bundleIdentifier: String) -> [String] {
+    let candidates =
+      ["group.\(bundleIdentifier)"] + AppGroupResolver.profileAppGroups()
+    return candidates.map { identifier in
+      guard let defaults = UserDefaults(suiteName: identifier) else {
+        return "group:\(identifier) suite=unavailable"
+      }
+      let stage = defaults.string(forKey: "tunnelStage") ?? "-"
+      let error = defaults.string(forKey: "tunnelLastError") ?? "-"
+      return "group:\(identifier) stage=\(stage) error=\(error)"
+    }
+  }
+
+  private static func extractEntitlements(from data: Data) -> [String: Any]? {
+    guard let start = data.range(of: Data("<plist".utf8)),
+      let end = data.range(
+        of: Data("</plist>".utf8),
+        options: [],
+        in: start.upperBound..<data.endIndex
+      ),
+      let plist = try? PropertyListSerialization.propertyList(
+        from: data[start.lowerBound..<end.upperBound],
+        format: nil
+      ) as? [String: Any]
+    else {
+      return nil
+    }
+    return plist["Entitlements"] as? [String: Any]
   }
 }

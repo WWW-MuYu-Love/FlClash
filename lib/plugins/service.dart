@@ -76,6 +76,12 @@ class Service {
           _tunnelError.value = message;
           commonPrint.log('Tunnel failed: $message', logLevel: LogLevel.error);
           break;
+        case 'tunnelDiagnostics':
+          commonPrint.log(
+            'Tunnel diagnostics:\n${call.arguments as String}',
+            logLevel: LogLevel.warning,
+          );
+          break;
         case 'event':
           final methodCall = CoreMethodCall.fromJson(
             Map<String, Object?>.from(

@@ -21,6 +21,7 @@ final class TunnelController {
     onTunnelStateChanged: @escaping (TunnelTarget) -> Void,
     onConnectionStateChanged: @escaping (String) -> Void,
     onTunnelFailure: @escaping (String) -> Void,
+    onTunnelDiagnostics: @escaping (String) -> Void,
     onExternalStart: @escaping () -> Void,
     onExternalStop: @escaping () -> Void
   ) {
@@ -38,6 +39,7 @@ final class TunnelController {
       onTunnelStateChanged: onTunnelStateChanged,
       onConnectionStateChanged: onConnectionStateChanged,
       onTunnelFailure: onTunnelFailure,
+      onTunnelDiagnostics: onTunnelDiagnostics,
       onExternalStart: onExternalStart,
       onExternalStop: onExternalStop
     )
