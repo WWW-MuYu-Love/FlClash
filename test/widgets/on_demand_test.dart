@@ -370,6 +370,56 @@ void main() {
     expect(find.text('Location permission'), findsNothing);
     expect(find.bySemanticsLabel('Tap to authorize'), findsNothing);
   });
+
+  testWidgets('swiping a card past half its width sets the SSID direct', (
+    tester,
+  ) async {
+    await pumpView(tester, ssids: ['Home']);
+
+    await tester.drag(find.text('Home'), const Offset(-800, 0));
+    await tester.pumpAndSettle();
+
+    expect(container.read(directSSIDsProvider), ['Home']);
+  });
+
+  testWidgets('a short swipe leaves the action open until a tap elsewhere', (
+    tester,
+  ) async {
+    await pumpView(tester, ssids: ['Home']);
+
+    await tester.drag(find.text('Home'), const Offset(-100, 0));
+    await tester.pumpAndSettle();
+    expect(find.text('Direct'), findsOneWidget);
+
+    await tester.tapAt(const Offset(700, 900));
+    await tester.pumpAndSettle();
+    expect(find.text('Direct'), findsNothing);
+  });
+
+  testWidgets('swiping a second card closes the first one', (tester) async {
+    await pumpView(tester, ssids: ['Home', 'Office']);
+
+    await tester.drag(find.text('Home'), const Offset(-100, 0));
+    await tester.pumpAndSettle();
+    expect(find.text('Direct'), findsOneWidget);
+
+    await tester.drag(find.text('Office'), const Offset(-100, 0));
+    await tester.pumpAndSettle();
+    expect(find.text('Direct'), findsOneWidget);
+  });
+
+  testWidgets('the SSID name and its status are centered on the card', (
+    tester,
+  ) async {
+    await pumpView(tester, ssids: ['Home']);
+
+    final card = tester.getRect(find.byType(DecorationListItem).first);
+    final name = tester.getRect(find.text('Home'));
+    final status = tester.getRect(find.text('Disconnect'));
+
+    expect(name.center.dx, closeTo(card.center.dx, 1));
+    expect(status.center.dx, closeTo(card.center.dx, 1));
+  });
 }
 
 /// The view keys its shared selection notifier by [UniqueKeyStateMixin.key], so
