@@ -701,6 +701,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "extend": MessageLookupByLibrary.simpleMessage("확장"),
     "extendMode": MessageLookupByLibrary.simpleMessage("확장 모드"),
     "extendScript": MessageLookupByLibrary.simpleMessage("확장 스크립트"),
+    "extensionCore": MessageLookupByLibrary.simpleMessage("확장 코어"),
     "externalController": MessageLookupByLibrary.simpleMessage("외부 컨트롤러"),
     "externalControllerDesc": MessageLookupByLibrary.simpleMessage(
       "외부 컨트롤러를 사용하면 9090 포트로 코어를 제어할 수 있습니다.",
@@ -1061,7 +1062,9 @@ class MessageLookup extends MessageLookupByLibrary {
       "코어는 앱 프로세스 안에서 실행됩니다. 코어의 점유량은 런타임 통계로 추정하며, 나머지는 앱 및 공유 메모리로 집계합니다.",
     ),
     "memoryInfo": MessageLookupByLibrary.simpleMessage("메모리 정보"),
-    "memoryInfoDesc": MessageLookupByLibrary.simpleMessage("앱과 코어가 사용하는 메모리"),
+    "memoryInfoDesc": MessageLookupByLibrary.simpleMessage(
+      "앱, 코어, 확장 코어가 사용하는 메모리",
+    ),
     "memoryReleased": MessageLookupByLibrary.simpleMessage("메모리를 해제했습니다"),
     "memoryReleasedSize": m50,
     "messageTest": MessageLookupByLibrary.simpleMessage("메시지 테스트"),

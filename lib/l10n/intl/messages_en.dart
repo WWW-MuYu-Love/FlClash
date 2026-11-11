@@ -842,6 +842,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "extend": MessageLookupByLibrary.simpleMessage("Extend"),
     "extendMode": MessageLookupByLibrary.simpleMessage("Extend mode"),
     "extendScript": MessageLookupByLibrary.simpleMessage("Extend script"),
+    "extensionCore": MessageLookupByLibrary.simpleMessage("Extension core"),
     "externalController": MessageLookupByLibrary.simpleMessage(
       "External controller",
     ),
@@ -1059,10 +1060,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "installCertificateSuccess": MessageLookupByLibrary.simpleMessage(
       "Certificate installed",
     ),
-    "installedAppsPermissionDeniedMessage":
-        MessageLookupByLibrary.simpleMessage(
-          "The app list permission was denied, so installed apps cannot be listed. Please grant it manually in system settings.",
-        ),
+    "installedAppsPermissionDeniedMessage": MessageLookupByLibrary.simpleMessage(
+      "The app list permission was denied, so installed apps cannot be listed. Please grant it manually in system settings.",
+    ),
     "installedAppsPermissionDesc": MessageLookupByLibrary.simpleMessage(
       "This system hides the installed app list until the permission is granted. Authorize it to configure the per-app proxy.",
     ),
@@ -1257,7 +1257,7 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "memoryInfo": MessageLookupByLibrary.simpleMessage("Memory info"),
     "memoryInfoDesc": MessageLookupByLibrary.simpleMessage(
-      "Memory the app and the core use",
+      "Memory the app, the core and the extension core use",
     ),
     "memoryReleased": MessageLookupByLibrary.simpleMessage("Memory released"),
     "memoryReleasedSize": m50,

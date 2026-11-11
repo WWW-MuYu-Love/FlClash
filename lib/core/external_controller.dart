@@ -125,6 +125,10 @@ class ExternalControllerClient {
 
   static const _fetchTimeout = Duration(seconds: 2);
 
+  // /memory ticks once a second and its first sample is zero, so reading
+  // a real value takes two ticks.
+  static const _memoryReadTimeout = Duration(seconds: 4);
+
   Future<ExternalControllerSnapshot?> fetchConnections() async {
     try {
       final request = await _http
@@ -143,6 +147,48 @@ class ExternalControllerClient {
           .join()
           .timeout(_fetchTimeout);
       return ExternalControllerSnapshot.fromJson(jsonDecode(body));
+    } catch (_) {
+      return null;
+    }
+  }
+
+  // GET /memory returns the core behind 9090's resident memory. The
+  // endpoint streams one JSON object per second, and its first sample
+  // is always zero, so this reads until the first non-zero `inuse`
+  // and then closes the connection instead of waiting for the stream
+  // to end.
+  Future<int?> fetchMemory() async {
+    try {
+      final request = await _http
+          .getUrl(baseUri.replace(path: '/memory'))
+          .timeout(_fetchTimeout);
+      if (secret.isNotEmpty) {
+        request.headers.set(HttpHeaders.authorizationHeader, 'Bearer $secret');
+      }
+      final response = await request.close().timeout(_fetchTimeout);
+      if (response.statusCode != HttpStatus.ok) {
+        await response.drain<void>();
+        return null;
+      }
+      var read = 0;
+      await for (final line
+          in response
+              .transform(utf8.decoder)
+              .transform(const LineSplitter())
+              .timeout(_memoryReadTimeout)) {
+        read++;
+        final json = jsonDecode(line);
+        if (json is Map<String, Object?>) {
+          final inuse = json['inuse'];
+          if (inuse is num && inuse > 0) {
+            return inuse.toInt();
+          }
+        }
+        if (read >= 3) {
+          break;
+        }
+      }
+      return null;
     } catch (_) {
       return null;
     }

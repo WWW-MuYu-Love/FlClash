@@ -901,6 +901,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "extend": MessageLookupByLibrary.simpleMessage("Extension"),
     "extendMode": MessageLookupByLibrary.simpleMessage("Mode d’extension"),
     "extendScript": MessageLookupByLibrary.simpleMessage("Script d’extension"),
+    "extensionCore": MessageLookupByLibrary.simpleMessage("Cœur d’extension"),
     "externalController": MessageLookupByLibrary.simpleMessage(
       "Contrôleur externe",
     ),
@@ -1138,10 +1139,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "installCertificateSuccess": MessageLookupByLibrary.simpleMessage(
       "Certificat installé",
     ),
-    "installedAppsPermissionDeniedMessage":
-        MessageLookupByLibrary.simpleMessage(
-          "L’autorisation de la liste des apps a été refusée ; les apps installées ne peuvent donc pas être listées. Veuillez l’accorder manuellement dans les réglages du système.",
-        ),
+    "installedAppsPermissionDeniedMessage": MessageLookupByLibrary.simpleMessage(
+      "L’autorisation de la liste des apps a été refusée ; les apps installées ne peuvent donc pas être listées. Veuillez l’accorder manuellement dans les réglages du système.",
+    ),
     "installedAppsPermissionDesc": MessageLookupByLibrary.simpleMessage(
       "Ce système masque la liste des apps installées tant que l’autorisation n’est pas accordée. Accordez-la pour configurer le proxy par app.",
     ),
@@ -1356,7 +1356,7 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "memoryInfo": MessageLookupByLibrary.simpleMessage("Infos mémoire"),
     "memoryInfoDesc": MessageLookupByLibrary.simpleMessage(
-      "Mémoire utilisée par l’app et le cœur",
+      "Mémoire utilisée par l’app, le cœur et le cœur d’extension",
     ),
     "memoryReleased": MessageLookupByLibrary.simpleMessage("Mémoire libérée"),
     "memoryReleasedSize": m50,

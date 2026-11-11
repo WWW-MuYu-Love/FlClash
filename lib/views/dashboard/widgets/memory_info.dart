@@ -24,6 +24,7 @@ class MemorySnapshot {
     this.coreTotal = 0,
     this.core,
     this.coreInProcess = false,
+    this.extensionTotal = 0,
   });
 
   final int app;
@@ -31,7 +32,12 @@ class MemorySnapshot {
   final CoreMemoryStats? core;
   final bool coreInProcess;
 
-  int get total => app + coreTotal;
+  /// The extension core's resident memory. It runs in its own process,
+  /// so it adds on top of the app process instead of being carved out
+  /// of it; zero when the tunnel is down.
+  final int extensionTotal;
+
+  int get total => app + coreTotal + extensionTotal;
 
   int get coreOther => max(0, coreTotal - (core?.runtimeTotal ?? 0));
 
@@ -41,9 +47,14 @@ class MemorySnapshot {
     required int rss,
     required CoreMemoryStats? core,
     required bool coreInProcess,
+    int extensionRss = 0,
   }) {
     if (core == null) {
-      return MemorySnapshot(app: rss, coreInProcess: coreInProcess);
+      return MemorySnapshot(
+        app: rss,
+        coreInProcess: coreInProcess,
+        extensionTotal: extensionRss,
+      );
     }
     if (coreInProcess) {
       final runtime = core.runtimeTotal;
@@ -52,9 +63,15 @@ class MemorySnapshot {
         coreTotal: runtime,
         core: core,
         coreInProcess: true,
+        extensionTotal: extensionRss,
       );
     }
-    return MemorySnapshot(app: rss, coreTotal: core.rss, core: core);
+    return MemorySnapshot(
+      app: rss,
+      coreTotal: core.rss,
+      core: core,
+      extensionTotal: extensionRss,
+    );
   }
 }
 
@@ -78,10 +95,17 @@ Future<MemorySnapshot> _readSnapshot(WidgetRef ref) async {
   final core = coreConnected
       ? await ref.read(coreHandlerProvider).getMemoryStats()
       : null;
+  // On iOS the extension core is a separate process behind 9090. On
+  // Android and desktop 9090 is the app core itself, so asking it would
+  // count the same memory twice.
+  final extensionRss = system.isIOS
+      ? await ref.read(externalControllerClientProvider).fetchMemory()
+      : null;
   return MemorySnapshot.resolve(
     rss: rss,
     core: core,
     coreInProcess: system.isMobile,
+    extensionRss: extensionRss ?? 0,
   );
 }
 
@@ -218,6 +242,12 @@ class _MemorySummary extends StatelessWidget {
         bytes: memory.coreTotal,
         color: DashboardColors.of(context).series2,
       ),
+      if (memory.extensionTotal > 0)
+        (
+          label: appLocalizations.extensionCore,
+          bytes: memory.extensionTotal,
+          color: DashboardColors.of(context).series3,
+        ),
     ];
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -443,6 +473,18 @@ class _MemoryDetailSheetState extends ConsumerState<MemoryDetailSheet>
             contentKey: ValueKey(_snapshot.core != null),
             items: _coreItems(appLocalizations, _snapshot),
           ),
+          if (_snapshot.extensionTotal > 0)
+            _MemorySection(
+              title: appLocalizations.extensionCore,
+              bytes: _snapshot.extensionTotal,
+              items: [
+                _MemoryRow(
+                  label: appLocalizations.memoryAppResident,
+                  bytes: _snapshot.extensionTotal,
+                  total: _snapshot.extensionTotal,
+                ),
+              ],
+            ),
         ],
       ),
     );
@@ -543,6 +585,11 @@ class _MemoryOverview extends StatelessWidget {
                 bytes: snapshot.coreTotal,
                 color: DashboardColors.of(context).series2,
               ),
+              if (snapshot.extensionTotal > 0)
+                (
+                  bytes: snapshot.extensionTotal,
+                  color: DashboardColors.of(context).series3,
+                ),
             ],
           ),
           const SizedBox(height: 8),

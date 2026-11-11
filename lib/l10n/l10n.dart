@@ -971,6 +971,16 @@ class AppLocalizations {
     return Intl.message('Core', name: 'core', desc: '', args: []);
   }
 
+  /// `Extension core`
+  String get extensionCore {
+    return Intl.message(
+      'Extension core',
+      name: 'extensionCore',
+      desc: '',
+      args: [],
+    );
+  }
+
   /// `Tab animation`
   String get tabAnimation {
     return Intl.message(
@@ -7669,10 +7679,10 @@ class AppLocalizations {
     );
   }
 
-  /// `Memory the app and the core use`
+  /// `Memory the app, the core and the extension core use`
   String get memoryInfoDesc {
     return Intl.message(
-      'Memory the app and the core use',
+      'Memory the app, the core and the extension core use',
       name: 'memoryInfoDesc',
       desc: '',
       args: [],
@@ -7708,7 +7718,8 @@ class AppLocalizations {
   String customImportDroppedSubRules(num count, Object label) {
     return Intl.plural(
       count,
-      one: '1 SUB-RULE rule was dropped, since custom profiles do not support sub-rules',
+      one:
+          '1 SUB-RULE rule was dropped, since custom profiles do not support sub-rules',
       other:
           '$label SUB-RULE rules were dropped, since custom profiles do not support sub-rules',
       name: 'customImportDroppedSubRules',

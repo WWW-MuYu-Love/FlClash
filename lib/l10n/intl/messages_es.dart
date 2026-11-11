@@ -905,6 +905,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "extend": MessageLookupByLibrary.simpleMessage("Extensión"),
     "extendMode": MessageLookupByLibrary.simpleMessage("Modo de extensión"),
     "extendScript": MessageLookupByLibrary.simpleMessage("Script de extensión"),
+    "extensionCore": MessageLookupByLibrary.simpleMessage(
+      "Núcleo de extensión",
+    ),
     "externalController": MessageLookupByLibrary.simpleMessage(
       "Controlador externo",
     ),
@@ -1136,10 +1139,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "installCertificateSuccess": MessageLookupByLibrary.simpleMessage(
       "Certificado instalado",
     ),
-    "installedAppsPermissionDeniedMessage":
-        MessageLookupByLibrary.simpleMessage(
-          "Se denegó el permiso de lista de apps, por lo que no se pueden mostrar las apps instaladas. Concédelo manualmente en los ajustes del sistema.",
-        ),
+    "installedAppsPermissionDeniedMessage": MessageLookupByLibrary.simpleMessage(
+      "Se denegó el permiso de lista de apps, por lo que no se pueden mostrar las apps instaladas. Concédelo manualmente en los ajustes del sistema.",
+    ),
     "installedAppsPermissionDesc": MessageLookupByLibrary.simpleMessage(
       "Este sistema oculta la lista de apps instaladas hasta que se concede el permiso. Autorízalo para configurar el proxy por app.",
     ),
@@ -1356,7 +1358,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "Información de memoria",
     ),
     "memoryInfoDesc": MessageLookupByLibrary.simpleMessage(
-      "Memoria que usan la app y el núcleo",
+      "Memoria que usan la app, el núcleo y el núcleo de extensión",
     ),
     "memoryReleased": MessageLookupByLibrary.simpleMessage("Memoria liberada"),
     "memoryReleasedSize": m50,

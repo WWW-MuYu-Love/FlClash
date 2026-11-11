@@ -657,6 +657,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "extend": MessageLookupByLibrary.simpleMessage("扩展"),
     "extendMode": MessageLookupByLibrary.simpleMessage("扩展模式"),
     "extendScript": MessageLookupByLibrary.simpleMessage("扩展脚本"),
+    "extensionCore": MessageLookupByLibrary.simpleMessage("扩展内核"),
     "externalController": MessageLookupByLibrary.simpleMessage("外部控制器"),
     "externalControllerDesc": MessageLookupByLibrary.simpleMessage(
       "外部控制器开启后，可通过 9090 端口控制内核。",
@@ -979,7 +980,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "内核与应用运行在同一进程，内核部分按运行时统计估算，其余计入应用及共享内存。",
     ),
     "memoryInfo": MessageLookupByLibrary.simpleMessage("内存信息"),
-    "memoryInfoDesc": MessageLookupByLibrary.simpleMessage("应用与内核占用的内存"),
+    "memoryInfoDesc": MessageLookupByLibrary.simpleMessage("应用、内核与扩展内核占用的内存"),
     "memoryReleased": MessageLookupByLibrary.simpleMessage("内存已释放"),
     "memoryReleasedSize": m50,
     "messageTest": MessageLookupByLibrary.simpleMessage("消息测试"),
