@@ -205,6 +205,28 @@ class Preferences {
     await preferences?.setString(lastPageLabelKey, pageLabel.name);
   }
 
+  Future<List<String>> getLastNavigationPath() async {
+    try {
+      final preferences = await _store.value;
+      final raw = preferences?.getString(lastNavigationPathKey);
+      if (raw == null) {
+        return const [];
+      }
+      final decoded = json.decode(raw);
+      if (decoded is! List) {
+        return const [];
+      }
+      return decoded.whereType<String>().toList();
+    } catch (_) {
+      return const [];
+    }
+  }
+
+  Future<void> saveLastNavigationPath(List<String> path) async {
+    final preferences = await _store.value;
+    await preferences?.setString(lastNavigationPathKey, json.encode(path));
+  }
+
   Future<void> clearPreferences() async {
     final sharedPreferencesIns = await _store.value;
     await sharedPreferencesIns?.clear();

@@ -32,6 +32,8 @@ export 'lock.dart';
 export 'mixin.dart';
 export 'network.dart';
 export 'network_error.dart';
+export 'navigation_hooks.dart';
+export 'navigation_restore.dart';
 export 'num.dart';
 export 'package.dart';
 export 'path.dart';

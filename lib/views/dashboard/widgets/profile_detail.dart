@@ -150,7 +150,11 @@ class _ProfileDetailSheetState extends ConsumerState<ProfileDetailSheet>
     with ConfigCountsWatch<ProfileDetailSheet> {
   void _handlePreview(Profile profile) {
     unawaited(
-      BaseNavigator.push<String>(context, PreviewProfileView(profile: profile)),
+      pushRestorable<String>(
+        context,
+        PreviewProfileView(profile: profile),
+        'profilePreview:${profile.id}',
+      ),
     );
   }
 

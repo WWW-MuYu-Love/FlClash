@@ -123,3 +123,26 @@ double overlayTopOffset(Ref ref) {
   // The window controls over a page sit within its app bar.
   return (showsHeader ? kHeaderHeight : 0) + bannerBarClearance;
 }
+
+/// The stack of restorable sub-pages open above the top-level page.
+@Riverpod(keepAlive: true)
+class NavigationPath extends _$NavigationPath {
+  @override
+  List<String> build() => const [];
+
+  void push(String descriptor) {
+    state = [...state, descriptor];
+  }
+
+  void pop(String descriptor) {
+    final index = state.lastIndexOf(descriptor);
+    if (index == -1) {
+      return;
+    }
+    state = [...state.sublist(0, index), ...state.sublist(index + 1)];
+  }
+
+  void reset() {
+    state = const [];
+  }
+}

@@ -302,7 +302,11 @@ class ProfileItem extends ConsumerWidget {
 
   Future<void> _handlePreview(BuildContext context) async {
     unawaited(
-      BaseNavigator.push<String>(context, PreviewProfileView(profile: profile)),
+      pushRestorable<String>(
+        context,
+        PreviewProfileView(profile: profile),
+        'profilePreview:${profile.id}',
+      ),
     );
   }
 
@@ -387,11 +391,15 @@ class ProfileItem extends ConsumerWidget {
   }
 
   void _handlePushGenProfilePage(BuildContext context, int id) {
-    BaseNavigator.push(context, ExtendView(profileId: id));
+    pushRestorable(context, ExtendView(profileId: id), 'profileExtend:$id');
   }
 
   void _handlePushCustomProfilePage(BuildContext context, int id) {
-    BaseNavigator.push(context, CustomProfileView(profileId: id));
+    pushRestorable(
+      context,
+      CustomProfileView(profileId: id),
+      'profileCustom:$id',
+    );
   }
 
   void _handleEdit(BuildContext context) {

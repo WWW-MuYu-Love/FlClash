@@ -10,6 +10,7 @@ import 'package:fl_clash/state.dart';
 import 'package:fl_clash/ui/ui.dart';
 import 'package:fl_clash/widgets/icon.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -28,6 +29,15 @@ class _AppStateManagerState extends ConsumerState<AppStateManager>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    NavigationRestorationHooks.onPush = (descriptor) {
+      ref.read(navigationPathProvider.notifier).push(descriptor);
+    };
+    NavigationRestorationHooks.onPop = (descriptor) {
+      ref.read(navigationPathProvider.notifier).pop(descriptor);
+    };
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      unawaited(_restoreNavigationPath());
+    });
     // A desktop build started to the tray mounts while hidden, and a paused
     // render never runs a post-frame callback.
     scheduleMicrotask(() {
@@ -43,6 +53,12 @@ class _AppStateManagerState extends ConsumerState<AppStateManager>
     ref.listenManual(currentPageLabelProvider, (prev, next) {
       if (prev != next) {
         unawaited(preferences.saveLastPageLabel(next));
+        ref.read(navigationPathProvider.notifier).reset();
+      }
+    });
+    ref.listenManual(navigationPathProvider, (prev, next) {
+      if (prev != next) {
+        unawaited(preferences.saveLastNavigationPath(next));
       }
     });
     ref.listenManual(groupsProvider, (prev, next) {
@@ -88,6 +104,28 @@ class _AppStateManagerState extends ConsumerState<AppStateManager>
       AppLifecycleState.paused ||
       AppLifecycleState.detached => false,
     };
+  }
+
+  /// Reopens the sub-pages open when the app was killed, in order.
+  Future<void> _restoreNavigationPath() async {
+    if (!mounted) {
+      return;
+    }
+    final path = await preferences.getLastNavigationPath();
+    if (path.isEmpty || !mounted) {
+      return;
+    }
+    for (final descriptor in path) {
+      if (!mounted) {
+        return;
+      }
+      final page = navigationPathPage(ref, descriptor);
+      if (page == null) {
+        continue;
+      }
+      unawaited(pushRestorable(context, page, descriptor));
+      await SchedulerBinding.instance.endOfFrame;
+    }
   }
 
   @override

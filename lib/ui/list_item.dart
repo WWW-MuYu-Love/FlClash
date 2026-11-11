@@ -1,3 +1,4 @@
+import 'package:fl_clash/common/navigation_hooks.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:prism_ui/icons/icons.dart';
@@ -31,10 +32,14 @@ final class _OpenAction extends _ListItemAction {
 
   final bool forceFull;
 
+  /// Restores this sub-page on relaunch when set.
+  final String? restorationId;
+
   const _OpenAction({
     required this.widget,
     this.onChanged,
     required this.forceFull,
+    this.restorationId,
   });
 }
 
@@ -111,6 +116,7 @@ class ListItem<T> extends StatelessWidget {
     required Widget widget,
     ValueChanged<dynamic>? onChanged,
     bool forceFull = true,
+    String? restorationId,
     this.horizontalTitleGap,
     this.minTileHeight,
     this.minVerticalPadding = listRowVerticalPadding,
@@ -119,6 +125,7 @@ class ListItem<T> extends StatelessWidget {
          widget: widget,
          onChanged: onChanged,
          forceFull: forceFull,
+         restorationId: restorationId,
        ),
        onTap = null;
 
@@ -262,17 +269,24 @@ class ListItem<T> extends StatelessWidget {
       case final _OpenAction openDelegate:
         final child = openDelegate.widget;
         final onChanged = openDelegate.onChanged;
+        final restorationId = openDelegate.restorationId;
         if (!context.isMobileView) {
           return _buildRow(
             context,
             position: position,
             trailing: _pageTrailing,
             onTap: () async {
+              if (restorationId != null) {
+                NavigationRestorationHooks.onPush?.call(restorationId);
+              }
               final result = await showExtend<dynamic>(
                 context,
                 props: ExtendProps(forceFull: openDelegate.forceFull),
                 builder: (_) => child,
               );
+              if (restorationId != null) {
+                NavigationRestorationHooks.onPop?.call(restorationId);
+              }
               onChanged?.call(result);
             },
           );
@@ -287,10 +301,20 @@ class ListItem<T> extends StatelessWidget {
               context,
               position: position,
               trailing: _pageTrailing,
-              onTap: action,
+              onTap: () {
+                if (restorationId != null) {
+                  NavigationRestorationHooks.onPush?.call(restorationId);
+                }
+                action();
+              },
             );
           },
-          onClosed: onChanged,
+          onClosed: (result) {
+            if (restorationId != null) {
+              NavigationRestorationHooks.onPop?.call(restorationId);
+            }
+            onChanged?.call(result);
+          },
           openBuilder: (_, action) {
             return child;
           },

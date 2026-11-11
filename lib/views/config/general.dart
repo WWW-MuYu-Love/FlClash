@@ -263,6 +263,7 @@ class GeneralView extends ConsumerWidget {
       ListItem.open(
         title: Text(appLocalizations.onDemand),
         widget: const OnDemandView(),
+        restorationId: 'tools/general/onDemand',
       ),
       _appSettingToggle(
         title: (l) => l.minimizeOnExit,

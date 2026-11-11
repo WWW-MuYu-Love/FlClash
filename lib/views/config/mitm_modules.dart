@@ -359,8 +359,11 @@ class _MitmModuleRow extends ConsumerWidget {
                       onChanged: (value) => _setEnabled(ref, module, value),
                     ),
             ),
-            onPressed: () =>
-                BaseNavigator.push(context, MitmModuleView(id: module.id)),
+            onPressed: () => pushRestorable(
+              context,
+              MitmModuleView(id: module.id),
+              'mitmModule:${module.id}',
+            ),
           ),
         ),
       ),

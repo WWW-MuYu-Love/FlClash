@@ -190,6 +190,7 @@ class _GeneralItem extends StatelessWidget {
       leading: const GlyphIcon(AppGlyphs.settings),
       title: Text(context.appLocalizations.general),
       widget: const GeneralView(),
+      restorationId: 'tools/general',
     );
   }
 }
@@ -203,6 +204,7 @@ class _AdvancedConfigItem extends StatelessWidget {
       leading: const GlyphIcon(AppGlyphs.wrench),
       title: Text(context.appLocalizations.advancedConfig),
       widget: const AdvancedConfigView(),
+      restorationId: 'tools/advanced',
     );
   }
 }
