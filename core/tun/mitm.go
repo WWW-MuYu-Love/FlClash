@@ -9,8 +9,10 @@ import (
 	"time"
 
 	N "github.com/metacubex/mihomo/common/net"
+	"github.com/metacubex/mihomo/common/utils"
 	"github.com/metacubex/mihomo/component/sniffer"
 	C "github.com/metacubex/mihomo/constant"
+	P "github.com/metacubex/mihomo/constant/provider"
 
 	"core/mitm"
 )
@@ -22,9 +24,36 @@ type mitmTunnel struct {
 	C.Tunnel
 }
 
+// The wrapper must also satisfy P.Tunnel: sing_tun.New asserts
+// tunnel.(P.Tunnel) for provider access, and a wrapper that only embeds
+// C.Tunnel panics there, which StartTun recovers as a failed tunnel start.
+var (
+	_ C.Tunnel = mitmTunnel{}
+	_ P.Tunnel = mitmTunnel{}
+)
+
 // WrapTunnel returns a C.Tunnel that diverts MITM targets to the engine.
+// A tunnel that does not implement P.Tunnel is returned unwrapped.
 func WrapTunnel(t C.Tunnel) C.Tunnel {
+	if _, ok := t.(P.Tunnel); !ok {
+		return t
+	}
 	return mitmTunnel{Tunnel: t}
+}
+
+// Providers forwards to the wrapped tunnel.
+func (m mitmTunnel) Providers() map[string]P.ProxyProvider {
+	return m.Tunnel.(P.Tunnel).Providers()
+}
+
+// RuleProviders forwards to the wrapped tunnel.
+func (m mitmTunnel) RuleProviders() map[string]P.RuleProvider {
+	return m.Tunnel.(P.Tunnel).RuleProviders()
+}
+
+// RuleUpdateCallback forwards to the wrapped tunnel.
+func (m mitmTunnel) RuleUpdateCallback() *utils.Callback[P.RuleProvider] {
+	return m.Tunnel.(P.Tunnel).RuleUpdateCallback()
 }
 
 // HandleTCPConn diverts a MITM target to the engine; all other connections go
