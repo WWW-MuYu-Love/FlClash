@@ -1556,16 +1556,6 @@ class AppLocalizations {
     );
   }
 
-  /// `Auto-refresh outbound IP`
-  String get autoRefreshOutboundIp {
-    return Intl.message(
-      'Auto-refresh outbound IP',
-      name: 'autoRefreshOutboundIp',
-      desc: '',
-      args: [],
-    );
-  }
-
   /// `Background keepalive`
   String get backgroundKeepAlive {
     return Intl.message(

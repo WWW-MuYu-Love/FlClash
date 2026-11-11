@@ -200,7 +200,6 @@
   "appIconDesign": "Diseño del icono de la app",
   "autoCloseConnections": "Cerrar conexiones automáticamente",
   "onlyStatisticsProxy": "Contar solo el tráfico del proxy",
-  "autoRefreshOutboundIp": "Actualizar IP de salida automáticamente",
   "backgroundKeepAlive": "Mantener en segundo plano",
   "backgroundKeepAliveOff": "Apagado",
   "backgroundKeepAliveSilentAudio": "Audio silencioso",

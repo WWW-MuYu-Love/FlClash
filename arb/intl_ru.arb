@@ -200,7 +200,6 @@
   "appIconDesign": "Дизайн значка приложения",
   "autoCloseConnections": "Автозакрытие соединений",
   "onlyStatisticsProxy": "Учитывать только трафик прокси",
-  "autoRefreshOutboundIp": "Автообновление исходящего IP",
   "backgroundKeepAlive": "Работа в фоне",
   "backgroundKeepAliveOff": "Выкл.",
   "backgroundKeepAliveSilentAudio": "Бесшумное аудио",

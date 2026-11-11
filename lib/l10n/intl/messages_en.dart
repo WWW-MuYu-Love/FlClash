@@ -380,9 +380,6 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "autoInclude": MessageLookupByLibrary.simpleMessage("Auto-include"),
     "autoLaunch": MessageLookupByLibrary.simpleMessage("Auto launch"),
-    "autoRefreshOutboundIp": MessageLookupByLibrary.simpleMessage(
-      "Auto-refresh outbound IP",
-    ),
     "autoRun": MessageLookupByLibrary.simpleMessage("Auto run"),
     "autoRunDesc": MessageLookupByLibrary.simpleMessage(
       "Auto run starts the proxy when the app opens.",

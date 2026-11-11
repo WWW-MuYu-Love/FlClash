@@ -345,16 +345,6 @@ class GeneralView extends ConsumerWidget {
     ];
   }
 
-  List<Widget> _dashboardItems() {
-    return [
-      _appSettingToggle(
-        title: (l) => l.autoRefreshOutboundIp,
-        select: (state) => state.autoRefreshOutboundIp,
-        update: (state, value) => state.copyWith(autoRefreshOutboundIp: value),
-      ),
-    ];
-  }
-
   List<Widget> _connectionItems() {
     return [
       const DelayTestTimeoutItem(),
@@ -461,10 +451,6 @@ class GeneralView extends ConsumerWidget {
           generateSection(
             title: appLocalizations.connection,
             items: _connectionItems(),
-          ),
-          generateSection(
-            title: appLocalizations.dashboard,
-            items: _dashboardItems(),
           ),
           OverrideSection(
             title: appLocalizations.core,

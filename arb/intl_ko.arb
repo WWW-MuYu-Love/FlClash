@@ -200,7 +200,6 @@
   "appIconDesign": "앱 아이콘 디자인",
   "autoCloseConnections": "연결 자동 종료",
   "onlyStatisticsProxy": "프록시 트래픽만 집계",
-  "autoRefreshOutboundIp": "송신 IP 자동 새로고침",
   "backgroundKeepAlive": "백그라운드 유지",
   "backgroundKeepAliveOff": "끄기",
   "backgroundKeepAliveSilentAudio": "무음 오디오",

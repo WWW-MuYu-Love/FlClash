@@ -329,9 +329,6 @@ class MessageLookup extends MessageLookupByLibrary {
     "autoCloseConnections": MessageLookupByLibrary.simpleMessage("接続を自動的に閉じる"),
     "autoInclude": MessageLookupByLibrary.simpleMessage("自動で含める"),
     "autoLaunch": MessageLookupByLibrary.simpleMessage("自動起動"),
-    "autoRefreshOutboundIp": MessageLookupByLibrary.simpleMessage(
-      "送信元 IP を自動更新",
-    ),
     "autoRun": MessageLookupByLibrary.simpleMessage("自動実行"),
     "autoRunDesc": MessageLookupByLibrary.simpleMessage(
       "自動実行はアプリを開いたときにプロキシを開始します。",

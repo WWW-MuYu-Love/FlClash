@@ -405,9 +405,6 @@ class MessageLookup extends MessageLookupByLibrary {
       "Inclure automatiquement",
     ),
     "autoLaunch": MessageLookupByLibrary.simpleMessage("Lancement automatique"),
-    "autoRefreshOutboundIp": MessageLookupByLibrary.simpleMessage(
-      "Actualiser l’IP de sortie automatiquement",
-    ),
     "autoRun": MessageLookupByLibrary.simpleMessage("Démarrage automatique"),
     "autoRunDesc": MessageLookupByLibrary.simpleMessage(
       "Le démarrage automatique active le proxy à l’ouverture de l’app.",

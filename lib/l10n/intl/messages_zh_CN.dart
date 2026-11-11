@@ -321,7 +321,6 @@ class MessageLookup extends MessageLookupByLibrary {
     "autoCloseConnections": MessageLookupByLibrary.simpleMessage("自动关闭连接"),
     "autoInclude": MessageLookupByLibrary.simpleMessage("自动包含"),
     "autoLaunch": MessageLookupByLibrary.simpleMessage("自启动"),
-    "autoRefreshOutboundIp": MessageLookupByLibrary.simpleMessage("自动刷新出站 IP"),
     "autoRun": MessageLookupByLibrary.simpleMessage("自动运行"),
     "autoRunDesc": MessageLookupByLibrary.simpleMessage("自动运行会在打开应用时启动代理。"),
     "autoSetSystemDns": MessageLookupByLibrary.simpleMessage("自动设置系统DNS"),

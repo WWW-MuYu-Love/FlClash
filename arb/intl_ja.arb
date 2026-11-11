@@ -200,7 +200,6 @@
   "appIconDesign": "アプリアイコンのデザイン",
   "autoCloseConnections": "接続を自動的に閉じる",
   "onlyStatisticsProxy": "プロキシトラフィックのみ集計",
-  "autoRefreshOutboundIp": "送信元 IP を自動更新",
   "backgroundKeepAlive": "バックグラウンド維持",
   "backgroundKeepAliveOff": "オフ",
   "backgroundKeepAliveSilentAudio": "無音オーディオ",

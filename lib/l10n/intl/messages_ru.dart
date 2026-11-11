@@ -394,9 +394,6 @@ class MessageLookup extends MessageLookupByLibrary {
       "Автоматическое включение",
     ),
     "autoLaunch": MessageLookupByLibrary.simpleMessage("Автозапуск"),
-    "autoRefreshOutboundIp": MessageLookupByLibrary.simpleMessage(
-      "Автообновление исходящего IP",
-    ),
     "autoRun": MessageLookupByLibrary.simpleMessage("Автовключение"),
     "autoRunDesc": MessageLookupByLibrary.simpleMessage(
       "Автовключение запускает прокси при открытии приложения.",
