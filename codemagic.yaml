@@ -63,14 +63,26 @@ workflows:
           go version || echo "Go NOT preinstalled — will install below"
           cargo --version || echo "Rust NOT preinstalled — will install below"
           rustc --version || true
-      - name: Ensure Go (hook builds the mihomo core with CGO)
+      - name: Ensure Go 1.27.4 (hook builds the mihomo core with CGO)
         script: |
-          if ! command -v go >/dev/null 2>&1; then
+          # core/go.mod requires go 1.27.0 and mitmproxy-go needs Go >= 1.27.3.
+          # Homebrew's go tracks the current stable (1.27.4); install it when
+          # missing and upgrade it when an older one is present, so the build
+          # never silently uses a stale toolchain.
+          if command -v go >/dev/null 2>&1; then
+            brew upgrade go || true
+          else
             brew install go
           fi
           go version
-          # Reference CI pins Go 1.26.4. If the hook fails on a newer Go,
-          # pin 1.26.4 from https://go.dev/dl/ instead of brew's latest.
+          # Fail loudly on a Go older than 1.27.3 instead of breaking later
+          # in the core build.
+          GO_MINOR=$(go version | sed -E 's/.*go1\.([0-9]+)\.[0-9]+.*/\1/')
+          GO_PATCH=$(go version | sed -E 's/.*go1\.[0-9]+\.([0-9]+).*/\1/')
+          if [ "$GO_MINOR" -lt 27 ] || { [ "$GO_MINOR" -eq 27 ] && [ "$GO_PATCH" -lt 3 ]; }; then
+            echo "Go >= 1.27.3 required, found $(go version)"
+            exit 1
+          fi
       - name: Ensure Rust (hook builds the Rust helper for iOS)
         script: |
           if ! command -v cargo >/dev/null 2>&1; then
