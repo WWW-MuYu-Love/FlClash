@@ -108,7 +108,10 @@ func Start(fd int, stack, address, dns, rawOptions string) *sing_tun.Listener {
 		FileDescriptor:         dupFd,
 	}
 
-	listener, err := sing_tun.New(options, tunnel.Tunnel)
+	// The tunnel is wrapped so MITM targets are diverted to the MITM engine
+	// before the tunnel routes them; when MITM is off the wrapper delegates
+	// every connection straight through.
+	listener, err := sing_tun.New(options, WrapTunnel(tunnel.Tunnel))
 
 	if err != nil {
 		log.Errorln("TUN: %v", err)
