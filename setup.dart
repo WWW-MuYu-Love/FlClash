@@ -184,7 +184,13 @@ List<String> createFlutterBuildArgs({
 }
 
 Map<String, String> createBuildEnvironment(String env) {
-  return {'APP_ENV': env};
+  return {
+    'APP_ENV': env,
+    // The MITM UI (Tools -> Advanced config -> MITM) is gated by this
+    // compile-time flag; the core MITM engine is already integrated, so
+    // the iOS build ships with the UI enabled.
+    'FEATURE_MITM': 'true',
+  };
 }
 
 /// Packages whose build hook `pubspec.yaml` turns into a no-op.
