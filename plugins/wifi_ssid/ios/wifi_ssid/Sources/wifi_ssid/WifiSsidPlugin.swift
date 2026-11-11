@@ -11,7 +11,7 @@ public class WifiSsidPlugin: NSObject, FlutterPlugin {
 
     public static func register(with registrar: FlutterPluginRegistrar) {
         let channel = FlutterMethodChannel(
-            name: "wifi_ssid", binaryMessenger: registrar.messenger
+            name: "wifi_ssid", binaryMessenger: registrar.messenger()
         )
         let instance = WifiSsidPlugin()
         registrar.addMethodCallDelegate(instance, channel: channel)
