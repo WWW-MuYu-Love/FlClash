@@ -31,7 +31,7 @@ final class PacketTunnelProvider: NEPacketTunnelProvider {
     logger.info("startTunnel begin")
     sharedStateStore.clearRunTime()
     sharedStateStore.clearLastError()
-    sharedStateStore.saveStage("started")
+    sharedStateStore.saveStage("已启动")
     reloadWidgets()
     let snapshot: (options: PacketTunnelVPNOptions, data: Data)
     let setupParams: Data
@@ -43,7 +43,7 @@ final class PacketTunnelProvider: NEPacketTunnelProvider {
     } else if let forwarded = sharedStateStore.loadForwardedConfig(
       from: savedProtocolConfiguration()
     ) {
-      sharedStateStore.saveStage("protocol config")
+      sharedStateStore.saveStage("协议配置")
       snapshot = forwarded.snapshot
       setupParams = forwarded.setupParams
     } else if let loaded = sharedStateStore.loadVPNOptionsSnapshot() {
@@ -54,7 +54,7 @@ final class PacketTunnelProvider: NEPacketTunnelProvider {
       // A decode failure above already saved the specific reason; only
       // fall back to the generic message when nothing was recorded.
       if sharedStateStore.loadLastError() == nil {
-        sharedStateStore.saveLastError("missing VPN options")
+        sharedStateStore.saveLastError("缺少 VPN 配置")
       }
       completionHandler(PacketTunnelProviderError.missingVPNOptions)
       return
@@ -76,7 +76,7 @@ final class PacketTunnelProvider: NEPacketTunnelProvider {
         return
       }
       self.logger.info("setTunnelNetworkSettings completed")
-      self.sharedStateStore.saveStage("network settings ok")
+      self.sharedStateStore.saveStage("网络设置完成")
       guard
         let tunnelFileDescriptor =
           self.networkConfiguration.tunnelFileDescriptor()
@@ -85,7 +85,7 @@ final class PacketTunnelProvider: NEPacketTunnelProvider {
           "startTunnel failed: tunnel file descriptor missing"
         )
         self.sharedStateStore.saveLastError(
-          "could not determine tunnel file descriptor"
+          "无法获取隧道文件描述符"
         )
         completionHandler(
           PacketTunnelProviderError.couldNotDetermineFileDescriptor
@@ -100,7 +100,7 @@ final class PacketTunnelProvider: NEPacketTunnelProvider {
       self.logger.info(
         "quickSetup initParams=\(initParams, privacy: .public)"
       )
-      self.sharedStateStore.saveStage("quickSetup started")
+      self.sharedStateStore.saveStage("核心初始化中")
       NECoreBridge.quickSetup(
         withInitParams: initParams,
         setupParams: setupParams
@@ -117,7 +117,7 @@ final class PacketTunnelProvider: NEPacketTunnelProvider {
           return
         }
         self.logger.info("quickSetup completed")
-        self.sharedStateStore.saveStage("quickSetup ok")
+        self.sharedStateStore.saveStage("核心初始化完成")
         let coreTunOptions = CoreTunOptions(
           stack: vpnOptions.stack,
           address: self.networkConfiguration.tunAddress(for: vpnOptions),
@@ -131,7 +131,7 @@ final class PacketTunnelProvider: NEPacketTunnelProvider {
         )
         guard let coreTunOptionsData = try? JSONEncoder().encode(coreTunOptions)
         else {
-          self.sharedStateStore.saveLastError("could not start core TUN")
+          self.sharedStateStore.saveLastError("无法启动核心隧道")
           completionHandler(PacketTunnelProviderError.couldNotStartCoreTun)
           return
         }
@@ -143,12 +143,12 @@ final class PacketTunnelProvider: NEPacketTunnelProvider {
           "NECoreBridge.startTun result=\(started, privacy: .public)"
         )
         self.sharedStateStore.saveStage(
-          started ? "startTun ok" : "startTun failed"
+          started ? "隧道启动成功" : "隧道启动失败"
         )
         if started {
           self.sharedStateStore.saveRunTime(vpnOptions: snapshot.data)
         } else {
-          self.sharedStateStore.saveLastError("could not start core TUN")
+          self.sharedStateStore.saveLastError("无法启动核心隧道")
         }
         completionHandler(
           started ? nil : PacketTunnelProviderError.couldNotStartCoreTun
@@ -295,11 +295,11 @@ private enum PacketTunnelProviderError: LocalizedError {
   var errorDescription: String? {
     switch self {
     case .missingVPNOptions:
-      return "missing VPN options"
+      return "缺少 VPN 配置"
     case .couldNotDetermineFileDescriptor:
-      return "could not determine tunnel file descriptor"
+      return "无法获取隧道文件描述符"
     case .couldNotStartCoreTun:
-      return "could not start core TUN"
+      return "无法启动核心隧道"
     }
   }
 }

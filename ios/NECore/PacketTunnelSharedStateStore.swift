@@ -262,7 +262,7 @@ struct PacketTunnelVPNOptions: Decodable {
     let container = try decoder.container(keyedBy: CodingKeys.self)
     // A missing field falls back to the Dart-side default instead of
     // failing the whole decode: an upstream rename must not break tunnel
-    // start with a misleading "missing VPN options" error.
+    // start with a misleading "缺少 VPN 配置" error.
     port = try container.decodeIfPresent(Int.self, forKey: .port) ?? 7890
     ipv6 = try container.decodeIfPresent(Bool.self, forKey: .ipv6) ?? false
     captureDns = try container.decodeIfPresent(
