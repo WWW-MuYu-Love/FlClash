@@ -13,7 +13,7 @@ import UIKit
 /// The mode is owned by Dart (AppSettingProps.backgroundKeepAliveMode) and
 /// pushed here through the service channel; this class only starts and
 /// stops the mechanism that is asked for.
-final class BackgroundKeepAlive {
+final class BackgroundKeepAlive: NSObject {
   static let shared = BackgroundKeepAlive()
 
   private enum Mode {
@@ -204,7 +204,9 @@ final class BackgroundKeepAlive {
     {
       window.addSubview(container)
     }
-    let controller = AVPictureInPictureController(playerLayer: layer)
+    guard let controller = AVPictureInPictureController(playerLayer: layer) else {
+      return
+    }
     controller.delegate = self
     pipPlayer = player
     pipLooper = looper

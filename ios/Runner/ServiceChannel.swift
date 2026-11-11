@@ -302,7 +302,9 @@ final class ServiceChannel {
 
   // Best effort: the keychain may not expose installed certificates to the
   // app, in which case an installed-but-untrusted CA reads as not installed.
-  private static func caCertificateInstalled(_ ca: SecCertificate) -> Bool {
+  // Nonisolated: called from a detached task off the main actor, and it only
+  // touches the Security framework, never main-actor state.
+  private nonisolated static func caCertificateInstalled(_ ca: SecCertificate) -> Bool {
     guard let caData = SecCertificateCopyData(ca) as Data? else {
       return false
     }
