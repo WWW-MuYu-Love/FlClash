@@ -17,7 +17,13 @@ class Picker {
       initialDirectory: await appPath.downloadDirPath,
       bytes: bytes,
     );
-    if (!system.isAndroid && uri != null && uri.scheme == 'file') {
+    // On iOS the native side already exported the file through the document
+    // picker; writing it again from Dart fails outside the sandbox, e.g. an
+    // iCloud Drive destination the app cannot reach.
+    if (!system.isAndroid &&
+        !system.isIOS &&
+        uri != null &&
+        uri.scheme == 'file') {
       final file = File(uri.toFilePath());
       await file.safeWriteAsBytes(bytes);
     }

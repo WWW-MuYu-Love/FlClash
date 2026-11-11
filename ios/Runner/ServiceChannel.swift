@@ -1,5 +1,8 @@
 import Flutter
 import Foundation
+import Security
+import Shared
+import UIKit
 import os
 
 @MainActor
@@ -232,9 +235,130 @@ final class ServiceChannel {
         let running = await tunnelController.getRunTime() > 0
         result(running ? sharedStateStore.activeVpnOptions() : nil)
       }
+    case "checkMitmCertificateTrust":
+      checkMitmCertificateTrust(call, result: result)
+    case "shareMitmCertificate":
+      shareMitmCertificate(call, result: result)
     default:
       result(FlutterMethodNotImplemented)
     }
+  }
+
+  // The leaf issued for the check host only validates against the system
+  // trust store when the CA is installed and fully trusted. Evaluation can
+  // consult revocation, so it runs off the main thread.
+  private func checkMitmCertificateTrust(
+    _ call: FlutterMethodCall,
+    result: @escaping FlutterResult
+  ) {
+    guard let args = call.arguments as? [String: Any],
+      let leafPem = args["leafPem"] as? String,
+      let caPem = args["caPem"] as? String,
+      let host = args["host"] as? String,
+      let leaf = Self.certificate(fromPem: leafPem),
+      let ca = Self.certificate(fromPem: caPem)
+    else {
+      result("notInstalled")
+      return
+    }
+    Task.detached {
+      let policy = SecPolicyCreateSSL(true, host as CFString)
+      var trust: SecTrust?
+      guard SecTrustCreateWithCertificates(leaf, policy, &trust) == errSecSuccess,
+        let trust
+      else {
+        result("notInstalled")
+        return
+      }
+      var error: CFError?
+      if SecTrustEvaluateWithError(trust, &error) {
+        result("ready")
+        return
+      }
+      result(Self.caCertificateInstalled(ca) ? "untrusted" : "notInstalled")
+    }
+  }
+
+  private static func certificate(fromPem pem: String) -> SecCertificate? {
+    let base64 = pem
+      .components(separatedBy: .newlines)
+      .filter { !$0.isEmpty && !$0.hasPrefix("-----") }
+      .joined()
+    guard let der = Data(base64Encoded: base64) else { return nil }
+    return SecCertificateCreateWithData(nil, der as CFData)
+  }
+
+  // Best effort: the keychain may not expose installed certificates to the
+  // app, in which case an installed-but-untrusted CA reads as not installed.
+  private static func caCertificateInstalled(_ ca: SecCertificate) -> Bool {
+    guard let caData = SecCertificateCopyData(ca) as Data? else {
+      return false
+    }
+    let query: [String: Any] = [
+      kSecClass as String: kSecClassCertificate,
+      kSecReturnData as String: true,
+      kSecMatchLimit as String: kSecMatchLimitAll,
+    ]
+    var items: CFTypeRef?
+    guard SecItemCopyMatching(query as CFDictionary, &items) == errSecSuccess,
+      let dataList = items as? [Data]
+    else {
+      return false
+    }
+    return dataList.contains(caData)
+  }
+
+  // Presents the share sheet with the CA file so the user can save it to
+  // Files and install it from there.
+  private func shareMitmCertificate(
+    _ call: FlutterMethodCall,
+    result: @escaping FlutterResult
+  ) {
+    guard let args = call.arguments as? [String: Any],
+      let pem = args["pem"] as? String,
+      let fileName = args["fileName"] as? String,
+      let rootViewController = topViewController()
+    else {
+      result(false)
+      return
+    }
+    let tempURL = FileManager.default.temporaryDirectory
+      .appendingPathComponent(fileName)
+    do {
+      try pem.write(to: tempURL, atomically: true, encoding: .utf8)
+    } catch {
+      result(false)
+      return
+    }
+    let activity = UIActivityViewController(
+      activityItems: [tempURL],
+      applicationActivities: nil
+    )
+    if let popover = activity.popoverPresentationController {
+      popover.sourceView = rootViewController.view
+      popover.sourceRect = CGRect(
+        x: rootViewController.view.bounds.midX,
+        y: rootViewController.view.bounds.midY,
+        width: 0,
+        height: 0
+      )
+      popover.permittedArrowDirections = []
+    }
+    rootViewController.present(activity, animated: true)
+    result(true)
+  }
+
+  private func topViewController() -> UIViewController? {
+    guard let scene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+      let window = scene.windows.first(where: { $0.isKeyWindow }),
+      var top = window.rootViewController
+    else {
+      return nil
+    }
+    while let presented = top.presentedViewController {
+      top = presented
+    }
+    return top
   }
 
   private func methodCallData(_ call: FlutterMethodCall) -> Data? {
