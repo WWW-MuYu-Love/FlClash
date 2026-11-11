@@ -227,6 +227,32 @@ class Preferences {
     await preferences?.setString(lastNavigationPathKey, json.encode(path));
   }
 
+  /// The outbound-IP answers cached on disk, keyed by the proxy name the
+  /// lookup pinned. Each entry holds the address, its country code and the
+  /// lookup time in milliseconds since the epoch, so a cold start after
+  /// iOS kills the app can show the last address without probing again.
+  Future<Map<String, Object?>> getOutboundIpCache() async {
+    try {
+      final preferences = await _store.value;
+      final raw = preferences?.getString(outboundIpCacheKey);
+      if (raw == null) {
+        return {};
+      }
+      final decoded = json.decode(raw);
+      if (decoded is! Map<String, Object?>) {
+        return {};
+      }
+      return decoded;
+    } catch (_) {
+      return {};
+    }
+  }
+
+  Future<void> saveOutboundIpCache(Map<String, Object?> cache) async {
+    final preferences = await _store.value;
+    await preferences?.setString(outboundIpCacheKey, json.encode(cache));
+  }
+
   Future<void> clearPreferences() async {
     final sharedPreferencesIns = await _store.value;
     await sharedPreferencesIns?.clear();

@@ -1,3 +1,6 @@
+import 'dart:convert';
+
+import 'package:fl_clash/common/constant.dart';
 import 'package:fl_clash/common/service_probe.dart';
 import 'package:fl_clash/core/controller.dart';
 import 'package:fl_clash/core/interface.dart';
@@ -10,6 +13,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:riverpod/riverpod.dart';
 
+import '../helpers/preferences.dart';
+
 class _MockCore extends Mock implements CoreHandlerInterface {}
 
 const _answer = OutboundIpResult(
@@ -21,18 +26,19 @@ const _answer = OutboundIpResult(
 );
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
   setUpAll(() => registerFallbackValue(const OutboundIpParams(timeout: 0)));
 
   late _MockCore core;
 
   setUp(() => core = _MockCore());
 
-  ProviderContainer build({bool proxied = true}) {
+  ProviderContainer build({bool proxied = true, int coreEpoch = 1}) {
     final container = ProviderContainer(
       overrides: [
         routeTrackerProvider.overrideWithBuild(
           (_, _) => RouteState(
-            coreEpoch: 1,
+            coreEpoch: coreEpoch,
             routeVersion: 1,
             hostEpoch: 1,
             proxied: proxied,
@@ -154,5 +160,108 @@ void main() {
     await pumpEventQueue();
 
     verify(() => core.outboundIp(any())).called(1);
+  });
+
+  group('disk cache', () {
+    setUp(() async {
+      await mockPreferences();
+    });
+
+    test(
+      'a cold start reuses the cached address without asking the Core',
+      () async {
+        when(() => core.outboundIp(any())).thenAnswer((_) async => _answer);
+        final first = build();
+        first.read(outboundIpProbeProvider.notifier).watch(routedOutbound);
+        await pumpEventQueue();
+        expect(
+          first.read(outboundIpProbeProvider).entryOf(routedOutbound).value?.ip,
+          '2.2.2.2',
+        );
+        first.dispose();
+
+        // A fresh container with a restarted Core (a new epoch), as after
+        // iOS kills the app in the background.
+        final second = build(coreEpoch: 2);
+        second.read(outboundIpProbeProvider.notifier).watch(routedOutbound);
+        await pumpEventQueue();
+
+        verify(() => core.outboundIp(any())).called(1);
+        final entry = second
+            .read(outboundIpProbeProvider)
+            .entryOf(routedOutbound);
+        expect(entry.phase, ProbePhase.fresh);
+        expect(entry.value?.ip, '2.2.2.2');
+        expect(entry.value?.countryCode, 'US');
+      },
+    );
+
+    test('a stale disk entry is looked up again', () async {
+      final staleAt = DateTime.now()
+          .subtract(const Duration(minutes: 31))
+          .millisecondsSinceEpoch;
+      await mockPreferences({
+        outboundIpCacheKey: json.encode({
+          routedOutbound: {
+            'ip': '1.1.1.1',
+            'countryCode': 'US',
+            'checkedAt': staleAt,
+          },
+        }),
+      });
+      when(() => core.outboundIp(any())).thenAnswer((_) async => _answer);
+      final container = build();
+
+      container.read(outboundIpProbeProvider.notifier).watch(routedOutbound);
+      await pumpEventQueue();
+
+      verify(() => core.outboundIp(any())).called(1);
+      expect(
+        container
+            .read(outboundIpProbeProvider)
+            .entryOf(routedOutbound)
+            .value
+            ?.ip,
+        '2.2.2.2',
+      );
+    });
+
+    test('a manual refresh drops the disk entry and asks the Core', () async {
+      when(() => core.outboundIp(any())).thenAnswer((_) async => _answer);
+      final container = build();
+      final probe = container.read(outboundIpProbeProvider.notifier);
+      probe.watch(routedOutbound);
+      await pumpEventQueue();
+      expect(
+        container
+            .read(outboundIpProbeProvider)
+            .entryOf(routedOutbound)
+            .value
+            ?.ip,
+        '2.2.2.2',
+      );
+
+      when(() => core.outboundIp(any())).thenAnswer(
+        (_) async => const OutboundIpResult(
+          url: 'https://www.cloudflare.com/cdn-cgi/trace',
+          body: 'ip=3.3.3.3\nloc=US\n',
+          chains: ['HK-01'],
+          coreEpoch: 1,
+          routeVersion: 1,
+        ),
+      );
+      probe.refresh([routedOutbound]);
+      await pumpEventQueue();
+
+      verify(() => core.outboundIp(any())).called(2);
+      expect(
+        container
+            .read(outboundIpProbeProvider)
+            .entryOf(routedOutbound)
+            .value
+            ?.ip,
+        '3.3.3.3',
+      );
+    });
   });
 }

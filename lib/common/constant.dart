@@ -79,6 +79,11 @@ const probeThrottleDuration = Duration(seconds: 5);
 /// (`proxied`, then the listeners, then the Android TUN).
 const probeMoveSettleDuration = Duration(milliseconds: 300);
 
+/// How long a disk-cached outbound IP stays usable. A cold start after iOS
+/// kills the app shows the cached address instead of probing again, and the
+/// address is re-looked-up once this expires or the user refreshes.
+const outboundIpCacheMaxAge = Duration(minutes: 30);
+
 const downloadTimeoutDuration = Duration(seconds: 20);
 
 /// A healthy source answers within a second; past this the outbound is down.
@@ -130,6 +135,7 @@ const bootRecordKey = 'boot_record';
 const appliedConfigMd5Key = 'applied_config_md5';
 const lastPageLabelKey = 'last_page_label';
 const lastNavigationPathKey = 'last_navigation_path';
+const outboundIpCacheKey = 'outbound_ip_cache';
 const defaultSystemDnsFallback = '223.5.5.5';
 const repository = 'chen08209/FlClash';
 const maxMobileWidth = 600;

@@ -27,6 +27,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
 import '../../helpers/glyph_finders.dart';
+import '../../helpers/preferences.dart';
 import '../../helpers/test_app.dart';
 import '../../helpers/host_scaffold.dart';
 
@@ -65,7 +66,10 @@ void main() {
 
   late _MockCore core;
 
-  setUp(() => core = _MockCore());
+  setUp(() async {
+    await mockPreferences();
+    core = _MockCore();
+  });
 
   void answer(
     FutureOr<List<ServiceCheckItem>> Function(ServiceCheckParams params) check,

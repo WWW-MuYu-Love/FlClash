@@ -26,6 +26,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
 import '../../helpers/glyph_finders.dart';
+import '../../helpers/preferences.dart';
 import '../../helpers/test_app.dart';
 import 'package:prism_ui/prism_ui.dart';
 import '../../helpers/host_scaffold.dart';
@@ -168,7 +169,8 @@ DashboardChip _chip(WidgetTester tester, String label) =>
     );
 
 void main() {
-  setUp(() {
+  setUp(() async {
+    await mockPreferences();
     mitmFeature = true;
     addTearDown(() => mitmFeature = false);
   });
