@@ -2332,9 +2332,6 @@ class MessageLookup extends MessageLookupByLibrary {
     "yearsAgo": m100,
     "yearsAgoShort": m101,
     "yes": MessageLookupByLibrary.simpleMessage("Sí"),
-    "zashboardPanel": MessageLookupByLibrary.simpleMessage(
-      "Panel de Zashboard",
-    ),
     "zhCN": MessageLookupByLibrary.simpleMessage("Chino simplificado"),
   };
 }

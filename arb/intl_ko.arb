@@ -201,7 +201,6 @@
   "autoCloseConnections": "연결 자동 종료",
   "onlyStatisticsProxy": "프록시 트래픽만 집계",
   "autoRefreshOutboundIp": "송신 IP 자동 새로고침",
-  "zashboardPanel": "Zashboard 패널",
   "showNotificationStopAction": "알림에 중지 버튼 표시",
   "pureBlackMode": "퓨어 블랙 모드",
   "sidebar": "사이드바",

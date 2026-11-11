@@ -1566,16 +1566,6 @@ class AppLocalizations {
     );
   }
 
-  /// `Zashboard panel`
-  String get zashboardPanel {
-    return Intl.message(
-      'Zashboard panel',
-      name: 'zashboardPanel',
-      desc: '',
-      args: [],
-    );
-  }
-
   /// `Stop button in notification`
   String get showNotificationStopAction {
     return Intl.message(

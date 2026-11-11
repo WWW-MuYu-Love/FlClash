@@ -325,26 +325,6 @@ class GeneralView extends ConsumerWidget {
         select: (state) => state.autoRefreshOutboundIp,
         update: (state, value) => state.copyWith(autoRefreshOutboundIp: value),
       ),
-      ConfigToggleItem(
-        key: const ValueKey(#zashboard),
-        title: (l) => l.zashboardPanel,
-        selector: appSettingProvider.select(
-          (state) => state.dashboardWidgets.contains(DashboardWidget.zashboard),
-        ),
-        onChanged: (ref, value) => ref
-            .read(appSettingProvider.notifier)
-            .update(
-              (state) => state.copyWith(
-                dashboardWidgets: value
-                    ? [...state.dashboardWidgets, DashboardWidget.zashboard]
-                    : state.dashboardWidgets
-                          .where(
-                            (widget) => widget != DashboardWidget.zashboard,
-                          )
-                          .toList(),
-              ),
-            ),
-      ),
     ];
   }
 

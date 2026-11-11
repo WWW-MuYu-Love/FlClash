@@ -201,7 +201,6 @@
   "autoCloseConnections": "Cerrar conexiones automáticamente",
   "onlyStatisticsProxy": "Contar solo el tráfico del proxy",
   "autoRefreshOutboundIp": "Actualizar IP de salida automáticamente",
-  "zashboardPanel": "Panel de Zashboard",
   "showNotificationStopAction": "Botón de detener en la notificación",
   "pureBlackMode": "Modo negro puro",
   "sidebar": "Barra lateral",
