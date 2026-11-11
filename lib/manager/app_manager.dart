@@ -62,32 +62,11 @@ class _AppStateManagerState extends ConsumerState<AppStateManager>
         ref.read(proxiesActionProvider.notifier).updateGroupsDebounce();
       }
     });
-    ref.listenManual(suspendProvider, (prev, next) {
-      if (prev != next) {
-        ref.read(setupActionProvider.notifier).syncSuspend();
-      }
-    });
-    ref.listenManual(isDirectSsidProvider, (prev, next) {
-      if (prev == next) {
-        return;
-      }
-      final setupAction = ref.read(setupActionProvider.notifier);
-      if (next) {
-        final currentMode = ref.read(patchClashConfigProvider).mode;
-        if (currentMode != Mode.direct) {
-          ref.read(directSsidRestoreModeProvider.notifier).value = currentMode;
-        }
-        setupAction.changeMode(Mode.direct);
-        return;
-      }
-      final restoreMode = ref.read(directSsidRestoreModeProvider);
-      ref.read(directSsidRestoreModeProvider.notifier).value = null;
-      // Only restore when the user has not changed the mode themselves.
-      if (restoreMode != null &&
-          ref.read(patchClashConfigProvider).mode == Mode.direct) {
-        setupAction.changeMode(restoreMode);
-      }
-    });
+    // The exclude-SSID actions are enforced by the native side so they
+    // keep working when this app is killed in the background: the system
+    // disconnects the VPN on the disconnect SSIDs via on-demand rules, and
+    // the extension switches the core to direct on the direct SSIDs. The
+    // lists and the controller secret reach them through the shared state.
     final systemDns = systemDnsCoordinator;
     if (systemDns != null) {
       ref.listenManual(shouldPatchSystemDnsProvider, (prev, next) {

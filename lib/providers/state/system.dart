@@ -238,6 +238,11 @@ SharedState sharedState(Ref ref) {
       options: ref.watch(coreOptionsProvider),
     ),
     vpnOptions: ref.watch(vpnOptionsProvider).value,
+    excludeSSIDs: ref.watch(excludeSSIDsProvider),
+    directSSIDs: ref.watch(directSSIDsProvider),
+    controllerSecret: ref.watch(
+      patchClashConfigProvider.select((state) => state.secret),
+    ),
   );
 }
 

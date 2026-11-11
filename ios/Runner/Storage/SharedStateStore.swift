@@ -96,6 +96,7 @@ final class SharedStateStore {
     return TunnelConfiguration(
       options: sharedState.vpnOptions?.networkExtensionOptions ?? NetworkExtensionOptions(),
       excludeSSIDs: sharedState.excludeSSIDs ?? [],
+      directSSIDs: sharedState.directSSIDs ?? [],
       alwaysOn: sharedState.alwaysOn ?? false
     )
   }
@@ -137,16 +138,27 @@ final class SharedStateStore {
 struct TunnelConfiguration {
   let options: NetworkExtensionOptions
   let excludeSSIDs: [String]
+  let directSSIDs: [String]
   let alwaysOn: Bool
 
   init(
     options: NetworkExtensionOptions = NetworkExtensionOptions(),
     excludeSSIDs: [String] = [],
+    directSSIDs: [String] = [],
     alwaysOn: Bool = false
   ) {
     self.options = options
     self.excludeSSIDs = excludeSSIDs
+    self.directSSIDs = directSSIDs
     self.alwaysOn = alwaysOn
+  }
+
+  /// SSIDs whose action is disconnect: excluded but not direct. Only these
+  /// get an on-demand disconnect rule; a direct SSID must keep the tunnel
+  /// up so the extension can switch the core to direct mode.
+  var disconnectSSIDs: [String] {
+    let direct = Set(directSSIDs)
+    return excludeSSIDs.filter { !direct.contains($0) }
   }
 }
 
@@ -162,6 +174,8 @@ struct NetworkExtensionOptions {
 private struct SharedStatePayload: Decodable {
   let vpnOptions: VpnOptionsPayload?
   let excludeSSIDs: [String]?
+  let directSSIDs: [String]?
+  let controllerSecret: String?
   let alwaysOn: Bool?
 }
 
