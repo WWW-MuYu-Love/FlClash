@@ -73,4 +73,13 @@ void main() {
     expect(packageManifest, contains('.linkedFramework("NetworkExtension")'));
     expect(packageManifest, contains('.iOS(.v15)'));
   });
+
+  test('iOS calls the registrar messenger method', () {
+    expect(
+      pluginSource,
+      contains('registrar.messenger()'),
+      reason:
+          'the iOS registrar exposes messenger as a method, unlike macOS',
+    );
+  });
 }
