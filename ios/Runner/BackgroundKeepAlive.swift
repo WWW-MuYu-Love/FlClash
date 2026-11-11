@@ -37,6 +37,9 @@ final class BackgroundKeepAlive: NSObject {
   private var backgroundObserver: NSObjectProtocol?
 
   override private init() {
+    // Swift two-phase init: super.init() first — the observer closures
+    // below capture self and cannot run before the superclass is ready.
+    super.init()
     backgroundObserver = NotificationCenter.default.addObserver(
       forName: UIApplication.didEnterBackgroundNotification,
       object: nil,
