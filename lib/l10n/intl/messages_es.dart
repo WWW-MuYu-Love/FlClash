@@ -423,6 +423,16 @@ class MessageLookup extends MessageLookupByLibrary {
     "backgroundBlur": MessageLookupByLibrary.simpleMessage(
       "Desenfoque de fondo",
     ),
+    "backgroundKeepAlive": MessageLookupByLibrary.simpleMessage(
+      "Mantener en segundo plano",
+    ),
+    "backgroundKeepAliveOff": MessageLookupByLibrary.simpleMessage("Apagado"),
+    "backgroundKeepAlivePictureInPicture": MessageLookupByLibrary.simpleMessage(
+      "Picture-in-picture",
+    ),
+    "backgroundKeepAliveSilentAudio": MessageLookupByLibrary.simpleMessage(
+      "Audio silencioso",
+    ),
     "backup": MessageLookupByLibrary.simpleMessage("Copia de seguridad"),
     "backupAndRestore": MessageLookupByLibrary.simpleMessage(
       "Copia de seguridad y restauración",

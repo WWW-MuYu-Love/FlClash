@@ -15,6 +15,32 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 part 'general/overrides.dart';
 part 'general/port_form.dart';
 
+class BackgroundKeepAliveItem extends ConsumerWidget {
+  const BackgroundKeepAliveItem({super.key});
+
+  @override
+  Widget build(BuildContext context, ref) {
+    final appLocalizations = context.appLocalizations;
+    return ConfigOptionsItem<BackgroundKeepAliveMode>(
+      title: (l) => l.backgroundKeepAlive,
+      options: BackgroundKeepAliveMode.values,
+      textBuilder: (mode) => switch (mode) {
+        BackgroundKeepAliveMode.off => appLocalizations.backgroundKeepAliveOff,
+        BackgroundKeepAliveMode.silentAudio =>
+          appLocalizations.backgroundKeepAliveSilentAudio,
+        BackgroundKeepAliveMode.pictureInPicture =>
+          appLocalizations.backgroundKeepAlivePictureInPicture,
+      },
+      selector: appSettingProvider.select(
+        (state) => state.backgroundKeepAliveMode,
+      ),
+      onChanged: (ref, value) => ref
+          .read(appSettingProvider.notifier)
+          .update((state) => state.copyWith(backgroundKeepAliveMode: value)),
+    );
+  }
+}
+
 class LogLevelItem extends ConsumerWidget {
   const LogLevelItem({super.key});
 
@@ -260,6 +286,7 @@ class GeneralView extends ConsumerWidget {
         select: (state) => state.autoRun,
         update: (state, value) => state.copyWith(autoRun: value),
       ),
+      if (system.isIOS) const BackgroundKeepAliveItem(),
       ListItem.open(
         title: Text(appLocalizations.onDemand),
         widget: const OnDemandView(),

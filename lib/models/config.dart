@@ -273,6 +273,8 @@ abstract class AppSettingProps with _$AppSettingProps {
     @Default(defaultFilters) List<Filter> filters,
     @Default(false) bool hideIp,
     @Default(false) bool autoRefreshOutboundIp,
+    @Default(BackgroundKeepAliveMode.off)
+    BackgroundKeepAliveMode backgroundKeepAliveMode,
     @Default(false) bool editorLineWrap,
     @Default(EditorFontSize.standard) EditorFontSize editorFontSize,
     @Default([]) List<String> serviceOrder,

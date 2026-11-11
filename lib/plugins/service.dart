@@ -179,6 +179,16 @@ class Service {
     return DateTime.fromMillisecondsSinceEpoch(ms);
   }
 
+  /// iOS only: how the app keeps itself alive in the background. No-op
+  /// elsewhere; the native side ignores unknown modes.
+  Future<bool> setBackgroundKeepAlive(BackgroundKeepAliveMode mode) async {
+    return await methodChannel.invokeMethod<bool>(
+          'setBackgroundKeepAlive',
+          mode.name,
+        ) ??
+        false;
+  }
+
   bool get hasListeners {
     return _listeners.isNotEmpty;
   }

@@ -341,6 +341,14 @@ class MessageLookup extends MessageLookupByLibrary {
     "autoUpdateInterval": MessageLookupByLibrary.simpleMessage("자동 업데이트 간격"),
     "back": MessageLookupByLibrary.simpleMessage("뒤로"),
     "backgroundBlur": MessageLookupByLibrary.simpleMessage("배경 흐림"),
+    "backgroundKeepAlive": MessageLookupByLibrary.simpleMessage("백그라운드 유지"),
+    "backgroundKeepAliveOff": MessageLookupByLibrary.simpleMessage("끄기"),
+    "backgroundKeepAlivePictureInPicture": MessageLookupByLibrary.simpleMessage(
+      "화면 속 화면",
+    ),
+    "backgroundKeepAliveSilentAudio": MessageLookupByLibrary.simpleMessage(
+      "무음 오디오",
+    ),
     "backup": MessageLookupByLibrary.simpleMessage("백업"),
     "backupAndRestore": MessageLookupByLibrary.simpleMessage("백업 및 복원"),
     "backupFromNewerVersion": MessageLookupByLibrary.simpleMessage(

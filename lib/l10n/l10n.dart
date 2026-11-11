@@ -1566,6 +1566,46 @@ class AppLocalizations {
     );
   }
 
+  /// `Background keepalive`
+  String get backgroundKeepAlive {
+    return Intl.message(
+      'Background keepalive',
+      name: 'backgroundKeepAlive',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Off`
+  String get backgroundKeepAliveOff {
+    return Intl.message(
+      'Off',
+      name: 'backgroundKeepAliveOff',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Silent audio`
+  String get backgroundKeepAliveSilentAudio {
+    return Intl.message(
+      'Silent audio',
+      name: 'backgroundKeepAliveSilentAudio',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Picture-in-picture`
+  String get backgroundKeepAlivePictureInPicture {
+    return Intl.message(
+      'Picture-in-picture',
+      name: 'backgroundKeepAlivePictureInPicture',
+      desc: '',
+      args: [],
+    );
+  }
+
   /// `Stop button in notification`
   String get showNotificationStopAction {
     return Intl.message(

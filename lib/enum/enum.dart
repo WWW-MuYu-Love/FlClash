@@ -204,6 +204,11 @@ enum CoreEventType {
 
 enum FindProcessMode { always, off }
 
+/// How the app keeps itself alive in the background on iOS: silent audio
+/// playback, or a tiny picture-in-picture window. Both make iOS treat the
+/// app as still in use instead of suspending it.
+enum BackgroundKeepAliveMode { off, silentAudio, pictureInPicture }
+
 enum InterfaceNameMode { clear, follow, custom }
 
 enum RestoreOption { all, onlyProfiles }

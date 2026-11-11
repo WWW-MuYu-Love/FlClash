@@ -341,6 +341,14 @@ class MessageLookup extends MessageLookupByLibrary {
     "autoUpdateInterval": MessageLookupByLibrary.simpleMessage("自動更新間隔"),
     "back": MessageLookupByLibrary.simpleMessage("戻る"),
     "backgroundBlur": MessageLookupByLibrary.simpleMessage("背景のぼかし"),
+    "backgroundKeepAlive": MessageLookupByLibrary.simpleMessage("バックグラウンド維持"),
+    "backgroundKeepAliveOff": MessageLookupByLibrary.simpleMessage("オフ"),
+    "backgroundKeepAlivePictureInPicture": MessageLookupByLibrary.simpleMessage(
+      "ピクチャ・イン・ピクチャ",
+    ),
+    "backgroundKeepAliveSilentAudio": MessageLookupByLibrary.simpleMessage(
+      "無音オーディオ",
+    ),
     "backup": MessageLookupByLibrary.simpleMessage("バックアップ"),
     "backupAndRestore": MessageLookupByLibrary.simpleMessage("バックアップと復元"),
     "backupFromNewerVersion": MessageLookupByLibrary.simpleMessage(

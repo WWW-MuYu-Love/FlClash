@@ -410,6 +410,16 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "back": MessageLookupByLibrary.simpleMessage("Назад"),
     "backgroundBlur": MessageLookupByLibrary.simpleMessage("Размытие фона"),
+    "backgroundKeepAlive": MessageLookupByLibrary.simpleMessage(
+      "Работа в фоне",
+    ),
+    "backgroundKeepAliveOff": MessageLookupByLibrary.simpleMessage("Выкл."),
+    "backgroundKeepAlivePictureInPicture": MessageLookupByLibrary.simpleMessage(
+      "Картинка в картинке",
+    ),
+    "backgroundKeepAliveSilentAudio": MessageLookupByLibrary.simpleMessage(
+      "Бесшумное аудио",
+    ),
     "backup": MessageLookupByLibrary.simpleMessage("Резервное копирование"),
     "backupAndRestore": MessageLookupByLibrary.simpleMessage(
       "Резервное копирование и восстановление",

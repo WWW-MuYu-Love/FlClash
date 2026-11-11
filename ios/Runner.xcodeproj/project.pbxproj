@@ -25,6 +25,8 @@
 		74858FAF1ED2DC5600515810 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74858FAE1ED2DC5600515810 /* AppDelegate.swift */; };
 		7884E8682EC3CC0700C636F2 /* SceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7884E8672EC3CC0400C636F2 /* SceneDelegate.swift */; };
 		7891A0012FF2266100620D82 /* ServiceChannel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7891A0002FF2266100620D82 /* ServiceChannel.swift */; };
+		CA8FDA92783CF749D789C8AC /* BackgroundKeepAlive.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81E5579F5ABF0872AC37CD69 /* BackgroundKeepAlive.swift */; };
+		453741DA067ACC1D114B5CF4 /* keepalive.mp4 in Resources */ = {isa = PBXBuildFile; fileRef = 045E4C942D1A5EBC4BA27A62 /* keepalive.mp4 */; };
 		7891A0032FF2361D00620D82 /* IOSCoreBridge.m in Sources */ = {isa = PBXBuildFile; fileRef = 7891A0022FF2361D00620D82 /* IOSCoreBridge.m */; };
 		7891A0062FF2361D00620D82 /* libclash.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 7891A0052FF2361D00620D82 /* libclash.a */; };
 		7891A0082FF23B9500620D82 /* libresolv.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = 7891A0072FF23B9500620D82 /* libresolv.tbd */; };
@@ -123,6 +125,8 @@
 		74858FAE1ED2DC5600515810 /* AppDelegate.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		7884E8672EC3CC0400C636F2 /* SceneDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneDelegate.swift; sourceTree = "<group>"; };
 		7891A0002FF2266100620D82 /* ServiceChannel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServiceChannel.swift; sourceTree = "<group>"; };
+		81E5579F5ABF0872AC37CD69 /* BackgroundKeepAlive.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackgroundKeepAlive.swift; sourceTree = "<group>"; };
+		045E4C942D1A5EBC4BA27A62 /* keepalive.mp4 */ = {isa = PBXFileReference; lastKnownFileType = video.mp4; path = keepalive.mp4; sourceTree = "<group>"; };
 		7891A0022FF2361D00620D82 /* IOSCoreBridge.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = IOSCoreBridge.m; sourceTree = "<group>"; };
 		7891A0042FF2361D00620D82 /* IOSCoreBridge.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = IOSCoreBridge.h; sourceTree = "<group>"; };
 		7891A0052FF2361D00620D82 /* libclash.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libclash.a; path = ../libclash/ios/arm64/libclash.a; sourceTree = "<group>"; };
@@ -344,6 +348,8 @@
 				7884E8672EC3CC0400C636F2 /* SceneDelegate.swift */,
 				0590E2612FFA576B00321CD8 /* ShortcutProvider.swift */,
 				7891A0002FF2266100620D82 /* ServiceChannel.swift */,
+				81E5579F5ABF0872AC37CD69 /* BackgroundKeepAlive.swift */,
+				045E4C942D1A5EBC4BA27A62 /* keepalive.mp4 */,
 				7D0000023000000000000001 /* Core */,
 				7C0000013000000000000001 /* Tunnel */,
 				7D0000033000000000000001 /* Storage */,
@@ -567,6 +573,7 @@
 				3B3967161E833CAA004F5970 /* AppFrameworkInfo.plist in Resources */,
 				97C146FE1CF9000F007C117D /* Assets.xcassets in Resources */,
 				97C146FC1CF9000F007C117D /* Main.storyboard in Resources */,
+				453741DA067ACC1D114B5CF4 /* keepalive.mp4 in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -663,6 +670,7 @@
 				1498D2341E8E89220040F4C2 /* GeneratedPluginRegistrant.m in Sources */,
 				7884E8682EC3CC0700C636F2 /* SceneDelegate.swift in Sources */,
 				7891A0012FF2266100620D82 /* ServiceChannel.swift in Sources */,
+				CA8FDA92783CF749D789C8AC /* BackgroundKeepAlive.swift in Sources */,
 				7C0000123000000000000001 /* TunnelController.swift in Sources */,
 				7C0000133000000000000001 /* TunnelCoordinator.swift in Sources */,
 				7C0000143000000000000001 /* TunnelManagerStore.swift in Sources */,

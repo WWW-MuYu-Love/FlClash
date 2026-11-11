@@ -329,6 +329,14 @@ class MessageLookup extends MessageLookupByLibrary {
     "autoUpdateInterval": MessageLookupByLibrary.simpleMessage("自动更新间隔"),
     "back": MessageLookupByLibrary.simpleMessage("返回"),
     "backgroundBlur": MessageLookupByLibrary.simpleMessage("背景模糊"),
+    "backgroundKeepAlive": MessageLookupByLibrary.simpleMessage("后台保活"),
+    "backgroundKeepAliveOff": MessageLookupByLibrary.simpleMessage("关闭"),
+    "backgroundKeepAlivePictureInPicture": MessageLookupByLibrary.simpleMessage(
+      "画中画",
+    ),
+    "backgroundKeepAliveSilentAudio": MessageLookupByLibrary.simpleMessage(
+      "无声音频",
+    ),
     "backup": MessageLookupByLibrary.simpleMessage("备份"),
     "backupAndRestore": MessageLookupByLibrary.simpleMessage("备份与恢复"),
     "backupFromNewerVersion": MessageLookupByLibrary.simpleMessage(

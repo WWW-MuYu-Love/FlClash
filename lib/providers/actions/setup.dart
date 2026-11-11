@@ -55,6 +55,22 @@ class SetupAction extends _$SetupAction {
       appSettingProvider.select((state) => state.showTrayTitle),
       (_, _) => _syncRuntimeTicker(),
     );
+    ref.listen(
+      appSettingProvider.select(
+        (state) => state.backgroundKeepAliveMode,
+      ),
+      (_, mode) => _applyBackgroundKeepAlive(mode),
+    );
+  }
+
+  /// iOS only: push the saved keepalive mode to the native side. The native
+  /// side owns the audio session / PiP controller; Dart only tells it which
+  /// mode is wanted.
+  void _applyBackgroundKeepAlive(BackgroundKeepAliveMode mode) {
+    if (!system.isIOS) {
+      return;
+    }
+    unawaited(service?.setBackgroundKeepAlive(mode));
   }
 
   bool get _isTrafficShown =>
@@ -157,6 +173,9 @@ class SetupAction extends _$SetupAction {
     if (!globalState.needInitStatus) {
       return;
     }
+    _applyBackgroundKeepAlive(
+      ref.read(appSettingProvider).backgroundKeepAliveMode,
+    );
     _startTime = await serviceStartTime();
     if (_isRunning) {
       globalState.lastConfigMd5 = await preferences.getAppliedConfigMd5();

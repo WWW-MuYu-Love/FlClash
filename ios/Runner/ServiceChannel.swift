@@ -236,6 +236,15 @@ final class ServiceChannel {
         let running = await tunnelController.getRunTime() > 0
         result(running ? sharedStateStore.activeVpnOptions() : nil)
       }
+    case "setBackgroundKeepAlive":
+      // Dart sends the mode name: "off", "silentAudio", "pictureInPicture".
+      // Unknown values stop the keepalive.
+      if let mode = call.arguments as? String {
+        BackgroundKeepAlive.shared.setMode(mode)
+        result(true)
+      } else {
+        result(false)
+      }
     default:
       result(FlutterMethodNotImplemented)
     }

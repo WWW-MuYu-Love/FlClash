@@ -67,6 +67,12 @@ _AppSettingProps _$AppSettingPropsFromJson(
       defaultFilters,
   hideIp: json['hideIp'] as bool? ?? false,
   autoRefreshOutboundIp: json['autoRefreshOutboundIp'] as bool? ?? false,
+  backgroundKeepAliveMode:
+      $enumDecodeNullable(
+        _$BackgroundKeepAliveModeEnumMap,
+        json['backgroundKeepAliveMode'],
+      ) ??
+      BackgroundKeepAliveMode.off,
   editorLineWrap: json['editorLineWrap'] as bool? ?? false,
   editorFontSize:
       $enumDecodeNullable(_$EditorFontSizeEnumMap, json['editorFontSize']) ??
@@ -129,6 +135,8 @@ Map<String, dynamic> _$AppSettingPropsToJson(_AppSettingProps instance) =>
       'filters': instance.filters,
       'hideIp': instance.hideIp,
       'autoRefreshOutboundIp': instance.autoRefreshOutboundIp,
+      'backgroundKeepAliveMode':
+          _$BackgroundKeepAliveModeEnumMap[instance.backgroundKeepAliveMode]!,
       'editorLineWrap': instance.editorLineWrap,
       'editorFontSize': _$EditorFontSizeEnumMap[instance.editorFontSize]!,
       'serviceOrder': instance.serviceOrder,
@@ -150,6 +158,12 @@ const _$TabAnimationEnumMap = {
 const _$RestoreStrategyEnumMap = {
   RestoreStrategy.compatible: 'compatible',
   RestoreStrategy.override: 'override',
+};
+
+const _$BackgroundKeepAliveModeEnumMap = {
+  BackgroundKeepAliveMode.off: 'off',
+  BackgroundKeepAliveMode.silentAudio: 'silentAudio',
+  BackgroundKeepAliveMode.pictureInPicture: 'pictureInPicture',
 };
 
 const _$EditorFontSizeEnumMap = {
