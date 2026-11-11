@@ -35,7 +35,7 @@ class MemorySnapshot {
 
   int get coreOther => max(0, coreTotal - (core?.runtimeTotal ?? 0));
 
-  /// On Android the Core shares the app process, so its runtime accounting is
+  /// On mobile the Core shares the app process, so its runtime accounting is
   /// carved out of the process RSS instead of added on top of it.
   static MemorySnapshot resolve({
     required int rss,
@@ -81,7 +81,7 @@ Future<MemorySnapshot> _readSnapshot(WidgetRef ref) async {
   return MemorySnapshot.resolve(
     rss: rss,
     core: core,
-    coreInProcess: system.isAndroid,
+    coreInProcess: system.isMobile,
   );
 }
 
