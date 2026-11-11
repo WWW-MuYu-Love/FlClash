@@ -167,37 +167,6 @@ class _OnDemandViewState extends ConsumerState<OnDemandView>
     });
   }
 
-  // A round swipe button like the one on LiveContainer's app page: a solid
-  // circle with a white icon, and the action label beneath it.
-  Widget _swipeActionButton({
-    required String label,
-    required Glyph glyph,
-    required Color color,
-    required Color foreground,
-  }) {
-    return SizedBox(
-      width: 70,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 48,
-            height: 48,
-            decoration: ShapeDecoration(color: color, shape: AppShape.full),
-            child: Center(child: GlyphIcon(glyph, size: 20, color: foreground)),
-          ),
-          const SizedBox(height: 3),
-          Text(
-            label,
-            style: AppTextStyle.caption2
-                .of(context)
-                .copyWith(color: context.colorScheme.onSurfaceVariant),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildItem({
     required String ssid,
     required int index,
@@ -208,44 +177,13 @@ class _OnDemandViewState extends ConsumerState<OnDemandView>
   }) {
     final position = ItemPosition.get(index, length);
     final appLocalizations = context.appLocalizations;
-    final colorScheme = context.colorScheme;
     return ReorderDragStartListener(
       key: ValueKey(ssid),
       index: index,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16),
-        child: Dismissible(
-          key: ValueKey('swipe-$ssid'),
-          direction: DismissDirection.horizontal,
-          // The action fires once the round button is fully revealed.
-          dismissThresholds: const {
-            DismissDirection.startToEnd: 0.25,
-            DismissDirection.endToStart: 0.25,
-          },
-          confirmDismiss: (direction) async {
-            // Left swipe switches the SSID to direct mode, right swipe
-            // switches it back to disconnecting the tunnel.
-            _setSsidAction(ssid, direction == DismissDirection.endToStart);
-            return false;
-          },
-          background: Align(
-            alignment: Alignment.centerLeft,
-            child: _swipeActionButton(
-              label: appLocalizations.disconnect,
-              glyph: AppGlyphs.wifiOff,
-              color: colorScheme.error,
-              foreground: colorScheme.onError,
-            ),
-          ),
-          secondaryBackground: Align(
-            alignment: Alignment.centerRight,
-            child: _swipeActionButton(
-              label: appLocalizations.direct,
-              glyph: AppGlyphs.link,
-              color: colorScheme.primary,
-              foreground: colorScheme.onPrimary,
-            ),
-          ),
+        child: _SsidSwipeCard(
+          onSetAction: (direct) => _setSsidAction(ssid, direct),
           child: ItemPositionProvider(
             position: position,
             child: SelectedDecorationListItem(
@@ -503,6 +441,173 @@ class _OnDemandViewState extends ConsumerState<OnDemandView>
         ],
       ),
       title: context.appLocalizations.onDemand,
+    );
+  }
+}
+
+/// A card that swipes sideways to reveal round action buttons, like the
+/// app cards on LiveContainer's app page. Swiping past half the card runs
+/// the action; a shorter swipe leaves the button open to tap.
+class _SsidSwipeCard extends StatefulWidget {
+  const _SsidSwipeCard({required this.onSetAction, required this.child});
+
+  final ValueChanged<bool> onSetAction;
+  final Widget child;
+
+  @override
+  State<_SsidSwipeCard> createState() => _SsidSwipeCardState();
+}
+
+class _SsidSwipeCardState extends State<_SsidSwipeCard>
+    with SingleTickerProviderStateMixin {
+  static const _revealWidth = 76.0;
+
+  late final AnimationController _controller;
+  Animation<double>? _offsetAnimation;
+  double _offset = 0;
+  bool _isOpen = false;
+  double _width = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller =
+        AnimationController(
+          vsync: this,
+          duration: const Duration(milliseconds: 250),
+        )..addListener(() {
+          setState(() {
+            _offset = _offsetAnimation?.value ?? _offset;
+          });
+        });
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _animateTo(double target) {
+    _isOpen = target != 0;
+    _offsetAnimation = Tween<double>(
+      begin: _offset,
+      end: target,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic));
+    _controller.forward(from: 0);
+  }
+
+  void _execute(bool direct) {
+    widget.onSetAction(direct);
+    _animateTo(0);
+  }
+
+  void _onDragUpdate(DragUpdateDetails details) {
+    _controller.stop();
+    setState(() {
+      _offset = (_offset + details.delta.dx).clamp(-_width, _width);
+    });
+  }
+
+  void _onDragEnd(DragEndDetails details) {
+    if (_width <= 0) {
+      _animateTo(0);
+      return;
+    }
+    final halfWidth = _width * 0.5;
+    if (_offset >= halfWidth) {
+      _execute(false);
+    } else if (_offset <= -halfWidth) {
+      _execute(true);
+    } else if (_offset >= _revealWidth / 2) {
+      _animateTo(_revealWidth);
+    } else if (_offset <= -_revealWidth / 2) {
+      _animateTo(-_revealWidth);
+    } else {
+      _animateTo(0);
+    }
+  }
+
+  // A round swipe button like the one on LiveContainer's app page: a solid
+  // circle with a white icon, and the action label beneath it.
+  Widget _swipeActionButton({
+    required String label,
+    required Glyph glyph,
+    required Color color,
+    required Color foreground,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: SizedBox(
+        width: 70,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 48,
+              height: 48,
+              decoration: ShapeDecoration(color: color, shape: AppShape.full),
+              child: Center(
+                child: GlyphIcon(glyph, size: 20, color: foreground),
+              ),
+            ),
+            const SizedBox(height: 3),
+            Text(
+              label,
+              style: AppTextStyle.caption2
+                  .of(context)
+                  .copyWith(color: context.colorScheme.onSurfaceVariant),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = context.colorScheme;
+    final appLocalizations = context.appLocalizations;
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        _width = constraints.maxWidth;
+        return Stack(
+          children: [
+            Positioned.fill(
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  _swipeActionButton(
+                    label: appLocalizations.disconnect,
+                    glyph: AppGlyphs.wifiOff,
+                    color: colorScheme.error,
+                    foreground: colorScheme.onError,
+                    onTap: () => _execute(false),
+                  ),
+                  _swipeActionButton(
+                    label: appLocalizations.direct,
+                    glyph: AppGlyphs.link,
+                    color: colorScheme.primary,
+                    foreground: colorScheme.onPrimary,
+                    onTap: () => _execute(true),
+                  ),
+                ],
+              ),
+            ),
+            Transform.translate(
+              offset: Offset(_offset, 0),
+              child: GestureDetector(
+                onHorizontalDragUpdate: _onDragUpdate,
+                onHorizontalDragEnd: _onDragEnd,
+                onTap: _isOpen ? () => _animateTo(0) : null,
+                child: IgnorePointer(ignoring: _isOpen, child: widget.child),
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 }
