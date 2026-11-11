@@ -110,6 +110,9 @@ class Bootstrap {
       traffics: FixedList(trafficSampleLength),
       totalTraffic: const Traffic(),
       systemUiOverlayStyle: const SystemUiOverlayStyle(),
+      // A background kill drops the in-memory page, so reopening lands on
+      // the last page instead of the dashboard.
+      pageLabel: await preferences.getLastPageLabel() ?? PageLabel.dashboard,
     );
     final appStateOverrides = buildAppStateOverrides(appState);
     final configOverrides = buildConfigOverrides(config);

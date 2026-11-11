@@ -40,6 +40,11 @@ class _AppStateManagerState extends ConsumerState<AppStateManager>
         ref.read(storeActionProvider.notifier).savePreferencesDebounce();
       }
     });
+    ref.listenManual(currentPageLabelProvider, (prev, next) {
+      if (prev != next) {
+        unawaited(preferences.saveLastPageLabel(next));
+      }
+    });
     ref.listenManual(groupsProvider, (prev, next) {
       if (prev != next) {
         unawaited(precacheTargetIcons(next.map((group) => group.icon)));

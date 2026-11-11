@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:fl_clash/common/boot_record.dart';
 import 'package:fl_clash/common/constant.dart';
 import 'package:fl_clash/common/preferences.dart';
+import 'package:fl_clash/enum/enum.dart';
 import 'package:fl_clash/models/models.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -37,6 +38,24 @@ void main() {
 
       await preferences.saveAppliedConfigMd5(null);
       expect(store.containsKey(appliedConfigMd5Key), isFalse);
+    });
+  });
+
+  group('last page label', () {
+    test('defaults to null when never written', () async {
+      expect(await preferences.getLastPageLabel(), isNull);
+    });
+
+    test('round-trips a written page label', () async {
+      await preferences.saveLastPageLabel(PageLabel.proxies);
+
+      expect(await preferences.getLastPageLabel(), PageLabel.proxies);
+    });
+
+    test('returns null for an unknown page label', () async {
+      await store.setString(lastPageLabelKey, 'no-such-page');
+
+      expect(await preferences.getLastPageLabel(), isNull);
     });
   });
 
