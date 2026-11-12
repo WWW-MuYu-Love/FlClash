@@ -382,6 +382,22 @@ void main() {
     expect(container.read(directSSIDsProvider), ['Home']);
   });
 
+  testWidgets('a newly added SSID defaults to direct', (tester) async {
+    await pumpView(tester);
+
+    await tester.tap(find.byTooltip('Add'));
+    await tester.pumpAndSettle();
+    expect(find.text('Add SSID'), findsOneWidget);
+
+    await tester.enterText(find.byType(EditableText), 'Home');
+    await tester.tap(find.text('Submit'));
+    await tester.pumpAndSettle();
+
+    expect(container.read(excludeSSIDsProvider), ['Home']);
+    expect(container.read(directSSIDsProvider), ['Home']);
+    expect(find.text('Direct'), findsOneWidget);
+  });
+
   testWidgets('a short swipe leaves the action open until a tap elsewhere', (
     tester,
   ) async {

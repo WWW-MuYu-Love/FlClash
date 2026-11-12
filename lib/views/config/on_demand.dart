@@ -142,8 +142,12 @@ class _OnDemandViewState extends ConsumerState<OnDemandView>
       }
       return [...newSSIDS, newSSID];
     });
-    // Renaming keeps the SSID's action.
-    if (ssid != null) {
+    // A newly added SSID defaults to direct; renaming keeps the action.
+    if (ssid == null) {
+      ref.read(directSSIDsProvider.notifier).update((state) {
+        return [...state, newSSID];
+      });
+    } else {
       ref.read(directSSIDsProvider.notifier).update((state) {
         if (!state.contains(ssid)) {
           return state;
