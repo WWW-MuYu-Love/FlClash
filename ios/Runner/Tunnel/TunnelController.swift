@@ -117,7 +117,7 @@ final class TunnelController {
     else {
       throw ProviderMessageError(
         code: "network_extension_unavailable",
-        message: "network extension is not running"
+        message: "扩展未运行"
       )
     }
 
@@ -130,7 +130,7 @@ final class TunnelController {
         continuation.resume(
           throwing: ProviderMessageError(
             code: "network_extension_timeout",
-            message: "network extension did not answer in 30 seconds"
+            message: "扩展 30 秒内未响应"
           )
         )
       }
@@ -148,7 +148,7 @@ final class TunnelController {
               continuation.resume(
                 throwing: ProviderMessageError(
                   code: "empty_response",
-                  message: "empty network extension response"
+                  message: "扩展返回空响应"
                 )
               )
               return

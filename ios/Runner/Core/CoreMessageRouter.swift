@@ -327,7 +327,7 @@ final class CoreMessageRouter {
       throw CoreRoutingError(
         code: "extension_config_failed",
         message:
-          "App core applied the config, but the extension core did not receive it: \(error.localizedDescription)"
+          "应用内核已应用配置，但扩展内核未收到：\(error.localizedDescription)"
       )
     }
   }
