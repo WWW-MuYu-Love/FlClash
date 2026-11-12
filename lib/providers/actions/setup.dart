@@ -334,7 +334,8 @@ class SetupAction extends _$SetupAction {
   @visibleForTesting
   Future<void> updateConfig() async {
     await globalState.safeRun(() async {
-      final patchConfig = ref.read(patchClashConfigProvider);
+      var patchConfig = ref.read(patchClashConfigProvider);
+      patchConfig = _ensureIOSController(patchConfig);
       final shouldContinueSetup = await requestAdmin(patchConfig.tun.enable);
       if (!shouldContinueSetup) {
         await _restartCoreAfterAuthorization();
@@ -348,6 +349,25 @@ class SetupAction extends _$SetupAction {
         ),
       );
     });
+  }
+
+  PatchClashConfig _ensureIOSController(PatchClashConfig patchConfig) {
+    if (!system.isIOS) {
+      return patchConfig;
+    }
+    final ensured = patchConfig
+        .copyWith(externalController: ExternalControllerStatus.open)
+        .ensureControllerSecret();
+    if (ensured != patchConfig) {
+      ref.read(patchClashConfigProvider.notifier).update((_) => ensured);
+    }
+    return ensured;
+  }
+
+  /// iOS only: make sure the controller secret exists before a caller
+  /// builds something from it, e.g. the Zashboard card building its URL.
+  void ensureIOSController() {
+    _ensureIOSController(ref.read(patchClashConfigProvider));
   }
 
   @protected
