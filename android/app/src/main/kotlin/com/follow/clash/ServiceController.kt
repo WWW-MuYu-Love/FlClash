@@ -59,9 +59,11 @@ object ServiceController {
         setupParams: String,
     ): Result<String> = runCatching {
         NetworkObserver.start()
-        suspendCancellableCoroutine { continuation ->
-            Core.quickSetup(initParams, setupParams) { result ->
-                continuation.resume(result.orEmpty())
+        withTimeout(30_000) {
+            suspendCancellableCoroutine { continuation ->
+                Core.quickSetup(initParams, setupParams) { result ->
+                    continuation.resume(result.orEmpty())
+                }
             }
         }
     }

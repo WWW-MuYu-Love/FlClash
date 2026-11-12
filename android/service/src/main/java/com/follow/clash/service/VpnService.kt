@@ -212,12 +212,13 @@ class VpnService : SystemVpnService(), ManagedService {
             addRoute(fallbackAddress, 0)
             return
         }
-        try {
-            routeList.forEach { route ->
-                addRoute(route.address, route.prefixLength)
-            }
-        } catch (_: Exception) {
-            addRoute(fallbackAddress, 0)
+        routeList.forEach { route ->
+            runCatching { addRoute(route.address, route.prefixLength) }
+                .onFailure { error ->
+                    GlobalState.log(
+                        "Skipping VPN route ${route.address.hostAddress}/${route.prefixLength}: $error",
+                    )
+                }
         }
     }
 

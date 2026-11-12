@@ -135,12 +135,15 @@ class RouteAddressTest {
     }
 
     @Test
-    fun `propagates a malformed entry instead of silently dropping it`() {
-        val options = optionsWithRoutes(listOf("192.168.1.0/24", "not-a-cidr"))
+    fun `skips a malformed entry and keeps the valid routes`() {
+        val options = optionsWithRoutes(
+            listOf("192.168.1.0/24", "not-a-cidr", "10.0.0.0/8"),
+        )
 
-        assertThrows(IllegalArgumentException::class.java) {
-            options.getIpv4RouteAddress()
-        }
+        assertEquals(
+            listOf(24, 8),
+            options.getIpv4RouteAddress().map { it.prefixLength },
+        )
     }
 }
 

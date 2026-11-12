@@ -154,8 +154,8 @@ internal class ServiceStateMachine(private val host: ServiceStateHost) {
         }
         if (!setupCore()) {
             abandon(request)
-        } else if (launchStart(request).await() == StartOutcome.FAILED) {
-            host.showToast(START_FAILED_MESSAGE)
+        } else {
+            launchStart(request).await()
         }
     }
 
@@ -163,7 +163,9 @@ internal class ServiceStateMachine(private val host: ServiceStateHost) {
         val result = CompletableDeferred<StartOutcome>()
         val launch: (Boolean) -> Unit = { permitted ->
             host.scope.launch {
-                result.complete(if (permitted) start(request) else abandon(request))
+                result.complete(
+                    if (permitted) start(request) else abandon(request, START_FAILED_MESSAGE),
+                )
             }
         }
         val app = host.app()
@@ -214,44 +216,49 @@ internal class ServiceStateMachine(private val host: ServiceStateHost) {
     }
 
     private suspend fun start(request: RunRequest): StartOutcome {
-        val started = try {
+        val failure = try {
             startPreparationLock.withLock { runStart(request) }
         } catch (error: CancellationException) {
             throw error
         } catch (error: Exception) {
             host.log("Unable to process service start request: $error")
-            false
+            START_FAILED_MESSAGE
         }
-        return if (started) StartOutcome.STARTED else abandon(request)
+        return if (failure == null) StartOutcome.STARTED else abandon(request, failure)
     }
 
-    private suspend fun abandon(request: RunRequest): StartOutcome {
+    private suspend fun abandon(
+        request: RunRequest,
+        failureMessage: String? = null,
+    ): StartOutcome {
         val dropped = arbiter.resetToStopped(request)
         reconcileStopped()
         if (!dropped) {
             return StartOutcome.SUPERSEDED
         }
+        failureMessage?.let { host.showToast(it) }
         host.notifyStopped()
         return StartOutcome.FAILED
     }
 
-    private suspend fun runStart(request: RunRequest): Boolean {
+    private suspend fun runStart(request: RunRequest): String? {
         if (!isCurrent(request)) {
-            return false
+            return START_FAILED_MESSAGE
         }
-        val options = sharedState.vpnOptions ?: return false
+        val options = sharedState.vpnOptions ?: return START_FAILED_MESSAGE
         if (!prepareVpn(options)) {
-            if (host.app() == null && isCurrent(request)) {
-                host.showToast(VPN_PERMISSION_MESSAGE)
-            }
-            return false
+            return VPN_PERMISSION_MESSAGE
         }
         return transitionLock.withLock {
             when {
-                !isCurrent(request) -> false
-                host.runtime?.vpn == options.enable -> true
+                !isCurrent(request) -> START_FAILED_MESSAGE
+                host.runtime?.vpn == options.enable -> null
                 else -> transitioning(RunState.STARTING) {
-                    host.startService(withLocalNetworkFallback(options)) && isCurrent(request)
+                    if (host.startService(withLocalNetworkFallback(options)) && isCurrent(request)) {
+                        null
+                    } else {
+                        START_FAILED_MESSAGE
+                    }
                 }
             }
         }

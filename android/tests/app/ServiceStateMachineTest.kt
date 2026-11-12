@@ -323,6 +323,39 @@ class ServiceStateMachineTest {
         assertEquals(1, host.stoppedNotifications)
     }
 
+    @Test
+    fun `a denied vpn permission is reported when the app is attached`() = runTest {
+        val host = FakeHost(backgroundScope)
+        host.app = FakeApp(vpnGranted = false)
+        val machine = ServiceStateMachine(host)
+        machine.syncSharedState(configuredState())
+
+        assertFalse(machine.requestStart().await())
+        assertTrue(host.toasts.contains(VPN_PERMISSION_MESSAGE))
+    }
+
+    @Test
+    fun `a service that refuses the start is reported exactly once`() = runTest {
+        val host = FakeHost(backgroundScope)
+        host.startSucceeds = false
+        val machine = ServiceStateMachine(host)
+        machine.syncSharedState(configuredState())
+
+        assertFalse(machine.requestStart().await())
+        assertEquals(1, host.toasts.count { it == START_FAILED_MESSAGE })
+    }
+
+    @Test
+    fun `a denied notification permission is reported exactly once`() = runTest {
+        val host = FakeHost(backgroundScope)
+        host.app = FakeApp(notificationGranted = false)
+        val machine = ServiceStateMachine(host)
+        machine.syncSharedState(configuredState())
+
+        assertFalse(machine.requestStart().await())
+        assertEquals(1, host.toasts.count { it == START_FAILED_MESSAGE })
+    }
+
     /** Flutter opened the Core's listeners before asking, and may be gone before it hears back. */
     @Test
     fun `a start refused before any service came up closes the core without passing STOPPING`() =

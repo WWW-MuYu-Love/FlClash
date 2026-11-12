@@ -1,6 +1,7 @@
 package com.follow.clash.service.models
 
 import com.follow.clash.common.AccessControlMode
+import com.follow.clash.common.GlobalState
 import com.google.gson.Gson
 import java.net.Inet4Address
 import java.net.Inet6Address
@@ -53,12 +54,16 @@ data class CIDR(
 )
 
 fun VpnOptions.getIpv4RouteAddress(): List<CIDR> = routeAddress
-    .map(String::toCIDR)
+    .mapNotNull(String::toValidCIDR)
     .filter { it.address is Inet4Address }
 
 fun VpnOptions.getIpv6RouteAddress(): List<CIDR> = routeAddress
-    .map(String::toCIDR)
+    .mapNotNull(String::toValidCIDR)
     .filter { it.address is Inet6Address }
+
+private fun String.toValidCIDR(): CIDR? = runCatching { toCIDR() }
+    .onFailure { error -> GlobalState.log("Skipping invalid VPN route: $this ($error)") }
+    .getOrNull()
 
 fun String.toCIDR(): CIDR {
     val parts = split("/")
