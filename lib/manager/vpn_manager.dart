@@ -25,26 +25,23 @@ class _VpnContainerState extends ConsumerState<VpnManager> with TileListener {
   void initState() {
     super.initState();
     tile?.addListener(this);
-    ref.listenManual(
-      vpnOptionsProvider.select((state) => state.value?.effective),
-      (prev, next) {
-        final running = ref.read(runningVpnOptionsProvider)?.effective;
-        if (next == null ||
-            prev == next ||
-            running == null ||
-            running == next) {
-          return;
-        }
-        // Turning VPN off stops the run outright: a tip alone would leave the dashboard showing a run with no tunnel behind it.
-        if (!next.enable) {
-          if (ref.read(isStartProvider)) {
-            unawaited(ref.read(setupActionProvider.notifier).setRunning(false));
-          }
-          return;
-        }
-        _showRestartTip();
-      },
-    );
+    ref.listenManual(vpnOptionsProvider.select((state) => state.value), (
+      prev,
+      next,
+    ) {
+      final running = ref.read(runningVpnOptionsProvider);
+      if (next == null || prev == null || running == null) {
+        return;
+      }
+      if (running.effective == next.effective) {
+        return;
+      }
+      if (prev.copyWith(enable: next.enable) == next) {
+        unawaited(_toggleTunnelOnly(prev: prev, next: next));
+        return;
+      }
+      _showRestartTip();
+    });
     // A failed tunnel start is otherwise silent: the dashboard shows the
     // core running while the system VPN never connects.
     ref.listenManual(tunnelErrorProvider, (prev, next) {
@@ -93,6 +90,35 @@ class _VpnContainerState extends ConsumerState<VpnManager> with TileListener {
         unawaited(ref.read(setupActionProvider.notifier).restartVpn());
       },
     );
+  }
+
+  Future<void> _toggleTunnelOnly({
+    required VpnOptions prev,
+    required VpnOptions next,
+  }) async {
+    final bool handled;
+    try {
+      handled = await ref
+          .read(setupActionProvider.notifier)
+          .setTunnelEnabled(next.enable);
+    } catch (error) {
+      if (next.enable) {
+        // The tunnel never started: put the switch back where it was.
+        ref
+            .read(vpnSettingProvider.notifier)
+            .update((state) => state.copyWith(enable: prev.enable));
+      }
+      dialogs.showBanner(
+        userFacingErrorMessage(error, currentAppLocalizations),
+        level: BannerLevel.error,
+      );
+      return;
+    }
+    if (!handled) {
+      _showRestartTip();
+      return;
+    }
+    ref.read(runningVpnOptionsProvider.notifier).value = next;
   }
 
   @override

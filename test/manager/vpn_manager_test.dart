@@ -1,4 +1,5 @@
 import 'package:fl_clash/common/common.dart';
+import 'package:fl_clash/core/method.dart';
 import 'package:fl_clash/enum/enum.dart';
 import 'package:fl_clash/manager/vpn_manager.dart';
 import 'package:fl_clash/models/models.dart';
@@ -16,10 +17,27 @@ import '../helpers/test_app.dart';
 
 class _RestartRecordingSetupAction extends SetupAction {
   int restarts = 0;
+  int tunnelToggles = 0;
+  bool? lastTunnelEnabled;
+  // False mirrors the real method off iOS; set true to simulate the iOS
+  // fast path.
+  bool tunnelToggleHandled = false;
+  Exception? tunnelToggleError;
 
   @override
   Future<void> restartVpn() async {
     restarts++;
+  }
+
+  @override
+  Future<bool> setTunnelEnabled(bool enable) async {
+    tunnelToggles++;
+    lastTunnelEnabled = enable;
+    final error = tunnelToggleError;
+    if (error != null) {
+      throw error;
+    }
+    return tunnelToggleHandled;
   }
 }
 
@@ -105,6 +123,144 @@ void main() {
     await tester.tap(tip());
     await tester.pump();
     expect(setupAction.restarts, 1);
+    await drainTimers(tester);
+  });
+
+  testWidgets('turning VPN off while the service runs asks for a restart', (
+    tester,
+  ) async {
+    await pumpVpnManager(tester);
+    startService();
+
+    updateVpn((state) => state.copyWith(enable: false));
+    await settle(tester);
+    expect(tip(), findsOneWidget);
+    expect(setupAction.restarts, 0);
+
+    await tester.pump(const Duration(milliseconds: 500));
+    await tester.tap(tip());
+    await tester.pump();
+    expect(setupAction.restarts, 1);
+    await drainTimers(tester);
+  });
+
+  testWidgets('flipping the VPN switch off toggles only the tunnel', (
+    tester,
+  ) async {
+    setupAction.tunnelToggleHandled = true;
+    await pumpVpnManager(tester);
+    startService();
+
+    updateVpn((state) => state.copyWith(enable: false));
+    await settle(tester);
+
+    expect(tip(), findsNothing);
+    expect(setupAction.tunnelToggles, 1);
+    expect(setupAction.lastTunnelEnabled, isFalse);
+    expect(setupAction.restarts, 0);
+    expect(container.read(runningVpnOptionsProvider)?.enable, isFalse);
+    await drainTimers(tester);
+  });
+
+  testWidgets('flipping the VPN switch on toggles only the tunnel', (
+    tester,
+  ) async {
+    setupAction.tunnelToggleHandled = true;
+    await pumpVpnManager(tester);
+    updateVpn((state) => state.copyWith(enable: false));
+    await settle(tester);
+    startService();
+
+    updateVpn((state) => state.copyWith(enable: true));
+    await settle(tester);
+
+    expect(tip(), findsNothing);
+    expect(setupAction.tunnelToggles, 1);
+    expect(setupAction.lastTunnelEnabled, isTrue);
+    expect(setupAction.restarts, 0);
+    expect(container.read(runningVpnOptionsProvider)?.enable, isTrue);
+    await drainTimers(tester);
+  });
+
+  testWidgets('an enable flip with another change still asks for a restart', (
+    tester,
+  ) async {
+    setupAction.tunnelToggleHandled = true;
+    await pumpVpnManager(tester);
+    startService();
+
+    updateVpn((state) => state.copyWith(enable: false, ipv6: !state.ipv6));
+    await settle(tester);
+
+    expect(tip(), findsOneWidget);
+    expect(setupAction.tunnelToggles, 0);
+    await drainTimers(tester);
+  });
+
+  testWidgets('a failed tunnel start puts the switch back', (tester) async {
+    setupAction.tunnelToggleHandled = true;
+    setupAction.tunnelToggleError = const CoreMethodException(
+      code: 'service_refused',
+      message: 'The iOS service did not start',
+    );
+    await pumpVpnManager(tester);
+    updateVpn((state) => state.copyWith(enable: false));
+    await settle(tester);
+    startService();
+
+    updateVpn((state) => state.copyWith(enable: true));
+    await settle(tester);
+    await settle(tester);
+
+    expect(container.read(vpnSettingProvider).enable, isFalse);
+    expect(
+      find.text(currentAppLocalizations.serviceDidNotStart),
+      findsOneWidget,
+    );
+    expect(tip(), findsNothing);
+    expect(setupAction.tunnelToggles, 1);
+    expect(setupAction.restarts, 0);
+    await drainTimers(tester);
+  });
+
+  testWidgets('a failed tunnel stop leaves the switch off', (tester) async {
+    setupAction.tunnelToggleHandled = true;
+    setupAction.tunnelToggleError = const CoreMethodException(
+      code: 'service_refused',
+      message: 'The mobile service did not stop',
+    );
+    await pumpVpnManager(tester);
+    startService();
+
+    updateVpn((state) => state.copyWith(enable: false));
+    await settle(tester);
+    await settle(tester);
+
+    expect(container.read(vpnSettingProvider).enable, isFalse);
+    expect(
+      find.text(currentAppLocalizations.serviceDidNotStop),
+      findsOneWidget,
+    );
+    expect(tip(), findsNothing);
+    expect(setupAction.tunnelToggles, 1);
+    await drainTimers(tester);
+  });
+
+  testWidgets('later changes measure against the toggled options', (
+    tester,
+  ) async {
+    setupAction.tunnelToggleHandled = true;
+    await pumpVpnManager(tester);
+    startService();
+
+    updateVpn((state) => state.copyWith(enable: false));
+    await settle(tester);
+    expect(setupAction.tunnelToggles, 1);
+
+    updateVpn((state) => state.copyWith(ipv6: !state.ipv6));
+    await settle(tester);
+
+    expect(tip(), findsNothing);
     await drainTimers(tester);
   });
 
