@@ -154,6 +154,8 @@ workflows:
   #       options once the port plan lands: the signed build is
   #       `dart setup.dart ios` (no --no-codesign), possibly with
   #       --ios-development-team <TEAM_ID> / --ios-bundle-id <id>.
+  #       setup.dart defaults --ipa-export-method to ad-hoc, matching
+  #       (a); pass it explicitly only if the profile needs another one.
   #       If setup.dart cannot consume Codemagic signing, the fallback is
   #       a plain `flutter build ipa` with an export options plist —
   #       decide from the first unsigned build's log + setup.dart source.

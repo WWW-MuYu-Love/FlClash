@@ -128,7 +128,7 @@ ArgParser createSetupArgParser() {
     )
     ..addOption(
       'ipa-export-method',
-      defaultsTo: 'app-store',
+      defaultsTo: 'ad-hoc',
       allowed: ['app-store', 'ad-hoc', 'development', 'enterprise'],
       help: 'iOS IPA export method',
     )
@@ -177,7 +177,7 @@ List<String> createFlutterBuildArgs({
     if (iosExportOptionsPlist != null && iosExportOptionsPlist.isNotEmpty) {
       flutterBuildArgs.add('export-options-plist=$iosExportOptionsPlist');
     } else {
-      flutterBuildArgs.add('export-method=${iosExportMethod ?? 'app-store'}');
+      flutterBuildArgs.add('export-method=${iosExportMethod ?? 'ad-hoc'}');
     }
   }
   return flutterBuildArgs;
@@ -567,7 +567,55 @@ Future<bool> _hasCommand(String cmd) async {
   return result.exitCode == 0;
 }
 
+({int major, int minor, int patch})? parseGoVersion(String output) {
+  final match = RegExp(r'go(\d+)\.(\d+)\.(\d+)').firstMatch(output);
+  if (match == null) return null;
+  return (
+    major: int.parse(match.group(1)!),
+    minor: int.parse(match.group(2)!),
+    patch: int.parse(match.group(3)!),
+  );
+}
+
+/// mitmproxy-go requires Go >= 1.27.3 (see codemagic.yaml).
+bool isSupportedGoVersion(({int major, int minor, int patch}) version) {
+  if (version.major != 1) return version.major > 1;
+  if (version.minor != 27) return version.minor > 27;
+  return version.patch >= 3;
+}
+
+Future<int> _ensureGoRustToolchains() async {
+  if (!await _hasCommand('go')) {
+    stderr.writeln(
+      'Go >= 1.27.3 is required to build the core but `go` was not found '
+      'on PATH. Install it from https://go.dev/dl/ and retry.',
+    );
+    return 1;
+  }
+  final goVersionResult = await Process.run('go', ['version']);
+  final goVersionOutput = goVersionResult.stdout as String;
+  final goVersion = parseGoVersion(goVersionOutput);
+  if (goVersion == null || !isSupportedGoVersion(goVersion)) {
+    stderr.writeln(
+      'Go >= 1.27.3 is required to build the core, found '
+      '${goVersionOutput.trim()}. Upgrade Go and retry.',
+    );
+    return 1;
+  }
+  if (!await _hasCommand('cargo')) {
+    stderr.writeln(
+      'Cargo (Rust) is required to build the Rust helper but `cargo` was '
+      'not found on PATH. Install it via rustup (https://rustup.rs/) '
+      'and retry.',
+    );
+    return 1;
+  }
+  return 0;
+}
+
 Future<int> _ensureDependencies(String platform) async {
+  final toolchainExit = await _ensureGoRustToolchains();
+  if (toolchainExit != 0) return toolchainExit;
   switch (platform) {
     case 'macos':
       return _ensureMacosDependencies();

@@ -309,11 +309,12 @@ class GeneralView extends ConsumerWidget {
         widget: const OnDemandView(),
         restorationId: 'tools/general/onDemand',
       ),
-      _appSettingToggle(
-        title: (l) => l.minimizeOnExit,
-        select: (state) => state.minimizeOnExit,
-        update: (state, value) => state.copyWith(minimizeOnExit: value),
-      ),
+      if (!system.isMobile)
+        _appSettingToggle(
+          title: (l) => l.minimizeOnExit,
+          select: (state) => state.minimizeOnExit,
+          update: (state, value) => state.copyWith(minimizeOnExit: value),
+        ),
       if (system.isAndroid) ...[
         _appSettingToggle(
           title: (l) => l.exclude,

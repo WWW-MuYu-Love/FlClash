@@ -247,16 +247,56 @@ hooks:
       expect(content, contains('DEVELOPMENT_TEAM = ABCDE12345'));
     });
 
+    test('defaults the iOS IPA export method to ad-hoc', () {
+      final results = setup.createSetupArgParser().parse(['ios']);
+
+      expect(results['ipa-export-method'], 'ad-hoc');
+    });
+
     test('adds default iOS export method to flutter build args', () {
       final args = setup.createFlutterBuildArgs(
         platform: 'ios',
         verbose: false,
       );
 
+      expect(args, ['dart-define-from-file=env.json', 'export-method=ad-hoc']);
+    });
+
+    test('keeps an explicit iOS IPA export method', () {
+      final args = setup.createFlutterBuildArgs(
+        platform: 'ios',
+        verbose: false,
+        iosExportMethod: 'app-store',
+      );
+
       expect(args, [
         'dart-define-from-file=env.json',
         'export-method=app-store',
       ]);
+    });
+
+    test('parses go version output', () {
+      expect(setup.parseGoVersion('go version go1.27.4 darwin/arm64'), (
+        major: 1,
+        minor: 27,
+        patch: 4,
+      ));
+      expect(setup.parseGoVersion('go version'), isNull);
+    });
+
+    test('requires Go 1.27.3 or newer', () {
+      expect(
+        setup.isSupportedGoVersion((major: 1, minor: 27, patch: 2)),
+        isFalse,
+      );
+      expect(
+        setup.isSupportedGoVersion((major: 1, minor: 27, patch: 3)),
+        isTrue,
+      );
+      expect(
+        setup.isSupportedGoVersion((major: 1, minor: 28, patch: 0)),
+        isTrue,
+      );
     });
 
     test('uses iOS export options plist when provided', () {
