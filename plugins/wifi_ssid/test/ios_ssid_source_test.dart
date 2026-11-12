@@ -78,8 +78,7 @@ void main() {
     expect(
       pluginSource,
       contains('registrar.messenger()'),
-      reason:
-          'the iOS registrar exposes messenger as a method, unlike macOS',
+      reason: 'the iOS registrar exposes messenger as a method, unlike macOS',
     );
   });
 }
