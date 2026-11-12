@@ -8,14 +8,16 @@ part of '../mitm.dart';
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
-/// Hosts with recorded decrypted exchanges, from the core that decrypts:
-/// the extension core behind 9090 on iOS, the app core elsewhere.
+/// Hosts with recorded decrypted exchanges. On iOS the persisted
+/// captures on the shared disk are read first, so hosts stay listed
+/// after the tunnel stops; the live core only adds in-flight hosts.
 
 @ProviderFor(mitmDecryptedHosts)
 final mitmDecryptedHostsProvider = MitmDecryptedHostsProvider._();
 
-/// Hosts with recorded decrypted exchanges, from the core that decrypts:
-/// the extension core behind 9090 on iOS, the app core elsewhere.
+/// Hosts with recorded decrypted exchanges. On iOS the persisted
+/// captures on the shared disk are read first, so hosts stay listed
+/// after the tunnel stops; the live core only adds in-flight hosts.
 
 final class MitmDecryptedHostsProvider
     extends
@@ -25,8 +27,9 @@ final class MitmDecryptedHostsProvider
           FutureOr<Set<String>>
         >
     with $FutureModifier<Set<String>>, $FutureProvider<Set<String>> {
-  /// Hosts with recorded decrypted exchanges, from the core that decrypts:
-  /// the extension core behind 9090 on iOS, the app core elsewhere.
+  /// Hosts with recorded decrypted exchanges. On iOS the persisted
+  /// captures on the shared disk are read first, so hosts stay listed
+  /// after the tunnel stops; the live core only adds in-flight hosts.
   MitmDecryptedHostsProvider._()
     : super(
         from: null,
@@ -54,7 +57,7 @@ final class MitmDecryptedHostsProvider
 }
 
 String _$mitmDecryptedHostsHash() =>
-    r'9389627f119bbfe6788daad2f2bc3dc364e3364b';
+    r'084ab6a214e52589e8b91713436e83d7ca625b0a';
 
 @ProviderFor(MitmCa)
 final mitmCaProvider = MitmCaProvider._();
@@ -263,7 +266,7 @@ final class MitmExchangesProvider
   }
 }
 
-String _$mitmExchangesHash() => r'96d87c252cb85ddf95f68aa25bd8a762e81bc816';
+String _$mitmExchangesHash() => r'30f99cd0b68aa839e2f1fd919d17779383bf7f4e';
 
 /// Fetched again while shown, until the connection has closed and none of its
 /// requests is pending. Keyed by host: the capture store never sees the
@@ -346,7 +349,7 @@ final class MitmExchangeProvider
   }
 }
 
-String _$mitmExchangeHash() => r'3ca47bd8e1bed8a419d8b8462623df3d04109966';
+String _$mitmExchangeHash() => r'89914a2d122cda05a2afa7a1329bf9c5a6e5c5f1';
 
 final class MitmExchangeFamily extends $Family
     with $FunctionalFamilyOverride<FutureOr<MitmExchange?>, int> {
@@ -427,7 +430,7 @@ final class MitmBodyProvider
   }
 }
 
-String _$mitmBodyHash() => r'4772be5027018eddec6d986e24d84aaf5ab7fc5b';
+String _$mitmBodyHash() => r'c937d37220616333d3375799f876734efbafee9a';
 
 final class MitmBodyFamily extends $Family
     with

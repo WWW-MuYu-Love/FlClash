@@ -4,6 +4,7 @@ package tun
 
 import (
 	"context"
+	"errors"
 	"net"
 	"strconv"
 	"time"
@@ -13,6 +14,7 @@ import (
 	"github.com/metacubex/mihomo/component/sniffer"
 	C "github.com/metacubex/mihomo/constant"
 	P "github.com/metacubex/mihomo/constant/provider"
+	"github.com/metacubex/mihomo/log"
 
 	"core/mitm"
 )
@@ -70,9 +72,18 @@ func (m mitmTunnel) HandleTCPConn(conn net.Conn, metadata *C.Metadata) {
 	}
 	hostport := net.JoinHostPort(host, portString(metadata.DstPort))
 	if err := mitm.Default().Serve(context.Background(), conn, hostport); err != nil {
-		// The MITM path failed; do not drop the connection silently, hand it
-		// to the tunnel so it still routes.
-		m.Tunnel.HandleTCPConn(conn, metadata)
+		if errors.Is(err, mitm.ErrHandlerUnavailable) {
+			// The handler never started, so the connection is untouched:
+			// route it direct, as if MITM were off.
+			m.Tunnel.HandleTCPConn(conn, metadata)
+			return
+		}
+		// The handler owned the connection once Serve started: it closes
+		// it on every error path and reads the ClientHello before failing,
+		// so the bytes a tunnel retry would need are already consumed.
+		// Handing it back would only fail later, on a closed connection.
+		log.Warnln("[MITM] serve %s failed: %v", hostport, err)
+		_ = conn.Close()
 	}
 }
 

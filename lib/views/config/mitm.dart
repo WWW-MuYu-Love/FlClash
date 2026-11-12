@@ -103,6 +103,11 @@ class _MitmViewState extends ConsumerState<MitmView> {
           ? null
           : appLocalizations.mitmCertificateAndroidReadyTip;
     }
+    if (system.isIOS) {
+      return check?.trust == MitmTrust.ready
+          ? null
+          : appLocalizations.mitmIosTrustSteps;
+    }
     if (check?.trust == MitmTrust.ready) {
       return null;
     }
@@ -202,7 +207,14 @@ class _MitmViewState extends ConsumerState<MitmView> {
         if (open == true) {
           await app?.openCertificateSettings();
         }
-      case MitmInstallOutcome.installed || MitmInstallOutcome.prompted || null:
+      case MitmInstallOutcome.prompted:
+        if (system.isIOS) {
+          await dialogs.showAlert(
+            title: appLocalizations.installCertificate,
+            message: TextSpan(text: appLocalizations.mitmIosTrustSteps),
+          );
+        }
+      case MitmInstallOutcome.installed || null:
         break;
     }
   }

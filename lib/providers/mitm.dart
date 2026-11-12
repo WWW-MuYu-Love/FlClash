@@ -20,6 +20,7 @@ import 'app.dart';
 import 'config.dart';
 import 'core.dart';
 import 'database.dart';
+import 'state.dart';
 
 part 'generated/mitm.g.dart';
 
@@ -191,7 +192,12 @@ class MitmTrustState extends _$MitmTrustState {
 /// Completed exchanges from the persisted captures on the shared disk.
 /// In-flight exchanges are not visible here yet: they need the 9090
 /// controller, which is not wired up yet.
-Future<MitmExchangeList> _mitmExchangesIOS(Ref ref, String host) async {
+Future<MitmExchangeList> _mitmExchangesIOS(
+  Ref ref,
+  String host, {
+  required bool running,
+  required bool capture,
+}) async {
   final disk = await readMitmCaptureExchanges(
     await appPath.mitmCapturesDirPath,
   );
@@ -202,7 +208,7 @@ Future<MitmExchangeList> _mitmExchangesIOS(Ref ref, String host) async {
   };
   final exchanges = byId.values.toList()..sort((a, b) => a.id.compareTo(b.id));
   return MitmExchangeList(
-    capturing: exchanges.isNotEmpty,
+    capturing: capture,
     since: exchanges.isEmpty ? null : exchanges.first.start,
     exchanges: exchanges,
     closed: false,
@@ -215,12 +221,19 @@ Future<MitmExchangeList> _mitmExchangesIOS(Ref ref, String host) async {
 /// shared disk; in-flight exchanges are not visible yet.
 @riverpod
 Future<MitmExchangeList> mitmExchanges(Ref ref, String host) async {
+  final running = ref.watch(isStartProvider);
+  final capture = ref.watch(
+    patchClashConfigProvider.select(
+      (state) => state.mitm.enable && state.mitm.capture,
+    ),
+  );
   final list = system.isIOS
-      ? await _mitmExchangesIOS(ref, host)
+      ? await _mitmExchangesIOS(ref, host, running: running, capture: capture)
       : await ref.read(coreHandlerProvider).getMitmExchangesByHost(host);
   final settled =
       list.closed && !list.exchanges.any((exchange) => exchange.pending);
-  if (!settled && ref.mounted) {
+  // With the tunnel stopped the disk copy is static, so skip the refresh.
+  if (!settled && ref.mounted && (running || !system.isIOS)) {
     final timer = Timer(_exchangesRefreshInterval, ref.invalidateSelf);
     ref.onDispose(timer.cancel);
   }
@@ -238,8 +251,9 @@ Future<MitmExchange?> mitmExchange(Ref ref, int id) async {
       return disk;
     }
   }
+  final running = !system.isIOS || ref.read(isStartProvider);
   final exchange = await ref.read(coreHandlerProvider).getMitmExchange(id);
-  if (exchange != null && exchange.pending && ref.mounted) {
+  if (exchange != null && exchange.pending && running && ref.mounted) {
     final timer = Timer(_exchangesRefreshInterval, ref.invalidateSelf);
     ref.onDispose(timer.cancel);
   }

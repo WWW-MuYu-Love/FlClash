@@ -24,6 +24,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"sort"
 	"sync"
 	"time"
 
@@ -72,16 +73,64 @@ type Limits struct {
 // Engine owns the MITM handler and its state. All methods are safe for
 // concurrent use.
 type Engine struct {
-	mu        sync.RWMutex
-	homeDir   string
-	ca        *tls.Certificate
-	caCert    *x509.Certificate
-	handler   mitmproxy.MitmProxyHandler
-	config    Config
-	mixedPort int
-	capture   bool
-	exchange  *ExchangeStore
-	closed    bool
+	mu             sync.RWMutex
+	homeDir        string
+	ca             *tls.Certificate
+	caCert         *x509.Certificate
+	handler        *handlerRef
+	config         Config
+	mixedPort      int
+	capture        bool
+	exchange       *ExchangeStore
+	decryptedHosts map[string]struct{}
+	closed         bool
+}
+
+// ErrHandlerUnavailable means Serve never started, so the connection is untouched.
+var ErrHandlerUnavailable = errors.New("mitm handler unavailable")
+
+// handlerRef owns one handler generation: Cleanup closes its active
+// connections, so a rebuild retires the old generation instead of cleaning it up mid-Serve.
+type handlerRef struct {
+	mu      sync.Mutex
+	handler mitmproxy.MitmProxyHandler
+	active  int
+	retired bool
+}
+
+func (h *handlerRef) acquire() bool {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	if h.retired {
+		return false
+	}
+	h.active++
+	return true
+}
+
+func (h *handlerRef) release() {
+	h.mu.Lock()
+	cleanup := false
+	h.active--
+	if h.active == 0 && h.retired {
+		cleanup = true
+	}
+	handler := h.handler
+	h.mu.Unlock()
+	if cleanup {
+		handler.Cleanup()
+	}
+}
+
+func (h *handlerRef) retire() {
+	h.mu.Lock()
+	h.retired = true
+	cleanup := h.active == 0
+	handler := h.handler
+	h.mu.Unlock()
+	if cleanup {
+		handler.Cleanup()
+	}
 }
 
 // Default returns the process-wide engine, creating it on first use.
@@ -145,8 +194,25 @@ func (e *Engine) loadOrGenerateCA() error {
 				return nil
 			}
 		}
+		e.backupStoredCA()
+		log.Warnln("[MITM] stored CA is unusable, backed up to ca.crt.bak/ca.key.bak; generating a new one")
+	} else if certErr == nil || keyErr == nil {
+		e.backupStoredCA()
+		log.Warnln("[MITM] stored CA is incomplete, backed up the surviving half; generating a new one")
 	}
 	return e.generateCALocked()
+}
+
+func (e *Engine) backupStoredCA() {
+	for _, name := range []string{caCertName, caKeyName} {
+		oldPath := filepath.Join(e.homeDir, name)
+		if _, err := os.Stat(oldPath); err != nil {
+			continue
+		}
+		if err := os.Rename(oldPath, oldPath+".bak"); err != nil {
+			log.Warnln("[MITM] backing up %s failed: %v", name, err)
+		}
+	}
 }
 
 // generateCALocked creates a fresh CA, stores it, and keeps it in memory.
@@ -228,9 +294,9 @@ func (e *Engine) SetMixedPort(port int) error {
 // rebuildHandlerLocked (re)creates the mitmproxy handler from the current CA
 // and config. The caller must hold e.mu.
 func (e *Engine) rebuildHandlerLocked() error {
-	if e.handler != nil {
-		e.handler.Cleanup()
+	if old := e.handler; old != nil {
 		e.handler = nil
+		old.retire()
 	}
 	if e.ca == nil {
 		return nil
@@ -258,7 +324,7 @@ func (e *Engine) rebuildHandlerLocked() error {
 	if err != nil {
 		return fmt.Errorf("mitm handler: %w", err)
 	}
-	e.handler = handler
+	e.handler = &handlerRef{handler: handler}
 	return nil
 }
 
@@ -267,26 +333,37 @@ func (e *Engine) rebuildHandlerLocked() error {
 // The connection is tagged with a fresh id so its exchanges can be listed.
 // The handler is initialized lazily on first use.
 func (e *Engine) Serve(ctx context.Context, conn net.Conn, hostport string) error {
-	e.mu.RLock()
-	handler := e.handler
-	e.mu.RUnlock()
-	if handler == nil {
-		if err := e.Init(); err != nil {
-			return err
-		}
-		e.mu.RLock()
-		handler = e.handler
-		e.mu.RUnlock()
-	}
-	if handler == nil {
-		return errors.New("mitm handler not initialized")
+	ref, err := e.acquireHandler()
+	if err != nil {
+		return fmt.Errorf("%w: %w", ErrHandlerUnavailable, err)
 	}
 	connID := e.exchange.NextConnectionID()
 	ctx = contextWithConnectionID(ctx, connID)
 	ctx = mitmproxy.AppendToRequestContext(ctx, mitmproxy.ReqContext{Hostport: hostport})
-	err := handler.Serve(ctx, conn)
+	err = ref.handler.Serve(ctx, conn)
+	ref.release()
 	e.exchange.MarkClosed(connID)
 	return err
+}
+
+// The acquire runs under e.mu, so a rebuild cannot retire the generation in between.
+func (e *Engine) acquireHandler() (*handlerRef, error) {
+	load := func() (*handlerRef, bool) {
+		e.mu.RLock()
+		defer e.mu.RUnlock()
+		ref := e.handler
+		return ref, ref != nil && ref.acquire()
+	}
+	if ref, ok := load(); ok {
+		return ref, nil
+	}
+	if err := e.Init(); err != nil {
+		return nil, err
+	}
+	if ref, ok := load(); ok {
+		return ref, nil
+	}
+	return nil, errors.New("mitm handler not initialized")
 }
 
 // Enabled reports whether MITM interception is on for new connections.
@@ -354,7 +431,34 @@ func (e *Engine) Exchanges(connectionID string) *ExchangeList {
 func (e *Engine) DecryptedHosts() *HostList {
 	e.mu.RLock()
 	defer e.mu.RUnlock()
-	return &HostList{Hosts: e.exchange.Hosts()}
+	seen := make(map[string]struct{}, len(e.decryptedHosts))
+	for host := range e.decryptedHosts {
+		seen[host] = struct{}{}
+	}
+	if e.exchange != nil {
+		for _, host := range e.exchange.Hosts() {
+			seen[host] = struct{}{}
+		}
+	}
+	hosts := make([]string, 0, len(seen))
+	for host := range seen {
+		hosts = append(hosts, host)
+	}
+	sort.Strings(hosts)
+	return &HostList{Hosts: hosts}
+}
+
+func (e *Engine) recordDecryptedHost(rawURL string) {
+	host := exchangeHost(rawURL)
+	if host == "" {
+		return
+	}
+	e.mu.Lock()
+	defer e.mu.Unlock()
+	if e.decryptedHosts == nil {
+		e.decryptedHosts = map[string]struct{}{}
+	}
+	e.decryptedHosts[host] = struct{}{}
 }
 
 // ExchangesByHost returns the recorded exchanges for one host.
@@ -394,7 +498,7 @@ func (e *Engine) Close() {
 	defer e.mu.Unlock()
 	e.closed = true
 	if e.handler != nil {
-		e.handler.Cleanup()
+		e.handler.retire()
 		e.handler = nil
 	}
 }
@@ -402,5 +506,18 @@ func (e *Engine) Close() {
 // intercept runs on every decrypted request. It records the exchange and
 // applies the configured rewrites.
 func (e *Engine) intercept(ctx context.Context, req *http.Request, invoker mitmproxy.HTTPDelegatedInvoker) (*http.Response, error) {
-	return e.exchange.Intercept(ctx, e, req, invoker)
+	e.recordDecryptedHost(req.URL.String())
+	e.mu.RLock()
+	capture := e.capture
+	e.mu.RUnlock()
+	if capture {
+		return e.exchange.Intercept(ctx, e, req, invoker)
+	}
+	requestRewriteActions(e, req)
+	resp, err := invoker.Invoke(req)
+	if err != nil {
+		return resp, err
+	}
+	responseRewriteActions(e, resp)
+	return resp, nil
 }
