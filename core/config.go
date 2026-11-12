@@ -167,7 +167,18 @@ func applyConfig(params *SetupParams) error {
 
 	currentConfig = cfg
 	hub.ApplyConfig(cfg)
-	applyMitmConfig(cfg)
+	if err != nil {
+		// The rejected file's mitm section is not applied: applyMitmConfig
+		// re-reads that file, so a section that happens to parse would
+		// enable MITM for a config the tunnel refused. Only the mixed
+		// port follows the fallback, so the engine keeps dialing the
+		// listener that is actually running.
+		if err := mitm.Default().SetMixedPort(cfg.General.MixedPort); err != nil {
+			log.Warnln("[MITM] mixed port update failed: %v", err)
+		}
+	} else {
+		applyMitmConfig(cfg)
+	}
 	patchSelectGroup(params.SelectedMap)
 	bumpRouteEpoch()
 	updateListeners(cfg)
@@ -256,6 +267,11 @@ func updateConfig(params *UpdateParams) error {
 	}
 
 	updateListeners(currentConfig)
+	if params.MixedPort != nil {
+		if err := mitm.Default().SetMixedPort(*params.MixedPort); err != nil {
+			log.Warnln("[MITM] mixed port update failed: %v", err)
+		}
+	}
 	for geoType, link := range params.GeoXUrl {
 		setGeoResourceUrl(geoType, link)
 	}

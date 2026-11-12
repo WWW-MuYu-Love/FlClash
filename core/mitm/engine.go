@@ -73,17 +73,19 @@ type Limits struct {
 // Engine owns the MITM handler and its state. All methods are safe for
 // concurrent use.
 type Engine struct {
-	mu             sync.RWMutex
-	homeDir        string
-	ca             *tls.Certificate
-	caCert         *x509.Certificate
-	handler        *handlerRef
-	config         Config
-	mixedPort      int
-	capture        bool
-	exchange       *ExchangeStore
-	decryptedHosts map[string]struct{}
-	closed         bool
+	mu                sync.RWMutex
+	homeDir           string
+	ca                *tls.Certificate
+	caCert            *x509.Certificate
+	handler           *handlerRef
+	config            Config
+	mixedPort         int
+	capture           bool
+	exchange          *ExchangeStore
+	decryptedHosts    map[string]struct{}
+	closed            bool
+	pressureLevel     int
+	lastPressureClear time.Time
 }
 
 // ErrHandlerUnavailable means Serve never started, so the connection is untouched.
@@ -273,6 +275,12 @@ func (e *Engine) Certificate() *Certificate {
 		return nil
 	}
 	return DescribeCertificate(e.caCert)
+}
+
+func (e *Engine) MixedPort() int {
+	e.mu.RLock()
+	defer e.mu.RUnlock()
+	return e.mixedPort
 }
 
 // SetMixedPort records the core's mixed port, which the engine dials as a
@@ -482,14 +490,69 @@ func (e *Engine) Body(id int, response bool) *Body {
 	return e.exchange.Body(id, response)
 }
 
+// pressureClearThrottle bounds level-3 wipes: the host polls memory every 15s.
+const pressureClearThrottle = 30 * time.Second
+
+// SetPressure applies the host's memory-pressure level in grades: 1 pauses body
+// recording, 2 also drops recorded bodies, 3 drops all recorded exchanges.
+func (e *Engine) SetPressure(level int) {
+	e.mu.Lock()
+	defer e.mu.Unlock()
+	if level < 0 {
+		level = 0
+	}
+	if level > 3 {
+		level = 3
+	}
+	previous := e.pressureLevel
+	e.pressureLevel = level
+	switch {
+	case level == 0:
+		if previous != 0 {
+			log.Infoln("[MITM] memory pressure cleared, body recording resumed")
+		}
+	case level < 3:
+		if level != previous {
+			log.Warnln("[MITM] memory pressure level %d: body recording paused", level)
+		}
+		if level >= 2 && previous < 2 && e.exchange != nil {
+			e.exchange.DropBodies()
+		}
+	default:
+		if !e.lastPressureClear.IsZero() && time.Since(e.lastPressureClear) < pressureClearThrottle {
+			return
+		}
+		e.lastPressureClear = time.Now()
+		e.clearExchangesLocked()
+	}
+}
+
+func (e *Engine) clearExchangesLocked() {
+	if e.exchange == nil {
+		return
+	}
+	dropped := e.exchange.Len()
+	e.exchange.Clear()
+	log.Warnln("[MITM] memory pressure level 3: dropped %d recorded exchanges", dropped)
+}
+
 // ReleasePressure drops recorded exchanges to free memory under pressure.
 // The CA and handler stay, so interception keeps working.
 func (e *Engine) ReleasePressure() {
 	e.mu.Lock()
 	defer e.mu.Unlock()
-	if e.exchange != nil {
-		e.exchange.Clear()
+	e.pressureLevel = 3
+	e.lastPressureClear = time.Now()
+	e.clearExchangesLocked()
+}
+
+func (e *Engine) recordBodies() bool {
+	if e == nil {
+		return true
 	}
+	e.mu.RLock()
+	defer e.mu.RUnlock()
+	return e.pressureLevel < 1
 }
 
 // Close releases the handler. The stored CA is kept.
@@ -510,6 +573,7 @@ func (e *Engine) intercept(ctx context.Context, req *http.Request, invoker mitmp
 	e.mu.RLock()
 	capture := e.capture
 	e.mu.RUnlock()
+	rawURL := req.URL.String()
 	if capture {
 		return e.exchange.Intercept(ctx, e, req, invoker)
 	}
@@ -518,6 +582,6 @@ func (e *Engine) intercept(ctx context.Context, req *http.Request, invoker mitmp
 	if err != nil {
 		return resp, err
 	}
-	responseRewriteActions(e, resp)
+	responseRewriteActions(e, resp, rawURL)
 	return resp, nil
 }

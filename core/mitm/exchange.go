@@ -10,6 +10,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"regexp"
 	"sort"
 	"strconv"
 	"strings"
@@ -310,33 +311,40 @@ func (s *ExchangeStore) Intercept(ctx context.Context, e *Engine, req *http.Requ
 	}
 	var reqCapture *cappedCapture
 	if req.Body != nil {
-		reqCapture = &cappedCapture{}
+		reqCapture = &cappedCapture{discard: !e.recordBodies()}
 		req.Body = io.NopCloser(io.TeeReader(req.Body, reqCapture))
 	}
 	s.add(ex)
-	applyRequestRewrites(e, req, ex)
+	s.applyRequestRewrites(e, req, ex)
 
 	resp, err := invoker.Invoke(req)
 	if reqCapture != nil {
-		ex.requestBody, ex.requestTruncated = reqCapture.snapshot()
+		body, truncated := reqCapture.snapshot()
+		s.mu.Lock()
+		ex.requestBody, ex.requestTruncated = body, truncated
 		ex.RequestSize = int(reqCapture.total)
+		s.mu.Unlock()
 	}
 	if err != nil {
+		s.mu.Lock()
 		ex.Pending = false
 		ex.Duration = time.Since(start).Milliseconds()
 		ex.Error = err.Error()
+		s.mu.Unlock()
 		s.complete(ex)
 		return resp, err
 	}
+	s.mu.Lock()
 	ex.TTFB = time.Since(start).Milliseconds()
 	ex.Status = resp.StatusCode
 	ex.ResponseHeader = cloneHeader(resp.Header)
+	s.mu.Unlock()
 	if resp.Body != nil {
-		resp.Body = newTeeBody(resp.Body, func(capture *cappedCapture) {
+		resp.Body = newTeeBody(resp.Body, !e.recordBodies(), func(capture *cappedCapture) {
 			s.finishResponse(ex, start, capture)
 		})
 	}
-	applyResponseRewrites(e, resp, ex)
+	s.applyResponseRewrites(e, resp, ex)
 	return resp, nil
 }
 
@@ -365,8 +373,42 @@ func (s *ExchangeStore) evictLocked() {
 	for len(s.order) > s.limit {
 		oldest := s.order[0]
 		s.order = s.order[1:]
+		conn := ""
+		if ex := s.byID[oldest]; ex != nil {
+			conn = ex.Connection
+		}
 		delete(s.byID, oldest)
 		s.removeFilesLocked(oldest)
+		if conn != "" {
+			s.dropClosedLocked(conn)
+		}
+	}
+}
+
+func (s *ExchangeStore) dropClosedLocked(conn string) {
+	for _, id := range s.order {
+		if ex := s.byID[id]; ex != nil && ex.Connection == conn {
+			return
+		}
+	}
+	delete(s.closed, conn)
+}
+
+func (s *ExchangeStore) Len() int {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	return len(s.byID)
+}
+
+// DropBodies discards recorded bodies held in memory; completed exchanges re-read theirs from disk.
+func (s *ExchangeStore) DropBodies() {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	for _, ex := range s.byID {
+		ex.requestBody = nil
+		ex.responseBody = nil
+		ex.requestTruncated = false
+		ex.responseTruncated = false
 	}
 }
 
@@ -396,10 +438,15 @@ func (s *ExchangeStore) List(connectionID string, capturing bool) *ExchangeList 
 func (s *ExchangeStore) Get(id int) *Exchange {
 	s.mu.RLock()
 	ex := s.byID[id]
+	if ex != nil {
+		cp := ex.clone()
+		s.mu.RUnlock()
+		return cp
+	}
 	dir := s.dir
 	s.mu.RUnlock()
-	if ex != nil || dir == "" {
-		return ex
+	if dir == "" {
+		return nil
 	}
 	stored, err := s.loadStored(id)
 	if err != nil {
@@ -409,6 +456,19 @@ func (s *ExchangeStore) Get(id int) *Exchange {
 	loaded.requestTruncated = stored.RequestTruncated
 	loaded.responseTruncated = stored.ResponseTruncated
 	return &loaded
+}
+
+// clone deep-copies the exchange so a caller may marshal it after the store's lock is released.
+func (ex *Exchange) clone() *Exchange {
+	cp := *ex
+	cp.RequestHeader = cloneHeader(ex.RequestHeader)
+	cp.ResponseHeader = cloneHeader(ex.ResponseHeader)
+	if ex.Actions != nil {
+		cp.Actions = append([]Action(nil), ex.Actions...)
+	}
+	cp.requestBody = append([]byte(nil), ex.requestBody...)
+	cp.responseBody = append([]byte(nil), ex.responseBody...)
+	return &cp
 }
 
 // Hosts returns the distinct hosts with recorded exchanges, lowercased and
@@ -480,19 +540,23 @@ func normalizeHost(host string) string {
 func (s *ExchangeStore) Body(id int, response bool) *Body {
 	s.mu.RLock()
 	ex := s.byID[id]
+	var data []byte
+	var truncated, pending bool
+	if ex != nil {
+		if response {
+			data, truncated = ex.responseBody, ex.responseTruncated
+		} else {
+			data, truncated = ex.requestBody, ex.requestTruncated
+		}
+		data = append([]byte(nil), data...)
+		pending = ex.Pending
+	}
 	dir := s.dir
 	s.mu.RUnlock()
 	if ex == nil {
 		return nil
 	}
-	var data []byte
-	var truncated bool
-	if response {
-		data, truncated = ex.responseBody, ex.responseTruncated
-	} else {
-		data, truncated = ex.requestBody, ex.requestTruncated
-	}
-	if data == nil && dir != "" && !ex.Pending {
+	if data == nil && dir != "" && !pending {
 		data, truncated = s.readBodyFile(id, response, truncated)
 	}
 	return &Body{Data: base64.StdEncoding.EncodeToString(data), Truncated: truncated}
@@ -541,11 +605,17 @@ func (s *ExchangeStore) loadStored(id int) (storedExchange, error) {
 	return stored, nil
 }
 
-// MarkClosed records that a MITM connection has ended.
+// MarkClosed records that a MITM connection has ended, but only when the store
+// still holds one of its exchanges; otherwise the map grows by one entry per connection.
 func (s *ExchangeStore) MarkClosed(connectionID string) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	s.closed[connectionID] = true
+	for _, id := range s.order {
+		if ex := s.byID[id]; ex != nil && ex.Connection == connectionID {
+			s.closed[connectionID] = true
+			return
+		}
+	}
 }
 
 func (s *ExchangeStore) Clear() {
@@ -553,6 +623,7 @@ func (s *ExchangeStore) Clear() {
 	defer s.mu.Unlock()
 	s.byID = map[int]*Exchange{}
 	s.order = nil
+	s.closed = map[string]bool{}
 	s.since = time.Now()
 	if s.dir == "" {
 		return
@@ -598,12 +669,16 @@ func cloneHeader(h http.Header) map[string][]string {
 }
 
 type cappedCapture struct {
-	buf   []byte
-	total int64
+	buf     []byte
+	total   int64
+	discard bool
 }
 
 func (c *cappedCapture) Write(p []byte) (int, error) {
 	c.total += int64(len(p))
+	if c.discard {
+		return len(p), nil
+	}
 	if len(c.buf) < maxRecordedBody {
 		room := maxRecordedBody - len(c.buf)
 		if len(p) < room {
@@ -615,6 +690,9 @@ func (c *cappedCapture) Write(p []byte) (int, error) {
 }
 
 func (c *cappedCapture) snapshot() ([]byte, bool) {
+	if c.discard {
+		return nil, false
+	}
 	return c.buf, c.total > maxRecordedBody
 }
 
@@ -628,8 +706,8 @@ type teeBody struct {
 	onDone  func(*cappedCapture)
 }
 
-func newTeeBody(body io.ReadCloser, onDone func(*cappedCapture)) *teeBody {
-	capture := &cappedCapture{}
+func newTeeBody(body io.ReadCloser, discard bool, onDone func(*cappedCapture)) *teeBody {
+	capture := &cappedCapture{discard: discard}
 	return &teeBody{body: body, tee: io.TeeReader(body, capture), capture: capture, onDone: onDone}
 }
 
@@ -648,14 +726,19 @@ func (t *teeBody) Close() error {
 }
 
 // applyRequestRewrites applies URL and header rewrites to a decrypted request.
-func applyRequestRewrites(e *Engine, req *http.Request, ex *Exchange) {
-	ex.Actions = append(ex.Actions, requestRewriteActions(e, req)...)
+func (s *ExchangeStore) applyRequestRewrites(e *Engine, req *http.Request, ex *Exchange) {
+	actions := requestRewriteActions(e, req)
+	s.mu.Lock()
+	ex.Actions = append(ex.Actions, actions...)
+	ex.URL = req.URL.String()
+	s.mu.Unlock()
 }
 
 func requestRewriteActions(e *Engine, req *http.Request) []Action {
 	e.mu.RLock()
 	rules := e.config
 	e.mu.RUnlock()
+	rawURL := req.URL.String()
 	var actions []Action
 	for _, line := range rules.URLRewrite {
 		if applyURLRewrite(req, line) {
@@ -663,7 +746,7 @@ func requestRewriteActions(e *Engine, req *http.Request) []Action {
 		}
 	}
 	for _, line := range rules.HeaderRewrite {
-		if applyHeaderRewrite(req.Header, line) {
+		if applyHeaderRewrite(req.Header, line, "request", rawURL) {
 			actions = append(actions, Action{Kind: "header-rewrite", Phase: "request", Detail: line})
 		}
 	}
@@ -671,17 +754,20 @@ func requestRewriteActions(e *Engine, req *http.Request) []Action {
 }
 
 // applyResponseRewrites applies header rewrites to a decrypted response.
-func applyResponseRewrites(e *Engine, resp *http.Response, ex *Exchange) {
-	ex.Actions = append(ex.Actions, responseRewriteActions(e, resp)...)
+func (s *ExchangeStore) applyResponseRewrites(e *Engine, resp *http.Response, ex *Exchange) {
+	actions := responseRewriteActions(e, resp, ex.OriginalURL)
+	s.mu.Lock()
+	ex.Actions = append(ex.Actions, actions...)
+	s.mu.Unlock()
 }
 
-func responseRewriteActions(e *Engine, resp *http.Response) []Action {
+func responseRewriteActions(e *Engine, resp *http.Response, rawURL string) []Action {
 	e.mu.RLock()
 	rules := e.config
 	e.mu.RUnlock()
 	var actions []Action
 	for _, line := range rules.HeaderRewrite {
-		if applyHeaderRewrite(resp.Header, line) {
+		if applyHeaderRewrite(resp.Header, line, "response", rawURL) {
 			actions = append(actions, Action{Kind: "header-rewrite", Phase: "response", Detail: line})
 		}
 	}
@@ -706,18 +792,74 @@ func applyURLRewrite(req *http.Request, line string) bool {
 	return false
 }
 
-// applyHeaderRewrite applies "<pattern> <header>: <value>" to a header map.
-func applyHeaderRewrite(header http.Header, line string) bool {
+// applyHeaderRewrite applies one "<phase> <pattern> <action> <header>: <value>" line;
+// it fires only when the phase matches and the pattern matches the request URL.
+func applyHeaderRewrite(header http.Header, line, phase, rawURL string) bool {
 	parts := splitRewriteLine(line)
 	if len(parts) < 2 {
 		return false
 	}
-	kv := splitHeaderValue(parts[1])
-	if kv == nil {
+	switch parts[0] {
+	case "http-request", "http-response":
+		want := "request"
+		if parts[0] == "http-response" {
+			want = "response"
+		}
+		if phase != want || len(parts) < 4 {
+			return false
+		}
+		if !matchURLPattern(parts[1], rawURL) {
+			return false
+		}
+		return applyHeaderAction(header, parts[2], strings.Join(parts[3:], " "))
+	default:
+		if !matchURLPattern(parts[0], rawURL) {
+			return false
+		}
+		return applyHeaderAction(header, "header-replace", strings.Join(parts[1:], " "))
+	}
+}
+
+func applyHeaderAction(header http.Header, action, rest string) bool {
+	switch action {
+	case "header-add", "header-replace":
+		kv := splitHeaderValue(rest)
+		if kv == nil || kv[0] == "" {
+			return false
+		}
+		if action == "header-add" {
+			header.Add(kv[0], kv[1])
+		} else {
+			header.Set(kv[0], kv[1])
+		}
+		return true
+	case "header-del":
+		name := strings.TrimSpace(strings.TrimSuffix(strings.TrimSpace(rest), ":"))
+		if name == "" {
+			return false
+		}
+		header.Del(name)
+		return true
+	case "header-replace-regex":
+		kv := splitHeaderValue(rest)
+		if kv == nil || kv[0] == "" {
+			return false
+		}
+		pattern, replacement, ok := strings.Cut(kv[1], " ")
+		if !ok {
+			return false
+		}
+		re, err := regexp.Compile(pattern)
+		if err != nil {
+			return false
+		}
+		for i, value := range header.Values(kv[0]) {
+			header[http.CanonicalHeaderKey(kv[0])][i] = re.ReplaceAllString(value, replacement)
+		}
+		return true
+	default:
 		return false
 	}
-	header.Set(kv[0], kv[1])
-	return true
 }
 
 func splitRewriteLine(line string) []string {

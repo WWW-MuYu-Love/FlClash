@@ -483,30 +483,17 @@ void main() {
         ).coreJson(const MitmRules());
 
         expect(trusted['decrypt-tls'], isTrue);
-        expect(trusted['ca-fingerprint'], 'AB:CD');
+        expect(trusted, isNot(contains('ca-fingerprint')));
         expect(trusted, isNot(contains('trusted-fingerprint')));
         expect(trusted, isNot(contains('decrypt-untrusted')));
       });
 
-      test('bounds what decryption holds with the keys the Core reads', () {
+      test('sends only the capture limit the Core reads', () {
         final limits =
             defaultMitm.coreJson(const MitmRules())['limits']
                 as Map<String, Object?>;
 
-        expect(limits['max-body-size'], 4 << 20);
-        expect(
-          {
-            'max-body-size',
-            'body-buffer',
-            'certificate-cache',
-            'max-sessions',
-            'script-concurrency',
-            'script-memory',
-            'capture-entries',
-            'capture-bytes',
-          }.containsAll(limits.keys),
-          isTrue,
-        );
+        expect(limits, {'capture-entries': 2000});
       });
 
       test('the capture limit reaches the Core among the limits', () {
@@ -530,7 +517,7 @@ void main() {
         ).coreJson(const MitmRules());
 
         expect(json['decrypt-tls'], isTrue);
-        expect(json['ca-fingerprint'], '');
+        expect(json, isNot(contains('ca-fingerprint')));
       });
     });
 

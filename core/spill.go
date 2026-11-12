@@ -3,6 +3,7 @@ package core
 import (
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/metacubex/mihomo/constant"
 )
@@ -12,6 +13,11 @@ import (
 const (
 	responseSpillThreshold = 1 << 20
 	spilledResponseDirName = "responses"
+	// spilledResponseMaxAge bounds the init-time sweep below: the host reads
+	// a spilled response after the method returns, and the other core may
+	// have spilled one of its own into the shared home directory moments
+	// earlier, so only files older than this are safe to remove.
+	spilledResponseMaxAge = 10 * time.Minute
 )
 
 var spillThreshold = responseSpillThreshold
@@ -79,7 +85,15 @@ func clearSpilledResponses() {
 	if err != nil {
 		return
 	}
+	cutoff := time.Now().Add(-spilledResponseMaxAge)
 	for _, entry := range entries {
+		if entry.IsDir() {
+			continue
+		}
+		info, err := entry.Info()
+		if err != nil || info.ModTime().After(cutoff) {
+			continue
+		}
 		_ = os.Remove(filepath.Join(spilledResponseDir(), entry.Name()))
 	}
 }

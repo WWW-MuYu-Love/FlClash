@@ -947,7 +947,7 @@
   "httpCaptureDesc": "记录“主机名”中列出的主机的请求，在连接详情中查看。记录只保存在内存中。",
   "httpCaptureNoHosts": "未列出任何主机，不会记录内容。请在 MITM 页的“主机名”中添加，或在连接详情中加入。",
   "httpCaptureLimit": "最多记录条数",
-  "httpCaptureLimitDesc": "达到此条数或占满 {memory} 内存后，先丢弃最早的记录。每段内容只保留前 {body}。",
+  "httpCaptureLimitDesc": "达到此条数后，先丢弃最早的记录。",
   "httpRequests": "HTTP 请求",
   "httpRequestsMissing": "抓包开启前发出或已被清除的请求不在列表中。",
   "httpRequestCleared": "这条请求的记录已清除",

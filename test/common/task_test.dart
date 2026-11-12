@@ -803,7 +803,7 @@ void main() {
       final mitm = config['mitm'] as YamlMap;
 
       expect(mitm['decrypt-tls'], isTrue);
-      expect(mitm['ca-fingerprint'], 'AB:CD');
+      expect(mitm, isNot(contains('ca-fingerprint')));
     });
 
     test('modules join the mitm lists and lead the rules', () async {

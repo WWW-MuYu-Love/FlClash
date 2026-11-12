@@ -382,7 +382,7 @@ void main() {
 
     expect(saved().trustedFingerprint, _certificate.fingerprint);
     final json = saved().coreJson(const MitmRules());
-    expect(json['ca-fingerprint'], _certificate.fingerprint);
+    expect(json, isNot(contains('ca-fingerprint')));
     expect(json['decrypt-tls'], isTrue);
   });
 

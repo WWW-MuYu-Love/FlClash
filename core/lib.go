@@ -383,10 +383,10 @@ func ForceGC() {
 }
 
 // SetMitmPressure stays for the Android service, which reports memory pressure
-// whatever the core; the engine drops its recorded exchanges to free memory.
+// whatever the core; the engine answers in grades, so a mild report only
+// pauses body recording instead of wiping the capture history.
 func SetMitmPressure(level int32) {
-	_ = level
-	mitm.Default().ReleasePressure()
+	mitm.Default().SetPressure(int(level))
 }
 
 func UpdateDns(value string) {

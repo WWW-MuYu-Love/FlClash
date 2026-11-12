@@ -2231,43 +2231,36 @@ abstract class Mitm with _$Mitm {
   factory Mitm.fromJson(Map<String, Object?> json) => _$MitmFromJson(json);
 }
 
-/// A body rewrite holds about ten times the body, a script on JSON twenty.
-const _desktopMitmLimits = {
-  'max-body-size': 4 << 20,
-  'body-buffer': 32 << 20,
-  'certificate-cache': 1024,
-  'script-concurrency': 4,
-  'script-memory': 256 << 20,
-  'capture-entries': 2000,
-  'capture-bytes': 64 << 20,
-};
+/// Only `capture-entries` reaches the Core: its `Limits` holds nothing else.
+const _desktopMitmLimits = {'capture-entries': 2000};
 
-const _androidMitmLimits = {
-  'max-body-size': 2 << 20,
-  'body-buffer': 8 << 20,
-  'certificate-cache': 256,
-  'max-sessions': 256,
-  'script-concurrency': 2,
-  'script-memory': 64 << 20,
-  'capture-entries': 500,
-  'capture-bytes': 16 << 20,
-};
+const _androidMitmLimits = {'capture-entries': 500};
 
-/// Past the top option the byte limit drops records before the count does.
+const _iosMitmLimits = {'capture-entries': 500};
+
 const _desktopMitmCaptureOptions = [500, 1000, 2000, 5000, 10000, 20000];
 const _androidMitmCaptureOptions = [200, 500, 1000, 2000, 5000];
+const _iosMitmCaptureOptions = [200, 500, 1000, 2000, 5000];
 
-List<int> mitmCaptureOptions({required bool isAndroid}) =>
-    isAndroid ? _androidMitmCaptureOptions : _desktopMitmCaptureOptions;
+List<int> mitmCaptureOptions({required bool isAndroid}) {
+  if (isAndroid) {
+    return _androidMitmCaptureOptions;
+  }
+  if (system.isIOS) {
+    return _iosMitmCaptureOptions;
+  }
+  return _desktopMitmCaptureOptions;
+}
 
-Map<String, Object> _mitmLimits({required bool isAndroid}) =>
-    isAndroid ? _androidMitmLimits : _desktopMitmLimits;
-
-int mitmCaptureBytes({required bool isAndroid}) =>
-    _mitmLimits(isAndroid: isAndroid)['capture-bytes']! as int;
-
-int mitmMaxBodySize({required bool isAndroid}) =>
-    _mitmLimits(isAndroid: isAndroid)['max-body-size']! as int;
+Map<String, Object> _mitmLimits({required bool isAndroid}) {
+  if (isAndroid) {
+    return _androidMitmLimits;
+  }
+  if (system.isIOS) {
+    return _iosMitmLimits;
+  }
+  return _desktopMitmLimits;
+}
 
 extension MitmExt on Mitm {
   int captureLimit({required bool isAndroid}) =>
@@ -2304,7 +2297,6 @@ extension MitmExt on Mitm {
       ...json,
       ...rules.toJson(),
       'decrypt-tls': decryptUntrusted || trustedFingerprint != null,
-      'ca-fingerprint': decryptUntrusted ? '' : trustedFingerprint ?? '',
       'limits': {
         ..._mitmLimits(isAndroid: system.isAndroid),
         'capture-entries': ?captureEntries,

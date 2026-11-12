@@ -947,7 +947,7 @@
   "httpCaptureDesc": "호스트 이름에 나열한 호스트의 요청을 기록하며, 연결 세부 정보에서 볼 수 있습니다. 기록은 메모리에만 보관됩니다.",
   "httpCaptureNoHosts": "나열된 호스트가 없어 아무것도 기록되지 않습니다. MITM 페이지의 호스트 이름이나 연결 세부 정보에서 추가하세요.",
   "httpCaptureLimit": "최대 기록 수",
-  "httpCaptureLimitDesc": "이 개수에 도달하거나 메모리 {memory}를 채우면 가장 오래된 기록부터 삭제됩니다. 본문은 앞부분 {body}만 보관합니다.",
+  "httpCaptureLimitDesc": "이 개수에 도달하면 가장 오래된 기록부터 삭제됩니다.",
   "httpRequests": "HTTP 요청",
   "httpRequestsMissing": "캡처를 켜기 전에 보냈거나 이미 지워진 요청은 표시되지 않습니다.",
   "httpRequestCleared": "이 요청의 기록은 지워졌습니다",

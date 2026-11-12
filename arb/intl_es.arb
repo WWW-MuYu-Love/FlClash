@@ -947,7 +947,7 @@
   "httpCaptureDesc": "Registra las solicitudes a los hosts indicados en Nombre de host, para verlas en los detalles de la conexión. Los registros solo se guardan en memoria.",
   "httpCaptureNoHosts": "No hay ningún host indicado, así que no se registra nada. Añade hosts en Nombre de host, en la página MITM, o desde los detalles de una conexión.",
   "httpCaptureLimit": "Máximo de registros",
-  "httpCaptureLimitDesc": "Los registros más antiguos se eliminan primero al alcanzar este número u ocupar {memory} de memoria. De cada cuerpo se conservan solo los primeros {body}.",
+  "httpCaptureLimitDesc": "Cuando se alcanza este número, los registros más antiguos se eliminan primero.",
   "httpRequests": "Solicitudes HTTP",
   "httpRequestsMissing": "Las solicitudes enviadas antes de activar la captura, o ya borradas, no aparecen.",
   "httpRequestCleared": "El registro de esta solicitud se ha borrado",

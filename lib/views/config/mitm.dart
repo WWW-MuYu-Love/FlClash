@@ -369,8 +369,12 @@ class _MitmViewState extends ConsumerState<MitmView> {
     final check = certificate.value == null
         ? null
         : ref.watch(mitmTrustStateProvider).value;
+    final tunnelRunning = ref.watch(
+      runningVpnOptionsProvider.select((state) => state?.enable == true),
+    );
     final showRestart =
         ref.watch(isStartProvider) &&
+        (!system.isIOS || tunnelRunning) &&
         ref.watch(
           patchClashConfigProvider.select((state) => state.mitm.enable),
         );
@@ -639,10 +643,7 @@ class MitmCaptureView extends ConsumerWidget {
                 ),
               ),
             ],
-            footer: appLocalizations.httpCaptureLimitDesc(
-              mitmCaptureBytes(isAndroid: isAndroid).traffic.show,
-              mitmMaxBodySize(isAndroid: isAndroid).traffic.show,
-            ),
+            footer: appLocalizations.httpCaptureLimitDesc,
           ),
         ],
       ),

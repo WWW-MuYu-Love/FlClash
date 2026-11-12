@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"testing"
+	"time"
 
 	"github.com/metacubex/mihomo/constant"
 )
@@ -88,17 +89,32 @@ func TestHandleMethodCallAnswersInlineUnderTheThreshold(t *testing.T) {
 	}
 }
 
-func TestClearSpilledResponsesKeepsTheDirectory(t *testing.T) {
+func TestClearSpilledResponsesRemovesOnlyExpired(t *testing.T) {
 	home := withSpillHome(t, 64)
 	handleMethodCall(getConfigCall(t, "9"))
 
-	clearSpilledResponses()
-
-	entries, err := os.ReadDir(filepath.Join(home, spilledResponseDirName))
+	dir := filepath.Join(home, spilledResponseDirName)
+	entries, err := os.ReadDir(dir)
 	if err != nil {
 		t.Fatalf("read spill directory: %v", err)
 	}
-	if len(entries) != 0 {
-		t.Errorf("entries = %v, want none left", entries)
+	if len(entries) != 1 {
+		t.Fatalf("entries = %d, want the one spilled response", len(entries))
+	}
+	path := filepath.Join(dir, entries[0].Name())
+
+	// A fresh spill may still be unread: the other core can spill right before this core initializes.
+	clearSpilledResponses()
+	if _, err := os.Stat(path); err != nil {
+		t.Fatalf("fresh spilled response removed: %v", err)
+	}
+
+	old := time.Now().Add(-spilledResponseMaxAge).Add(-time.Minute)
+	if err := os.Chtimes(path, old, old); err != nil {
+		t.Fatalf("chtimes: %v", err)
+	}
+	clearSpilledResponses()
+	if _, err := os.Stat(path); !os.IsNotExist(err) {
+		t.Fatalf("expired spilled response kept")
 	}
 }
