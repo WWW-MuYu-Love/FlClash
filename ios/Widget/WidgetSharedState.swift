@@ -35,6 +35,10 @@ struct WidgetTheme: Decodable {
   let light: WidgetColors
   let dark: WidgetColors
 
+  private enum CodingKeys: String, CodingKey {
+    case themeMode, light, dark
+  }
+
   init(from decoder: Decoder) throws {
     let container = try decoder.container(keyedBy: CodingKeys.self)
     themeMode =
@@ -69,6 +73,11 @@ struct WidgetColors: Decodable {
   let onPrimary: UInt32
   let trackOff: UInt32
   let thumbOff: UInt32
+
+  private enum CodingKeys: String, CodingKey {
+    case background, onBackground, onBackgroundVariant, primary, onPrimary,
+      trackOff, thumbOff
+  }
 
   init(from decoder: Decoder) throws {
     let container = try decoder.container(keyedBy: CodingKeys.self)
