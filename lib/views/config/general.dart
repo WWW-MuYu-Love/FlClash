@@ -309,7 +309,8 @@ class GeneralView extends ConsumerWidget {
         widget: const OnDemandView(),
         restorationId: 'tools/general/onDemand',
       ),
-      if (!system.isMobile)
+      // Android implements this via moveTaskToBack; only iOS has no such action.
+      if (!system.isIOS)
         _appSettingToggle(
           title: (l) => l.minimizeOnExit,
           select: (state) => state.minimizeOnExit,
