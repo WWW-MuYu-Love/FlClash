@@ -7758,7 +7758,8 @@ class AppLocalizations {
   String customImportDroppedSubRules(num count, Object label) {
     return Intl.plural(
       count,
-      one: '1 SUB-RULE rule was dropped, since custom profiles do not support sub-rules',
+      one:
+          '1 SUB-RULE rule was dropped, since custom profiles do not support sub-rules',
       other:
           '$label SUB-RULE rules were dropped, since custom profiles do not support sub-rules',
       name: 'customImportDroppedSubRules',
@@ -7922,13 +7923,13 @@ class AppLocalizations {
     );
   }
 
-  /// `The oldest records go first once this many are kept or they fill {memory} of memory. Each body keeps its first {body}.`
-  String httpCaptureLimitDesc(Object memory, Object body) {
+  /// `The oldest records go first once this many are kept.`
+  String get httpCaptureLimitDesc {
     return Intl.message(
-      'The oldest records go first once this many are kept or they fill $memory of memory. Each body keeps its first $body.',
+      'The oldest records go first once this many are kept.',
       name: 'httpCaptureLimitDesc',
       desc: '',
-      args: [memory, body],
+      args: [],
     );
   }
 

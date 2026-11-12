@@ -953,7 +953,7 @@
   "httpCaptureDesc": "Enregistre les requêtes vers les hôtes listés dans Nom d’hôte, à consulter dans les détails de la connexion. Les enregistrements restent uniquement en mémoire.",
   "httpCaptureNoHosts": "Aucun hôte n’est listé, rien n’est donc enregistré. Ajoutez des hôtes dans Nom d’hôte sur la page MITM, ou depuis les détails d’une connexion.",
   "httpCaptureLimit": "Nombre maximal d’enregistrements",
-  "httpCaptureLimitDesc": "Les plus anciens enregistrements sont supprimés en premier une fois ce nombre atteint ou {memory} de mémoire occupés. Seuls les premiers {body} de chaque corps sont conservés.",
+  "httpCaptureLimitDesc": "Une fois ce nombre atteint, les enregistrements les plus anciens sont supprimés en premier.",
   "httpRequests": "Requêtes HTTP",
   "httpRequestsMissing": "Les requêtes envoyées avant l'activation de la capture, ou déjà effacées, ne sont pas listées.",
   "httpRequestCleared": "L'enregistrement de cette requête a été effacé",

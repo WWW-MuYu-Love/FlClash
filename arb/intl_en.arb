@@ -953,7 +953,7 @@
   "httpCaptureDesc": "Records requests to the hosts listed under Hostname, to view in connection details. Records stay in memory only.",
   "httpCaptureNoHosts": "No host is listed, so nothing is recorded. Add hosts under Hostname on the MITM page, or from the details of a connection.",
   "httpCaptureLimit": "Maximum records",
-  "httpCaptureLimitDesc": "The oldest records go first once this many are kept or they fill {memory} of memory. Each body keeps its first {body}.",
+  "httpCaptureLimitDesc": "The oldest records go first once this many are kept.",
   "httpRequests": "HTTP requests",
   "httpRequestsMissing": "Requests made before capture was on, or since cleared, are not listed.",
   "httpRequestCleared": "This request is no longer kept",

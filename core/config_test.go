@@ -14,6 +14,8 @@ import (
 	"testing"
 	"time"
 
+	"core/mitm"
+
 	"github.com/metacubex/mihomo/adapter/inbound"
 	"github.com/metacubex/mihomo/adapter/provider"
 	"github.com/metacubex/mihomo/component/updater"
@@ -134,6 +136,21 @@ func TestUpdateConfigAppliesAllowLan(t *testing.T) {
 
 	if !currentConfig.General.AllowLan {
 		t.Error("AllowLan stayed false; the patched value never reached the general config")
+	}
+}
+
+func TestUpdateConfigPushesMixedPortToMitmEngine(t *testing.T) {
+	withCurrentConfig(t, &config.Config{General: &config.General{}, Controller: &config.Controller{}})
+	previous := mitm.Default().MixedPort()
+	t.Cleanup(func() { _ = mitm.Default().SetMixedPort(previous) })
+	port := 18080
+
+	if err := updateConfig(&UpdateParams{MixedPort: &port}); err != nil {
+		t.Fatalf("updateConfig error: %v", err)
+	}
+
+	if got := mitm.Default().MixedPort(); got != port {
+		t.Errorf("MITM mixed port = %d, want %d; the engine would keep dialing the old port", got, port)
 	}
 }
 
