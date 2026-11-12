@@ -57,13 +57,7 @@ class ZashboardCard extends ConsumerWidget {
               }
               final url = zashboardUrl(client);
               if (zashboardInAppWebViewAvailable()) {
-                unawaited(
-                  showExtend(
-                    context,
-                    props: const ExtendProps(forceFull: true),
-                    builder: (_) => ZashboardView(url: url),
-                  ),
-                );
+                unawaited(openZashboard(context, url));
               } else {
                 unawaited(launchUrl(url));
               }
