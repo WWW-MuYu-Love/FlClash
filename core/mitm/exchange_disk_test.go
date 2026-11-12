@@ -3,8 +3,41 @@ package mitm
 import (
 	"os"
 	"path/filepath"
+	"strconv"
 	"testing"
 )
+
+func TestExchangeStoreLoadKeepsOnlyLimit(t *testing.T) {
+	dir := t.TempDir()
+	s := NewExchangeStoreWithDir(10, dir)
+	for i := 1; i <= 5; i++ {
+		ex := &Exchange{
+			ID: i, URL: "https://example.com/" + strconv.Itoa(i),
+			Connection: "1",
+		}
+		s.add(ex)
+		s.complete(ex)
+	}
+	loaded := NewExchangeStoreWithDir(3, dir)
+	list := loaded.List("", true)
+	if len(list.Exchanges) != 3 {
+		t.Fatalf("reloaded List() = %d exchanges, want 3", len(list.Exchanges))
+	}
+	for i, summary := range list.Exchanges {
+		if want := i + 3; summary.ID != want {
+			t.Fatalf("reloaded exchange %d id = %d, want %d", i, summary.ID, want)
+		}
+	}
+	if got := loaded.Get(1); got != nil {
+		t.Fatalf("reloaded Get(1) = %+v, want nil", got)
+	}
+	if _, err := os.Stat(filepath.Join(dir, "1.json")); !os.IsNotExist(err) {
+		t.Fatalf("dropped exchange file still exists")
+	}
+	if _, err := os.Stat(filepath.Join(dir, "5.json")); err != nil {
+		t.Fatalf("kept exchange file missing: %v", err)
+	}
+}
 
 func TestExchangeStoreDiskPersistsBodies(t *testing.T) {
 	dir := t.TempDir()

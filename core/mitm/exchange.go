@@ -213,6 +213,12 @@ func (s *ExchangeStore) loadLocked() {
 		ids = append(ids, id)
 	}
 	sort.Ints(ids)
+	if s.limit > 0 && len(ids) > s.limit {
+		for _, id := range ids[:len(ids)-s.limit] {
+			s.removeFilesLocked(id)
+		}
+		ids = ids[len(ids)-s.limit:]
+	}
 	for _, id := range ids {
 		data, err := os.ReadFile(s.metaPath(id))
 		if err != nil {
@@ -251,7 +257,14 @@ func (s *ExchangeStore) removeFilesLocked(id int) {
 func (s *ExchangeStore) complete(ex *Exchange) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	s.completeLocked(ex)
+}
+
+func (s *ExchangeStore) completeLocked(ex *Exchange) {
 	if ex.Pending || s.dir == "" {
+		return
+	}
+	if s.byID[ex.ID] != ex {
 		return
 	}
 	s.persistLocked(ex)
@@ -278,6 +291,8 @@ func (s *ExchangeStore) NextConnectionID() string {
 
 // Intercept runs on every decrypted request: it records the exchange, applies
 // the configured rewrites, and returns the (possibly rewritten) response.
+// Bodies are teed, never buffered and replaced: the request body is read by
+// the upstream during Invoke, the response body by the client after Intercept returns.
 func (s *ExchangeStore) Intercept(ctx context.Context, e *Engine, req *http.Request, invoker mitmproxy.HTTPDelegatedInvoker) (*http.Response, error) {
 	connID := connectionIDFromContext(ctx)
 	start := time.Now()
@@ -293,19 +308,19 @@ func (s *ExchangeStore) Intercept(ctx context.Context, e *Engine, req *http.Requ
 		Connection:    connID,
 		RequestHeader: cloneHeader(req.Header),
 	}
-	// Capture the request body, then restore it for the upstream call.
+	var reqCapture *cappedCapture
 	if req.Body != nil {
-		body, truncated := readCapped(req.Body)
-		ex.requestBody = body
-		ex.requestTruncated = truncated
-		ex.RequestSize = len(body)
-		req.Body = io.NopCloser(bytes.NewReader(body))
-		req.ContentLength = int64(len(body))
+		reqCapture = &cappedCapture{}
+		req.Body = io.NopCloser(io.TeeReader(req.Body, reqCapture))
 	}
 	s.add(ex)
 	applyRequestRewrites(e, req, ex)
 
 	resp, err := invoker.Invoke(req)
+	if reqCapture != nil {
+		ex.requestBody, ex.requestTruncated = reqCapture.snapshot()
+		ex.RequestSize = int(reqCapture.total)
+	}
 	if err != nil {
 		ex.Pending = false
 		ex.Duration = time.Since(start).Milliseconds()
@@ -317,18 +332,25 @@ func (s *ExchangeStore) Intercept(ctx context.Context, e *Engine, req *http.Requ
 	ex.Status = resp.StatusCode
 	ex.ResponseHeader = cloneHeader(resp.Header)
 	if resp.Body != nil {
-		body, truncated := readCapped(resp.Body)
-		ex.responseBody = body
-		ex.responseTruncated = truncated
-		ex.ResponseSize = len(body)
-		resp.Body = io.NopCloser(bytes.NewReader(body))
-		resp.ContentLength = int64(len(body))
+		resp.Body = newTeeBody(resp.Body, func(capture *cappedCapture) {
+			s.finishResponse(ex, start, capture)
+		})
 	}
 	applyResponseRewrites(e, resp, ex)
+	return resp, nil
+}
+
+func (s *ExchangeStore) finishResponse(ex *Exchange, start time.Time, capture *cappedCapture) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.byID[ex.ID] != ex {
+		return
+	}
+	ex.responseBody, ex.responseTruncated = capture.snapshot()
+	ex.ResponseSize = int(capture.total)
 	ex.Pending = false
 	ex.Duration = time.Since(start).Milliseconds()
-	s.complete(ex)
-	return resp, nil
+	s.completeLocked(ex)
 }
 
 func (s *ExchangeStore) add(ex *Exchange) {
@@ -575,45 +597,95 @@ func cloneHeader(h http.Header) map[string][]string {
 	return out
 }
 
-// readCapped reads up to maxRecordedBody bytes, reporting truncation.
-func readCapped(r io.Reader) ([]byte, bool) {
-	body, err := io.ReadAll(io.LimitReader(r, maxRecordedBody+1))
-	if err != nil {
-		return nil, false
+type cappedCapture struct {
+	buf   []byte
+	total int64
+}
+
+func (c *cappedCapture) Write(p []byte) (int, error) {
+	c.total += int64(len(p))
+	if len(c.buf) < maxRecordedBody {
+		room := maxRecordedBody - len(c.buf)
+		if len(p) < room {
+			room = len(p)
+		}
+		c.buf = append(c.buf, p[:room]...)
 	}
-	if len(body) > maxRecordedBody {
-		return body[:maxRecordedBody], true
+	return len(p), nil
+}
+
+func (c *cappedCapture) snapshot() ([]byte, bool) {
+	return c.buf, c.total > maxRecordedBody
+}
+
+// The framework may swap an empty body for http.NoBody without closing the
+// original, so the exchange finishes when the body is fully read or closed.
+type teeBody struct {
+	body    io.ReadCloser
+	tee     io.Reader
+	capture *cappedCapture
+	finish  sync.Once
+	onDone  func(*cappedCapture)
+}
+
+func newTeeBody(body io.ReadCloser, onDone func(*cappedCapture)) *teeBody {
+	capture := &cappedCapture{}
+	return &teeBody{body: body, tee: io.TeeReader(body, capture), capture: capture, onDone: onDone}
+}
+
+func (t *teeBody) Read(p []byte) (int, error) {
+	n, err := t.tee.Read(p)
+	if err == io.EOF {
+		t.finish.Do(func() { t.onDone(t.capture) })
 	}
-	return body, false
+	return n, err
+}
+
+func (t *teeBody) Close() error {
+	err := t.body.Close()
+	t.finish.Do(func() { t.onDone(t.capture) })
+	return err
 }
 
 // applyRequestRewrites applies URL and header rewrites to a decrypted request.
 func applyRequestRewrites(e *Engine, req *http.Request, ex *Exchange) {
+	ex.Actions = append(ex.Actions, requestRewriteActions(e, req)...)
+}
+
+func requestRewriteActions(e *Engine, req *http.Request) []Action {
 	e.mu.RLock()
 	rules := e.config
 	e.mu.RUnlock()
+	var actions []Action
 	for _, line := range rules.URLRewrite {
 		if applyURLRewrite(req, line) {
-			ex.Actions = append(ex.Actions, Action{Kind: "url-rewrite", Phase: "request", Detail: line})
+			actions = append(actions, Action{Kind: "url-rewrite", Phase: "request", Detail: line})
 		}
 	}
 	for _, line := range rules.HeaderRewrite {
 		if applyHeaderRewrite(req.Header, line) {
-			ex.Actions = append(ex.Actions, Action{Kind: "header-rewrite", Phase: "request", Detail: line})
+			actions = append(actions, Action{Kind: "header-rewrite", Phase: "request", Detail: line})
 		}
 	}
+	return actions
 }
 
 // applyResponseRewrites applies header rewrites to a decrypted response.
 func applyResponseRewrites(e *Engine, resp *http.Response, ex *Exchange) {
+	ex.Actions = append(ex.Actions, responseRewriteActions(e, resp)...)
+}
+
+func responseRewriteActions(e *Engine, resp *http.Response) []Action {
 	e.mu.RLock()
 	rules := e.config
 	e.mu.RUnlock()
+	var actions []Action
 	for _, line := range rules.HeaderRewrite {
 		if applyHeaderRewrite(resp.Header, line) {
-			ex.Actions = append(ex.Actions, Action{Kind: "header-rewrite", Phase: "response", Detail: line})
+			actions = append(actions, Action{Kind: "header-rewrite", Phase: "response", Detail: line})
 		}
 	}
+	return actions
 }
 
 // applyURLRewrite rewrites req.URL when line matches "<pattern> <replacement>".
