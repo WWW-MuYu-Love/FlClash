@@ -58,9 +58,11 @@ class Logs extends _$Logs with AutoDisposeNotifierMixin {
 
   Future<bool> exportLogs() async {
     final logString = await encodeLogsTask(value.list);
+    final panicLogs = await readPanicLogs(await appPath.panicLogsDirPath);
+    final combined = panicLogs.isEmpty ? logString : '$logString$panicLogs';
     final tempFilePath = await appPath.tempFilePath;
     final file = File(tempFilePath);
-    await file.safeWriteAsString(logString);
+    await file.safeWriteAsString(combined);
     bool res = false;
     res = await picker.saveFileWithPath(logFileName, tempFilePath) != null;
     return res;

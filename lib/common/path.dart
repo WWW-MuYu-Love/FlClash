@@ -230,6 +230,13 @@ class AppPath {
     return join(scriptsDir, '$fileName.js');
   }
 
+  /// The Go core redirects its stderr here at init, so a runtime panic in
+  /// a background goroutine leaves its trace on disk. Mirrors
+  /// core/panic_capture.go.
+  Future<String> get panicLogsDirPath async {
+    return join(await homeDirPath, 'logs');
+  }
+
   Future<String> get mitmModulesDirPath async {
     return join(await homeDirPath, mitmDirectoryName, mitmModulesDirectoryName);
   }
@@ -299,4 +306,27 @@ String getBackupFileName() {
 
 String get logFileName {
   return '${appName}_${DateTime.now().show}.log';
+}
+
+/// Reads the panic traces the core left on disk, oldest file first.
+/// Empty when the core never wrote one.
+Future<String> readPanicLogs(String dirPath) async {
+  final buffer = StringBuffer();
+  for (final name in const ['panic.log.old', 'panic.log']) {
+    try {
+      final file = File(join(dirPath, name));
+      if (!await file.exists()) {
+        continue;
+      }
+      final content = await file.readAsString();
+      if (content.trim().isEmpty) {
+        continue;
+      }
+      buffer.writeln('\n--- $name ---');
+      buffer.writeln(content.trim());
+    } catch (_) {
+      continue;
+    }
+  }
+  return buffer.toString();
 }

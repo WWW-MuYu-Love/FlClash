@@ -26,6 +26,8 @@ var (
 )
 
 func handleInit(params *InitParams) error {
+	// First: a panic anywhere after this leaves its trace on disk.
+	redirectStderrToPanicLog(params.HomeDir)
 	configMu.Lock()
 	defer configMu.Unlock()
 	sdkVersion.Store(int32(params.Version))
