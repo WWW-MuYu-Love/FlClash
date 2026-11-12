@@ -1,9 +1,11 @@
+import 'package:fl_clash/core/external_controller.dart';
 import 'package:fl_clash/enum/enum.dart';
 import 'package:fl_clash/features/form/form.dart';
 import 'package:fl_clash/models/models.dart';
 import 'package:fl_clash/providers/action.dart';
 import 'package:fl_clash/providers/app.dart';
 import 'package:fl_clash/providers/config.dart';
+import 'package:fl_clash/providers/core.dart';
 import 'package:fl_clash/providers/database.dart';
 import 'package:fl_clash/providers/state.dart';
 import 'package:fl_clash/state.dart';
@@ -27,6 +29,7 @@ import 'package:fl_clash/views/proxies/list.dart';
 import 'package:fl_clash/views/proxies/tab.dart';
 import 'package:fl_clash/views/theme.dart';
 import 'package:fl_clash/views/views.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -239,6 +242,163 @@ void main() {
     await tester.pump();
 
     expect(find.text('Zashboard'), findsNothing);
+    expect(tester.takeException(), null);
+  });
+
+  testWidgets('zashboard opens the panel with the controller secret', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(500, 1000);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    const runningOptions = VpnOptions(
+      enable: true,
+      port: 7890,
+      ipv6: false,
+      dnsHijacking: false,
+      accessControlProps: AccessControlProps(
+        enable: false,
+        mode: AccessControlMode.acceptSelected,
+        acceptList: [],
+        rejectList: [],
+      ),
+      allowBypass: false,
+      systemProxy: true,
+      bypassDomain: [],
+      stack: 'mixed',
+    );
+    final client = ExternalControllerClient(
+      baseUri: Uri.parse('http://127.0.0.1:9090'),
+      secret: 'AbC123xYz987',
+    );
+    addTearDown(client.close);
+    final container = ProviderContainer(
+      overrides: [
+        profilesProvider.overrideWith(TestProfiles.new),
+        runningVpnOptionsProvider.overrideWithValue(runningOptions),
+        externalControllerClientProvider.overrideWithValue(client),
+      ],
+    );
+    addTearDown(container.dispose);
+    globalState.container = container;
+    container
+        .read(viewSizeProvider.notifier)
+        .update((_) => const Size(500, 1000));
+
+    const launcherChannel = MethodChannel('plugins.flutter.io/url_launcher');
+    final launchedUrls = <String>[];
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(launcherChannel, (call) async {
+          if (call.method == 'launch') {
+            launchedUrls.add((call.arguments as Map)['url'] as String);
+            return true;
+          }
+          return null;
+        });
+    addTearDown(
+      () => TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(launcherChannel, null),
+    );
+
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: const TestApp(child: DashboardView()),
+      ),
+    );
+    await tester.pump();
+
+    final scrollables = find.byType(Scrollable);
+    for (var index = 0; index < 8; index++) {
+      await tester.drag(scrollables.first, const Offset(0, -700));
+      await tester.pump();
+    }
+    await tester.tap(find.text('Zashboard'));
+    await tester.pump();
+    await tester.pump();
+
+    expect(launchedUrls, [
+      'http://127.0.0.1:9090/ui?hostname=127.0.0.1&port=9090&secret=AbC123xYz987',
+    ]);
+    expect(tester.takeException(), null);
+  });
+
+  testWidgets('zashboard opens the bare panel url without a secret', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(500, 1000);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    const runningOptions = VpnOptions(
+      enable: true,
+      port: 7890,
+      ipv6: false,
+      dnsHijacking: false,
+      accessControlProps: AccessControlProps(
+        enable: false,
+        mode: AccessControlMode.acceptSelected,
+        acceptList: [],
+        rejectList: [],
+      ),
+      allowBypass: false,
+      systemProxy: true,
+      bypassDomain: [],
+      stack: 'mixed',
+    );
+    final client = ExternalControllerClient(
+      baseUri: Uri.parse('http://127.0.0.1:9090'),
+    );
+    addTearDown(client.close);
+    final container = ProviderContainer(
+      overrides: [
+        profilesProvider.overrideWith(TestProfiles.new),
+        runningVpnOptionsProvider.overrideWithValue(runningOptions),
+        externalControllerClientProvider.overrideWithValue(client),
+      ],
+    );
+    addTearDown(container.dispose);
+    globalState.container = container;
+    container
+        .read(viewSizeProvider.notifier)
+        .update((_) => const Size(500, 1000));
+
+    const launcherChannel = MethodChannel('plugins.flutter.io/url_launcher');
+    final launchedUrls = <String>[];
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(launcherChannel, (call) async {
+          if (call.method == 'launch') {
+            launchedUrls.add((call.arguments as Map)['url'] as String);
+            return true;
+          }
+          return null;
+        });
+    addTearDown(
+      () => TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(launcherChannel, null),
+    );
+
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: const TestApp(child: DashboardView()),
+      ),
+    );
+    await tester.pump();
+
+    final scrollables = find.byType(Scrollable);
+    for (var index = 0; index < 8; index++) {
+      await tester.drag(scrollables.first, const Offset(0, -700));
+      await tester.pump();
+    }
+    await tester.tap(find.text('Zashboard'));
+    await tester.pump();
+    await tester.pump();
+
+    expect(launchedUrls, ['http://127.0.0.1:9090/ui']);
     expect(tester.takeException(), null);
   });
 

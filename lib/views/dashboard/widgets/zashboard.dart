@@ -24,10 +24,19 @@ class ZashboardCard extends ConsumerWidget {
       semanticLabel: 'Zashboard',
       onTap: vpnRunning
           ? () {
-              final baseUri = ref
-                  .read(externalControllerClientProvider)
-                  .baseUri;
-              unawaited(launchUrl(baseUri.replace(path: '/ui')));
+              final client = ref.read(externalControllerClientProvider);
+              final baseUri = client.baseUri;
+              final url = client.secret.isEmpty
+                  ? baseUri.replace(path: '/ui')
+                  : baseUri.replace(
+                      path: '/ui',
+                      queryParameters: {
+                        'hostname': baseUri.host,
+                        'port': '${baseUri.port}',
+                        'secret': client.secret,
+                      },
+                    );
+              unawaited(launchUrl(url));
             }
           : null,
       child: Column(
