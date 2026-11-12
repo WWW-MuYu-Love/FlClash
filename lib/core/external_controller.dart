@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:fl_clash/common/constant.dart';
 import 'package:fl_clash/enum/enum.dart';
 import 'package:fl_clash/models/models.dart';
 
@@ -380,6 +381,167 @@ class ExternalControllerClient {
     } catch (_) {
       unauthorized = false;
       return false;
+    }
+  }
+
+  // GET /proxies/{name}/delay runs the delay test on the core behind 9090
+  // and answers {"delay": N}; 504 is a timeout, 503 or 404 a failure. A
+  // null return means the request itself failed (the tunnel is down or
+  // the secret is stale).
+  Future<Delay?> fetchDelay(String name, String url, Duration timeout) async {
+    // The endpoint parses the timeout as milliseconds in an int16.
+    final timeoutMs = timeout.inMilliseconds.clamp(0, 30000);
+    final httpTimeout = Duration(milliseconds: timeoutMs) + _fetchTimeout * 2;
+    try {
+      final request = await _http
+          .getUrl(
+            baseUri.replace(
+              pathSegments: [...baseUri.pathSegments, 'proxies', name, 'delay'],
+              queryParameters: {'url': url, 'timeout': '$timeoutMs'},
+            ),
+          )
+          .timeout(_fetchTimeout);
+      if (secret.isNotEmpty) {
+        request.headers.set(HttpHeaders.authorizationHeader, 'Bearer $secret');
+      }
+      final response = await request.close().timeout(httpTimeout);
+      _noteStatus(response);
+      if (response.statusCode == HttpStatus.gatewayTimeout) {
+        await response.drain<void>();
+        return Delay(name: name, url: url, value: delayTimedOutValue);
+      }
+      if (response.statusCode != HttpStatus.ok) {
+        await response.drain<void>();
+        if (response.statusCode == HttpStatus.serviceUnavailable ||
+            response.statusCode == HttpStatus.notFound) {
+          return Delay(name: name, url: url, value: -2);
+        }
+        return null;
+      }
+      final body = await response
+          .transform(utf8.decoder)
+          .join()
+          .timeout(_fetchTimeout);
+      final json = jsonDecode(body);
+      if (json is! Map<String, Object?>) {
+        return null;
+      }
+      final delay = json['delay'];
+      if (delay is! num) {
+        return null;
+      }
+      return Delay(name: name, url: url, value: delay.toInt());
+    } catch (_) {
+      unauthorized = false;
+      return null;
+    }
+  }
+
+  // POST /cache/dns/flush clears the DNS cache on the core behind 9090;
+  // 204 means cleared. A false return means the request itself failed.
+  Future<bool> clearDnsCache() async {
+    try {
+      final request = await _http
+          .postUrl(
+            baseUri.replace(
+              pathSegments: [...baseUri.pathSegments, 'cache', 'dns', 'flush'],
+            ),
+          )
+          .timeout(_fetchTimeout);
+      if (secret.isNotEmpty) {
+        request.headers.set(HttpHeaders.authorizationHeader, 'Bearer $secret');
+      }
+      final response = await request.close().timeout(_fetchTimeout);
+      _noteStatus(response);
+      await response.drain<void>();
+      return response.statusCode == HttpStatus.noContent ||
+          response.statusCode == HttpStatus.ok;
+    } catch (_) {
+      unauthorized = false;
+      return false;
+    }
+  }
+
+  // POST /probe/services runs the service sweep on the core behind 9090
+  // and answers the checked items. A null return means the request
+  // itself failed (the tunnel is down or the secret is stale).
+  Future<List<ServiceCheckItem>?> fetchServiceCheck(
+    ServiceCheckParams params,
+  ) async {
+    final httpTimeout = coreGuardFor(
+      params.timeout,
+      budgetFactor: serviceSweepBudgetFactor,
+    );
+    try {
+      final request = await _http
+          .postUrl(
+            baseUri.replace(
+              pathSegments: [...baseUri.pathSegments, 'probe', 'services'],
+            ),
+          )
+          .timeout(_fetchTimeout);
+      if (secret.isNotEmpty) {
+        request.headers.set(HttpHeaders.authorizationHeader, 'Bearer $secret');
+      }
+      request.headers.contentType = ContentType.json;
+      request.write(jsonEncode(params.toJson()));
+      final response = await request.close().timeout(httpTimeout);
+      _noteStatus(response);
+      if (response.statusCode != HttpStatus.ok) {
+        await response.drain<void>();
+        return null;
+      }
+      final body = await response
+          .transform(utf8.decoder)
+          .join()
+          .timeout(_fetchTimeout);
+      final json = jsonDecode(body);
+      if (json is! List) {
+        return null;
+      }
+      return [
+        for (final item in json)
+          if (item is Map<String, Object?>) ServiceCheckItem.fromJson(item),
+      ];
+    } catch (_) {
+      unauthorized = false;
+      return null;
+    }
+  }
+
+  // POST /route/check resolves the routes on the core behind 9090 and
+  // answers which of them are still held. A null return means the request
+  // itself failed.
+  Future<RouteCheck?> fetchRouteCheck(CheckRoutesParams params) async {
+    final httpTimeout = coreGuardFor(probeTimeoutDuration.inMilliseconds);
+    try {
+      final request = await _http
+          .postUrl(
+            baseUri.replace(
+              pathSegments: [...baseUri.pathSegments, 'route', 'check'],
+            ),
+          )
+          .timeout(_fetchTimeout);
+      if (secret.isNotEmpty) {
+        request.headers.set(HttpHeaders.authorizationHeader, 'Bearer $secret');
+      }
+      request.headers.contentType = ContentType.json;
+      request.write(jsonEncode(params.toJson()));
+      final response = await request.close().timeout(httpTimeout);
+      _noteStatus(response);
+      if (response.statusCode != HttpStatus.ok) {
+        await response.drain<void>();
+        return null;
+      }
+      final body = await response
+          .transform(utf8.decoder)
+          .join()
+          .timeout(_fetchTimeout);
+      final json = jsonDecode(body);
+      return json is Map<String, Object?> ? RouteCheck.fromJson(json) : null;
+    } catch (_) {
+      unauthorized = false;
+      return null;
     }
   }
 

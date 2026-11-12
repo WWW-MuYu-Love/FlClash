@@ -503,13 +503,26 @@ class ProxiesAction extends _$ProxiesAction {
       _scheduleDelayFlush();
     }
     try {
-      final delay = await _core.testDelay(
+      var delay = await _core.testDelay(
         TestDelayParams(
           proxyName: target.proxyName,
           testUrl: target.testUrl,
           timeout: job.timeout.inMilliseconds,
         ),
       );
+      // A failed or timed-out answer may come from the App core, which is
+      // not the routing core when the VPN is on: ask the extension core
+      // over 9090, whose answer is authoritative.
+      final value = delay.value;
+      if ((value == null || value < 0) &&
+          ref.read(runningVpnOptionsProvider)?.enable == true) {
+        final routed = await ref
+            .read(externalControllerClientProvider)
+            .fetchDelay(target.proxyName, target.testUrl, job.timeout);
+        if (routed != null) {
+          delay = routed;
+        }
+      }
       if (!job.cancelled) {
         setDelay(delay);
       }

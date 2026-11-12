@@ -136,6 +136,14 @@ class ServiceCheck {
       'ServiceCheck(${status.id}, delay: $delay, node: $node, region: $region)';
 }
 
+/// Maps checked items to their targets, dropping items for unknown services.
+Map<ServiceTarget, ServiceCheck> serviceChecksOf(
+  List<ServiceCheckItem> items,
+) => {
+  for (final item in items)
+    ?ServiceTarget.byId(item.name): ServiceCheck.of(item),
+};
+
 /// An empty [proxyName] lets the Core route by its rules; an empty [targets]
 /// checks every service.
 Future<Map<ServiceTarget, ServiceCheck>> checkServices(
@@ -151,10 +159,7 @@ Future<Map<ServiceTarget, ServiceCheck>> checkServices(
       timeout: timeout.inMilliseconds,
     ),
   );
-  return {
-    for (final item in items)
-      ?ServiceTarget.byId(item.name): ServiceCheck.of(item),
-  };
+  return serviceChecksOf(items);
 }
 
 IpInfo Function(String) _json(IpInfo Function(Map<String, dynamic>) parse) {
