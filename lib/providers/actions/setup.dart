@@ -261,18 +261,6 @@ class SetupAction extends _$SetupAction {
   }
 
   Future<bool> _start(_RunRequest request) async {
-    if (system.isIOS && !request.resume) {
-      // With VPN off there is no tunnel to start; refusing keeps the dashboard honest.
-      final vpnOptions = await ref.read(vpnOptionsProvider.future);
-      if (!vpnOptions.enable) {
-        dialogs.showBanner(
-          currentAppLocalizations.enableVpnFirst,
-          level: BannerLevel.error,
-        );
-        _rollbackRunning(request);
-        return false;
-      }
-    }
     if (request.initialize) {
       var applied = false;
       try {
@@ -350,11 +338,11 @@ class SetupAction extends _$SetupAction {
 
   Future<void> _setListening(bool running) async {
     final vpnOptions = await ref.read(vpnOptionsProvider.future);
-    if (running && system.isIOS && !vpnOptions.enable) {
-      throw MessageException(currentAppLocalizations.enableVpnFirst);
-    }
+    final skipStart = running && system.isIOS && !vpnOptions.enable;
     try {
-      await setCoreRunning(running);
+      if (!skipStart) {
+        await setCoreRunning(running);
+      }
     } catch (error) {
       if (_isUnanswered(error)) {
         ref.read(runningVpnOptionsProvider.notifier).value = null;

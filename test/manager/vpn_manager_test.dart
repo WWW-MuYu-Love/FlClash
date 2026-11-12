@@ -108,6 +108,24 @@ void main() {
     await drainTimers(tester);
   });
 
+  testWidgets('turning VPN off while the service runs asks for a restart', (
+    tester,
+  ) async {
+    await pumpVpnManager(tester);
+    startService();
+
+    updateVpn((state) => state.copyWith(enable: false));
+    await settle(tester);
+    expect(tip(), findsOneWidget);
+    expect(setupAction.restarts, 0);
+
+    await tester.pump(const Duration(milliseconds: 500));
+    await tester.tap(tip());
+    await tester.pump();
+    expect(setupAction.restarts, 1);
+    await drainTimers(tester);
+  });
+
   testWidgets('a mixed port change asks for a restart under a system proxy', (
     tester,
   ) async {
