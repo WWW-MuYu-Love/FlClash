@@ -316,19 +316,15 @@ final class CoreMessageRouter {
         extensionData,
         route: .networkExtension
       )
-    } catch let error as ProviderMessageError
-      where error.code == "network_extension_unavailable"
-    {
-      // The extension is not running, so there is nothing to push to. The
-      // tunnel start reads the same config from the shared state, so the
-      // setup still succeeds instead of aborting the start.
-      return appResponse
     } catch {
-      throw CoreRoutingError(
-        code: "extension_config_failed",
-        message:
-          "应用内核已应用配置，但扩展内核未收到：\(error.localizedDescription)"
+      // The push is best-effort: the extension re-reads the config from the
+      // shared state on start, and mode changes also reach it over the 9090
+      // controller, so a failed push must not fail the setup/update itself.
+      let code = (error as? ProviderMessageError)?.code ?? "unknown"
+      log(
+        "config push to extension failed method=\(method.rawValue) code=\(code): \(error.localizedDescription)"
       )
+      return appResponse
     }
   }
 
