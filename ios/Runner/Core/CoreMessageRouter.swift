@@ -316,6 +316,13 @@ final class CoreMessageRouter {
         extensionData,
         route: .networkExtension
       )
+    } catch let error as ProviderMessageError
+      where error.code == "network_extension_unavailable"
+    {
+      // The extension is not running, so there is nothing to push to. The
+      // tunnel start reads the same config from the shared state, so the
+      // setup still succeeds instead of aborting the start.
+      return appResponse
     } catch {
       throw CoreRoutingError(
         code: "extension_config_failed",

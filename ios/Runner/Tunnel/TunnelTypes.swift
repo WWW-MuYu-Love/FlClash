@@ -94,7 +94,11 @@ final class TunnelWait {
   }
 }
 
-struct ProviderMessageError: Error {
+struct ProviderMessageError: LocalizedError {
   let code: String
   let message: String
+
+  var errorDescription: String? {
+    message
+  }
 }
