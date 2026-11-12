@@ -246,6 +246,8 @@ var methodHandlers = map[CoreMethod]methodHandler{
 	mitmExchangesMethod:           withArguments(handleMitmExchanges),
 	mitmExchangeMethod:            withArguments(handleMitmExchange),
 	mitmBodyMethod:                withArguments(handleMitmBody),
+	mitmHostsMethod:               withoutArguments(handleMitmDecryptedHosts),
+	mitmExchangesByHostMethod:     withArguments(handleMitmExchangesByHost),
 }
 
 func watchRouteHandler(call *MethodCall) (any, error) {

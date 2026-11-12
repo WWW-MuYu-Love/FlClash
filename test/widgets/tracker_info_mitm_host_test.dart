@@ -150,5 +150,10 @@ void main() {
       expect(find.text(currentAppLocalizations.mitmDecryptHost), findsNothing);
       expect(find.text(currentAppLocalizations.mitmExcludeHost), findsNothing);
     }
+    // Unmount inside the test body: the detail view watches the async
+    // decrypted-hosts provider, whose disposal schedules a frame that
+    // teardown would otherwise leave pending.
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pumpAndSettle();
   });
 }

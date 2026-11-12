@@ -27,7 +27,7 @@ MitmExchangeList _list({required bool closed, required bool pending}) =>
     );
 
 void main() {
-  testWidgets('requests are fetched again until the connection settles', (
+  testWidgets('requests are fetched again until the host settles', (
     tester,
   ) async {
     final answers = [
@@ -38,7 +38,7 @@ void main() {
     var calls = 0;
     final core = _MockCoreHandlerInterface();
     when(
-      () => core.getMitmExchanges('connection-1'),
+      () => core.getMitmExchangesByHost('a.test'),
     ).thenAnswer((_) async => answers[(calls++).clamp(0, answers.length - 1)]);
     final container = ProviderContainer(
       overrides: [
@@ -46,16 +46,13 @@ void main() {
       ],
     );
     addTearDown(container.dispose);
-    container.listen(mitmExchangesProvider('connection-1'), (_, _) {});
+    container.listen(mitmExchangesProvider('a.test'), (_, _) {});
 
     for (var second = 0; second < 12; second++) {
       await tester.pump(const Duration(seconds: 1));
     }
 
     expect(calls, answers.length);
-    expect(
-      container.read(mitmExchangesProvider('connection-1')).value,
-      answers.last,
-    );
+    expect(container.read(mitmExchangesProvider('a.test')).value, answers.last);
   });
 }

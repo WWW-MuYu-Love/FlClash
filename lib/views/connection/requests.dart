@@ -6,6 +6,7 @@ import 'package:fl_clash/core/method.dart';
 import 'package:fl_clash/enum/enum.dart';
 import 'package:fl_clash/features/features.dart';
 import 'package:fl_clash/models/models.dart';
+import 'package:fl_clash/providers/mitm.dart';
 import 'package:fl_clash/providers/providers.dart';
 import 'package:fl_clash/state.dart';
 import 'package:fl_clash/ui/icons/icons.dart';
@@ -384,6 +385,9 @@ class _LiveFeedState extends ConsumerState<_LiveFeed>
     if (!mounted) {
       return;
     }
+    // The MITM marker rides on the hosts with recorded exchanges, refreshed
+    // with the connections it marks.
+    ref.invalidate(mitmDecryptedHostsProvider);
     _showConnections(trackerInfos);
   }
 

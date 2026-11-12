@@ -2,6 +2,7 @@ import 'package:fl_clash/common/common.dart';
 import 'package:fl_clash/enum/enum.dart';
 import 'package:fl_clash/features/features.dart';
 import 'package:fl_clash/models/models.dart';
+import 'package:fl_clash/providers/mitm.dart';
 import 'package:fl_clash/widgets/widgets.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -236,6 +237,39 @@ void main() {
       lessThan(tester.getCenter(find.text('Node')).dx),
     );
 
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
+
+  testWidgets('a decrypted host shows the MITM label without the flag', (
+    tester,
+  ) async {
+    Future<void> pumpRow(Set<String> decryptedHosts) async {
+      await tester.pumpWidget(
+        TestApp(
+          wrapInProviderScope: true,
+          overrides: [
+            mitmDecryptedHostsProvider.overrideWith(
+              (ref) async => decryptedHosts,
+            ),
+          ],
+          homeBuilder: (child) => HostScaffold(body: child),
+          child: TrackerInfoItem(
+            trackerInfo: _tracker(host: 'a.test', chains: const ['DIRECT']),
+            detailTitle: 'Detail',
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+    }
+
+    await pumpRow({'a.test'});
+    expect(find.text('MITM'), findsOneWidget);
+
+    // A fresh scope: updating overrides on the same scope would not re-read
+    // them, so dispose the tree first.
+    await tester.pumpWidget(const SizedBox.shrink());
+    await pumpRow(const {});
+    expect(find.text('MITM'), findsNothing);
     await tester.pumpWidget(const SizedBox.shrink());
   });
 }

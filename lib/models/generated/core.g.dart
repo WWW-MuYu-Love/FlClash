@@ -235,6 +235,16 @@ Map<String, dynamic> _$MitmExchangeListToJson(_MitmExchangeList instance) =>
       'closed': instance.closed,
     };
 
+_MitmDecryptedHosts _$MitmDecryptedHostsFromJson(Map<String, dynamic> json) =>
+    _MitmDecryptedHosts(
+      hosts:
+          (json['hosts'] as List<dynamic>?)?.map((e) => e as String).toList() ??
+          const [],
+    );
+
+Map<String, dynamic> _$MitmDecryptedHostsToJson(_MitmDecryptedHosts instance) =>
+    <String, dynamic>{'hosts': instance.hosts};
+
 _MitmAction _$MitmActionFromJson(Map<String, dynamic> json) => _MitmAction(
   kind: json['kind'] as String,
   phase: json['phase'] as String? ?? '',

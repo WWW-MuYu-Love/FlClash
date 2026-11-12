@@ -72,7 +72,9 @@ class MitmExchangesView extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final appLocalizations = context.appLocalizations;
     final (list, loading, error) = ref.watch(
-      mitmExchangesProvider(trackerInfo.id).select(
+      mitmExchangesProvider(
+        normalizeMitmHost(trackerInfo.metadata.host),
+      ).select(
         (value) => (
           value.value,
           value.isLoading && !value.hasValue && !value.hasError,
@@ -353,7 +355,8 @@ class _MitmSideView extends ConsumerWidget {
               title: bodyTitle,
               items: [ListItem(title: Text(appLocalizations.inProgress))],
             ),
-          if (kept) MitmBodySection(title: bodyTitle, content: content),
+          if (kept)
+            MitmBodySection(title: bodyTitle, content: content),
           if (bodyError != null)
             generateSection(
               title: bodyTitle,

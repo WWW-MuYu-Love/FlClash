@@ -149,6 +149,16 @@ abstract class MitmExchangeList with _$MitmExchangeList {
       _$MitmExchangeListFromJson(json);
 }
 
+/// Hosts with recorded decrypted exchanges, lowercased and bare.
+@freezed
+abstract class MitmDecryptedHosts with _$MitmDecryptedHosts {
+  const factory MitmDecryptedHosts({@Default([]) List<String> hosts}) =
+      _MitmDecryptedHosts;
+
+  factory MitmDecryptedHosts.fromJson(Map<String, Object?> json) =>
+      _$MitmDecryptedHostsFromJson(json);
+}
+
 @freezed
 abstract class MitmAction with _$MitmAction {
   const factory MitmAction({

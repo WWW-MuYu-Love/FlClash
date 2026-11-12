@@ -5,6 +5,7 @@ import 'dart:typed_data';
 import 'package:collection/collection.dart';
 import 'package:fl_clash/common/common.dart';
 import 'package:fl_clash/common/mitm_body.dart';
+import 'package:fl_clash/common/mitm_capture_disk.dart';
 import 'package:fl_clash/common/mitm_module.dart';
 import 'package:fl_clash/common/mitm_trust.dart';
 import 'package:fl_clash/enum/enum.dart';
@@ -23,6 +24,36 @@ import 'database.dart';
 part 'generated/mitm.g.dart';
 
 const _exchangesRefreshInterval = Duration(seconds: 2);
+
+/// Lowercases a connection host and strips a port, matching the core's
+/// decrypted-hosts normalization.
+String normalizeMitmHost(String host) {
+  final trimmed = host.trim().toLowerCase();
+  final port = trimmed.lastIndexOf(':');
+  if (port < 0) {
+    return trimmed;
+  }
+  return trimmed.substring(0, port);
+}
+
+/// Hosts with recorded decrypted exchanges. On iOS the persisted
+/// captures on the shared disk are the source, so hosts stay listed
+/// after the tunnel stops. Live in-flight hosts need the 9090
+/// controller, which is not wired up yet.
+@riverpod
+Future<Set<String>> mitmDecryptedHosts(Ref ref) async {
+  if (system.isIOS) {
+    return mitmCaptureHosts(
+      await readMitmCaptureExchanges(await appPath.mitmCapturesDirPath),
+    );
+  }
+  // No core, no decrypted hosts: never call into the core while it is down.
+  if (ref.read(coreStatusProvider) != CoreStatus.connected) {
+    return const {};
+  }
+  final hosts = await ref.read(coreHandlerProvider).getMitmDecryptedHosts();
+  return {for (final host in hosts.hosts) normalizeMitmHost(host)};
+}
 
 @Riverpod(keepAlive: true)
 class MitmCa extends _$MitmCa {
@@ -157,13 +188,36 @@ class MitmTrustState extends _$MitmTrustState {
   }
 }
 
+/// Completed exchanges from the persisted captures on the shared disk.
+/// In-flight exchanges are not visible here yet: they need the 9090
+/// controller, which is not wired up yet.
+Future<MitmExchangeList> _mitmExchangesIOS(Ref ref, String host) async {
+  final disk = await readMitmCaptureExchanges(
+    await appPath.mitmCapturesDirPath,
+  );
+  final byId = <int, MitmExchangeSummary>{
+    for (final exchange in disk)
+      if (normalizeMitmHost(Uri.tryParse(exchange.url)?.host ?? '') == host)
+        exchange.id: mitmCaptureSummary(exchange),
+  };
+  final exchanges = byId.values.toList()..sort((a, b) => a.id.compareTo(b.id));
+  return MitmExchangeList(
+    capturing: exchanges.isNotEmpty,
+    since: exchanges.isEmpty ? null : exchanges.first.start,
+    exchanges: exchanges,
+    closed: false,
+  );
+}
+
 /// Fetched again while shown, until the connection has closed and none of its
-/// requests is pending.
+/// requests is pending. Keyed by host: the capture store never sees the
+/// tracker's ids. On iOS the store is the persisted captures on the
+/// shared disk; in-flight exchanges are not visible yet.
 @riverpod
-Future<MitmExchangeList> mitmExchanges(Ref ref, String connectionId) async {
-  final list = await ref
-      .read(coreHandlerProvider)
-      .getMitmExchanges(connectionId);
+Future<MitmExchangeList> mitmExchanges(Ref ref, String host) async {
+  final list = system.isIOS
+      ? await _mitmExchangesIOS(ref, host)
+      : await ref.read(coreHandlerProvider).getMitmExchangesByHost(host);
   final settled =
       list.closed && !list.exchanges.any((exchange) => exchange.pending);
   if (!settled && ref.mounted) {
@@ -175,6 +229,15 @@ Future<MitmExchangeList> mitmExchanges(Ref ref, String connectionId) async {
 
 @riverpod
 Future<MitmExchange?> mitmExchange(Ref ref, int id) async {
+  if (system.isIOS) {
+    final disk = await readMitmCaptureExchange(
+      await appPath.mitmCapturesDirPath,
+      id,
+    );
+    if (disk != null && !disk.pending) {
+      return disk;
+    }
+  }
   final exchange = await ref.read(coreHandlerProvider).getMitmExchange(id);
   if (exchange != null && exchange.pending && ref.mounted) {
     final timer = Timer(_exchangesRefreshInterval, ref.invalidateSelf);
@@ -190,9 +253,22 @@ Future<MitmBodyContent?> mitmBody(
   required bool response,
   required String contentType,
 }) async {
-  final body = await ref
-      .read(coreHandlerProvider)
-      .getMitmBody(id, response: response);
+  final MitmBody? body;
+  if (system.isIOS) {
+    body =
+        await readMitmCaptureBody(
+          await appPath.mitmCapturesDirPath,
+          id,
+          response: response,
+        ) ??
+        await ref
+            .read(coreHandlerProvider)
+            .getMitmBody(id, response: response);
+  } else {
+    body = await ref
+        .read(coreHandlerProvider)
+        .getMitmBody(id, response: response);
+  }
   if (body == null) {
     return null;
   }

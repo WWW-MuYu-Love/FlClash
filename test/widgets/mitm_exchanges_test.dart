@@ -28,6 +28,17 @@ final _decrypted = TrackerInfo(
   rulePayload: '',
 );
 
+// Same host, but the core never set the flag: only the decrypted-hosts set
+// can mark it.
+final _plain = TrackerInfo(
+  id: 'connection-2',
+  start: _start,
+  metadata: const Metadata(network: 'tcp', host: 'a.test'),
+  chains: const ['DIRECT'],
+  rule: 'MATCH',
+  rulePayload: '',
+);
+
 final _exchange = MitmExchange(
   id: 7,
   start: _start,
@@ -65,6 +76,8 @@ MitmExchangeSummary _summary(MitmExchange exchange) => MitmExchangeSummary(
 
 Future<ProviderContainer> _pumpDetail(
   WidgetTester tester, {
+  TrackerInfo? trackerInfo,
+  Set<String> decryptedHosts = const {},
   required MitmExchangeList list,
   Exception? listError,
   Exception? bodyError,
@@ -74,14 +87,16 @@ Future<ProviderContainer> _pumpDetail(
   List<MitmModule> modules = const [],
   bool inSheet = false,
 }) async {
+  final info = trackerInfo ?? _decrypted;
   final contentType = mitmHeaderValue(
     (exchange ?? _exchange).responseHeader,
     'Content-Type',
   );
   final container = ProviderContainer(
     overrides: [
+      mitmDecryptedHostsProvider.overrideWith((ref) async => decryptedHosts),
       mitmExchangesProvider(
-        _decrypted.id,
+        info.metadata.host,
       ).overrideWith((ref) async => listError == null ? list : throw listError),
       mitmExchangeProvider(7).overrideWith((ref) async => exchange),
       mitmBodyProvider(
@@ -109,14 +124,13 @@ Future<ProviderContainer> _pumpDetail(
         child: inSheet
             ? Builder(
                 builder: (context) => GestureDetector(
-                  onTap: () =>
-                      showTrackerInfoDetail(context, _decrypted, 'Detail'),
+                  onTap: () => showTrackerInfoDetail(context, info, 'Detail'),
                   child: const Text('open'),
                 ),
               )
             : SheetProvider(
                 type: SheetType.page,
-                child: TrackerInfoDetailView(trackerInfo: _decrypted),
+                child: TrackerInfoDetailView(trackerInfo: info),
               ),
       ),
     ),
@@ -172,6 +186,31 @@ Future<void> _scrollTo(WidgetTester tester, Finder finder) {
 }
 
 void main() {
+  testWidgets('a decrypted host shows the requests tab without the flag', (
+    tester,
+  ) async {
+    await _pumpDetail(
+      tester,
+      trackerInfo: _plain,
+      decryptedHosts: {'a.test'},
+      list: MitmExchangeList(capturing: true, exchanges: [_summary(_exchange)]),
+      exchange: _exchange,
+    );
+
+    expect(find.text(currentAppLocalizations.httpRequests), findsOneWidget);
+  });
+
+  testWidgets('an undecrypted host shows no requests tab', (tester) async {
+    await _pumpDetail(
+      tester,
+      trackerInfo: _plain,
+      list: MitmExchangeList(capturing: true, exchanges: [_summary(_exchange)]),
+      exchange: _exchange,
+    );
+
+    expect(find.text(currentAppLocalizations.httpRequests), findsNothing);
+  });
+
   testWidgets('a request opens as a page of its connection\'s sheet', (
     tester,
   ) async {
