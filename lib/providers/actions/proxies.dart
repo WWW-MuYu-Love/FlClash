@@ -494,6 +494,30 @@ class ProxiesAction extends _$ProxiesAction {
     }
   }
 
+  Future<Delay> _testDelay(_DelayTestJob job, _DelayTestTarget target) async {
+    try {
+      return await _core.testDelay(
+        TestDelayParams(
+          proxyName: target.proxyName,
+          testUrl: target.testUrl,
+          timeout: job.timeout.inMilliseconds,
+        ),
+      );
+    } on CoreMethodException catch (error) {
+      if (error.code != 'empty_response' ||
+          ref.read(runningVpnOptionsProvider)?.enable != true) {
+        rethrow;
+      }
+      final routed = await ref
+          .read(externalControllerClientProvider)
+          .fetchDelay(target.proxyName, target.testUrl, job.timeout);
+      if (routed == null) {
+        rethrow;
+      }
+      return routed;
+    }
+  }
+
   Future<void> _runDelayTest(_DelayTestJob job, _DelayTestTarget target) async {
     if (job.cancelled) {
       return;
@@ -503,13 +527,7 @@ class ProxiesAction extends _$ProxiesAction {
       _scheduleDelayFlush();
     }
     try {
-      var delay = await _core.testDelay(
-        TestDelayParams(
-          proxyName: target.proxyName,
-          testUrl: target.testUrl,
-          timeout: job.timeout.inMilliseconds,
-        ),
-      );
+      var delay = await _testDelay(job, target);
       // A failed or timed-out answer may come from the App core, which is
       // not the routing core when the VPN is on: ask the extension core
       // over 9090, whose answer is authoritative.

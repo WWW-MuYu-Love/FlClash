@@ -1,6 +1,7 @@
 import 'package:fl_clash/core/controller.dart';
 import 'package:fl_clash/core/external_controller.dart';
 import 'package:fl_clash/core/interface.dart';
+import 'package:fl_clash/core/method.dart';
 import 'package:fl_clash/enum/enum.dart';
 import 'package:fl_clash/features/connection/tracker_info_list.dart';
 import 'package:fl_clash/models/models.dart';
@@ -29,9 +30,13 @@ class _FakeExternalControllerClient extends ExternalControllerClient {
     : super(baseUri: Uri.parse('http://127.0.0.1:9090'));
 
   final ExternalControllerSnapshot? snapshot;
+  int fetchConnectionsCalls = 0;
 
   @override
-  Future<ExternalControllerSnapshot?> fetchConnections() async => snapshot;
+  Future<ExternalControllerSnapshot?> fetchConnections() async {
+    fetchConnectionsCalls++;
+    return snapshot;
+  }
 }
 
 const _mobileSize = Size(400, 800);
@@ -126,9 +131,7 @@ void main() {
     await teardownCard(tester);
   });
 
-  testWidgets('prefers the 9090 snapshot count over the Core count', (
-    tester,
-  ) async {
+  testWidgets('takes the Core count and never asks 9090', (tester) async {
     when(() => core.getConnectionCount()).thenAnswer((_) async => 34);
     final client = _FakeExternalControllerClient(
       ExternalControllerSnapshot(
@@ -145,26 +148,46 @@ void main() {
     await pumpCard(tester);
     await tester.pump(const Duration(seconds: 2));
 
-    expect(find.text('61'), findsOneWidget);
-    expect(find.text('34'), findsNothing);
+    expect(find.text('34'), findsOneWidget);
+    expect(find.text('61'), findsNothing);
+    expect(client.fetchConnectionsCalls, 0);
 
     await teardownCard(tester);
   });
 
-  testWidgets('falls back to the Core count when 9090 is unreachable', (
+  testWidgets('falls back to the 9090 snapshot count when the Core fails', (
     tester,
   ) async {
-    when(() => core.getConnectionCount()).thenAnswer((_) async => 34);
-    final client = _FakeExternalControllerClient(null);
+    when(() => core.getConnectionCount()).thenThrow(
+      const CoreMethodException(code: 'empty_response', message: 'empty'),
+    );
+    final client = _FakeExternalControllerClient(
+      ExternalControllerSnapshot(
+        uploadTotal: 1000,
+        downloadTotal: 2000,
+        connections: [for (var i = 0; i < 61; i++) _request(i)],
+      ),
+    );
     addTearDown(client.close);
     container.dispose();
     container = createContainer(client: client);
+    container.read(runningVpnOptionsProvider.notifier).value = const VpnOptions(
+      enable: true,
+      port: 7890,
+      ipv6: false,
+      dnsHijacking: false,
+      accessControlProps: AccessControlProps(),
+      allowBypass: false,
+      systemProxy: false,
+      bypassDomain: [],
+      stack: 'gvisor',
+    );
     globalState.container = container;
 
     await pumpCard(tester);
     await tester.pump(const Duration(seconds: 2));
 
-    expect(find.text('34'), findsOneWidget);
+    expect(find.text('61'), findsOneWidget);
 
     await teardownCard(tester);
   });

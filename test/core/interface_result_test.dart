@@ -13,6 +13,7 @@ class _NullCore extends CoreHandlerInterface {
     required CoreMethod method,
     Object? arguments,
     Duration? timeout,
+    CoreRoute? route,
   }) async {
     invoked.add(method);
     return null;
@@ -137,6 +138,7 @@ class _DisconnectedCore extends _NullCore {
     required CoreMethod method,
     Object? arguments,
     Duration? timeout,
+    CoreRoute? route,
   }) async {
     invoked.add(method);
     throw const CoreMethodException(

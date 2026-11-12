@@ -83,18 +83,43 @@ enum CoreMethod {
   }
 }
 
+/// Which Core a method call is pinned to; null lets the router decide.
+enum CoreRoute {
+  app('app'),
+  networkExtension('network-extension');
+
+  const CoreRoute(this.wireName);
+
+  final String wireName;
+
+  static CoreRoute? fromWireName(String? name) {
+    if (name == null) return null;
+    for (final route in values) {
+      if (route.wireName == name) return route;
+    }
+    return null;
+  }
+}
+
 class CoreMethodCall {
   final String? id;
   final CoreMethod method;
   final Object? arguments;
+  final CoreRoute? route;
 
-  const CoreMethodCall({this.id, required this.method, this.arguments});
+  const CoreMethodCall({
+    this.id,
+    required this.method,
+    this.arguments,
+    this.route,
+  });
 
   factory CoreMethodCall.fromJson(Map<String, Object?> json) {
     return CoreMethodCall(
       id: json['id'] as String?,
       method: CoreMethod.fromWireName(json['method'] as String),
       arguments: json['arguments'],
+      route: CoreRoute.fromWireName(json['route'] as String?),
     );
   }
 
@@ -103,6 +128,7 @@ class CoreMethodCall {
       if (id != null) 'id': id,
       'method': method.wireName,
       'arguments': arguments,
+      if (route != null) 'route': route!.wireName,
     };
   }
 }

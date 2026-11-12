@@ -169,8 +169,9 @@ class CoreLib extends CoreHandlerInterface {
     required CoreMethod method,
     Object? arguments,
     Duration? timeout,
+    CoreRoute? route,
   }) {
-    final call = _send(method: method, arguments: arguments);
+    final call = _send(method: method, arguments: arguments, route: route);
     return call.withTimeout(
       timeout: timeout,
       onTimeout: () {
@@ -180,7 +181,11 @@ class CoreLib extends CoreHandlerInterface {
     );
   }
 
-  Future<Object?> _send({required CoreMethod method, Object? arguments}) async {
+  Future<Object?> _send({
+    required CoreMethod method,
+    Object? arguments,
+    CoreRoute? route,
+  }) async {
     try {
       await _connectedCompleter.future.timeout(coreConnectionWaitDuration);
     } on TimeoutException {
@@ -191,7 +196,12 @@ class CoreLib extends CoreHandlerInterface {
     }
     final id = '${++_methodCallId}';
     final response = await _service!.invokeMethod(
-      CoreMethodCall(id: id, method: method, arguments: arguments),
+      CoreMethodCall(
+        id: id,
+        method: method,
+        arguments: arguments,
+        route: route,
+      ),
     );
     return response.unwrap<Object?>();
   }

@@ -3,8 +3,11 @@ import 'dart:async';
 import 'package:fl_clash/common/constant.dart';
 import 'package:fl_clash/common/service_probe.dart';
 import 'package:fl_clash/core/controller.dart';
+import 'package:fl_clash/core/external_controller.dart';
 import 'package:fl_clash/core/interface.dart';
+import 'package:fl_clash/core/method.dart';
 import 'package:fl_clash/models/models.dart';
+import 'package:fl_clash/providers/app.dart';
 import 'package:fl_clash/providers/config.dart';
 import 'package:fl_clash/providers/core.dart';
 import 'package:fl_clash/providers/route_state.dart';
@@ -15,6 +18,35 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
 class _MockCore extends Mock implements CoreHandlerInterface {}
+
+// The 9090 client is faked: the mixin only calls fetchServiceCheck on it.
+class _FakeExternalControllerClient extends ExternalControllerClient {
+  _FakeExternalControllerClient(this.items)
+    : super(baseUri: Uri.parse('http://127.0.0.1:9090'));
+
+  final List<ServiceCheckItem>? items;
+  int fetchServiceCheckCalls = 0;
+
+  @override
+  Future<List<ServiceCheckItem>?> fetchServiceCheck(
+    ServiceCheckParams params,
+  ) async {
+    fetchServiceCheckCalls++;
+    return items;
+  }
+}
+
+const _runningVpnOptions = VpnOptions(
+  enable: true,
+  port: 7890,
+  ipv6: false,
+  dnsHijacking: false,
+  accessControlProps: AccessControlProps(),
+  allowBypass: false,
+  systemProxy: false,
+  bypassDomain: [],
+  stack: 'gvisor',
+);
 
 ServiceCheckItem _item(String name, {String status = 'available'}) =>
     ServiceCheckItem(
@@ -69,6 +101,32 @@ void main() {
 
   ServiceStatus notifierOf(ProviderContainer scope) =>
       scope.read(serviceStatusProvider.notifier);
+
+  (ProviderContainer, _FakeExternalControllerClient) runningContainer({
+    List<ServiceCheckItem>? controllerItems,
+  }) {
+    final client = _FakeExternalControllerClient(controllerItems);
+    final scope = ProviderContainer(
+      overrides: [
+        routeTrackerProvider.overrideWithBuild(
+          (_, _) => const RouteState(
+            coreEpoch: 1,
+            routeVersion: 1,
+            hostEpoch: 1,
+            proxied: true,
+            synced: true,
+            live: true,
+          ),
+        ),
+        coreHandlerProvider.overrideWithValue(CoreController.scoped(core)),
+        externalControllerClientProvider.overrideWithValue(client),
+      ],
+    );
+    addTearDown(scope.dispose);
+    scope.read(runningVpnOptionsProvider.notifier).value = _runningVpnOptions;
+    scope.listen(serviceStatusProvider, (_, _) {});
+    return (scope, client);
+  }
 
   RoutedProbeState<ServiceTarget, ServiceCheck> stateOf(
     ProviderContainer scope,
@@ -310,6 +368,47 @@ void main() {
       ]);
     },
   );
+
+  test('falls back to 9090 when the Core does not answer', () async {
+    final (scope, client) = runningContainer(
+      controllerItems: [_item('youtube')],
+    );
+    when(() => core.serviceCheck(any())).thenThrow(
+      const CoreMethodException(code: 'empty_response', message: 'empty'),
+    );
+
+    notifierOf(scope).watch(ServiceTarget.youtube);
+    await pumpEventQueue();
+
+    expect(client.fetchServiceCheckCalls, 1);
+    verifyNever(() => core.serviceCheck(any(), route: CoreRoute.app));
+    final state = stateOf(scope);
+    expect(state.entryOf(ServiceTarget.youtube).phase, ProbePhase.fresh);
+    expect(state.valueOf(ServiceTarget.youtube)?.node, 'HK-01');
+  });
+
+  test('falls back to the app core when 9090 is gone too', () async {
+    final (scope, client) = runningContainer(controllerItems: null);
+    when(() => core.serviceCheck(any())).thenThrow(
+      const CoreMethodException(code: 'empty_response', message: 'empty'),
+    );
+    when(() => core.serviceCheck(any(), route: CoreRoute.app)).thenAnswer((
+      invocation,
+    ) async {
+      final params =
+          invocation.positionalArguments.single as ServiceCheckParams;
+      return [for (final name in params.names) _item(name)];
+    });
+
+    notifierOf(scope).watch(ServiceTarget.youtube);
+    await pumpEventQueue();
+
+    expect(client.fetchServiceCheckCalls, 1);
+    verify(() => core.serviceCheck(any(), route: CoreRoute.app)).called(1);
+    final state = stateOf(scope);
+    expect(state.entryOf(ServiceTarget.youtube).phase, ProbePhase.fresh);
+    expect(state.valueOf(ServiceTarget.youtube)?.node, 'HK-01');
+  });
 
   test('a config that turns every service off still offers them all', () {
     final scope = container();

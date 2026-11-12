@@ -75,14 +75,30 @@ Future<MemorySnapshot?> _readMemory(WidgetRef ref, MemoryReader? reader) async {
 Future<MemorySnapshot> _readSnapshot(WidgetRef ref) async {
   final rss = ProcessInfo.currentRss;
   final coreConnected = ref.read(coreStatusProvider) == CoreStatus.connected;
-  final core = coreConnected
-      ? await ref.read(coreHandlerProvider).getMemoryStats()
-      : null;
+  final core = coreConnected ? await _readCoreMemory(ref) : null;
   return MemorySnapshot.resolve(
     rss: rss,
     core: core,
     coreInProcess: system.isAndroid,
   );
+}
+
+Future<CoreMemoryStats?> _readCoreMemory(WidgetRef ref) async {
+  try {
+    return await ref.read(coreHandlerProvider).getMemoryStats();
+  } on CoreMethodException catch (error) {
+    if (error.code != 'empty_response' ||
+        ref.read(runningVpnOptionsProvider)?.enable != true) {
+      rethrow;
+    }
+    final inuse = await ref
+        .read(externalControllerClientProvider)
+        .fetchMemory();
+    if (inuse == null) {
+      rethrow;
+    }
+    return CoreMemoryStats(rss: inuse);
+  }
 }
 
 class MemoryInfo extends ConsumerStatefulWidget {

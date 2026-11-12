@@ -102,6 +102,8 @@ class CoreService extends CoreHandlerInterface {
     required CoreMethod method,
     Object? arguments,
     Duration? timeout,
+    // Desktop runs a single Core, so a pinned route is accepted and ignored.
+    CoreRoute? route,
   }) {
     return _rpcClient.invoke(
       method: method,

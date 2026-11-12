@@ -37,6 +37,27 @@ private enum ExtensionOnlyMethod: String {
   case listenerStop = "listener.stop"
 }
 
+// Live reads the routing core owns; the app core's answer would be stale, and 9090 can answer instead.
+private enum NoAppFallbackMethod: String {
+  case trafficCurrent = "traffic.current"
+  case trafficTotal = "traffic.total"
+  case connectionList = "connection.list"
+  case connectionCount = "connection.count"
+  case connectionClose = "connection.close"
+  case connectionCloseAll = "connection.closeAll"
+  case proxyTestDelay = "proxy.testDelay"
+  case proxySelect = "proxy.select"
+  case probeOutboundIp = "probe.outboundIp"
+  case probeServices = "probe.services"
+  case routeCheck = "route.check"
+  case dnsClearCache = "dns.clearCache"
+  case mitmHosts = "mitm.hosts"
+  case mitmExchangesByHost = "mitm.exchangesByHost"
+  case mitmExchange = "mitm.exchange"
+  case mitmBody = "mitm.body"
+  case coreMemory = "core.memory"
+}
+
 private struct CoreRoutingError: LocalizedError {
   let code: String
   let message: String
@@ -118,10 +139,9 @@ final class CoreMessageRouter {
       } else {
         routedResult = try await sendRoutedCoreMessage(
           data,
-          selectedRoute: route(
-            method: method,
-            defaultRoute: selectedRoute
-          )
+          method: method,
+          selectedRoute: methodCallRoute(data)
+            ?? route(method: method, defaultRoute: selectedRoute)
         )
       }
       if case .start(let kind) = action,
@@ -189,6 +209,7 @@ final class CoreMessageRouter {
 
   private func sendRoutedCoreMessage(
     _ data: Data,
+    method: String?,
     selectedRoute: CoreRoute
   ) async throws -> (response: String, route: CoreRoute) {
     do {
@@ -196,6 +217,9 @@ final class CoreMessageRouter {
       return (response, selectedRoute)
     } catch {
       guard selectedRoute == .networkExtension else {
+        throw error
+      }
+      if let method, NoAppFallbackMethod(rawValue: method) != nil {
         throw error
       }
       log(
@@ -467,6 +491,23 @@ final class CoreMessageRouter {
 
   private func methodCallName(_ data: Data) -> String? {
     methodCallObject(data)?["method"] as? String
+  }
+
+  // A Dart-pinned Core for the explicit app-core fallback; null lets the router decide.
+  private func methodCallRoute(_ data: Data) -> CoreRoute? {
+    guard let object = methodCallObject(data),
+      let route = object["route"] as? String
+    else {
+      return nil
+    }
+    switch route {
+    case "app":
+      return .app
+    case "network-extension":
+      return .networkExtension
+    default:
+      return nil
+    }
   }
 
   private func methodCallID(_ data: Data?) -> String? {

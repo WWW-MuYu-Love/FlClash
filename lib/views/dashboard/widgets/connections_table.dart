@@ -123,7 +123,7 @@ mixin ConnectionsPolling<T extends ConsumerStatefulWidget>
     }
     try {
       if (pollsConnections) {
-        final next = [...await _core.getConnections()];
+        final next = [...await _readConnections()];
         if (!isCurrent()) return;
         next.sort((a, b) => b.start.compareTo(a.start));
         final tcp = next
@@ -150,18 +150,41 @@ mixin ConnectionsPolling<T extends ConsumerStatefulWidget>
     }
   }
 
-  // The stats card is mobile-visible: with VPN on, the App core tracks no
-  // traffic, so read the routing core's count over 9090 first and fall
-  // back to the App core when 9090 is down. The table's list above stays
-  // on the App core (desktop-only, reverted in 9a3098f0).
+  Future<List<TrackerInfo>> _readConnections() async {
+    try {
+      return await _core.getConnections();
+    } on CoreMethodException catch (error) {
+      // Ask the routing core over 9090 when the provider message misses.
+      if (error.code != 'empty_response' ||
+          ref.read(runningVpnOptionsProvider)?.enable != true) {
+        rethrow;
+      }
+      final snapshot = await ref
+          .read(externalControllerClientProvider)
+          .fetchConnections();
+      if (snapshot == null) {
+        rethrow;
+      }
+      return snapshot.connections;
+    }
+  }
+
   Future<int> _readConnectionCount() async {
-    final snapshot = await ref
-        .read(externalControllerClientProvider)
-        .fetchConnections();
-    if (snapshot != null) {
+    try {
+      return await _core.getConnectionCount();
+    } on CoreMethodException catch (error) {
+      if (error.code != 'empty_response' ||
+          ref.read(runningVpnOptionsProvider)?.enable != true) {
+        rethrow;
+      }
+      final snapshot = await ref
+          .read(externalControllerClientProvider)
+          .fetchConnections();
+      if (snapshot == null) {
+        rethrow;
+      }
       return snapshot.connections.length;
     }
-    return _core.getConnectionCount();
   }
 }
 

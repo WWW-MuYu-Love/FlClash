@@ -22,12 +22,14 @@ abstract class CoreHandlerInterface {
     required CoreMethod method,
     Object? arguments,
     Duration? timeout,
+    CoreRoute? route,
   });
 
   Future<Object?> _call(
     CoreMethod method, {
     Object? arguments,
     Duration? timeout,
+    CoreRoute? route,
   }) async {
     return await handleWatch(
       onStart: () {
@@ -35,8 +37,12 @@ abstract class CoreHandlerInterface {
           'Invoke method ${method.wireName} ${DateTime.now()} $arguments',
         );
       },
-      function: () =>
-          invokeMethod(method: method, arguments: arguments, timeout: timeout),
+      function: () => invokeMethod(
+        method: method,
+        arguments: arguments,
+        timeout: timeout,
+        route: route,
+      ),
       onEnd: (result, elapsedMilliseconds) {
         commonPrint.log(
           'Invoke method ${method.wireName} completed in '
@@ -51,8 +57,14 @@ abstract class CoreHandlerInterface {
     R Function(Object data) decode, {
     Object? arguments,
     Duration? timeout,
+    CoreRoute? route,
   }) async {
-    final data = await _call(method, arguments: arguments, timeout: timeout);
+    final data = await _call(
+      method,
+      arguments: arguments,
+      timeout: timeout,
+      route: route,
+    );
     if (data == null) {
       throw CoreMethodException(
         code: 'empty_result',
@@ -350,16 +362,23 @@ abstract class CoreHandlerInterface {
     );
   }
 
-  Future<OutboundIpResult> outboundIp(OutboundIpParams params) {
+  Future<OutboundIpResult> outboundIp(
+    OutboundIpParams params, {
+    CoreRoute? route,
+  }) {
     return _query(
       CoreMethod.probeOutboundIp,
       _model(OutboundIpResult.fromJson),
       arguments: params.toJson(),
       timeout: coreGuardFor(params.timeout),
+      route: route,
     );
   }
 
-  Future<List<ServiceCheckItem>> serviceCheck(ServiceCheckParams params) {
+  Future<List<ServiceCheckItem>> serviceCheck(
+    ServiceCheckParams params, {
+    CoreRoute? route,
+  }) {
     return _query(
       CoreMethod.probeServices,
       _models(ServiceCheckItem.fromJson),
@@ -368,6 +387,7 @@ abstract class CoreHandlerInterface {
         params.timeout,
         budgetFactor: serviceSweepBudgetFactor,
       ),
+      route: route,
     );
   }
 

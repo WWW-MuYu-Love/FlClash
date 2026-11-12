@@ -22,9 +22,13 @@ class _FakeExternalControllerClient extends ExternalControllerClient {
     : super(baseUri: Uri.parse('http://127.0.0.1:1'));
 
   final ExternalControllerSnapshot? snapshot;
+  int fetchConnectionsCalls = 0;
 
   @override
-  Future<ExternalControllerSnapshot?> fetchConnections() async => snapshot;
+  Future<ExternalControllerSnapshot?> fetchConnections() async {
+    fetchConnectionsCalls++;
+    return snapshot;
+  }
 }
 
 const runningVersion = '0.8.96';
@@ -174,36 +178,22 @@ void main() {
       connections: [],
     );
 
-    ProviderContainer buildExternalContainer(
+    (ProviderContainer, _FakeExternalControllerClient) buildExternalContainer(
       ExternalControllerSnapshot? snapshot,
     ) {
+      final client = _FakeExternalControllerClient(snapshot);
       final container = ProviderContainer(
         overrides: [
           coreHandlerProvider.overrideWithValue(CoreController.scoped(core)),
-          externalControllerClientProvider.overrideWithValue(
-            _FakeExternalControllerClient(snapshot),
-          ),
+          externalControllerClientProvider.overrideWithValue(client),
         ],
       );
       addTearDown(container.dispose);
-      return container;
+      return (container, client);
     }
 
-    test('takes the totals from 9090 and never asks the core', () async {
-      final container = buildExternalContainer(snapshot);
-
-      await container.read(commonActionProvider.notifier).updateTraffic();
-
-      expect(
-        container.read(totalTrafficProvider),
-        const Traffic(up: 5000, down: 9000),
-      );
-      verifyNever(() => core.getTraffic(any()));
-      verifyNever(() => core.getTotalTraffic(any()));
-    });
-
-    test('falls back to the core when 9090 is unreachable', () async {
-      final container = buildExternalContainer(null);
+    test('takes the totals from the core and never asks 9090', () async {
+      final (container, client) = buildExternalContainer(snapshot);
       when(
         () => core.getTraffic(any()),
       ).thenAnswer((_) async => const Traffic(up: 10, down: 20));
@@ -218,8 +208,25 @@ void main() {
         container.read(totalTrafficProvider),
         const Traffic(up: 100, down: 200),
       );
+      expect(client.fetchConnectionsCalls, 0);
       verify(() => core.getTraffic(any())).called(1);
       verify(() => core.getTotalTraffic(any())).called(1);
+    });
+
+    test('falls back to 9090 when the core fails', () async {
+      final (container, client) = buildExternalContainer(snapshot);
+      when(() => core.getTraffic(any())).thenThrow(StateError('core down'));
+      when(
+        () => core.getTotalTraffic(any()),
+      ).thenThrow(StateError('core down'));
+
+      await container.read(commonActionProvider.notifier).updateTraffic();
+
+      expect(
+        container.read(totalTrafficProvider),
+        const Traffic(up: 5000, down: 9000),
+      );
+      expect(client.fetchConnectionsCalls, 1);
     });
   });
 

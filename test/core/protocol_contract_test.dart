@@ -33,6 +33,7 @@ class _RecordingCoreHandler extends CoreHandlerInterface {
     required CoreMethod method,
     Object? arguments,
     Duration? timeout,
+    CoreRoute? route,
   }) async {
     calls[method] = arguments;
     return switch (method) {
@@ -162,6 +163,7 @@ class _FailingConfigCoreHandler extends _RecordingCoreHandler {
     required CoreMethod method,
     Object? arguments,
     Duration? timeout,
+    CoreRoute? route,
   }) async {
     if (method == CoreMethod.configRead) {
       throw const CoreMethodException(
@@ -184,6 +186,7 @@ class _EmptyConfigCoreHandler extends _RecordingCoreHandler {
     required CoreMethod method,
     Object? arguments,
     Duration? timeout,
+    CoreRoute? route,
   }) async {
     if (method == CoreMethod.configRead) {
       return null;

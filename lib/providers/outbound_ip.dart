@@ -1,4 +1,5 @@
 import 'package:fl_clash/common/service_probe.dart';
+import 'package:fl_clash/core/method.dart';
 import 'package:fl_clash/models/models.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
@@ -24,10 +25,21 @@ class OutboundIpProbe extends _$OutboundIpProbe
     final proxyName = target == routedOutbound && !route.proxied
         ? directOutbound
         : target;
-    final result = await lookupOutboundIp(
-      ref.read(coreHandlerProvider),
-      proxyName,
-    );
+    OutboundIpResult result;
+    try {
+      result = await lookupOutboundIp(ref.read(coreHandlerProvider), proxyName);
+    } on CoreMethodException catch (error) {
+      // The app core probes the same address when the routed call did not
+      // reach the extension.
+      if (error.code != 'empty_response') {
+        rethrow;
+      }
+      result = await lookupOutboundIp(
+        ref.read(coreHandlerProvider),
+        proxyName,
+        route: CoreRoute.app,
+      );
+    }
     final value = parseOutboundIp(result);
     final exit = result.chains.firstOrNull;
     return {

@@ -1,6 +1,7 @@
 import 'package:fl_clash/common/service_probe.dart';
 import 'package:fl_clash/core/controller.dart';
 import 'package:fl_clash/core/interface.dart';
+import 'package:fl_clash/core/method.dart';
 import 'package:fl_clash/models/models.dart';
 import 'package:fl_clash/providers/core.dart';
 import 'package:fl_clash/providers/outbound_ip.dart';
@@ -129,6 +130,29 @@ void main() {
       RouteHit(host: 'www.cloudflare.com:443', proxy: 'HK-01', exit: 'HK-01'),
     ]);
   });
+
+  test(
+    'falls back to the app core when the routed call does not answer',
+    () async {
+      when(() => core.outboundIp(any())).thenThrow(
+        const CoreMethodException(code: 'empty_response', message: 'empty'),
+      );
+      when(
+        () => core.outboundIp(any(), route: CoreRoute.app),
+      ).thenAnswer((_) async => _answer);
+      final container = build();
+
+      container.read(outboundIpProbeProvider.notifier).watch(routedOutbound);
+      await pumpEventQueue();
+
+      verify(() => core.outboundIp(any(), route: CoreRoute.app)).called(1);
+      final entry = container
+          .read(outboundIpProbeProvider)
+          .entryOf(routedOutbound);
+      expect(entry.phase, ProbePhase.fresh);
+      expect(entry.value?.ip, '2.2.2.2');
+    },
+  );
 
   test('a Core error is a failure until it is refreshed', () async {
     when(() => core.outboundIp(any())).thenAnswer(

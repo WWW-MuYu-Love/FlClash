@@ -54,15 +54,6 @@ class CommonAction extends _$CommonAction {
     }
     _isUpdatingTraffic = true;
     try {
-      final external = await _readExternalTraffic();
-      if (external != null) {
-        final (instant, total) = external;
-        if (instant != null) {
-          ref.read(trafficsProvider.notifier).addTraffic(instant);
-        }
-        ref.read(totalTrafficProvider.notifier).value = total;
-        return;
-      }
       final onlyStatisticsProxy = ref.read(
         appSettingProvider.select((state) => state.onlyStatisticsProxy),
       );
@@ -70,11 +61,22 @@ class CommonAction extends _$CommonAction {
         _readTraffic(() => _core.getTraffic(onlyStatisticsProxy)),
         _readTraffic(() => _core.getTotalTraffic(onlyStatisticsProxy)),
       ]);
-      if (traffic != null) {
-        ref.read(trafficsProvider.notifier).addTraffic(traffic);
+      if (traffic != null || totalTraffic != null) {
+        if (traffic != null) {
+          ref.read(trafficsProvider.notifier).addTraffic(traffic);
+        }
+        if (totalTraffic != null) {
+          ref.read(totalTrafficProvider.notifier).value = totalTraffic;
+        }
+        return;
       }
-      if (totalTraffic != null) {
-        ref.read(totalTrafficProvider.notifier).value = totalTraffic;
+      final external = await _readExternalTraffic();
+      if (external != null) {
+        final (instant, total) = external;
+        if (instant != null) {
+          ref.read(trafficsProvider.notifier).addTraffic(instant);
+        }
+        ref.read(totalTrafficProvider.notifier).value = total;
       }
     } finally {
       _isUpdatingTraffic = false;

@@ -25,6 +25,25 @@ class ServiceStatus extends _$ServiceStatus
       value.status == ServiceProbeStatus.timeout ||
       value.status == ServiceProbeStatus.failed;
 
+  Future<List<ServiceCheckItem>?> _serviceCheckOver9090(
+    RouteState route,
+    ServiceTarget target,
+  ) async {
+    try {
+      return await ref
+          .read(externalControllerClientProvider)
+          .fetchServiceCheck(
+            ServiceCheckParams(
+              proxyName: route.proxied ? '' : directOutbound,
+              names: [target.id],
+              timeout: probeTimeoutDuration.inMilliseconds,
+            ),
+          );
+    } catch (_) {
+      return null;
+    }
+  }
+
   @override
   Future<Map<ServiceTarget, ProbeAnswer<ServiceCheck>>> probe(
     ServiceTarget target,
@@ -39,24 +58,22 @@ class ServiceStatus extends _$ServiceStatus
       );
     } on CoreMethodException catch (error) {
       // The routing core answers the sweep over 9090 when the routed call
-      // did not reach it.
+      // did not reach it, and the app core answers it when 9090 is gone too.
       if (error.code != 'empty_response' ||
           ref.read(runningVpnOptionsProvider)?.enable != true) {
         rethrow;
       }
-      final items = await ref
-          .read(externalControllerClientProvider)
-          .fetchServiceCheck(
-            ServiceCheckParams(
-              proxyName: route.proxied ? '' : directOutbound,
-              names: [target.id],
-              timeout: probeTimeoutDuration.inMilliseconds,
-            ),
-          );
-      if (items == null) {
-        rethrow;
+      final items = await _serviceCheckOver9090(route, target);
+      if (items != null) {
+        checks = serviceChecksOf(items);
+      } else {
+        checks = await checkServices(
+          ref.read(coreHandlerProvider),
+          proxyName: route.proxied ? '' : directOutbound,
+          targets: [target],
+          route: CoreRoute.app,
+        );
       }
-      checks = serviceChecksOf(items);
     }
     final check = checks[target];
     return {
