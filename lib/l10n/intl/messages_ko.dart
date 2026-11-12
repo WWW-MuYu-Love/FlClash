@@ -1661,6 +1661,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "다른 기기의 FlClash로 스캔하면 이 프로필을 가져올 수 있습니다.",
     ),
     "show": MessageLookupByLibrary.simpleMessage("표시"),
+    "showEnvBanner": MessageLookupByLibrary.simpleMessage("환경 워터마크 표시"),
     "showLess": MessageLookupByLibrary.simpleMessage("접기"),
     "showMore": MessageLookupByLibrary.simpleMessage("펼치기"),
     "showNotificationStopAction": MessageLookupByLibrary.simpleMessage(

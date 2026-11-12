@@ -1529,6 +1529,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "在另一台设备上用 FlClash 扫码即可导入此配置。",
     ),
     "show": MessageLookupByLibrary.simpleMessage("显示"),
+    "showEnvBanner": MessageLookupByLibrary.simpleMessage("显示环境水印"),
     "showLess": MessageLookupByLibrary.simpleMessage("收起"),
     "showMore": MessageLookupByLibrary.simpleMessage("展开"),
     "showNotificationStopAction": MessageLookupByLibrary.simpleMessage(

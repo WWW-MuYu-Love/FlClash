@@ -208,6 +208,7 @@
   "backgroundKeepAliveSilentAudio": "Audio silencieux",
   "backgroundKeepAlivePictureInPicture": "Picture-in-picture",
   "showNotificationStopAction": "Bouton Arrêter dans la notification",
+  "showEnvBanner": "Afficher le filigrane d'environnement",
   "pureBlackMode": "Mode noir pur",
   "sidebar": "Barre latérale",
   "backgroundBlur": "Flou d’arrière-plan",

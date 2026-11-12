@@ -427,6 +427,11 @@ class GeneralView extends ConsumerWidget {
         select: (state) => state.openLogs,
         update: (state, value) => state.copyWith(openLogs: value),
       ),
+      _appSettingToggle(
+        title: (l) => l.showEnvBanner,
+        select: (state) => state.showEnvBanner,
+        update: (state, value) => state.copyWith(showEnvBanner: value),
+      ),
     ];
   }
 

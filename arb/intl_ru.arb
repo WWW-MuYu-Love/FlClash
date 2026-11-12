@@ -208,6 +208,7 @@
   "backgroundKeepAliveSilentAudio": "Бесшумное аудио",
   "backgroundKeepAlivePictureInPicture": "Картинка в картинке",
   "showNotificationStopAction": "Кнопка остановки в уведомлении",
+  "showEnvBanner": "Показывать водяной знак окружения",
   "pureBlackMode": "Чисто чёрный режим",
   "sidebar": "Боковая панель",
   "backgroundBlur": "Размытие фона",

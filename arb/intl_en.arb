@@ -208,6 +208,7 @@
   "backgroundKeepAliveSilentAudio": "Silent audio",
   "backgroundKeepAlivePictureInPicture": "Picture-in-picture",
   "showNotificationStopAction": "Stop button in notification",
+  "showEnvBanner": "Show environment watermark",
   "pureBlackMode": "Pure black mode",
   "sidebar": "Sidebar",
   "backgroundBlur": "Background blur",

@@ -208,6 +208,7 @@
   "backgroundKeepAliveSilentAudio": "无声音频",
   "backgroundKeepAlivePictureInPicture": "画中画",
   "showNotificationStopAction": "通知栏显示停止按钮",
+  "showEnvBanner": "显示环境水印",
   "pureBlackMode": "纯黑模式",
   "sidebar": "侧边栏",
   "backgroundBlur": "背景模糊",

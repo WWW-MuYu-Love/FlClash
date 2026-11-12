@@ -208,6 +208,7 @@
   "backgroundKeepAliveSilentAudio": "無音オーディオ",
   "backgroundKeepAlivePictureInPicture": "ピクチャ・イン・ピクチャ",
   "showNotificationStopAction": "通知に停止ボタンを表示",
+  "showEnvBanner": "環境ウォーターマークを表示",
   "pureBlackMode": "ピュアブラックモード",
   "sidebar": "サイドバー",
   "backgroundBlur": "背景のぼかし",
