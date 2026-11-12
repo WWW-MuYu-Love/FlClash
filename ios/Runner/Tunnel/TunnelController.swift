@@ -102,9 +102,26 @@ final class TunnelController {
   }
 
   func sendProviderMessage(_ data: Data) async throws -> String {
+    do {
+      return try await sendProviderMessage(data, freshSession: false)
+    } catch let error as ProviderMessageError
+      where error.code == "empty_response"
+    {
+      // A nil reply can mean a stale cached session: retry on a fresh load.
+      logger.debug("sendProviderMessage empty response, retrying with a fresh session")
+      return try await sendProviderMessage(data, freshSession: true)
+    }
+  }
+
+  private func sendProviderMessage(
+    _ data: Data,
+    freshSession: Bool
+  ) async throws -> String {
     let manager: NETunnelProviderManager?
     do {
-      manager = try await managerStore.loadManager(createIfNeeded: false)
+      manager = freshSession
+        ? try await managerStore.loadFreshManager()
+        : try await managerStore.loadManager(createIfNeeded: false)
     } catch {
       throw ProviderMessageError(
         code: "network_extension_error",
@@ -120,19 +137,10 @@ final class TunnelController {
         message: "扩展未运行"
       )
     }
-
-    do {
-      return try await sendProviderMessageAttempt(data, session: session)
-    } catch let error as ProviderMessageError
-      where error.code == "empty_response"
-    {
-      // A nil reply usually means the extension missed a transient window,
-      // so one retry a second later is worth it; a down tunnel or a
-      // timeout says nothing a retry would fix.
-      logger.debug("sendProviderMessage empty response, retrying once")
-      try await Task.sleep(nanoseconds: 1_000_000_000)
-      return try await sendProviderMessageAttempt(data, session: session)
-    }
+    logger.debug(
+      "sendProviderMessage session=\(ObjectIdentifier(session)) fresh=\(freshSession)"
+    )
+    return try await sendProviderMessageAttempt(data, session: session)
   }
 
   private func sendProviderMessageAttempt(
