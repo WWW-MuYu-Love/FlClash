@@ -46,9 +46,16 @@ class ZashboardCard extends ConsumerWidget {
       semanticLabel: 'Zashboard',
       onTap: vpnRunning
           ? () {
-              final url = zashboardUrl(
-                ref.read(externalControllerClientProvider),
-              );
+              ref.read(setupActionProvider.notifier).ensureIOSController();
+              final client = ref.read(externalControllerClientProvider);
+              if (client.unauthorized) {
+                dialogs.showBanner(
+                  context.appLocalizations.externalControllerSecretMismatch,
+                  level: BannerLevel.error,
+                );
+                return;
+              }
+              final url = zashboardUrl(client);
               if (zashboardInAppWebViewAvailable()) {
                 unawaited(
                   showExtend(

@@ -493,6 +493,12 @@ class SetupAction extends _$SetupAction {
     return ensured;
   }
 
+  /// iOS only: make sure the controller secret exists before a caller
+  /// builds something from it, e.g. the Zashboard card building its URL.
+  void ensureIOSController() {
+    _ensureIOSController(ref.read(patchClashConfigProvider));
+  }
+
   Future<void> _syncSharedState() async {
     if (!system.isIOS) {
       return;

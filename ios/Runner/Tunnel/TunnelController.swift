@@ -121,6 +121,24 @@ final class TunnelController {
       )
     }
 
+    do {
+      return try await sendProviderMessageAttempt(data, session: session)
+    } catch let error as ProviderMessageError
+      where error.code == "empty_response"
+    {
+      // A nil reply usually means the extension missed a transient window,
+      // so one retry a second later is worth it; a down tunnel or a
+      // timeout says nothing a retry would fix.
+      logger.debug("sendProviderMessage empty response, retrying once")
+      try await Task.sleep(nanoseconds: 1_000_000_000)
+      return try await sendProviderMessageAttempt(data, session: session)
+    }
+  }
+
+  private func sendProviderMessageAttempt(
+    _ data: Data,
+    session: NETunnelProviderSession
+  ) async throws -> String {
     return try await withCheckedThrowingContinuation { continuation in
       let gate = ResumeGate()
       let timeout = DispatchWorkItem {
