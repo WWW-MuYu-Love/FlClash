@@ -138,7 +138,7 @@ final class TunnelController {
       )
     }
     logger.debug(
-      "sendProviderMessage session=\(ObjectIdentifier(session)) fresh=\(freshSession)"
+      "sendProviderMessage session=\(String(describing: session)) fresh=\(freshSession)"
     )
     return try await sendProviderMessageAttempt(data, session: session)
   }
