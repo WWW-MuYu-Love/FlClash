@@ -5,7 +5,25 @@ import WidgetKit
 final class SharedStateStore {
   private let sharedStateKey = "sharedState"
   private let setupParamsKey = "setupParams"
+  private let sharedStateVersionKey = "sharedStateVersion"
+  private let sharedStatePreviousKey = "sharedStatePrevious"
+  private let setupParamsPreviousKey = "setupParamsPrevious"
   private let runTimeKey = "runTime"
+
+  // Fresh instance per call site, so the counter is static: two saves in one millisecond must still differ.
+  private static let versionLock = NSLock()
+  private static var lastVersion = 0
+
+  private func nextVersion() -> Int {
+    Self.versionLock.lock()
+    defer { Self.versionLock.unlock() }
+    let version = max(
+      Int(Date().timeIntervalSince1970 * 1000),
+      Self.lastVersion + 1
+    )
+    Self.lastVersion = version
+    return version
+  }
 
   private let eventQueueDirectoryName = "core-events"
 
@@ -29,7 +47,32 @@ final class SharedStateStore {
     let previousData = userDefaults.data(forKey: sharedStateKey)
     let previousControlDisplayState = controlDisplayState(from: previousData)
     let previousStatusDisplayState = statusDisplayState(from: previousData)
-    if let json = try? JSONSerialization.jsonObject(with: data)
+    // Stamp one version into both payloads so readers can spot a torn write.
+    var stampedData = data
+    if var json = try? JSONSerialization.jsonObject(with: data)
+      as? [String: Any]
+    {
+      let version = nextVersion()
+      json[sharedStateVersionKey] = version
+      if var setupParams = json[setupParamsKey] as? [String: Any] {
+        setupParams[sharedStateVersionKey] = version
+        json[setupParamsKey] = setupParams
+      }
+      if let stamped = try? JSONSerialization.data(withJSONObject: json) {
+        stampedData = stamped
+      }
+    }
+    if let previousData {
+      userDefaults.set(previousData, forKey: sharedStatePreviousKey)
+      if let previousSetupParams = userDefaults.data(forKey: setupParamsKey)
+      {
+        userDefaults.set(
+          previousSetupParams,
+          forKey: setupParamsPreviousKey
+        )
+      }
+    }
+    if let json = try? JSONSerialization.jsonObject(with: stampedData)
       as? [String: Any],
       let setupParams = json[setupParamsKey],
       !(setupParams is NSNull),
@@ -38,16 +81,16 @@ final class SharedStateStore {
     {
       userDefaults.set(setupData, forKey: setupParamsKey)
     }
-    userDefaults.set(data, forKey: sharedStateKey)
+    userDefaults.set(stampedData, forKey: sharedStateKey)
     userDefaults.synchronize()
-    if previousControlDisplayState != controlDisplayState(from: data),
+    if previousControlDisplayState != controlDisplayState(from: stampedData),
       #available(iOS 18.0, *)
     {
       ControlCenter.shared.reloadControls(
         ofKind: "\(Bundle.main.bundleIdentifier!).Widget"
       )
     }
-    if previousStatusDisplayState != statusDisplayState(from: data) {
+    if previousStatusDisplayState != statusDisplayState(from: stampedData) {
       WidgetCenter.shared.reloadTimelines(
         ofKind: "\(Bundle.main.bundleIdentifier!).Widget.Status"
       )
@@ -96,8 +139,7 @@ final class SharedStateStore {
     return TunnelConfiguration(
       options: sharedState.vpnOptions?.networkExtensionOptions ?? NetworkExtensionOptions(),
       excludeSSIDs: sharedState.excludeSSIDs ?? [],
-      directSSIDs: sharedState.directSSIDs ?? [],
-      alwaysOn: sharedState.alwaysOn ?? false
+      directSSIDs: sharedState.directSSIDs ?? []
     )
   }
 
@@ -129,6 +171,11 @@ final class SharedStateStore {
       .removeObject(forKey: "tunnelLastError")
   }
 
+  func clearTunnelStage() {
+    UserDefaults(suiteName: appGroupIdentifier)?
+      .removeObject(forKey: "tunnelStage")
+  }
+
   func tunnelStage() -> String? {
     UserDefaults(suiteName: appGroupIdentifier)?
       .string(forKey: "tunnelStage")
@@ -139,18 +186,15 @@ struct TunnelConfiguration {
   let options: NetworkExtensionOptions
   let excludeSSIDs: [String]
   let directSSIDs: [String]
-  let alwaysOn: Bool
 
   init(
     options: NetworkExtensionOptions = NetworkExtensionOptions(),
     excludeSSIDs: [String] = [],
-    directSSIDs: [String] = [],
-    alwaysOn: Bool = false
+    directSSIDs: [String] = []
   ) {
     self.options = options
     self.excludeSSIDs = excludeSSIDs
     self.directSSIDs = directSSIDs
-    self.alwaysOn = alwaysOn
   }
 
   /// SSIDs whose action is disconnect: excluded but not direct. Only these
@@ -176,7 +220,6 @@ private struct SharedStatePayload: Decodable {
   let excludeSSIDs: [String]?
   let directSSIDs: [String]?
   let controllerSecret: String?
-  let alwaysOn: Bool?
 }
 
 private struct VpnOptionsPayload: Decodable {

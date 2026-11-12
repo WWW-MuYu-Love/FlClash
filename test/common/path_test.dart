@@ -195,6 +195,54 @@ void main() {
     expect(resolved.path, source.path);
   });
 
+  test('re-migrates source files newer than the migration stamp', () async {
+    final source = Directory(join(root.path, 'stamp-source'))..createSync();
+    final target = Directory(join(root.path, 'stamp-target'))..createSync();
+    final changed = File(join(source.path, 'config.yaml'))
+      ..writeAsStringSync('v1');
+    final kept = File(join(source.path, 'keep.yaml'))
+      ..writeAsStringSync('source');
+    kept.setLastModifiedSync(DateTime.now().subtract(const Duration(hours: 1)));
+
+    await migrateIOSDataDirectory(
+      supportDirectory: source,
+      appGroupPath: target.path,
+    );
+    expect(File(join(target.path, '.ios-migration.json')).existsSync(), isTrue);
+
+    File(join(target.path, 'keep.yaml')).writeAsStringSync('target');
+    changed
+      ..writeAsStringSync('v2')
+      ..setLastModifiedSync(DateTime.now().add(const Duration(seconds: 10)));
+
+    await migrateIOSDataDirectory(
+      supportDirectory: source,
+      appGroupPath: target.path,
+    );
+
+    expect(File(join(target.path, 'config.yaml')).readAsStringSync(), 'v2');
+    expect(File(join(target.path, 'keep.yaml')).readAsStringSync(), 'target');
+  });
+
+  test('keeps target files when the source is unchanged', () async {
+    final source = Directory(join(root.path, 'stable-source'))..createSync();
+    final target = Directory(join(root.path, 'stable-target'))..createSync();
+    File(join(source.path, 'config.yaml')).writeAsStringSync('v1');
+
+    await migrateIOSDataDirectory(
+      supportDirectory: source,
+      appGroupPath: target.path,
+    );
+    File(join(target.path, 'config.yaml')).writeAsStringSync('target');
+
+    await migrateIOSDataDirectory(
+      supportDirectory: source,
+      appGroupPath: target.path,
+    );
+
+    expect(File(join(target.path, 'config.yaml')).readAsStringSync(), 'target');
+  });
+
   test('resolves the app group derived from the bundle id', () async {
     const derivedPath = '/groups/derived';
     const profilePath = '/groups/profile';

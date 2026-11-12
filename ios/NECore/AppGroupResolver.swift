@@ -6,16 +6,22 @@ import Foundation
 /// device and certificate. The extension does not link the Shared module,
 /// so this mirrors AppGroupResolver in ios/Shared/; keep the two in sync.
 enum AppGroupResolver {
+  private static let cacheLock = NSLock()
   private static var cachedProfileGroups: [String]?
   private static var cachedResolvedIdentifiers: [String: String] = [:]
 
   /// App Groups listed in this bundle's embedded provisioning profile.
   static func profileAppGroups() -> [String] {
-    if let cached = cachedProfileGroups {
+    cacheLock.lock()
+    let cached = cachedProfileGroups
+    cacheLock.unlock()
+    if let cached {
       return cached
     }
     let groups = readProfileAppGroups()
+    cacheLock.lock()
     cachedProfileGroups = groups
+    cacheLock.unlock()
     return groups
   }
 
@@ -26,7 +32,10 @@ enum AppGroupResolver {
   static func resolveAppGroupIdentifier(
     bundleIdentifier: String
   ) -> String {
-    if let cached = cachedResolvedIdentifiers[bundleIdentifier] {
+    cacheLock.lock()
+    let cached = cachedResolvedIdentifiers[bundleIdentifier]
+    cacheLock.unlock()
+    if let cached {
       return cached
     }
     let resolved =
@@ -37,7 +46,9 @@ enum AppGroupResolver {
           ) != nil
         }
       ) ?? "group.\(bundleIdentifier)"
+    cacheLock.lock()
     cachedResolvedIdentifiers[bundleIdentifier] = resolved
+    cacheLock.unlock()
     return resolved
   }
 

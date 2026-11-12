@@ -6,16 +6,22 @@ import Foundation
 /// device and certificate. Keep in sync with AppGroupResolver in
 /// ios/NECore/, which the extension compiles separately.
 public enum AppGroupResolver {
+  private static let cacheLock = NSLock()
   private static var cachedProfileGroups: [String]?
   private static var cachedResolvedIdentifiers: [String: String] = [:]
 
   /// App Groups listed in this bundle's embedded provisioning profile.
   public static func profileAppGroups() -> [String] {
-    if let cached = cachedProfileGroups {
+    cacheLock.lock()
+    let cached = cachedProfileGroups
+    cacheLock.unlock()
+    if let cached {
       return cached
     }
     let groups = readProfileAppGroups()
+    cacheLock.lock()
     cachedProfileGroups = groups
+    cacheLock.unlock()
     return groups
   }
 
@@ -26,7 +32,10 @@ public enum AppGroupResolver {
   public static func resolveAppGroupIdentifier(
     bundleIdentifier: String
   ) -> String {
-    if let cached = cachedResolvedIdentifiers[bundleIdentifier] {
+    cacheLock.lock()
+    let cached = cachedResolvedIdentifiers[bundleIdentifier]
+    cacheLock.unlock()
+    if let cached {
       return cached
     }
     let resolved =
@@ -37,7 +46,9 @@ public enum AppGroupResolver {
           ) != nil
         }
       ) ?? "group.\(bundleIdentifier)"
+    cacheLock.lock()
     cachedResolvedIdentifiers[bundleIdentifier] = resolved
+    cacheLock.unlock()
     return resolved
   }
 
