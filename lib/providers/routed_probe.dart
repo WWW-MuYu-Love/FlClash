@@ -113,9 +113,26 @@ mixin RoutedProbe<K, V>
   Duration get throttleDuration => probeThrottleDuration;
 
   @protected
-  Future<RouteCheck> checkRoutes(List<List<RouteHit>> routes) => ref
-      .read(coreHandlerProvider)
-      .checkRoutes(CheckRoutesParams(routes: routes));
+  Future<RouteCheck> checkRoutes(List<List<RouteHit>> routes) async {
+    final params = CheckRoutesParams(routes: routes);
+    try {
+      return await ref.read(coreHandlerProvider).checkRoutes(params);
+    } on CoreMethodException catch (error) {
+      // The routing core answers the check over 9090 when the routed call
+      // did not reach it.
+      if (error.code != 'empty_response' ||
+          ref.read(runningVpnOptionsProvider)?.enable != true) {
+        rethrow;
+      }
+      final checked = await ref
+          .read(externalControllerClientProvider)
+          .fetchRouteCheck(params);
+      if (checked == null) {
+        rethrow;
+      }
+      return checked;
+    }
+  }
 
   @protected
   RoutedProbeState<K, V> buildProbe() {

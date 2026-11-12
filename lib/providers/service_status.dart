@@ -1,9 +1,12 @@
+import 'package:fl_clash/common/constant.dart';
 import 'package:fl_clash/common/mixin.dart';
 import 'package:fl_clash/common/service_probe.dart';
+import 'package:fl_clash/core/method.dart';
 import 'package:fl_clash/models/models.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
+import 'app.dart';
 import 'config.dart';
 import 'core.dart';
 import 'route_state.dart';
@@ -27,11 +30,34 @@ class ServiceStatus extends _$ServiceStatus
     ServiceTarget target,
     RouteState route,
   ) async {
-    final checks = await checkServices(
-      ref.read(coreHandlerProvider),
-      proxyName: route.proxied ? '' : directOutbound,
-      targets: [target],
-    );
+    Map<ServiceTarget, ServiceCheck> checks;
+    try {
+      checks = await checkServices(
+        ref.read(coreHandlerProvider),
+        proxyName: route.proxied ? '' : directOutbound,
+        targets: [target],
+      );
+    } on CoreMethodException catch (error) {
+      // The routing core answers the sweep over 9090 when the routed call
+      // did not reach it.
+      if (error.code != 'empty_response' ||
+          ref.read(runningVpnOptionsProvider)?.enable != true) {
+        rethrow;
+      }
+      final items = await ref
+          .read(externalControllerClientProvider)
+          .fetchServiceCheck(
+            ServiceCheckParams(
+              proxyName: route.proxied ? '' : directOutbound,
+              names: [target.id],
+              timeout: probeTimeoutDuration.inMilliseconds,
+            ),
+          );
+      if (items == null) {
+        rethrow;
+      }
+      checks = serviceChecksOf(items);
+    }
     final check = checks[target];
     return {
       if (check != null)

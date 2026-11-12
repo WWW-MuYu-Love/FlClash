@@ -110,6 +110,13 @@ class _DnsQueriesViewState extends ConsumerState<DnsQueriesView>
         'clearDnsCache error: $error',
         logLevel: coreFailureLogLevel(error),
       );
+      // The extension core owns the DNS cache when the VPN is on: ask it
+      // over 9090 when the routed call did not reach it.
+      if (ref.read(runningVpnOptionsProvider)?.enable == true) {
+        cleared = await ref
+            .read(externalControllerClientProvider)
+            .clearDnsCache();
+      }
     }
     if (!mounted) {
       return;

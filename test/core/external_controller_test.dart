@@ -738,4 +738,125 @@ void main() {
       expect(await dead.fetchMitmExchangesByHost('a.test'), isNull);
     });
   });
+
+  group('ExternalControllerClient probe', () {
+    late HttpServer server;
+    late ExternalControllerClient client;
+
+    setUp(() async {
+      server = await _serve((request) async {
+        request.response.headers.contentType = ContentType.json;
+        final path = request.uri.path;
+        if (path == '/probe/services') {
+          request.response.write(
+            '[{"name":"google","status":"ok","delay":66,"checked-at":1794513170800,"core-epoch":0,"route-version":0}]',
+          );
+        } else if (path == '/route/check') {
+          request.response.write(
+            '{"core-epoch":0,"route-version":0,"held":[true]}',
+          );
+        } else if (path.startsWith('/proxies/') && path.endsWith('/delay')) {
+          request.response.write('{"delay":66}');
+        } else if (path == '/cache/dns/flush') {
+          request.response.statusCode = HttpStatus.noContent;
+        } else {
+          request.response.statusCode = HttpStatus.notFound;
+        }
+        await request.response.close();
+      });
+      client = ExternalControllerClient(
+        baseUri: Uri.parse('http://127.0.0.1:${server.port}'),
+      );
+    });
+
+    tearDown(() async {
+      client.close();
+      await server.close(force: true);
+    });
+
+    test('reads the delay, the sweep and the route check', () async {
+      final delay = await client.fetchDelay(
+        'proxy',
+        'https://www.gstatic.com/generate_204',
+        const Duration(seconds: 5),
+      );
+      expect(delay?.value, 66);
+
+      final items = await client.fetchServiceCheck(
+        const ServiceCheckParams(timeout: 10000),
+      );
+      expect(items, hasLength(1));
+      expect(items?.first.name, 'google');
+      expect(items?.first.status, 'ok');
+
+      final checked = await client.fetchRouteCheck(const CheckRoutesParams());
+      expect(checked?.held, [true]);
+
+      expect(await client.clearDnsCache(), isTrue);
+    });
+
+    test('maps a gateway timeout to a timed-out delay', () async {
+      await server.close(force: true);
+      server = await _serve((request) async {
+        request.response.statusCode = HttpStatus.gatewayTimeout;
+        await request.response.close();
+      });
+      client = ExternalControllerClient(
+        baseUri: Uri.parse('http://127.0.0.1:${server.port}'),
+      );
+
+      final delay = await client.fetchDelay(
+        'proxy',
+        'https://www.gstatic.com/generate_204',
+        const Duration(seconds: 5),
+      );
+      expect(delay?.value, -1);
+    });
+
+    test('maps a failed test to a failed delay', () async {
+      await server.close(force: true);
+      server = await _serve((request) async {
+        request.response.statusCode = HttpStatus.serviceUnavailable;
+        await request.response.close();
+      });
+      client = ExternalControllerClient(
+        baseUri: Uri.parse('http://127.0.0.1:${server.port}'),
+      );
+
+      final delay = await client.fetchDelay(
+        'proxy',
+        'https://www.gstatic.com/generate_204',
+        const Duration(seconds: 5),
+      );
+      expect(delay?.value, -2);
+    });
+
+    test('returns null when the controller answers 401', () async {
+      await server.close(force: true);
+      server = await _serve((request) async {
+        request.response.statusCode = HttpStatus.unauthorized;
+        await request.response.close();
+      });
+      client = ExternalControllerClient(
+        baseUri: Uri.parse('http://127.0.0.1:${server.port}'),
+      );
+
+      expect(
+        await client.fetchDelay(
+          'proxy',
+          'https://example.test',
+          const Duration(seconds: 5),
+        ),
+        isNull,
+      );
+      expect(
+        await client.fetchServiceCheck(
+          const ServiceCheckParams(timeout: 10000),
+        ),
+        isNull,
+      );
+      expect(await client.fetchRouteCheck(const CheckRoutesParams()), isNull);
+      expect(await client.clearDnsCache(), isFalse);
+    });
+  });
 }
