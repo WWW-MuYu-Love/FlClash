@@ -38,6 +38,7 @@ export 'num.dart';
 export 'package.dart';
 export 'path.dart';
 export 'picker.dart';
+export 'pop.dart';
 export 'preferences.dart';
 export 'print.dart';
 export 'protocol.dart';

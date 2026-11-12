@@ -97,7 +97,7 @@ class _NestedFormSheetState<T> extends ConsumerState<NestedFormSheet<T>> {
         return;
       }
     }
-    Navigator.of(context).pop();
+    popAfterDragBack(context);
   }
 
   @override

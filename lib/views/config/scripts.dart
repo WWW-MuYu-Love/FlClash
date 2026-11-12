@@ -86,7 +86,7 @@ Future<void> saveScriptEditor(
           .save(await content.readText());
   ref.read(scriptsActionProvider.notifier).putScript(newScript);
   if (context.mounted) {
-    Navigator.of(context).pop();
+    popAfterDragBack(context);
   }
 }
 

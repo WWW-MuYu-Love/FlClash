@@ -117,13 +117,13 @@ class _InitErrorScreenState extends State<InitErrorScreen> {
             actions: [
               TextButton(
                 onPressed: () {
-                  Navigator.of(context).pop(false);
+                  popAfterDragBack(context, false);
                 },
                 child: Text(appLocalizations.cancel),
               ),
               TextButton(
                 onPressed: () {
-                  Navigator.of(context).pop(true);
+                  popAfterDragBack(context, true);
                 },
                 child: Text(appLocalizations.confirm),
               ),

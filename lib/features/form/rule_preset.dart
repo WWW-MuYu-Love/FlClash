@@ -77,7 +77,7 @@ class _RulePresetSheetState extends State<RulePresetSheet> {
       for (final preset in RulePreset.values)
         if (_selected.contains(preset)) ...preset.rules,
     ];
-    Navigator.of(context).pop();
+    popAfterDragBack(context);
     widget.onAdd(rules);
   }
 

@@ -358,7 +358,7 @@ class _HotKeyRecorderState extends ConsumerState<HotKeyRecorder> {
     }
     final modifiers = _heldModifiers(except: physicalKey);
     if (physicalKey == PhysicalKeyboardKey.escape && modifiers.isEmpty) {
-      Navigator.of(context).pop();
+      popAfterDragBack(context);
       return false;
     }
     setState(() {
@@ -369,12 +369,12 @@ class _HotKeyRecorderState extends ConsumerState<HotKeyRecorder> {
   }
 
   void _handleSave() {
-    Navigator.of(context).pop();
+    popAfterDragBack(context);
     _saveBinding(ref, _draft);
   }
 
   void _handleRemove() {
-    Navigator.of(context).pop();
+    popAfterDragBack(context);
     _saveBinding(ref, HotKeyAction(action: widget.hotKeyAction.action));
   }
 
@@ -485,7 +485,7 @@ class _HotKeyRecorderState extends ConsumerState<HotKeyRecorder> {
         actions: [
           TextButton(
             onPressed: () {
-              Navigator.of(context).pop();
+              popAfterDragBack(context);
             },
             child: Text(appLocalizations.cancel),
           ),

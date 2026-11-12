@@ -643,7 +643,7 @@ class _ReorderableProfilesSheetState
   }
 
   void _handleSave() {
-    Navigator.of(context).pop();
+    popAfterDragBack(context);
     final latest = ref.read(profilesProvider);
     final ids = {for (final profile in profiles) profile.id};
     ref.read(profilesProvider.notifier).reorder([

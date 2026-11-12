@@ -1,3 +1,4 @@
+import 'package:fl_clash/common/pop.dart';
 import 'package:fl_clash/ui/ui.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/rendering.dart';
@@ -12,10 +13,12 @@ Future<void> _dragRight(WidgetTester tester, Finder finder, double dx) {
 
 Future<void> _pumpOpener(
   WidgetTester tester,
-  void Function(BuildContext context) open,
-) async {
+  void Function(BuildContext context) open, {
+  GlobalKey<NavigatorState>? navigatorKey,
+}) async {
   await tester.pumpWidget(
     HostApp(
+      navigatorKey: navigatorKey,
       home: HostScaffold(
         body: Builder(
           builder: (context) => TextButton(
@@ -28,6 +31,19 @@ Future<void> _pumpOpener(
   );
   await tester.tap(find.text('open'));
   await tester.pumpAndSettle();
+}
+
+/// Drags a page right about 40% of the width and lets go halfway, so the
+/// page snaps back instead of popping. Returns with the page still
+/// springing back to rest.
+Future<void> _dragBackHalfway(WidgetTester tester, Finder finder) async {
+  final gesture = await tester.startGesture(tester.getCenter(finder));
+  for (var i = 0; i < 8; i++) {
+    await gesture.moveBy(const Offset(40, 0));
+    await tester.pump(const Duration(milliseconds: 16));
+  }
+  await gesture.up();
+  await tester.pump(const Duration(milliseconds: 100));
 }
 
 Future<Color> _pixelAt(WidgetTester tester, Offset point) async {
@@ -428,21 +444,86 @@ void main() {
       expect(find.text('page'), findsOneWidget);
       expect(find.byType(AppBarActionButton), findsOneWidget);
 
-      // Drag right about 40% of the width and let go halfway: the page
-      // snaps back instead of popping.
-      final gesture = await tester.startGesture(
-        tester.getCenter(find.text('page')),
-      );
-      for (var i = 0; i < 8; i++) {
-        await gesture.moveBy(const Offset(40, 0));
-        await tester.pump(const Duration(milliseconds: 16));
-      }
-      await gesture.up();
+      await _dragBackHalfway(tester, find.text('page'));
       // Tap the back button while the page is still springing back to rest,
       // as a finger does on a phone, instead of waiting for the settle.
-      await tester.pump(const Duration(milliseconds: 100));
-
       await tester.tap(find.byType(AppBarActionButton));
+      await tester.pumpAndSettle();
+      expect(find.text('page'), findsNothing);
+    },
+  );
+
+  testWidgets(
+    'an in-page pop tapped while a cancelled drag back settles still pops the page',
+    (tester) async {
+      // The page body is not hit-testable while it is sliding back (the
+      // drag-back card's hit test misses the content mid-settle), so the
+      // tap itself cannot land then; what matters is the pop the button
+      // would run. Capture the page's context and call the helper with it
+      // directly, as the button's onPressed does.
+      late final BuildContext pageContext;
+      await _pumpOpener(tester, (context) {
+        Navigator.of(context).push(
+          CardPageRoute<void>(
+            builder: (_) => ViewScope(
+              size: const Size(800, 600),
+              isMobile: true,
+              child: BaseScaffold(
+                title: 'theme',
+                body: Center(
+                  child: Builder(
+                    builder: (context) {
+                      pageContext = context;
+                      return TextButton(
+                        onPressed: () => popAfterDragBack(context),
+                        child: const Text('done'),
+                      );
+                    },
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+      });
+      expect(find.text('done'), findsOneWidget);
+
+      await _dragBackHalfway(tester, find.text('done'));
+      // Run the pop the button would run, while the page is still
+      // springing back to rest.
+      popAfterDragBack(pageContext);
+      await tester.pumpAndSettle();
+      expect(find.text('done'), findsNothing);
+    },
+  );
+
+  testWidgets(
+    'a system back press while a cancelled drag back settles still pops the page',
+    (tester) async {
+      final navigatorKey = GlobalKey<NavigatorState>();
+      final observer = DragBackPopRouteObserver(navigatorKey);
+      WidgetsBinding.instance.addObserver(observer);
+      addTearDown(() => WidgetsBinding.instance.removeObserver(observer));
+      await _pumpOpener(tester, (context) {
+        Navigator.of(context).push(
+          CardPageRoute<void>(
+            builder: (_) => const ViewScope(
+              size: Size(800, 600),
+              isMobile: true,
+              child: BaseScaffold(
+                title: 'theme',
+                body: Center(child: Text('page')),
+              ),
+            ),
+          ),
+        );
+      }, navigatorKey: navigatorKey);
+      expect(find.text('page'), findsOneWidget);
+
+      await _dragBackHalfway(tester, find.text('page'));
+      // Press the system back button while the page is still springing
+      // back to rest.
+      await tester.binding.handlePopRoute();
       await tester.pumpAndSettle();
       expect(find.text('page'), findsNothing);
     },

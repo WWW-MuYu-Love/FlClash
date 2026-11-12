@@ -185,11 +185,11 @@ class _IconPickerViewState extends ConsumerState<IconPickerView> {
   }
 
   void _handleSelect(IconSetIcon icon) {
-    Navigator.of(context).pop(icon.url);
+    popAfterDragBack(context, icon.url);
   }
 
   void _handleRemove() {
-    Navigator.of(context).pop('');
+    popAfterDragBack(context, '');
   }
 
   Future<void> _handleDeleteRecord(IconSetIcon icon) async {
@@ -237,7 +237,7 @@ class _IconPickerViewState extends ConsumerState<IconPickerView> {
       ),
     );
     if (url != null && mounted) {
-      Navigator.of(context).pop(url.trim());
+      popAfterDragBack(context, url.trim());
     }
   }
 

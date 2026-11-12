@@ -107,13 +107,13 @@ class Dialogs {
               if (cancelable)
                 TextButton(
                   onPressed: () {
-                    Navigator.of(context).pop(false);
+                    popAfterDragBack(context, false);
                   },
                   child: Text(cancelText ?? appLocalizations.cancel),
                 ),
               TextButton(
                 onPressed: () {
-                  Navigator.of(context).pop(true);
+                  popAfterDragBack(context, true);
                 },
                 child: Text(confirmText ?? appLocalizations.confirm),
               ),
@@ -146,7 +146,7 @@ class Dialogs {
           title: title,
           actions: [
             TextButton(
-              onPressed: () => Navigator.of(context).pop(),
+              onPressed: () => popAfterDragBack(context),
               child: Text(context.appLocalizations.close),
             ),
           ],

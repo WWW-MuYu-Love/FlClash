@@ -327,7 +327,7 @@ class _ProxyProviderOptionsViewState
 
   void _handleSave() {
     if (widget.onSave(ref)) {
-      context.safeNestedPop();
+      safeNestedPopAfterDragBack(context);
     }
   }
 
@@ -455,7 +455,7 @@ class _ProxyProviderOptionsViewState
               (options) => options.proxyOverride.ipVersion ?? IpVersion.dual,
             ),
           ),
-          onSelected: (item) => Navigator.of(context).pop(item),
+          onSelected: (item) => popAfterDragBack(context, item),
         ),
       ),
     );

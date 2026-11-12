@@ -202,7 +202,7 @@ class _ProviderItemState extends ConsumerState<ProviderItem> {
               actions: [
                 TextButton(
                   onPressed: () {
-                    Navigator.of(context).pop();
+                    popAfterDragBack(context);
                   },
                   child: Text(context.appLocalizations.confirm),
                 ),
@@ -461,7 +461,7 @@ class _EditProviderViewState extends ConsumerState<EditProviderView> {
     }
     proxiesAction.updateGroupsDebounce();
     if (context.mounted) {
-      Navigator.of(context).pop();
+      popAfterDragBack(context);
     }
   }
 

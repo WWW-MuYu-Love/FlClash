@@ -66,11 +66,15 @@ class ApplicationState extends ConsumerState<Application> {
   final _terminateSignals = system.isDesktop && !system.isWindows
       ? ProcessSignal.sigterm.watch()
       : null;
+  late final _dragBackPopRouteObserver = DragBackPopRouteObserver(
+    globalState.navigatorKey,
+  );
 
   @override
   void initState() {
     super.initState();
     SystemNavigator.setFrameworkHandlesBack(true);
+    WidgetsBinding.instance.addObserver(_dragBackPopRouteObserver);
     WidgetsBinding.instance.addPostFrameCallback((timeStamp) async {
       if (globalState.navigatorKey.currentContext != null) {
         await bootstrap.attach();
@@ -204,6 +208,7 @@ class ApplicationState extends ConsumerState<Application> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(_dragBackPopRouteObserver);
     linkManager.destroy();
     _autoUpdateProfilesTaskTimer?.cancel();
     super.dispose();

@@ -314,7 +314,8 @@ class _RuleFormState extends State<RuleForm> {
       });
       return;
     }
-    Navigator.of(context).pop(
+    popAfterDragBack(
+      context,
       (widget.rule ?? Rule(id: snowflake.id)).copyWith(
         ruleAction: _ruleAction,
         content: _contentController.text,

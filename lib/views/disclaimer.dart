@@ -294,7 +294,7 @@ class _ConsentBar extends StatelessWidget {
     return ElasticButton(
       child: OutlinedButton(
         onPressed: () {
-          Navigator.of(context).pop(false);
+          popAfterDragBack(context, false);
         },
         child: Text(context.appLocalizations.exit),
       ),
@@ -308,7 +308,7 @@ class _ConsentBar extends StatelessWidget {
       child: const _RestateDialog(),
     );
     if (restated == true && context.mounted) {
-      Navigator.of(context).pop(true);
+      popAfterDragBack(context, true);
     }
   }
 
@@ -430,14 +430,14 @@ class _RestateDialogState extends State<_RestateDialog> {
       actions: [
         TextButton(
           onPressed: () {
-            Navigator.of(context).pop(false);
+            popAfterDragBack(context, false);
           },
           child: Text(appLocalizations.cancel),
         ),
         TextButton(
           onPressed: canConfirm
               ? () {
-                  Navigator.of(context).pop(true);
+                  popAfterDragBack(context, true);
                 }
               : null,
           child: Text(appLocalizations.confirm),

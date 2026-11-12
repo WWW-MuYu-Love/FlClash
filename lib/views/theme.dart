@@ -1086,7 +1086,7 @@ class _CustomColorSheetState extends State<_CustomColorSheet> {
     unawaited(
       ModalRoute.of(context)!.completed.whenComplete(() => onConfirmed(color)),
     );
-    Navigator.of(context).pop();
+    popAfterDragBack(context);
   }
 
   @override

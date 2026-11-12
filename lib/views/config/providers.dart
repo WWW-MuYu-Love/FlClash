@@ -121,7 +121,7 @@ Future<void> saveClashProviderEditor(
     return;
   }
   if (context.mounted) {
-    Navigator.of(context).pop();
+    popAfterDragBack(context);
   }
 }
 
@@ -659,7 +659,8 @@ class _ProviderFormState extends State<_ProviderForm> {
       });
       return;
     }
-    Navigator.of(context).pop(
+    popAfterDragBack(
+      context,
       _provider.copyWith(
         label: _labelController.text.trim(),
         url: _urlController.text.trim(),

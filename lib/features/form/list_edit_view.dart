@@ -111,7 +111,7 @@ abstract class EditViewState<W extends ConsumerStatefulWidget, T>
   }
 
   void _handleSave() {
-    Navigator.of(context).pop(popResult(_entries));
+    popAfterDragBack(context, popResult(_entries));
   }
 
   Future<void> _handleBack() async {
@@ -122,7 +122,7 @@ abstract class EditViewState<W extends ConsumerStatefulWidget, T>
     if (res) {
       _handleSave();
     } else {
-      Navigator.of(context).pop();
+      popAfterDragBack(context);
     }
   }
 

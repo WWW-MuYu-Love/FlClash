@@ -62,7 +62,7 @@ class CustomProxyDialersView extends ConsumerWidget {
                 profileId,
               ).select((state) => state.value?[proxy.id] ?? ''),
             ),
-            onSelected: (item) => Navigator.of(context).pop(item),
+            onSelected: (item) => popAfterDragBack(context, item),
           );
         },
       ),

@@ -248,7 +248,7 @@ class _MatchTargetItem extends ConsumerWidget {
                 profileId,
               ).select((state) => state?.matchTarget ?? ''),
             ),
-            onSelected: (item) => Navigator.of(context).pop(item),
+            onSelected: (item) => popAfterDragBack(context, item),
           );
         },
       ),

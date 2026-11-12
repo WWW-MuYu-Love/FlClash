@@ -97,7 +97,7 @@ class _PortFormState extends ConsumerState<_PortForm> {
           ),
         );
     if (mounted) {
-      Navigator.of(context).pop();
+      popAfterDragBack(context);
     }
   }
 
@@ -123,7 +123,7 @@ class _PortFormState extends ConsumerState<_PortForm> {
             tproxyPort: int.parse(_tProxyPortController.text),
           ),
         );
-    Navigator.of(context).pop();
+    popAfterDragBack(context);
   }
 
   @visibleForTesting

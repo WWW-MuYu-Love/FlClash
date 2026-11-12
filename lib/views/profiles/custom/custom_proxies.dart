@@ -661,7 +661,7 @@ class _ShareLinkDialogState extends State<_ShareLinkDialog> {
   Future<void> _submit() async {
     final link = _controller.text.trim();
     if (link == widget.initialLink) {
-      Navigator.of(context).pop();
+      popAfterDragBack(context);
       return;
     }
     if (_reading) {
@@ -674,7 +674,7 @@ class _ShareLinkDialogState extends State<_ShareLinkDialog> {
     try {
       final definition = await widget.read(link);
       if (mounted) {
-        Navigator.of(context).pop(definition);
+        popAfterDragBack(context, definition);
       }
     } catch (error) {
       if (mounted) {
@@ -1191,7 +1191,7 @@ class _EditCustomProxyViewState extends ConsumerState<_EditCustomProxyView> {
           labelBuilder: (item) => item,
           selectedOf: (ref) =>
               ref.watch(customProxyProvider.select(selectedOf)),
-          onSelected: (item) => Navigator.of(context).pop(item),
+          onSelected: (item) => popAfterDragBack(context, item),
         ),
       ),
     );
@@ -1433,7 +1433,7 @@ class _EditCustomProxyViewState extends ConsumerState<_EditCustomProxyView> {
     );
     if (res == true && mounted) {
       ref.read(customProxiesProvider.notifier).delAll([id]);
-      context.safeNestedPop();
+      safeNestedPopAfterDragBack(context);
     }
   }
 
@@ -1452,7 +1452,7 @@ class _EditCustomProxyViewState extends ConsumerState<_EditCustomProxyView> {
       );
       if (!mounted) return;
       if (saved) {
-        context.safeNestedPop();
+        safeNestedPopAfterDragBack(context);
         return;
       }
       setState(() {

@@ -186,7 +186,7 @@ class _AccessViewState extends ConsumerState<AccessView>
       _handleSave();
     }
     if (mounted) {
-      Navigator.of(context).pop();
+      popAfterDragBack(context);
     }
   }
 

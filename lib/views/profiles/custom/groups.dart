@@ -637,7 +637,7 @@ class _EditProxyGroupViewState extends ConsumerState<EditProxyGroupView> {
           labelBuilder: (item) => item.name,
           selectedOf: (ref) =>
               ref.watch(proxyGroupProvider.select((state) => state.type)),
-          onSelected: (item) => Navigator.of(context).pop(item),
+          onSelected: (item) => popAfterDragBack(context, item),
         ),
       ),
     );
@@ -662,7 +662,7 @@ class _EditProxyGroupViewState extends ConsumerState<EditProxyGroupView> {
                   state.strategy ?? LoadBalanceStrategy.consistentHashing,
             ),
           ),
-          onSelected: (item) => Navigator.of(context).pop(item),
+          onSelected: (item) => popAfterDragBack(context, item),
         ),
       ),
     );
@@ -700,7 +700,7 @@ class _EditProxyGroupViewState extends ConsumerState<EditProxyGroupView> {
               labelBuilder: (item) => item,
               selectedOf: (ref) =>
                   ref.watch(proxyGroupProvider.select(_emptyFallbackOf)),
-              onSelected: (item) => Navigator.of(context).pop(item),
+              onSelected: (item) => popAfterDragBack(context, item),
             );
           },
         ),
@@ -739,7 +739,7 @@ class _EditProxyGroupViewState extends ConsumerState<EditProxyGroupView> {
                   (state) => state.defaultSelected ?? '',
                 ),
               ),
-              onSelected: (item) => Navigator.of(context).pop(item),
+              onSelected: (item) => popAfterDragBack(context, item),
             );
           },
         ),
@@ -1119,7 +1119,7 @@ class _EditProxyGroupViewState extends ConsumerState<EditProxyGroupView> {
     );
     if (res == true && mounted) {
       ref.read(proxyGroupsProvider(profileId).notifier).delAll([id]);
-      context.safeNestedPop();
+      safeNestedPopAfterDragBack(context);
     }
   }
 
@@ -1134,7 +1134,7 @@ class _EditProxyGroupViewState extends ConsumerState<EditProxyGroupView> {
     });
     try {
       if (await _handleSaveProxyGroup(context, ref) && mounted) {
-        context.safeNestedPop();
+        safeNestedPopAfterDragBack(context);
       }
     } finally {
       _saving = false;

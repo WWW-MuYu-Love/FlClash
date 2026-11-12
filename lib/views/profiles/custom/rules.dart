@@ -230,7 +230,7 @@ class _AddOrEditRuleViewState extends ConsumerState<_AddOrEditRuleView> {
           labelBuilder: (item) => item.name,
           selectedOf: (ref) =>
               ref.watch(ruleProvider.select((state) => state.ruleAction)),
-          onSelected: (item) => Navigator.of(context).pop(item),
+          onSelected: (item) => popAfterDragBack(context, item),
         ),
       ),
     );
@@ -314,7 +314,7 @@ class _AddOrEditRuleViewState extends ConsumerState<_AddOrEditRuleView> {
               labelBuilder: (item) => item,
               selectedOf: (ref) =>
                   ref.watch(ruleProvider.select((state) => state.ruleProvider)),
-              onSelected: (item) => Navigator.of(context).pop(item),
+              onSelected: (item) => popAfterDragBack(context, item),
               emptyLabel: context.appLocalizations.nullTip(
                 context.appLocalizations.ruleProviders,
               ),
@@ -412,7 +412,7 @@ class _AddOrEditRuleViewState extends ConsumerState<_AddOrEditRuleView> {
               labelBuilder: (item) => item,
               selectedOf: (ref) =>
                   ref.watch(ruleProvider.select((state) => state.ruleTarget)),
-              onSelected: (item) => Navigator.of(context).pop(item),
+              onSelected: (item) => popAfterDragBack(context, item),
             );
           },
         ),
@@ -508,7 +508,7 @@ class _AddOrEditRuleViewState extends ConsumerState<_AddOrEditRuleView> {
       await showSaveBlocked(context, error);
       return;
     }
-    context.safeNestedPop();
+    safeNestedPopAfterDragBack(context);
   }
 
   Future<void> _handleDelete(int profileId) async {
@@ -523,7 +523,7 @@ class _AddOrEditRuleViewState extends ConsumerState<_AddOrEditRuleView> {
     if (res == true && mounted) {
       final id = ref.read(ruleProvider).id;
       ref.read(profileRulesProvider(profileId).notifier).delAll([id]);
-      context.safeNestedPop();
+      safeNestedPopAfterDragBack(context);
     }
   }
 

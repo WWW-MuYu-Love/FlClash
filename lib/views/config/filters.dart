@@ -228,7 +228,7 @@ class _FilterFormState extends State<_FilterForm> {
       }
     }
     if (error == null && mounted) {
-      Navigator.of(context).pop(filter);
+      popAfterDragBack(context, filter);
     }
   }
 

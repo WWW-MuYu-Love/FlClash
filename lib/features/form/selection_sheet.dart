@@ -94,7 +94,7 @@ class _SelectionSheetState<T> extends ConsumerState<SelectionSheet<T>>
       ),
     );
     if (isLast) {
-      Navigator.of(context).pop();
+      popAfterDragBack(context);
       return;
     }
     setState(() {

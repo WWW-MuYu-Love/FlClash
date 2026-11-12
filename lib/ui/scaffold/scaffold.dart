@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math' as math;
 import 'dart:ui' show ImageFilter, lerpDouble;
 
+import 'package:fl_clash/common/pop.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/physics.dart';
 import 'package:flutter/services.dart';
@@ -445,7 +446,8 @@ class ScaffoldState extends State<Scaffold>
   }
 
   VoidCallback get _closeSheet =>
-      SheetProvider.of(context)?.onClose ?? () => context.safeNestedPop();
+      SheetProvider.of(context)?.onClose ??
+      () => safeNestedPopAfterDragBack(context);
 
   Widget _buildPopButton({
     required bool useCloseIcon,
@@ -491,33 +493,6 @@ class ScaffoldState extends State<Scaffold>
     );
   }
 
-  /// Pops the route under [context], waiting out a drag back still settling.
-  /// Popping now lets the drag-back follower drive the controller back to
-  /// rest, which kills the pop-out animation and strands the route: popped
-  /// from the history, but its animation sits at completed, so the page
-  /// stays painted and the back button stops working for good.
-  void _maybePopAfterDragBack(BuildContext context) {
-    final navigator = Navigator.of(context);
-    if (!navigator.userGestureInProgress) {
-      unawaited(Navigator.maybePop(context));
-      return;
-    }
-    final route = ModalRoute.of(context);
-    final notifier = navigator.userGestureInProgressNotifier;
-    late final VoidCallback listener;
-    listener = () {
-      if (notifier.value) {
-        return;
-      }
-      notifier.removeListener(listener);
-      if (!context.mounted || route?.isCurrent != true) {
-        return;
-      }
-      unawaited(Navigator.maybePop(context));
-    };
-    notifier.addListener(listener);
-  }
-
   Widget? _buildLeadingButton(
     VoidCallback? backAction, {
     required _SheetPop? pop,
@@ -530,7 +505,7 @@ class ScaffoldState extends State<Scaffold>
         useCloseIcon: pop.useCloseIcon,
         onPressed: pop.useCloseIcon
             ? _closeSheet
-            : backAction ?? () => Navigator.of(context).pop(),
+            : backAction ?? () => popAfterDragBack(context),
       );
     }
     if (backAction != null) {
@@ -550,7 +525,7 @@ class ScaffoldState extends State<Scaffold>
     }
     return _buildPopButton(
       useCloseIcon: route is PageRoute && route.fullscreenDialog,
-      onPressed: () => _maybePopAfterDragBack(context),
+      onPressed: () => maybePopAfterDragBack(context),
     );
   }
 

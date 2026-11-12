@@ -201,7 +201,7 @@ class _SendFromPhoneDialogState extends State<_SendFromPhoneDialog> {
     });
     final link = await receiver?.link;
     if (link != null && mounted) {
-      Navigator.of(context).pop(link);
+      popAfterDragBack(context, link);
     }
   }
 
@@ -243,7 +243,7 @@ class _SendFromPhoneDialogState extends State<_SendFromPhoneDialog> {
       title: context.appLocalizations.sendFromPhone,
       actions: [
         TextButton(
-          onPressed: () => Navigator.of(context).pop(),
+          onPressed: () => popAfterDragBack(context),
           child: Text(context.appLocalizations.cancel),
         ),
       ],

@@ -307,7 +307,7 @@ class RestoreOptionsDialog extends StatefulWidget {
 class _RestoreOptionsDialogState extends State<RestoreOptionsDialog> {
   void _handleOnTab(RestoreOption? option) {
     if (option == null) return;
-    Navigator.of(context).pop(option);
+    popAfterDragBack(context, option);
   }
 
   @override
@@ -414,12 +414,12 @@ class _WebDAVFormState extends ConsumerState<WebDAVForm> {
             fileName: widget.dav?.fileName ?? defaultDavFileName,
           ),
         );
-    Navigator.pop(context);
+    popAfterDragBack(context);
   }
 
   void _delete() {
     ref.read(davSettingProvider.notifier).update((_) => null);
-    Navigator.pop(context);
+    popAfterDragBack(context);
   }
 
   @override

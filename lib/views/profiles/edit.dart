@@ -46,7 +46,7 @@ Future<void> saveProfileFileEditor(
     return;
   }
   if (context.mounted) {
-    Navigator.of(context).pop(data);
+    popAfterDragBack(context, data);
   }
 }
 
@@ -267,7 +267,7 @@ class _EditProfileViewState extends ConsumerState<EditProfileView> {
       );
     }
     if (mounted) {
-      Navigator.of(context).pop();
+      popAfterDragBack(context);
     }
   }
 
@@ -324,7 +324,7 @@ class _EditProfileViewState extends ConsumerState<EditProfileView> {
       unawaited(_handleConfirm());
     } else {
       if (mounted) {
-        Navigator.of(context).pop();
+        popAfterDragBack(context);
       }
     }
   }

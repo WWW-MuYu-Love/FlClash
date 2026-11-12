@@ -95,7 +95,7 @@ Widget mitmModuleEditorPage(
       return;
     }
     if (context.mounted) {
-      Navigator.of(context).pop();
+      popAfterDragBack(context);
     }
     await offerMitmScripts(ref, saved);
   }
