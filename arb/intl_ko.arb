@@ -1010,6 +1010,8 @@
   "mitmCertificateSavedTip": "{fileName}을(를) 다운로드에 저장했습니다. 설정의 '보안 › 암호화 및 사용자 인증 정보 › 인증서 설치 › CA 인증서'에서 설치하세요.",
   "openSettings": "설정 열기",
   "mitmRemoveOldCertificateTip": "설정의 '보안 › 암호화 및 사용자 인증 정보 › 신뢰할 수 있는 자격증명 › 사용자'에서 이전 인증서 {name}을(를) 제거한 뒤 새 인증서를 설치하세요.",
+  "mitmRestartTunnel": "터널 다시 시작",
+  "mitmRestartTunnelTip": "MITM 변경 사항은 터널을 다시 시작해야 적용됩니다.",
   "mitmOldCertificateLeftTip": "이전 인증서 {name}을(를) 제거하지 못했습니다. 신뢰할 수 있는 루트에서 직접 제거하세요.",
   "mitmOldSystemCertificateLeftTip": "이전 인증서 {name}이(가) 시스템의 신뢰할 수 있는 인증서에 남아 있습니다. 루트 관리자에서 FlClash의 루트 권한을 허용한 뒤 다시 생성하거나, 그곳에서 'FlClash MITM CA' 모듈을 제거하고 다시 시작하세요.",
   "mitmDecryptHost": "이 호스트 복호화",

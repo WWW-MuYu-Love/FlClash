@@ -1010,6 +1010,8 @@
   "mitmCertificateSavedTip": "{fileName} を「ダウンロード」に保存しました。設定の「セキュリティ › 暗号化と認証情報 › 証明書のインストール › CA 証明書」からインストールしてください。",
   "openSettings": "設定を開く",
   "mitmRemoveOldCertificateTip": "設定の「セキュリティ › 暗号化と認証情報 › 信頼できる認証情報 › ユーザー」で古い証明書 {name} を削除してから、新しい証明書をインストールしてください。",
+  "mitmRestartTunnel": "トンネルを再起動",
+  "mitmRestartTunnelTip": "MITM の変更は、トンネルを再起動すると反映されます。",
   "mitmOldCertificateLeftTip": "古い証明書 {name} を削除できませんでした。信頼されたルートから手動で削除してください。",
   "mitmOldSystemCertificateLeftTip": "古い証明書 {name} はシステムの信頼された証明書に残っています。root マネージャーで FlClash に root を許可してから再生成するか、そこで「FlClash MITM CA」モジュールを削除して再起動してください。",
   "mitmDecryptHost": "このホストを復号",

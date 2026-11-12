@@ -84,6 +84,7 @@ void main() {
     Mitm mitm = defaultMitm,
     MitmTrustStore? store,
     bool safeMode = false,
+    bool running = false,
   }) async {
     tester.view.physicalSize = const Size(1000, 2000);
     tester.view.devicePixelRatio = 1;
@@ -115,6 +116,9 @@ void main() {
     );
     addTearDown(container.dispose);
     globalState.container = container;
+    if (running) {
+      container.read(runTimeProvider.notifier).update((_) => 3600);
+    }
     container.listen(patchClashConfigProvider, (_, _) {});
     container
         .read(viewSizeProvider.notifier)
@@ -484,5 +488,49 @@ void main() {
       findsOneWidget,
     );
     expect(saved().hostname, isEmpty);
+  });
+
+  testWidgets('restart is offered while the tunnel runs with MITM on', (
+    tester,
+  ) async {
+    await pumpView(
+      tester,
+      certificate: _certificate,
+      mitm: const Mitm(enable: true),
+      running: true,
+    );
+
+    expect(
+      find.text(currentAppLocalizations.mitmRestartTunnelTip),
+      findsOneWidget,
+    );
+    expect(
+      find.text(currentAppLocalizations.mitmRestartTunnel),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('restart stays hidden while the tunnel is down', (tester) async {
+    await pumpView(
+      tester,
+      certificate: _certificate,
+      mitm: const Mitm(enable: true),
+    );
+
+    expect(
+      find.text(currentAppLocalizations.mitmRestartTunnelTip),
+      findsNothing,
+    );
+    expect(find.text(currentAppLocalizations.mitmRestartTunnel), findsNothing);
+  });
+
+  testWidgets('restart stays hidden while MITM is off', (tester) async {
+    await pumpView(tester, certificate: _certificate, running: true);
+
+    expect(
+      find.text(currentAppLocalizations.mitmRestartTunnelTip),
+      findsNothing,
+    );
+    expect(find.text(currentAppLocalizations.mitmRestartTunnel), findsNothing);
   });
 }

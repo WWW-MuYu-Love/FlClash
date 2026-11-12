@@ -8,10 +8,8 @@ import 'package:fl_clash/features/form/form.dart';
 import 'package:fl_clash/l10n/l10n.dart';
 import 'package:fl_clash/models/models.dart';
 import 'package:fl_clash/plugins/app.dart';
-import 'package:fl_clash/providers/app.dart';
-import 'package:fl_clash/providers/config.dart';
-import 'package:fl_clash/providers/database.dart';
 import 'package:fl_clash/providers/mitm.dart';
+import 'package:fl_clash/providers/providers.dart';
 import 'package:fl_clash/state.dart';
 import 'package:fl_clash/views/config/mitm_modules.dart';
 import 'package:fl_clash/widgets/widgets.dart';
@@ -371,6 +369,11 @@ class _MitmViewState extends ConsumerState<MitmView> {
     final check = certificate.value == null
         ? null
         : ref.watch(mitmTrustStateProvider).value;
+    final showRestart =
+        ref.watch(isStartProvider) &&
+        ref.watch(
+          patchClashConfigProvider.select((state) => state.mitm.enable),
+        );
     return Scaffold(
       title: appLocalizations.mitm,
       isLoading: ref.watch(loadingProvider(LoadingTag.mitm)),
@@ -392,7 +395,11 @@ class _MitmViewState extends ConsumerState<MitmView> {
                           items: [
                             const _MitmEnableItem(),
                             _MitmCaptureItem(isAndroid: isAndroid),
+                            if (showRestart) const _MitmRestartItem(),
                           ],
+                          footer: showRestart
+                              ? appLocalizations.mitmRestartTunnelTip
+                              : null,
                         ),
                         generateSection(
                           title: appLocalizations.certificate,
@@ -543,13 +550,26 @@ class _MitmCaptureItem extends ConsumerWidget {
       subtitle: Text(
         capture ? appLocalizations.enabled : appLocalizations.disabled,
       ),
-      widget: _MitmCaptureView(isAndroid: isAndroid),
+      widget: MitmCaptureView(isAndroid: isAndroid),
     );
   }
 }
 
-class _MitmCaptureView extends ConsumerWidget {
-  const _MitmCaptureView({required this.isAndroid});
+class _MitmRestartItem extends ConsumerWidget {
+  const _MitmRestartItem();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return ListItem(
+      title: Text(context.appLocalizations.mitmRestartTunnel),
+      onTap: () =>
+          unawaited(ref.read(setupActionProvider.notifier).restartVpn()),
+    );
+  }
+}
+
+class MitmCaptureView extends ConsumerWidget {
+  const MitmCaptureView({super.key, required this.isAndroid});
 
   final bool isAndroid;
 
