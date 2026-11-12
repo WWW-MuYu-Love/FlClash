@@ -199,15 +199,19 @@ void _setVpn(WidgetRef ref, bool value) => ref
 
 /// On iOS the switch is only the setting; the subtitle reports the real
 /// tunnel state, so a failed start shows as unconnected instead of "enabled".
+/// A pending report only means "connecting" while a start is in progress:
+/// the native side starts at pending before it ever reports, so without a
+/// start it reads as no report at all.
 String _vpnSubtitle(
   BuildContext context,
   TunnelState? tunnelState,
   String? tunnelError,
   bool enabled,
+  bool isStart,
 ) {
   final appLocalizations = context.appLocalizations;
   final state = tunnelState;
-  if (state == null) {
+  if (state == null || (state == TunnelState.pending && !isStart)) {
     return enabled ? appLocalizations.enabled : appLocalizations.disabled;
   }
   return switch (state) {
@@ -232,13 +236,14 @@ class VpnTile extends ConsumerWidget {
     );
     final tunnelState = ref.watch(tunnelStateProvider);
     final tunnelError = ref.watch(tunnelErrorProvider);
+    final isStart = ref.watch(isStartProvider);
     return DashboardCard(
       padding: EdgeInsets.zero,
       child: DashboardSwitchRow(
         glyph: AppGlyphs.vpn,
         title: 'VPN',
         subtitle: metrics.subtitle
-            ? _vpnSubtitle(context, tunnelState, tunnelError, enabled)
+            ? _vpnSubtitle(context, tunnelState, tunnelError, enabled, isStart)
             : null,
         value: enabled,
         iconSize: metrics.icon,
@@ -266,6 +271,7 @@ class VpnCard extends ConsumerWidget {
     );
     final tunnelState = ref.watch(tunnelStateProvider);
     final tunnelError = ref.watch(tunnelErrorProvider);
+    final isStart = ref.watch(isStartProvider);
     void change(bool value) => _setVpn(ref, value);
     return DashboardCard(
       semanticLabel: 'VPN',
@@ -299,7 +305,13 @@ class VpnCard extends ConsumerWidget {
                   style: AppTextStyle.callout.of(context, emphasized: true),
                 ),
                 Text(
-                  _vpnSubtitle(context, tunnelState, tunnelError, enabled),
+                  _vpnSubtitle(
+                    context,
+                    tunnelState,
+                    tunnelError,
+                    enabled,
+                    isStart,
+                  ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: AppTextStyle.footnote

@@ -1,4 +1,5 @@
 import 'package:fl_clash/common/common.dart';
+import 'package:fl_clash/plugins/service.dart';
 import 'package:fl_clash/providers/app.dart';
 import 'package:fl_clash/providers/config.dart';
 import 'package:fl_clash/providers/database.dart';
@@ -209,5 +210,92 @@ void main() {
 
     await pumpTile(200, TakeoverSwitch.tun);
     expect(find.byType(ShapeBadge), findsNothing);
+  });
+
+  group('VPN subtitle with a pending tunnel', () {
+    Future<void> pumpVpnCard(
+      WidgetTester tester, {
+      required TunnelState? tunnelState,
+      bool isStart = false,
+      bool vpnEnabled = true,
+    }) async {
+      final vpnContainer = ProviderContainer(
+        overrides: [
+          profilesProvider.overrideWith(TestProfiles.new),
+          tunnelStateProvider.overrideWith((_) => tunnelState),
+        ],
+      );
+      addTearDown(vpnContainer.dispose);
+      globalState.container = vpnContainer;
+      vpnContainer.read(viewSizeProvider.notifier).value = const Size(400, 800);
+      vpnContainer.read(runTimeProvider.notifier).value = isStart ? 1 : null;
+      vpnContainer
+          .read(vpnSettingProvider.notifier)
+          .update((state) => state.copyWith(enable: vpnEnabled));
+      tester.view.physicalSize = const Size(400, 800);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: vpnContainer,
+          child: TestApp(
+            child: HostScaffold(body: ListView(children: [const VpnCard()])),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('shows enabled, not connecting, when nothing is starting', (
+      tester,
+    ) async {
+      await pumpVpnCard(tester, tunnelState: TunnelState.pending);
+
+      expect(find.text(currentAppLocalizations.connecting), findsNothing);
+      expect(find.text(currentAppLocalizations.enabled), findsOneWidget);
+    });
+
+    testWidgets('shows disabled when VPN is off and nothing is starting', (
+      tester,
+    ) async {
+      await pumpVpnCard(
+        tester,
+        tunnelState: TunnelState.pending,
+        vpnEnabled: false,
+      );
+
+      expect(find.text(currentAppLocalizations.connecting), findsNothing);
+      expect(find.text(currentAppLocalizations.disabled), findsOneWidget);
+    });
+
+    testWidgets('shows connecting while a start is in progress', (
+      tester,
+    ) async {
+      await pumpVpnCard(
+        tester,
+        tunnelState: TunnelState.pending,
+        isStart: true,
+      );
+
+      expect(find.text(currentAppLocalizations.connecting), findsOneWidget);
+    });
+
+    testWidgets('shows connected once the tunnel is up', (tester) async {
+      await pumpVpnCard(
+        tester,
+        tunnelState: TunnelState.connected,
+        isStart: true,
+      );
+
+      expect(find.text(currentAppLocalizations.connected), findsOneWidget);
+    });
+
+    testWidgets('shows disconnected once the tunnel is down', (tester) async {
+      await pumpVpnCard(tester, tunnelState: TunnelState.disconnected);
+
+      expect(find.text(currentAppLocalizations.disconnected), findsOneWidget);
+    });
   });
 }
