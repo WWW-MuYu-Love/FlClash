@@ -1059,6 +1059,10 @@ class MessageLookup extends MessageLookupByLibrary {
     "mitmOldCertificateLeftTip": m61,
     "mitmOldSystemCertificateLeftTip": m62,
     "mitmRemoveOldCertificateTip": m63,
+    "mitmRestartTunnel": MessageLookupByLibrary.simpleMessage("重启隧道"),
+    "mitmRestartTunnelTip": MessageLookupByLibrary.simpleMessage(
+      "MITM 的改动需重启隧道后生效。",
+    ),
     "mitmRootPendingReboot": MessageLookupByLibrary.simpleMessage(
       "证书将在重启手机后生效。",
     ),

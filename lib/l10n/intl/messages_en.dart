@@ -1070,9 +1070,10 @@ class MessageLookup extends MessageLookupByLibrary {
     "installCertificateSuccess": MessageLookupByLibrary.simpleMessage(
       "Certificate installed",
     ),
-    "installedAppsPermissionDeniedMessage": MessageLookupByLibrary.simpleMessage(
-      "The app list permission was denied, so installed apps cannot be listed. Please grant it manually in system settings.",
-    ),
+    "installedAppsPermissionDeniedMessage":
+        MessageLookupByLibrary.simpleMessage(
+          "The app list permission was denied, so installed apps cannot be listed. Please grant it manually in system settings.",
+        ),
     "installedAppsPermissionDesc": MessageLookupByLibrary.simpleMessage(
       "This system hides the installed app list until the permission is granted. Authorize it to configure the per-app proxy.",
     ),
@@ -1349,6 +1350,10 @@ class MessageLookup extends MessageLookupByLibrary {
     "mitmOldCertificateLeftTip": m61,
     "mitmOldSystemCertificateLeftTip": m62,
     "mitmRemoveOldCertificateTip": m63,
+    "mitmRestartTunnel": MessageLookupByLibrary.simpleMessage("Restart tunnel"),
+    "mitmRestartTunnelTip": MessageLookupByLibrary.simpleMessage(
+      "MITM changes take effect after the tunnel restarts.",
+    ),
     "mitmRootPendingReboot": MessageLookupByLibrary.simpleMessage(
       "The certificate takes effect after the device restarts.",
     ),

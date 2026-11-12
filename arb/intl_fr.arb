@@ -1016,6 +1016,8 @@
   "mitmCertificateSavedTip": "{fileName} est enregistré dans Téléchargements. Installez-le dans Paramètres › Sécurité › Chiffrement et identifiants › Installer un certificat › Certificat CA.",
   "openSettings": "Ouvrir les paramètres",
   "mitmRemoveOldCertificateTip": "Supprimez l’ancien certificat, {name}, dans Paramètres › Sécurité › Chiffrement et identifiants › Identifiants de confiance › Utilisateur, puis installez le nouveau.",
+  "mitmRestartTunnel": "Redémarrer le tunnel",
+  "mitmRestartTunnelTip": "Les modifications MITM prendront effet après le redémarrage du tunnel.",
   "mitmOldCertificateLeftTip": "Impossible de supprimer l’ancien certificat, {name}. Retirez-le vous-même des racines de confiance.",
   "mitmOldSystemCertificateLeftTip": "L’ancien certificat, {name}, figure toujours parmi les certificats de confiance du système. Autorisez l’accès root à FlClash dans votre gestionnaire root puis régénérez-le, ou supprimez-y le module « FlClash MITM CA » et redémarrez.",
   "mitmDecryptHost": "Déchiffrer cet hôte",

@@ -7758,8 +7758,7 @@ class AppLocalizations {
   String customImportDroppedSubRules(num count, Object label) {
     return Intl.plural(
       count,
-      one:
-          '1 SUB-RULE rule was dropped, since custom profiles do not support sub-rules',
+      one: '1 SUB-RULE rule was dropped, since custom profiles do not support sub-rules',
       other:
           '$label SUB-RULE rules were dropped, since custom profiles do not support sub-rules',
       name: 'customImportDroppedSubRules',
@@ -8495,6 +8494,26 @@ class AppLocalizations {
       name: 'mitmRemoveOldCertificateTip',
       desc: '',
       args: [name],
+    );
+  }
+
+  /// `Restart tunnel`
+  String get mitmRestartTunnel {
+    return Intl.message(
+      'Restart tunnel',
+      name: 'mitmRestartTunnel',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `MITM changes take effect after the tunnel restarts.`
+  String get mitmRestartTunnelTip {
+    return Intl.message(
+      'MITM changes take effect after the tunnel restarts.',
+      name: 'mitmRestartTunnelTip',
+      desc: '',
+      args: [],
     );
   }
 

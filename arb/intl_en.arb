@@ -1016,6 +1016,8 @@
   "mitmCertificateSavedTip": "Saved {fileName} to Downloads. Install it in Settings under Security › Encryption & credentials › Install a certificate › CA certificate.",
   "openSettings": "Open settings",
   "mitmRemoveOldCertificateTip": "Remove the old certificate, {name}, in Settings under Security › Encryption & credentials › Trusted credentials › User, then install the new one.",
+  "mitmRestartTunnel": "Restart tunnel",
+  "mitmRestartTunnelTip": "MITM changes take effect after the tunnel restarts.",
   "mitmOldCertificateLeftTip": "The old certificate, {name}, could not be removed. Remove it from the trusted roots yourself.",
   "mitmOldSystemCertificateLeftTip": "The old certificate, {name}, is still among the system's trusted CAs. Allow FlClash root access in your root manager and regenerate, or remove the FlClash MITM CA module there and restart.",
   "mitmDecryptHost": "Decrypt this host",

@@ -1161,6 +1161,10 @@ class MessageLookup extends MessageLookupByLibrary {
     "mitmOldCertificateLeftTip": m61,
     "mitmOldSystemCertificateLeftTip": m62,
     "mitmRemoveOldCertificateTip": m63,
+    "mitmRestartTunnel": MessageLookupByLibrary.simpleMessage("トンネルを再起動"),
+    "mitmRestartTunnelTip": MessageLookupByLibrary.simpleMessage(
+      "MITM の変更は、トンネルを再起動すると反映されます。",
+    ),
     "mitmRootPendingReboot": MessageLookupByLibrary.simpleMessage(
       "証明書は端末の再起動後に有効になります。",
     ),

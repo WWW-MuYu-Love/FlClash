@@ -33,6 +33,12 @@ func applyMitmConfig(cfg *config.Config) {
 		return
 	}
 	mitm.Default().SetConfig(section.Mitm)
+	log.Infoln(
+		"[MITM] applied: enable=%v decrypt-tls=%v hostnames=%d",
+		section.Mitm.Enable,
+		section.Mitm.DecryptTLS,
+		len(section.Mitm.Hostname),
+	)
 	if section.Mitm.Enable && section.Mitm.DecryptTLS {
 		if err := mitm.Default().Init(); err != nil {
 			log.Warnln("[MITM] init failed: %v", err)
