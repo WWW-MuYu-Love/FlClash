@@ -199,9 +199,9 @@ void _setVpn(WidgetRef ref, bool value) => ref
 
 /// On iOS the switch is only the setting; the subtitle reports the real
 /// tunnel state, so a failed start shows as unconnected instead of "enabled".
-/// A pending report only means "connecting" while a start is in progress:
-/// the native side starts at pending before it ever reports, so without a
-/// start it reads as no report at all.
+/// A pending report only means "connecting" while a tunnel start is in
+/// progress: the native side starts at pending before it ever reports, so
+/// with VPN off, or nothing starting, it reads as no report at all.
 String _vpnSubtitle(
   BuildContext context,
   TunnelState? tunnelState,
@@ -211,7 +211,8 @@ String _vpnSubtitle(
 ) {
   final appLocalizations = context.appLocalizations;
   final state = tunnelState;
-  if (state == null || (state == TunnelState.pending && !isStart)) {
+  if (state == null ||
+      (state == TunnelState.pending && !(isStart && enabled))) {
     return enabled ? appLocalizations.enabled : appLocalizations.disabled;
   }
   return switch (state) {

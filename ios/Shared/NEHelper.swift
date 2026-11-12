@@ -1,7 +1,13 @@
 import Foundation
 import NetworkExtension
+import os
 
 public enum NEHelper {
+  private static let logger = Logger(
+    subsystem: Bundle.main.bundleIdentifier ?? "love.muyu.flclash",
+    category: "NEHelper"
+  )
+
   private static var appBundleId: String {
     let bundleId = Bundle.main.bundleIdentifier!
     for suffix in [".NECore", ".Widget"] where bundleId.hasSuffix(suffix) {
@@ -67,7 +73,7 @@ public enum NEHelper {
     guard let manager = try await loadManager() else {
       return false
     }
-    stop(manager: manager)
+    await stop(manager: manager)
     return true
   }
 
@@ -77,7 +83,7 @@ public enum NEHelper {
       return
     }
     if isRunning(manager.connection.status) {
-      stop(manager: manager)
+      await stop(manager: manager)
     } else {
       _ = try await startWithPreferenceRetry(initialManager: manager)
     }
@@ -127,11 +133,27 @@ public enum NEHelper {
   }
 
   @MainActor
-  private static func stop(manager: NETunnelProviderManager) {
+  private static func stop(manager: NETunnelProviderManager) async {
+    await disableOnDemand(manager: manager)
     guard isRunning(manager.connection.status) else {
       return
     }
     manager.connection.stopVPNTunnel()
+  }
+
+  // A Widget, Control Center, or Siri stop must not leave on-demand free to restart the tunnel on the next network change.
+  @MainActor
+  private static func disableOnDemand(
+    manager: NETunnelProviderManager
+  ) async {
+    manager.isOnDemandEnabled = false
+    do {
+      try await manager.saveToPreferences()
+    } catch {
+      logger.error(
+        "disableOnDemand save failed: \(error.localizedDescription, privacy: .public)"
+      )
+    }
   }
 
   @MainActor

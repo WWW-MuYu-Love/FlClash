@@ -282,6 +282,21 @@ void main() {
       expect(find.text(currentAppLocalizations.connecting), findsOneWidget);
     });
 
+    testWidgets(
+      'shows disabled, not connecting, when the core runs with VPN off',
+      (tester) async {
+        await pumpVpnCard(
+          tester,
+          tunnelState: TunnelState.pending,
+          isStart: true,
+          vpnEnabled: false,
+        );
+
+        expect(find.text(currentAppLocalizations.connecting), findsNothing);
+        expect(find.text(currentAppLocalizations.disabled), findsOneWidget);
+      },
+    );
+
     testWidgets('shows connected once the tunnel is up', (tester) async {
       await pumpVpnCard(
         tester,

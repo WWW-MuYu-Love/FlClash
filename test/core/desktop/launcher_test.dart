@@ -40,6 +40,31 @@ void main() {
     );
   });
 
+  test('stderr split across chunks does not kill draining', () async {
+    final stderr = StreamController<List<int>>();
+    final process = _FakeProcess(
+      pid: 42,
+      exitCode: Future.value(0),
+      stderr: stderr.stream,
+    );
+    final launcher = DirectCoreLauncher(
+      startProcess: (_, _) async => process,
+      corePath: 'FlClashCore',
+    );
+
+    final lease = await launcher.start(
+      sessionId: '0123456789abcdef0123456789abcdef',
+      address: 'test-address',
+    );
+    stderr.add([0xc3]);
+    stderr.add([0xa9, 0x0a]);
+    await stderr.close();
+    await Future<void>.delayed(const Duration(milliseconds: 50));
+
+    expect(lease.pid, 42);
+    await lease.stop(const Duration(seconds: 1));
+  });
+
   test('direct lease reports an unconfirmed exit after timeout', () async {
     final process = _FakeProcess(pid: 42, exitCode: Completer<int>().future);
     final launcher = DirectCoreLauncher(
@@ -89,11 +114,15 @@ class _FakeProcess implements Process {
   final Stream<List<int>> stdout = const Stream.empty();
 
   @override
-  final Stream<List<int>> stderr = const Stream.empty();
+  final Stream<List<int>> stderr;
 
   bool killed = false;
 
-  _FakeProcess({required this.pid, required this.exitCode});
+  _FakeProcess({
+    required this.pid,
+    required this.exitCode,
+    this.stderr = const Stream.empty(),
+  });
 
   @override
   bool kill([ProcessSignal signal = ProcessSignal.sigterm]) {

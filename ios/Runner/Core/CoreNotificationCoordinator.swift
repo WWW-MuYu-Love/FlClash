@@ -54,7 +54,7 @@ final class CoreNotificationCoordinator {
     subsystem: Bundle.main.bundleIdentifier ?? "love.muyu.flclash",
     category: "CoreNotificationCoordinator"
   )
-  private let maxMigrationRetryCount = 1
+  private let maxMigrationRetryCount = 3
   private let migrationRetryBaseDelay: UInt64 = 250_000_000
 
   private var desiredRoute = CoreRoute.app
@@ -158,13 +158,12 @@ final class CoreNotificationCoordinator {
   }
 
   func setDesiredRoute(_ route: CoreRoute) {
-    let discardedNetworkExtension = route == .app
-      ? discardNetworkExtensionOwnership()
-      : false
+    // Every tunnel-state report re-arms the retry budget, so an exhausted migration gets another chance on the next report.
+    if route == .app {
+      _ = discardNetworkExtensionOwnership()
+    }
+    resetMigrationRetry()
     guard desiredRoute != route else {
-      if discardedNetworkExtension {
-        resetMigrationRetry()
-      }
       driveMigration()
       return
     }
@@ -172,7 +171,6 @@ final class CoreNotificationCoordinator {
       "actual core route \(desiredRoute.description) -> \(route.description)"
     )
     desiredRoute = route
-    resetMigrationRetry()
     driveMigration()
   }
 

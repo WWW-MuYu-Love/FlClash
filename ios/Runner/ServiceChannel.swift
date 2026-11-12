@@ -386,12 +386,13 @@ final class ServiceChannel {
       result("failed to sync shared state")
       return
     }
-    result("")
     Task {
       do {
         try await tunnelController.reloadOnDemandRules()
+        result("")
       } catch {
         log("syncState preferences failed: \(error.localizedDescription)")
+        result("failed to reload on-demand rules: \(error.localizedDescription)")
       }
     }
   }

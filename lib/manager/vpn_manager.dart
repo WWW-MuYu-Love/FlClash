@@ -107,10 +107,16 @@ class _VpnContainerState extends ConsumerState<VpnManager> with TileListener {
         ref
             .read(vpnSettingProvider.notifier)
             .update((state) => state.copyWith(enable: prev.enable));
+        dialogs.showBanner(
+          userFacingErrorMessage(error, currentAppLocalizations),
+          level: BannerLevel.error,
+        );
+        return;
       }
       dialogs.showBanner(
         userFacingErrorMessage(error, currentAppLocalizations),
         level: BannerLevel.error,
+        onTap: () => unawaited(_retryStopTunnel(next)),
       );
       return;
     }
@@ -119,6 +125,30 @@ class _VpnContainerState extends ConsumerState<VpnManager> with TileListener {
       return;
     }
     ref.read(runningVpnOptionsProvider.notifier).value = next;
+  }
+
+  // Retry bypasses the VPN setting, which would refire the toggle listener.
+  Future<void> _retryStopTunnel(VpnOptions next) async {
+    if (ref.read(vpnSettingProvider).enable ||
+        ref.read(runningVpnOptionsProvider)?.enable != true) {
+      return;
+    }
+    try {
+      final handled = await ref
+          .read(setupActionProvider.notifier)
+          .setTunnelEnabled(false);
+      if (!handled) {
+        _showRestartTip();
+        return;
+      }
+      ref.read(runningVpnOptionsProvider.notifier).value = next;
+    } catch (error) {
+      dialogs.showBanner(
+        userFacingErrorMessage(error, currentAppLocalizations),
+        level: BannerLevel.error,
+        onTap: () => unawaited(_retryStopTunnel(next)),
+      );
+    }
   }
 
   @override

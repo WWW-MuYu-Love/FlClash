@@ -78,11 +78,19 @@ class _AppStateManagerState extends ConsumerState<AppStateManager>
         ref.read(proxiesActionProvider.notifier).updateGroupsDebounce();
       }
     });
-    // The exclude-SSID actions are enforced by the native side so they
-    // keep working when this app is killed in the background: the system
-    // disconnects the VPN on the disconnect SSIDs via on-demand rules, and
-    // the extension switches the core to direct on the direct SSIDs. The
+    // iOS enforces the exclude-SSID actions natively so they keep working
+    // when this app is killed in the background: the system disconnects
+    // the VPN on the disconnect SSIDs via on-demand rules, and the
+    // extension switches the core to direct on the direct SSIDs. The
     // lists and the controller secret reach them through the shared state.
+    // Android has no equivalent, so the app itself parks the listener there.
+    if (!system.isIOS) {
+      ref.listenManual(suspendProvider, (prev, next) {
+        if (prev != next) {
+          ref.read(setupActionProvider.notifier).syncSuspend();
+        }
+      });
+    }
     final systemDns = systemDnsCoordinator;
     if (systemDns != null) {
       ref.listenManual(shouldPatchSystemDnsProvider, (prev, next) {
@@ -113,6 +121,16 @@ class _AppStateManagerState extends ConsumerState<AppStateManager>
     }
     final path = await preferences.getLastNavigationPath();
     if (path.isEmpty || !mounted) {
+      return;
+    }
+    // Profiles arrive from Drift after the first frame; restoring now
+    // would drop every config-dependent sub-page whose profile is not in yet.
+    try {
+      await ref
+          .read(profilesStreamProvider.future)
+          .timeout(const Duration(seconds: 5));
+    } catch (_) {}
+    if (!mounted) {
       return;
     }
     for (final descriptor in path) {

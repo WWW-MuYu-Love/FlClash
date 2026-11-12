@@ -43,6 +43,8 @@ final class BackgroundKeepAlive: NSObject {
   private var pipRetryExhausted = false
   private var foregroundObserver: NSObjectProtocol?
   private var backgroundObserver: NSObjectProtocol?
+  private var audioInterruptionObserver: NSObjectProtocol?
+  private var mediaServicesResetObserver: NSObjectProtocol?
 
   override private init() {
     // Swift two-phase init: super.init() first — the observer closures
@@ -62,6 +64,20 @@ final class BackgroundKeepAlive: NSObject {
     ) { [weak self] _ in
       self?.willEnterForeground()
     }
+    audioInterruptionObserver = NotificationCenter.default.addObserver(
+      forName: AVAudioSession.interruptionNotification,
+      object: nil,
+      queue: .main,
+    ) { [weak self] notification in
+      self?.handleAudioInterruption(notification)
+    }
+    mediaServicesResetObserver = NotificationCenter.default.addObserver(
+      forName: AVAudioSession.mediaServicesWereResetNotification,
+      object: nil,
+      queue: .main,
+    ) { [weak self] _ in
+      _ = self?.restartSilentAudio()
+    }
   }
 
   deinit {
@@ -70,6 +86,12 @@ final class BackgroundKeepAlive: NSObject {
     }
     if let foregroundObserver {
       NotificationCenter.default.removeObserver(foregroundObserver)
+    }
+    if let audioInterruptionObserver {
+      NotificationCenter.default.removeObserver(audioInterruptionObserver)
+    }
+    if let mediaServicesResetObserver {
+      NotificationCenter.default.removeObserver(mediaServicesResetObserver)
     }
     pipPossibleObserver?.invalidate()
     pipRetryTimer?.invalidate()
@@ -89,6 +111,9 @@ final class BackgroundKeepAlive: NSObject {
       next = .off
     }
     if next == mode {
+      if next == .silentAudio, audioEngine?.isRunning != true {
+        return restartSilentAudio()
+      }
       return isArmed(next)
     }
     mode = next
@@ -108,13 +133,33 @@ final class BackgroundKeepAlive: NSObject {
     case .off:
       return true
     case .silentAudio:
-      return audioEngine != nil
+      return audioEngine?.isRunning == true
     case .pictureInPicture:
       if pipArmed {
         return true
       }
       return startPictureInPicture()
     }
+  }
+
+  private func handleAudioInterruption(_ notification: Notification) {
+    guard mode == .silentAudio,
+      let rawType = notification.userInfo?[AVAudioSessionInterruptionTypeKey]
+        as? UInt,
+      AVAudioSession.InterruptionType(rawValue: rawType) == .ended
+    else {
+      return
+    }
+    _ = restartSilentAudio()
+  }
+
+  @discardableResult
+  private func restartSilentAudio() -> Bool {
+    guard mode == .silentAudio else {
+      return false
+    }
+    stopSilentAudio()
+    return startSilentAudio()
   }
 
   private func stopAll() {

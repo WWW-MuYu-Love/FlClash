@@ -240,6 +240,106 @@ void main() {
     await drainTimers(tester);
   });
 
+  testWidgets('tapping the failed-stop banner retries stopping the tunnel', (
+    tester,
+  ) async {
+    setupAction.tunnelToggleHandled = true;
+    setupAction.tunnelToggleError = const CoreMethodException(
+      code: 'service_refused',
+      message: 'The mobile service did not stop',
+    );
+    await pumpVpnManager(tester);
+    startService();
+
+    updateVpn((state) => state.copyWith(enable: false));
+    await settle(tester);
+    await settle(tester);
+    expect(setupAction.tunnelToggles, 1);
+    expect(find.text('The mobile service did not stop'), findsOneWidget);
+
+    setupAction.tunnelToggleError = null;
+    await tester.pump(const Duration(milliseconds: 500));
+    await tester.tap(find.text('The mobile service did not stop'));
+    await tester.pump(const Duration(milliseconds: 500));
+    await settle(tester);
+
+    expect(setupAction.tunnelToggles, 2);
+    expect(setupAction.lastTunnelEnabled, isFalse);
+    expect(container.read(runningVpnOptionsProvider)?.enable, isFalse);
+    expect(container.read(vpnSettingProvider).enable, isFalse);
+    expect(tip(), findsNothing);
+    // Tapping runs the retry but leaves the banner up until its timer ends.
+    await outlastTip(tester);
+    expect(find.text('The mobile service did not stop'), findsNothing);
+    await drainTimers(tester);
+  });
+
+  testWidgets('a failed stop retry shows the banner again without looping', (
+    tester,
+  ) async {
+    setupAction.tunnelToggleHandled = true;
+    setupAction.tunnelToggleError = const CoreMethodException(
+      code: 'service_refused',
+      message: 'The mobile service did not stop',
+    );
+    await pumpVpnManager(tester);
+    startService();
+
+    updateVpn((state) => state.copyWith(enable: false));
+    await settle(tester);
+    await settle(tester);
+    expect(setupAction.tunnelToggles, 1);
+
+    await tester.pump(const Duration(milliseconds: 500));
+    await tester.tap(find.text('The mobile service did not stop'));
+    await tester.pump(const Duration(milliseconds: 500));
+    await settle(tester);
+
+    expect(setupAction.tunnelToggles, 2);
+    expect(find.text('The mobile service did not stop'), findsOneWidget);
+    expect(container.read(vpnSettingProvider).enable, isFalse);
+    expect(container.read(runningVpnOptionsProvider)?.enable, isTrue);
+    expect(tip(), findsNothing);
+    await drainTimers(tester);
+  });
+
+  testWidgets('a stop retry does nothing once the switch is back on', (
+    tester,
+  ) async {
+    setupAction.tunnelToggleHandled = true;
+    setupAction.tunnelToggleError = const CoreMethodException(
+      code: 'service_refused',
+      message: 'The mobile service did not stop',
+    );
+    await pumpVpnManager(tester);
+    startService();
+
+    updateVpn((state) => state.copyWith(enable: false));
+    await settle(tester);
+    await settle(tester);
+    expect(setupAction.tunnelToggles, 1);
+
+    setupAction.tunnelToggleError = null;
+    updateVpn((state) => state.copyWith(enable: true));
+    await settle(tester);
+    await settle(tester);
+    // The failed stop never updated the running options, so the switch
+    // coming back on already matches what runs and toggles nothing.
+    expect(setupAction.tunnelToggles, 1);
+    expect(setupAction.lastTunnelEnabled, isFalse);
+    expect(container.read(runningVpnOptionsProvider)?.enable, isTrue);
+
+    await tester.pump(const Duration(milliseconds: 500));
+    await tester.tap(find.text('The mobile service did not stop'));
+    await tester.pump(const Duration(milliseconds: 500));
+    await settle(tester);
+
+    expect(setupAction.tunnelToggles, 1);
+    expect(container.read(vpnSettingProvider).enable, isTrue);
+    expect(container.read(runningVpnOptionsProvider)?.enable, isTrue);
+    await drainTimers(tester);
+  });
+
   testWidgets('later changes measure against the toggled options', (
     tester,
   ) async {

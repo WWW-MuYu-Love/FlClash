@@ -83,6 +83,8 @@ class SetupAction extends _$SetupAction {
   _SetupInputs? _appliedInputs;
   var _lastPushDuration = Duration.zero;
   var _pendingForceApply = false;
+  var _setupDepth = 0;
+  var _updateConfigPending = false;
 
   bool get _isRunning => _startTime != null && _startTime!.isBeforeNow;
 
@@ -392,6 +394,9 @@ class SetupAction extends _$SetupAction {
       return false;
     }
     return _listenerScheduler.run(() async {
+      if (enable && (ref.read(suspendProvider) || ref.read(safeModeProvider))) {
+        return false;
+      }
       if (enable) {
         // The extension reads the shared state when the tunnel starts.
         await _syncSharedState();
@@ -412,6 +417,10 @@ class SetupAction extends _$SetupAction {
   bool _isCurrent(_RunRequest request) => identical(_latestRunRequest, request);
 
   Future<void> updateConfigDebounce() async {
+    if (_setupDepth > 0) {
+      _updateConfigPending = true;
+      return;
+    }
     debouncer.call(FunctionTag.updateConfig, updateConfig);
   }
 
@@ -436,7 +445,7 @@ class SetupAction extends _$SetupAction {
         return;
       }
       final networkSetting = ref.read(networkSettingProvider);
-      // A failed App-core update must not skip the mode push: the 9090 push is the only path left.
+      // A failed update must not skip the mode push: the 9090 push is the only path left.
       try {
         await _core.updateConfig(
           _effectivePatchConfig(patchConfig).toUpdateParams(
@@ -605,23 +614,32 @@ class SetupAction extends _$SetupAction {
     bool force = false,
     Future<void> Function()? preloadInvoke,
   }) async {
-    final result = await _setupScheduler.run(() {
-      return _setupConfig(
-        force: force,
-        silence: silence,
-        preloadInvoke: preloadInvoke,
-        onUpdated: () async {
-          await ref.read(proxiesActionProvider.notifier).updateGroups();
-          await ref.read(providersProvider.notifier).syncProviders();
-        },
-      );
-    });
-    if (result != _SetupTaskResult.handoffToCoreRestart) {
-      return result;
+    _setupDepth++;
+    try {
+      final result = await _setupScheduler.run(() {
+        return _setupConfig(
+          force: force,
+          silence: silence,
+          preloadInvoke: preloadInvoke,
+          onUpdated: () async {
+            await ref.read(proxiesActionProvider.notifier).updateGroups();
+            await ref.read(providersProvider.notifier).syncProviders();
+          },
+        );
+      });
+      if (result != _SetupTaskResult.handoffToCoreRestart) {
+        return result;
+      }
+      // Release the current serial task before restartCore reapplies the profile.
+      final restarted = await _restartCoreAfterAuthorization();
+      return restarted ? _SetupTaskResult.completed : _SetupTaskResult.failed;
+    } finally {
+      _setupDepth--;
+      if (_setupDepth == 0 && _updateConfigPending) {
+        _updateConfigPending = false;
+        unawaited(updateConfigDebounce());
+      }
     }
-    // Release the current serial task before restartCore reapplies the profile.
-    final restarted = await _restartCoreAfterAuthorization();
-    return restarted ? _SetupTaskResult.completed : _SetupTaskResult.failed;
   }
 
   Future<bool> _restartCoreAfterAuthorization() async {
