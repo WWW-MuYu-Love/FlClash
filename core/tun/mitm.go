@@ -65,17 +65,20 @@ func (m mitmTunnel) HandleTCPConn(conn net.Conn, metadata *C.Metadata) {
 		m.Tunnel.HandleTCPConn(conn, metadata)
 		return
 	}
-	host := sniffSNI(conn)
+	// The stack hands us a raw connection, never a BufferedConn, so wrap
+	// it before sniffing and pass the wrapped connection downstream.
+	bc := N.NewBufferedConn(conn)
+	host := sniffSNI(bc)
 	if host == "" || !mitm.Default().ShouldIntercept(host) {
-		m.Tunnel.HandleTCPConn(conn, metadata)
+		m.Tunnel.HandleTCPConn(bc, metadata)
 		return
 	}
 	hostport := net.JoinHostPort(host, portString(metadata.DstPort))
-	if err := mitm.Default().Serve(context.Background(), conn, hostport); err != nil {
+	if err := mitm.Default().Serve(context.Background(), bc, hostport); err != nil {
 		if errors.Is(err, mitm.ErrHandlerUnavailable) {
 			// The handler never started, so the connection is untouched:
 			// route it direct, as if MITM were off.
-			m.Tunnel.HandleTCPConn(conn, metadata)
+			m.Tunnel.HandleTCPConn(bc, metadata)
 			return
 		}
 		// The handler owned the connection once Serve started: it closes
@@ -89,16 +92,12 @@ func (m mitmTunnel) HandleTCPConn(conn net.Conn, metadata *C.Metadata) {
 
 // sniffSNI peeks the TLS ClientHello and returns its SNI, or "" when the
 // connection is not TLS or the hello is not yet readable.
-func sniffSNI(conn net.Conn) string {
-	bc, ok := conn.(*N.BufferedConn)
-	if !ok {
-		return ""
-	}
+func sniffSNI(bc *N.BufferedConn) string {
 	// Wait briefly for the first bytes, as the tunnel does before sniffing.
 	if !bc.Peeked() {
-		_ = conn.SetReadDeadline(time.Now().Add(200 * time.Millisecond))
+		_ = bc.SetReadDeadline(time.Now().Add(200 * time.Millisecond))
 		_, _ = bc.Peek(1)
-		_ = conn.SetReadDeadline(time.Time{})
+		_ = bc.SetReadDeadline(time.Time{})
 	}
 	n := bc.Buffered()
 	if n == 0 {
