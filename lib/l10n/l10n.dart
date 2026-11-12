@@ -1256,6 +1256,26 @@ class AppLocalizations {
     );
   }
 
+  /// `The controller secret is out of sync. Restart the tunnel to sync it again.`
+  String get externalControllerSecretMismatch {
+    return Intl.message(
+      'The controller secret is out of sync. Restart the tunnel to sync it again.',
+      name: 'externalControllerSecretMismatch',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Couldn't sync this change to the tunnel; it may not have applied`
+  String get externalControllerSyncFailed {
+    return Intl.message(
+      'Couldn\'t sync this change to the tunnel; it may not have applied',
+      name: 'externalControllerSyncFailed',
+      desc: '',
+      args: [],
+    );
+  }
+
   /// `IPv6 traffic is received only while IPv6 is on.`
   String get ipv6Desc {
     return Intl.message(
@@ -4371,6 +4391,16 @@ class AppLocalizations {
     );
   }
 
+  /// `Turn on VPN first`
+  String get enableVpnFirst {
+    return Intl.message(
+      'Turn on VPN first',
+      name: 'enableVpnFirst',
+      desc: '',
+      args: [],
+    );
+  }
+
   /// `Restart`
   String get restart {
     return Intl.message('Restart', name: 'restart', desc: '', args: []);
@@ -5814,6 +5844,16 @@ class AppLocalizations {
     return Intl.message(
       'Close connections',
       name: 'closeConnections',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Couldn't close the connections; the tunnel controller is unreachable`
+  String get closeConnectionsFailedTip {
+    return Intl.message(
+      'Couldn\'t close the connections; the tunnel controller is unreachable',
+      name: 'closeConnectionsFailedTip',
       desc: '',
       args: [],
     );
@@ -7718,8 +7758,7 @@ class AppLocalizations {
   String customImportDroppedSubRules(num count, Object label) {
     return Intl.plural(
       count,
-      one:
-          '1 SUB-RULE rule was dropped, since custom profiles do not support sub-rules',
+      one: '1 SUB-RULE rule was dropped, since custom profiles do not support sub-rules',
       other:
           '$label SUB-RULE rules were dropped, since custom profiles do not support sub-rules',
       name: 'customImportDroppedSubRules',
@@ -8413,6 +8452,16 @@ class AppLocalizations {
     return Intl.message(
       'No root was found, so the certificate can only be installed as a user certificate. Only apps that trust user certificates, mostly browsers, are decrypted; other apps fail on the hosts you list, so leave those hosts out. On Android 11 and later you finish the install yourself in system settings.',
       name: 'mitmInstallUserCaTip',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Install the certificate from Files, then enable full trust for it in Settings → General → VPN & Device Management.`
+  String get mitmIosTrustSteps {
+    return Intl.message(
+      'Install the certificate from Files, then enable full trust for it in Settings → General → VPN & Device Management.',
+      name: 'mitmIosTrustSteps',
       desc: '',
       args: [],
     );

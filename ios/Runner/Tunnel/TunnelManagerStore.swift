@@ -159,7 +159,7 @@ final class TunnelManagerStore {
     // only take effect while on-demand is enabled, which the tunnel
     // disables when the user stops it, so this never starts a VPN the
     // user did not ask for.
-    if configuration.alwaysOn || !disconnectSSIDs.isEmpty {
+    if !disconnectSSIDs.isEmpty {
       let connectWifi = NEOnDemandRuleConnect()
       connectWifi.interfaceTypeMatch = .wiFi
       rules.append(connectWifi)
@@ -205,6 +205,28 @@ final class TunnelManagerStore {
 
   func clearTunnelLastError() {
     sharedStateStore.clearTunnelLastError()
+  }
+
+  func clearTunnelStage() {
+    sharedStateStore.clearTunnelStage()
+  }
+
+  func disableOnDemand(manager: NETunnelProviderManager) async {
+    manager.isOnDemandEnabled = false
+    do {
+      try await withCheckedThrowingContinuation {
+        (continuation: CheckedContinuation<Void, Error>) in
+        manager.saveToPreferences { error in
+          if let error {
+            continuation.resume(throwing: error)
+          } else {
+            continuation.resume()
+          }
+        }
+      }
+    } catch {
+      log("disableOnDemand save failed: \(error.localizedDescription)")
+    }
   }
 
   private func isRetryablePreferenceError(_ error: Error) -> Bool {

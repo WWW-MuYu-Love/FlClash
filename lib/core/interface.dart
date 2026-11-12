@@ -104,7 +104,9 @@ abstract class CoreHandlerInterface {
     return _query(CoreMethod.coreMemory, _model(CoreMemoryStats.fromJson));
   }
 
-  Future<void> crash() => _command(CoreMethod.coreCrash);
+  // A crash never answers, so bound the wait instead of holding the caller's timeout.
+  Future<void> crash() =>
+      _command(CoreMethod.coreCrash, timeout: const Duration(seconds: 10));
 
   Future<void> setupConfig(SetupParams params) {
     return _command(CoreMethod.configSetup, arguments: params.toJson());

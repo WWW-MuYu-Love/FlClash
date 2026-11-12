@@ -107,6 +107,11 @@ func handleShutdown() {
 	handleForceGC()
 }
 
+func handleShutdownResult() bool {
+	handleShutdown()
+	return true
+}
+
 func handleForceGC() {
 	tunnel.InvalidateAllProxies()
 	debug.FreeOSMemory()

@@ -63,6 +63,7 @@ final class CoreEventRelay {
       log("drainEventQueue skipped: missing app group dir")
       return
     }
+    reportDroppedEvents(in: directory)
     guard let files = try? FileManager.default.contentsOfDirectory(
       at: directory,
       includingPropertiesForKeys: nil
@@ -96,6 +97,20 @@ final class CoreEventRelay {
         }
       }
     }
+  }
+
+  // The extension counts events dropped while the app was away; surface the total once, then clear it.
+  private func reportDroppedEvents(in directory: URL) {
+    let fileURL = directory.appendingPathComponent("dropped-count")
+    guard let text = try? String(contentsOf: fileURL, encoding: .utf8),
+      let count = Int(text.trimmingCharacters(in: .whitespacesAndNewlines)),
+      count > 0
+    else {
+      return
+    }
+    try? FileManager.default.removeItem(at: fileURL)
+    // The extension counts dropped events cumulatively per process, so this total can include drops already reported.
+    log("drainEventQueue dropped \(count) events in total")
   }
 
   nonisolated private func handleEventNotification() {

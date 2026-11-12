@@ -122,9 +122,26 @@ final class TunnelController {
     }
 
     return try await withCheckedThrowingContinuation { continuation in
+      let gate = ResumeGate()
+      let timeout = DispatchWorkItem {
+        guard gate.claim() else {
+          return
+        }
+        continuation.resume(
+          throwing: ProviderMessageError(
+            code: "network_extension_timeout",
+            message: "network extension did not answer in 30 seconds"
+          )
+        )
+      }
+      DispatchQueue.main.asyncAfter(deadline: .now() + 30, execute: timeout)
       do {
         try session.sendProviderMessage(data) { response in
           Task { @MainActor in
+            timeout.cancel()
+            guard gate.claim() else {
+              return
+            }
             guard let response,
               let message = String(data: response, encoding: .utf8)
             else {
@@ -140,6 +157,10 @@ final class TunnelController {
           }
         }
       } catch {
+        timeout.cancel()
+        guard gate.claim() else {
+          return
+        }
         continuation.resume(
           throwing: ProviderMessageError(
             code: "network_extension_error",

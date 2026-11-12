@@ -1057,8 +1057,11 @@ func TestTestDelayStopsQueueingOnceTheTimeoutIsSpent(t *testing.T) {
 
 	select {
 	case delay := <-done:
-		if delay != nil {
-			t.Errorf("delay = %+v, want no result for a test that never got a slot", delay)
+		if delay == nil || delay.Value != delayFailed {
+			t.Errorf(
+				"delay = %+v, want a failed result for a test that never got a slot",
+				delay,
+			)
 		}
 	case <-time.After(time.Second):
 		t.Fatal("handleTestDelay outlived the timeout it was given, waiting for a slot")

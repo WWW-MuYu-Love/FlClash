@@ -322,6 +322,28 @@ func TestHandleMethodCallReportsUnknownMethod(t *testing.T) {
 	}
 }
 
+// The iOS shutdown path sends core.shutdown and waits on a true answer.
+func TestHandleMethodCallShutdownAnswersTrue(t *testing.T) {
+	frame := handleMethodCall(&MethodCall{ID: "10", Method: coreShutdownMethod})
+
+	var envelope struct {
+		Result any          `json:"result"`
+		Error  *MethodError `json:"error"`
+	}
+	if err := json.Unmarshal(frame, &envelope); err != nil {
+		t.Fatalf("response is not valid JSON: %v", err)
+	}
+	if envelope.Error != nil {
+		t.Fatalf("error = %+v, want a true result", envelope.Error)
+	}
+	if answered, ok := envelope.Result.(bool); !ok || !answered {
+		t.Errorf("result = %v, want true", envelope.Result)
+	}
+	if isInit.Load() {
+		t.Error("isInit stayed true after shutdown")
+	}
+}
+
 func TestSendMessageBatchWrapsMessagesInMethodCall(t *testing.T) {
 	batch := []Message{
 		{Type: DelayMessage, Data: Delay{Url: "https://example.test", Name: "a", Value: 12}},

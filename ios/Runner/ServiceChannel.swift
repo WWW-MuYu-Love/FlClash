@@ -240,10 +240,9 @@ final class ServiceChannel {
       }
     case "setBackgroundKeepAlive":
       // Dart sends the mode name: "off", "silentAudio", "pictureInPicture".
-      // Unknown values stop the keepalive.
+      // Unknown values stop the keepalive. The result is whether the requested mode is actually running.
       if let mode = call.arguments as? String {
-        BackgroundKeepAlive.shared.setMode(mode)
-        result(true)
+        result(BackgroundKeepAlive.shared.setMode(mode))
       } else {
         result(false)
       }

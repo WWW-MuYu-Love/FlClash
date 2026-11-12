@@ -529,6 +529,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "closeConnections": MessageLookupByLibrary.simpleMessage(
       "Закрыть соединения",
     ),
+    "closeConnectionsFailedTip": MessageLookupByLibrary.simpleMessage(
+      "Не удалось закрыть соединения; контроллер туннеля недоступен",
+    ),
     "color": MessageLookupByLibrary.simpleMessage("Цвет"),
     "colorStyle": MessageLookupByLibrary.simpleMessage("Стиль палитры"),
     "columns": MessageLookupByLibrary.simpleMessage("Столбцы"),
@@ -841,6 +844,9 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "emptyTip": m26,
     "en": MessageLookupByLibrary.simpleMessage("Английский"),
+    "enableVpnFirst": MessageLookupByLibrary.simpleMessage(
+      "Сначала включите VPN",
+    ),
     "enabled": MessageLookupByLibrary.simpleMessage("Включено"),
     "entries": MessageLookupByLibrary.simpleMessage(" записей"),
     "error": MessageLookupByLibrary.simpleMessage("Ошибка"),
@@ -891,6 +897,12 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "externalControllerSecret": MessageLookupByLibrary.simpleMessage(
       "Секрет внешнего контроллера",
+    ),
+    "externalControllerSecretMismatch": MessageLookupByLibrary.simpleMessage(
+      "Секрет контроллера не синхронизирован. Перезапустите туннель, чтобы синхронизировать его снова.",
+    ),
+    "externalControllerSyncFailed": MessageLookupByLibrary.simpleMessage(
+      "Не удалось синхронизировать это изменение с туннелем; возможно, оно не применилось",
     ),
     "externalLink": MessageLookupByLibrary.simpleMessage("Внешняя ссылка"),
     "extraLarge": MessageLookupByLibrary.simpleMessage("Очень крупный"),
@@ -1108,9 +1120,10 @@ class MessageLookup extends MessageLookupByLibrary {
     "installCertificateSuccess": MessageLookupByLibrary.simpleMessage(
       "Сертификат установлен",
     ),
-    "installedAppsPermissionDeniedMessage": MessageLookupByLibrary.simpleMessage(
-      "Разрешение на список приложений отклонено, поэтому установленные приложения недоступны. Предоставьте его вручную в системных настройках.",
-    ),
+    "installedAppsPermissionDeniedMessage":
+        MessageLookupByLibrary.simpleMessage(
+          "Разрешение на список приложений отклонено, поэтому установленные приложения недоступны. Предоставьте его вручную в системных настройках.",
+        ),
     "installedAppsPermissionDesc": MessageLookupByLibrary.simpleMessage(
       "Эта система не выдаёт список установленных приложений без разрешения. Предоставьте его, чтобы настроить прокси для отдельных приложений.",
     ),
@@ -1388,6 +1401,9 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "mitmInstallUserCaTip": MessageLookupByLibrary.simpleMessage(
       "Root не обнаружен: сертификат можно установить только как пользовательский. Расшифровываются только приложения, доверяющие пользовательским сертификатам, в основном браузеры; остальные не смогут подключиться к указанным узлам, поэтому не указывайте их узлы. Начиная с Android 11 установку нужно завершить вручную в настройках системы.",
+    ),
+    "mitmIosTrustSteps": MessageLookupByLibrary.simpleMessage(
+      "Установите сертификат из приложения «Файлы», затем включите для него полное доверие в «Настройки → Основные → VPN и управление устройством».",
     ),
     "mitmMissingStores": m58,
     "mitmModule": MessageLookupByLibrary.simpleMessage("Модуль"),

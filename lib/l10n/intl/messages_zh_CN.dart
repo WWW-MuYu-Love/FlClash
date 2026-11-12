@@ -408,6 +408,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "close": MessageLookupByLibrary.simpleMessage("关闭"),
     "closeConnection": MessageLookupByLibrary.simpleMessage("关闭连接"),
     "closeConnections": MessageLookupByLibrary.simpleMessage("关闭连接"),
+    "closeConnectionsFailedTip": MessageLookupByLibrary.simpleMessage(
+      "无法关闭连接，隧道控制器不可达",
+    ),
     "color": MessageLookupByLibrary.simpleMessage("颜色"),
     "colorStyle": MessageLookupByLibrary.simpleMessage("配色风格"),
     "columns": MessageLookupByLibrary.simpleMessage("列数"),
@@ -628,6 +631,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "emptyFallback": MessageLookupByLibrary.simpleMessage("空组兜底"),
     "emptyTip": m26,
     "en": MessageLookupByLibrary.simpleMessage("英语"),
+    "enableVpnFirst": MessageLookupByLibrary.simpleMessage("请先打开 VPN"),
     "enabled": MessageLookupByLibrary.simpleMessage("已开启"),
     "entries": MessageLookupByLibrary.simpleMessage("个条目"),
     "error": MessageLookupByLibrary.simpleMessage("错误"),
@@ -663,6 +667,12 @@ class MessageLookup extends MessageLookupByLibrary {
       "外部控制器开启后，可通过 9090 端口控制内核。",
     ),
     "externalControllerSecret": MessageLookupByLibrary.simpleMessage("外部控制器密钥"),
+    "externalControllerSecretMismatch": MessageLookupByLibrary.simpleMessage(
+      "控制器 secret 不同步，重启隧道可重新同步",
+    ),
+    "externalControllerSyncFailed": MessageLookupByLibrary.simpleMessage(
+      "未能同步到隧道，该设置可能未生效",
+    ),
     "externalLink": MessageLookupByLibrary.simpleMessage("外部链接"),
     "extraLarge": MessageLookupByLibrary.simpleMessage("超大"),
     "fade": MessageLookupByLibrary.simpleMessage("淡入"),
@@ -1030,6 +1040,9 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "mitmInstallUserCaTip": MessageLookupByLibrary.simpleMessage(
       "未检测到 root，证书只能安装为用户证书。只有信任用户证书的应用（多为浏览器）会被解密，其他应用访问列出的主机会失败，请不要列出它们的主机。Android 11 起需在系统设置中手动完成安装。",
+    ),
+    "mitmIosTrustSteps": MessageLookupByLibrary.simpleMessage(
+      "在“文件”中安装证书后，前往“设置 → 通用 → VPN 与设备管理”启用完全信任。",
     ),
     "mitmMissingStores": m58,
     "mitmModule": MessageLookupByLibrary.simpleMessage("模块"),

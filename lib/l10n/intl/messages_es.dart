@@ -548,6 +548,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "closeConnections": MessageLookupByLibrary.simpleMessage(
       "Cerrar conexiones",
     ),
+    "closeConnectionsFailedTip": MessageLookupByLibrary.simpleMessage(
+      "No se pudieron cerrar las conexiones; el controlador del túnel no responde",
+    ),
     "color": MessageLookupByLibrary.simpleMessage("Color"),
     "colorStyle": MessageLookupByLibrary.simpleMessage("Estilo de color"),
     "columns": MessageLookupByLibrary.simpleMessage("Columnas"),
@@ -858,6 +861,9 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "emptyTip": m26,
     "en": MessageLookupByLibrary.simpleMessage("Inglés"),
+    "enableVpnFirst": MessageLookupByLibrary.simpleMessage(
+      "Activa primero la VPN",
+    ),
     "enabled": MessageLookupByLibrary.simpleMessage("Activado"),
     "entries": MessageLookupByLibrary.simpleMessage(" entradas"),
     "error": MessageLookupByLibrary.simpleMessage("Error"),
@@ -916,6 +922,12 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "externalControllerSecret": MessageLookupByLibrary.simpleMessage(
       "Clave del controlador externo",
+    ),
+    "externalControllerSecretMismatch": MessageLookupByLibrary.simpleMessage(
+      "El secreto del controlador no está sincronizado. Reinicia el túnel para sincronizarlo de nuevo.",
+    ),
+    "externalControllerSyncFailed": MessageLookupByLibrary.simpleMessage(
+      "No se pudo sincronizar este cambio con el túnel; es posible que no se haya aplicado",
     ),
     "externalLink": MessageLookupByLibrary.simpleMessage("Enlace externo"),
     "extraLarge": MessageLookupByLibrary.simpleMessage("Muy grande"),
@@ -1139,9 +1151,10 @@ class MessageLookup extends MessageLookupByLibrary {
     "installCertificateSuccess": MessageLookupByLibrary.simpleMessage(
       "Certificado instalado",
     ),
-    "installedAppsPermissionDeniedMessage": MessageLookupByLibrary.simpleMessage(
-      "Se denegó el permiso de lista de apps, por lo que no se pueden mostrar las apps instaladas. Concédelo manualmente en los ajustes del sistema.",
-    ),
+    "installedAppsPermissionDeniedMessage":
+        MessageLookupByLibrary.simpleMessage(
+          "Se denegó el permiso de lista de apps, por lo que no se pueden mostrar las apps instaladas. Concédelo manualmente en los ajustes del sistema.",
+        ),
     "installedAppsPermissionDesc": MessageLookupByLibrary.simpleMessage(
       "Este sistema oculta la lista de apps instaladas hasta que se concede el permiso. Autorízalo para configurar el proxy por app.",
     ),
@@ -1425,6 +1438,9 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "mitmInstallUserCaTip": MessageLookupByLibrary.simpleMessage(
       "No se detectó root: el certificado solo puede instalarse como certificado de usuario. Solo se descifran las apps que confían en certificados de usuario, sobre todo los navegadores; las demás fallan en los hosts que indiques, así que no indiques sus hosts. Desde Android 11 terminas la instalación tú mismo en los ajustes del sistema.",
+    ),
+    "mitmIosTrustSteps": MessageLookupByLibrary.simpleMessage(
+      "Instala el certificado desde Archivos y luego activa la confianza total en Ajustes → General → VPN y gestión de dispositivos.",
     ),
     "mitmMissingStores": m58,
     "mitmModule": MessageLookupByLibrary.simpleMessage("Módulo"),

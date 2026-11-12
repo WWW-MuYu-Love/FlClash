@@ -142,38 +142,51 @@ class Service {
   Future<bool> start() async {
     _startRequested = true;
     _tunnelError.value = null;
-    return await methodChannel.invokeMethod<bool>(
-          'start',
-          ++_commandRevision,
-        ) ??
+    return await methodChannel
+            .invokeMethod<bool>('start', ++_commandRevision)
+            .timeout(const Duration(seconds: 30)) ??
         false;
   }
 
   Future<bool> stop() async {
     _startRequested = false;
-    return await methodChannel.invokeMethod<bool>('stop', ++_commandRevision) ??
+    return await methodChannel
+            .invokeMethod<bool>('stop', ++_commandRevision)
+            .timeout(const Duration(seconds: 30)) ??
         false;
   }
 
   Future<String> init() async {
-    return await methodChannel.invokeMethod<String>('init') ?? '';
+    return await methodChannel
+            .invokeMethod<String>('init')
+            .timeout(const Duration(seconds: 30)) ??
+        '';
   }
 
   Future<String> syncState(SharedState state) async {
-    return await methodChannel.invokeMethod<String>(
-          'syncState',
-          json.encode(state),
-        ) ??
+    return await methodChannel
+            .invokeMethod<String>('syncState', json.encode(state))
+            .timeout(const Duration(seconds: 30)) ??
         '';
   }
 
   Future<bool> shutdown() async {
-    return await methodChannel.invokeMethod<bool>('shutdown') ?? true;
+    return await methodChannel
+            .invokeMethod<bool>('shutdown')
+            .timeout(const Duration(seconds: 10)) ??
+        true;
   }
 
   Future<DateTime?> getRunTime() async {
-    final ms = await methodChannel.invokeMethod<int>('getRunTime') ?? 0;
-    if (ms == 0) {
+    int? ms;
+    try {
+      ms = await methodChannel
+          .invokeMethod<int>('getRunTime')
+          .timeout(const Duration(seconds: 10));
+    } on TimeoutException {
+      return null;
+    }
+    if (ms == null || ms == 0) {
       return null;
     }
     return DateTime.fromMillisecondsSinceEpoch(ms);
@@ -182,10 +195,9 @@ class Service {
   /// iOS only: how the app keeps itself alive in the background. No-op
   /// elsewhere; the native side ignores unknown modes.
   Future<bool> setBackgroundKeepAlive(BackgroundKeepAliveMode mode) async {
-    return await methodChannel.invokeMethod<bool>(
-          'setBackgroundKeepAlive',
-          mode.name,
-        ) ??
+    return await methodChannel
+            .invokeMethod<bool>('setBackgroundKeepAlive', mode.name)
+            .timeout(const Duration(seconds: 10)) ??
         false;
   }
 

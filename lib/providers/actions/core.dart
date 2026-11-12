@@ -92,8 +92,13 @@ class CoreAction extends _$CoreAction {
     await _core.forceGc();
   }
 
+  // A crash never answers, so the call ends in the bounded timeout. That timeout is the crash having happened, not a failure.
   Future<void> crash() async {
-    await _core.crash();
+    try {
+      await _core.crash();
+    } on TimeoutException {
+      return;
+    }
   }
 
   Future<bool> restartCore() {

@@ -432,6 +432,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "close": MessageLookupByLibrary.simpleMessage("閉じる"),
     "closeConnection": MessageLookupByLibrary.simpleMessage("接続を閉じる"),
     "closeConnections": MessageLookupByLibrary.simpleMessage("接続を閉じる"),
+    "closeConnectionsFailedTip": MessageLookupByLibrary.simpleMessage(
+      "接続を閉じることができませんでした。トンネルコントローラーに到達できません",
+    ),
     "color": MessageLookupByLibrary.simpleMessage("カラー"),
     "colorStyle": MessageLookupByLibrary.simpleMessage("配色スタイル"),
     "columns": MessageLookupByLibrary.simpleMessage("列数"),
@@ -682,6 +685,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "emptyFallback": MessageLookupByLibrary.simpleMessage("空グループのフォールバック"),
     "emptyTip": m26,
     "en": MessageLookupByLibrary.simpleMessage("英語"),
+    "enableVpnFirst": MessageLookupByLibrary.simpleMessage("先に VPN をオンにしてください"),
     "enabled": MessageLookupByLibrary.simpleMessage("有効"),
     "entries": MessageLookupByLibrary.simpleMessage(" 件"),
     "error": MessageLookupByLibrary.simpleMessage("エラー"),
@@ -718,6 +722,12 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "externalControllerSecret": MessageLookupByLibrary.simpleMessage(
       "外部コントローラーのシークレット",
+    ),
+    "externalControllerSecretMismatch": MessageLookupByLibrary.simpleMessage(
+      "コントローラーのシークレットが同期していません。トンネルを再起動すると再同期されます。",
+    ),
+    "externalControllerSyncFailed": MessageLookupByLibrary.simpleMessage(
+      "この変更をトンネルに同期できませんでした。反映されていない可能性があります",
     ),
     "externalLink": MessageLookupByLibrary.simpleMessage("外部リンク"),
     "extraLarge": MessageLookupByLibrary.simpleMessage("特大"),
@@ -1132,6 +1142,9 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "mitmInstallUserCaTip": MessageLookupByLibrary.simpleMessage(
       "root が見つからないため、ユーザー証明書としてのみインストールできます。復号されるのはユーザー証明書を信頼するアプリ（主にブラウザ）だけで、他のアプリは記載したホストへの接続に失敗するため、それらのホストは記載しないでください。Android 11 以降はシステム設定で手動でインストールを完了します。",
+    ),
+    "mitmIosTrustSteps": MessageLookupByLibrary.simpleMessage(
+      "「ファイル」で証明書をインストールした後、「設定 → 一般 → VPNとデバイス管理」で完全な信頼を有効にしてください。",
     ),
     "mitmMissingStores": m58,
     "mitmModule": MessageLookupByLibrary.simpleMessage("モジュール"),

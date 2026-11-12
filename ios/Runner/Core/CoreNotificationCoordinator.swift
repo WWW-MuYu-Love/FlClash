@@ -17,23 +17,18 @@ enum CoreRoute: Hashable {
 
 enum CoreNotificationKind: CaseIterable {
   case log
-  case request
 
   var startMethod: String {
     switch self {
     case .log:
-      return "startLogNotify"
-    case .request:
-      return "startRequestNotify"
+      return "log.start"
     }
   }
 
   var stopMethod: String {
     switch self {
     case .log:
-      return "stopLogNotify"
-    case .request:
-      return "stopRequestNotify"
+      return "log.stop"
     }
   }
 }
@@ -64,7 +59,6 @@ final class CoreNotificationCoordinator {
 
   private var desiredRoute = CoreRoute.app
   private var logSubscription: CoreNotificationSubscription?
-  private var requestSubscription: CoreNotificationSubscription?
   private var migrationTask: Task<Void, Never>?
   private var migrationRetryTask: Task<Void, Never>?
   private var migrationRetryCount = 0
@@ -87,14 +81,10 @@ final class CoreNotificationCoordinator {
       return nil
     }
     switch object["method"] as? String {
-    case "startLogNotify":
+    case "log.start":
       return .start(.log)
-    case "stopLogNotify":
+    case "log.stop":
       return .stop(.log)
-    case "startRequestNotify":
-      return .start(.request)
-    case "stopRequestNotify":
-      return .stop(.request)
     default:
       return nil
     }
@@ -437,8 +427,6 @@ final class CoreNotificationCoordinator {
     switch kind {
     case .log:
       return logSubscription
-    case .request:
-      return requestSubscription
     }
   }
 
@@ -449,8 +437,6 @@ final class CoreNotificationCoordinator {
     switch kind {
     case .log:
       logSubscription = subscription
-    case .request:
-      requestSubscription = subscription
     }
   }
 

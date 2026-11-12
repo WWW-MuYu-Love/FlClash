@@ -550,6 +550,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "closeConnections": MessageLookupByLibrary.simpleMessage(
       "Fermer les connexions",
     ),
+    "closeConnectionsFailedTip": MessageLookupByLibrary.simpleMessage(
+      "Impossible de fermer les connexions ; le contrôleur du tunnel est injoignable",
+    ),
     "color": MessageLookupByLibrary.simpleMessage("Couleur"),
     "colorStyle": MessageLookupByLibrary.simpleMessage("Style de couleur"),
     "columns": MessageLookupByLibrary.simpleMessage("Colonnes"),
@@ -858,6 +861,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "emptyFallback": MessageLookupByLibrary.simpleMessage("Repli si vide"),
     "emptyTip": m26,
     "en": MessageLookupByLibrary.simpleMessage("Anglais"),
+    "enableVpnFirst": MessageLookupByLibrary.simpleMessage(
+      "Activez d\'abord le VPN",
+    ),
     "enabled": MessageLookupByLibrary.simpleMessage("Activé"),
     "entries": MessageLookupByLibrary.simpleMessage(" entrées"),
     "error": MessageLookupByLibrary.simpleMessage("Erreur"),
@@ -910,6 +916,12 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "externalControllerSecret": MessageLookupByLibrary.simpleMessage(
       "Secret du contrôleur externe",
+    ),
+    "externalControllerSecretMismatch": MessageLookupByLibrary.simpleMessage(
+      "Le secret du contrôleur n\'est plus synchronisé. Redémarrez le tunnel pour le resynchroniser.",
+    ),
+    "externalControllerSyncFailed": MessageLookupByLibrary.simpleMessage(
+      "Impossible de synchroniser ce changement avec le tunnel ; il n\'a peut-être pas été appliqué",
     ),
     "externalLink": MessageLookupByLibrary.simpleMessage("Lien externe"),
     "extraLarge": MessageLookupByLibrary.simpleMessage("Très grande"),
@@ -1139,9 +1151,10 @@ class MessageLookup extends MessageLookupByLibrary {
     "installCertificateSuccess": MessageLookupByLibrary.simpleMessage(
       "Certificat installé",
     ),
-    "installedAppsPermissionDeniedMessage": MessageLookupByLibrary.simpleMessage(
-      "L’autorisation de la liste des apps a été refusée ; les apps installées ne peuvent donc pas être listées. Veuillez l’accorder manuellement dans les réglages du système.",
-    ),
+    "installedAppsPermissionDeniedMessage":
+        MessageLookupByLibrary.simpleMessage(
+          "L’autorisation de la liste des apps a été refusée ; les apps installées ne peuvent donc pas être listées. Veuillez l’accorder manuellement dans les réglages du système.",
+        ),
     "installedAppsPermissionDesc": MessageLookupByLibrary.simpleMessage(
       "Ce système masque la liste des apps installées tant que l’autorisation n’est pas accordée. Accordez-la pour configurer le proxy par app.",
     ),
@@ -1421,6 +1434,9 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "mitmInstallUserCaTip": MessageLookupByLibrary.simpleMessage(
       "Root n’a pas été détecté : le certificat ne peut être installé que comme certificat utilisateur. Seules les applications qui font confiance aux certificats utilisateur, surtout les navigateurs, sont déchiffrées ; les autres échouent sur les hôtes listés, ne listez donc pas leurs hôtes. À partir d’Android 11, vous terminez l’installation vous-même dans les paramètres système.",
+    ),
+    "mitmIosTrustSteps": MessageLookupByLibrary.simpleMessage(
+      "Installez le certificat depuis Fichiers, puis activez la confiance totale dans Réglages → Général → VPN et gestion des appareils.",
     ),
     "mitmMissingStores": m58,
     "mitmModule": MessageLookupByLibrary.simpleMessage("Module"),

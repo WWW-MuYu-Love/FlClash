@@ -32,6 +32,45 @@ class _RunRequest {
   });
 }
 
+/// Retries a 9090 push twice: a tunnel that just restarted answers a moment later.
+Future<bool> _pushToExternalController(Future<bool> Function() attempt) async {
+  const backoff = [Duration(milliseconds: 500), Duration(seconds: 1)];
+  for (var attemptIndex = 0; ; attemptIndex++) {
+    if (await attempt()) {
+      return true;
+    }
+    if (attemptIndex >= backoff.length) {
+      return false;
+    }
+    await Future.delayed(backoff[attemptIndex]);
+  }
+}
+
+void _reportExternalControllerFailure(
+  String label,
+  ExternalControllerClient client,
+) {
+  if (client.unauthorized) {
+    commonPrint.log(
+      '$label external controller sync failed: unauthorized, secret out of sync',
+      logLevel: LogLevel.warning,
+    );
+    dialogs.showBanner(
+      currentAppLocalizations.externalControllerSecretMismatch,
+      level: BannerLevel.error,
+    );
+    return;
+  }
+  commonPrint.log(
+    '$label external controller sync failed',
+    logLevel: LogLevel.warning,
+  );
+  dialogs.showBanner(
+    currentAppLocalizations.externalControllerSyncFailed,
+    level: BannerLevel.error,
+  );
+}
+
 @Riverpod(keepAlive: true)
 class SetupAction extends _$SetupAction {
   CoreController get _core => ref.read(coreHandlerProvider);
@@ -57,18 +96,31 @@ class SetupAction extends _$SetupAction {
     );
     ref.listen(
       appSettingProvider.select((state) => state.backgroundKeepAliveMode),
-      (_, mode) => _applyBackgroundKeepAlive(mode),
+      (_, mode) => unawaited(_applyBackgroundKeepAlive(mode)),
     );
   }
 
   /// iOS only: push the saved keepalive mode to the native side. The native
   /// side owns the audio session / PiP controller; Dart only tells it which
   /// mode is wanted.
-  void _applyBackgroundKeepAlive(BackgroundKeepAliveMode mode) {
+  Future<void> _applyBackgroundKeepAlive(BackgroundKeepAliveMode mode) async {
     if (!system.isIOS) {
       return;
     }
-    unawaited(service?.setBackgroundKeepAlive(mode));
+    try {
+      final applied = await service?.setBackgroundKeepAlive(mode) ?? false;
+      if (!applied) {
+        commonPrint.log(
+          'background keepalive ($mode) was not started by the native side',
+          logLevel: LogLevel.warning,
+        );
+      }
+    } catch (error) {
+      commonPrint.log(
+        'background keepalive failed: $error',
+        logLevel: LogLevel.warning,
+      );
+    }
   }
 
   bool get _isTrafficShown =>
@@ -100,12 +152,7 @@ class SetupAction extends _$SetupAction {
     ref.read(requestCountProvider.notifier).value = 0;
     try {
       final ok = await setupResult;
-      // A profile switch rebuilds the config for the App core only. The
-      // extension core only loads the full config at tunnel start, so
-      // while the VPN is on it keeps routing on the old profile — the
-      // dashboard already shows the new proxies, but the real egress
-      // stays on the old ones — until the tunnel restarts. Restart it so
-      // the routing core loads the new profile.
+      // Only a restart moves the connections already open onto the new profile.
       if (ok && ref.read(runningVpnOptionsProvider)?.enable == true) {
         await restartVpn();
       }
@@ -171,8 +218,10 @@ class SetupAction extends _$SetupAction {
     if (!globalState.needInitStatus) {
       return;
     }
-    _applyBackgroundKeepAlive(
-      ref.read(appSettingProvider).backgroundKeepAliveMode,
+    unawaited(
+      _applyBackgroundKeepAlive(
+        ref.read(appSettingProvider).backgroundKeepAliveMode,
+      ),
     );
     _startTime = await serviceStartTime();
     if (_isRunning) {
@@ -212,6 +261,18 @@ class SetupAction extends _$SetupAction {
   }
 
   Future<bool> _start(_RunRequest request) async {
+    if (system.isIOS && !request.resume) {
+      // With VPN off there is no tunnel to start; refusing keeps the dashboard honest.
+      final vpnOptions = await ref.read(vpnOptionsProvider.future);
+      if (!vpnOptions.enable) {
+        dialogs.showBanner(
+          currentAppLocalizations.enableVpnFirst,
+          level: BannerLevel.error,
+        );
+        _rollbackRunning(request);
+        return false;
+      }
+    }
     if (request.initialize) {
       var applied = false;
       try {
@@ -229,6 +290,7 @@ class SetupAction extends _$SetupAction {
     }
 
     try {
+      await _syncSharedState();
       await _startCoreRunning(request);
     } catch (_) {
       _rollbackRunning(request);
@@ -288,11 +350,11 @@ class SetupAction extends _$SetupAction {
 
   Future<void> _setListening(bool running) async {
     final vpnOptions = await ref.read(vpnOptionsProvider.future);
-    final skipStart = running && system.isIOS && !vpnOptions.enable;
+    if (running && system.isIOS && !vpnOptions.enable) {
+      throw MessageException(currentAppLocalizations.enableVpnFirst);
+    }
     try {
-      if (!skipStart) {
-        await setCoreRunning(running);
-      }
+      await setCoreRunning(running);
     } catch (error) {
       if (_isUnanswered(error)) {
         ref.read(runningVpnOptionsProvider.notifier).value = null;
@@ -361,19 +423,26 @@ class SetupAction extends _$SetupAction {
   @visibleForTesting
   Future<void> updateConfig() async {
     await globalState.safeRun(() async {
-      final patchConfig = ref.read(patchClashConfigProvider);
+      var patchConfig = ref.read(patchClashConfigProvider);
+      patchConfig = _ensureIOSController(patchConfig);
       final shouldContinueSetup = await requestAdmin(patchConfig.tun.enable);
       if (!shouldContinueSetup) {
         await _restartCoreAfterAuthorization();
         return;
       }
       final networkSetting = ref.read(networkSettingProvider);
-      await _core.updateConfig(
-        _effectivePatchConfig(patchConfig).toUpdateParams(
-          authentication: networkSetting.authentication.credentials,
-          options: ref.read(coreOptionsProvider),
-        ),
-      );
+      // A failed App-core update must not skip the mode push: the 9090 push is the only path left.
+      try {
+        await _core.updateConfig(
+          _effectivePatchConfig(patchConfig).toUpdateParams(
+            authentication: networkSetting.authentication.credentials,
+            options: ref.read(coreOptionsProvider),
+          ),
+        );
+      } catch (error, stackTrace) {
+        await _syncModeToExternalController(patchConfig.mode);
+        Error.throwWithStackTrace(error, stackTrace);
+      }
       await _syncModeToExternalController(patchConfig.mode);
     });
   }
@@ -386,12 +455,39 @@ class SetupAction extends _$SetupAction {
     if (ref.read(runningVpnOptionsProvider)?.enable != true) {
       return;
     }
-    final applied = await ref
-        .read(externalControllerClientProvider)
-        .setMode(mode);
-    if (!applied) {
+    final client = ref.read(externalControllerClientProvider);
+    final applied = await _pushToExternalController(() => client.setMode(mode));
+    if (applied) {
+      return;
+    }
+    _reportExternalControllerFailure(
+      'updateConfig(mode: ${mode.name})',
+      client,
+    );
+  }
+
+  PatchClashConfig _ensureIOSController(PatchClashConfig patchConfig) {
+    if (!system.isIOS) {
+      return patchConfig;
+    }
+    final ensured = patchConfig
+        .copyWith(externalController: ExternalControllerStatus.open)
+        .ensureControllerSecret();
+    if (ensured != patchConfig) {
+      ref.read(patchClashConfigProvider.notifier).update((_) => ensured);
+    }
+    return ensured;
+  }
+
+  Future<void> _syncSharedState() async {
+    if (!system.isIOS) {
+      return;
+    }
+    final syncError =
+        await service?.syncState(ref.read(sharedStateProvider)) ?? '';
+    if (syncError.isNotEmpty) {
       commonPrint.log(
-        'updateConfig(mode: ${mode.name}) external controller sync failed',
+        'sync shared state failed: $syncError',
         logLevel: LogLevel.warning,
       );
     }
@@ -491,11 +587,6 @@ class SetupAction extends _$SetupAction {
       silence: silence,
       preloadInvoke: preloadInvoke,
     );
-    // A profile rebuild only reaches the App core; when the tunnel is up
-    // the extension core keeps routing on its own copy, so push the mode
-    // to 9090 as well. Without this, a restart that starts the tunnel
-    // before the debounced rebuild runs leaves the extension on the
-    // previous mode until the next manual tunnel restart.
     if (result != _SetupTaskResult.failed) {
       await _syncModeToExternalController(
         ref.read(patchClashConfigProvider).mode,
@@ -704,6 +795,12 @@ class SetupAction extends _$SetupAction {
         externalController: ExternalControllerStatus.close,
       );
     }
+    if (system.isIOS) {
+      // The extension core is the only routing core on iOS, so the controller stays open here even when the settings switch is off.
+      patchConfig = patchConfig
+          .copyWith(externalController: ExternalControllerStatus.open)
+          .ensureControllerSecret();
+    }
     final authorized =
         ref.read(authorizedTunEnableProvider) ==
         TunAuthorizationState.authorized;
@@ -794,7 +891,8 @@ class SetupAction extends _$SetupAction {
       ref.read(profilesProvider.notifier).put(nextProfile);
     }
     commonPrint.log('setup ===> ${profile?.realLabel}');
-    final patchConfig = ref.read(patchClashConfigProvider);
+    var patchConfig = ref.read(patchClashConfigProvider);
+    patchConfig = _ensureIOSController(patchConfig);
     final shouldContinueSetup = await requestAdmin(patchConfig.tun.enable);
     if (!shouldContinueSetup) {
       return _SetupTaskResult.handoffToCoreRestart;
@@ -833,6 +931,9 @@ class SetupAction extends _$SetupAction {
     if (!profileFailed && yamlMd5 == globalState.lastConfigMd5 && !force) {
       _appliedInputs = inputs;
       globalState.lastConfigCounts = realProfile.counts;
+      if (preloadInvoke != null) {
+        await _syncSharedState();
+      }
       await preloadInvoke?.call();
       return _SetupTaskResult.completed;
     }
@@ -869,6 +970,10 @@ class SetupAction extends _$SetupAction {
               );
             }
           }
+          // The tunnel reads the shared state when it starts, so sync the new base before the preload starts it.
+          if (preloadInvoke != null) {
+            await _syncSharedState();
+          }
           try {
             await _core.setupConfig(
               params: setupParams.copyWith(
@@ -900,17 +1005,8 @@ class SetupAction extends _$SetupAction {
           await preferences.saveAppliedConfigMd5(yamlMd5);
         }
         await onUpdated?.call();
-        // The extension reads the shared state at tunnel start, so a profile
-        // change must reach the App Group even when the Core is not restarted.
-        if (system.isIOS) {
-          final syncError =
-              await service?.syncState(ref.read(sharedStateProvider)) ?? '';
-          if (syncError.isNotEmpty) {
-            commonPrint.log(
-              'sync shared state failed: $syncError',
-              logLevel: LogLevel.warning,
-            );
-          }
+        if (preloadInvoke == null) {
+          await _syncSharedState();
         }
       },
       silence: true,

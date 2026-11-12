@@ -11,7 +11,8 @@ final class NECoreEventQueue {
   )
 
   private var eventsSincePrune = 0
-  private var coreActive = true
+  private var droppedEventCount = 0
+  private let droppedCountFileName = "dropped-count"
 
   init(sharedStateStore: PacketTunnelSharedStateStore) {
     self.sharedStateStore = sharedStateStore
@@ -33,15 +34,7 @@ final class NECoreEventQueue {
     NECoreBridge.setEventListener(nil)
   }
 
-  func markCoreResponsive() {
-    coreActive = true
-  }
-
   private func enqueue(_ event: Data) {
-    guard coreActive else {
-      logger.warning("enqueue skipped: core is not active")
-      return
-    }
     guard let directory = eventQueueDirectory() else {
       logger.error("enqueue failed: missing app group dir")
       return
@@ -79,15 +72,48 @@ final class NECoreEventQueue {
     var files = eventFiles(in: directory)
     var overflowCount = files.count - maxEventQueueFiles
     if overflowCount > 0 {
-      coreActive = false
+      droppedEventCount += overflowCount
       logger.warning(
-        "prune overflow=\(overflowCount, privacy: .public), set core inactive"
+        "prune overflow=\(overflowCount, privacy: .public), dropped total=\(droppedEventCount, privacy: .public)"
       )
+      saveDroppedCount(in: directory)
     }
 
     while overflowCount > 0 && !files.isEmpty {
       removeOldestEventFile(&files)
       overflowCount -= 1
+    }
+    removeStaleTemporaryFiles(in: directory)
+  }
+
+  private func saveDroppedCount(in directory: URL) {
+    let fileURL = directory.appendingPathComponent(droppedCountFileName)
+    try? "\(droppedEventCount)".write(
+      to: fileURL,
+      atomically: true,
+      encoding: .utf8
+    )
+  }
+
+  // Only files older than a minute go, so a write still in flight is never removed.
+  private func removeStaleTemporaryFiles(in directory: URL) {
+    guard let fileURLs = try? FileManager.default.contentsOfDirectory(
+      at: directory,
+      includingPropertiesForKeys: [.contentModificationDateKey]
+    ) else {
+      return
+    }
+    let staleBefore = Date().addingTimeInterval(-60)
+    for fileURL in fileURLs where fileURL.pathExtension == "tmp" {
+      guard
+        let modified = try? fileURL.resourceValues(
+          forKeys: [.contentModificationDateKey]
+        ).contentModificationDate,
+        modified < staleBefore
+      else {
+        continue
+      }
+      try? FileManager.default.removeItem(at: fileURL)
     }
   }
 

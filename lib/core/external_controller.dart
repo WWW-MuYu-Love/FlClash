@@ -125,6 +125,13 @@ class ExternalControllerClient {
 
   static const _fetchTimeout = Duration(seconds: 2);
 
+  /// True when the last controller call failed with 401: the tunnel is up, only the secret is stale.
+  bool unauthorized = false;
+
+  void _noteStatus(HttpClientResponse response) {
+    unauthorized = response.statusCode == HttpStatus.unauthorized;
+  }
+
   // /memory ticks once a second and its first sample is zero, so reading
   // a real value takes two ticks.
   static const _memoryReadTimeout = Duration(seconds: 4);
@@ -138,6 +145,7 @@ class ExternalControllerClient {
         request.headers.set(HttpHeaders.authorizationHeader, 'Bearer $secret');
       }
       final response = await request.close().timeout(_fetchTimeout);
+      _noteStatus(response);
       if (response.statusCode != HttpStatus.ok) {
         await response.drain<void>();
         return null;
@@ -148,6 +156,7 @@ class ExternalControllerClient {
           .timeout(_fetchTimeout);
       return ExternalControllerSnapshot.fromJson(jsonDecode(body));
     } catch (_) {
+      unauthorized = false;
       return null;
     }
   }
@@ -166,6 +175,7 @@ class ExternalControllerClient {
         request.headers.set(HttpHeaders.authorizationHeader, 'Bearer $secret');
       }
       final response = await request.close().timeout(_fetchTimeout);
+      _noteStatus(response);
       if (response.statusCode != HttpStatus.ok) {
         await response.drain<void>();
         return null;
@@ -190,6 +200,7 @@ class ExternalControllerClient {
       }
       return null;
     } catch (_) {
+      unauthorized = false;
       return null;
     }
   }
@@ -204,6 +215,7 @@ class ExternalControllerClient {
         request.headers.set(HttpHeaders.authorizationHeader, 'Bearer $secret');
       }
       final response = await request.close().timeout(_fetchTimeout);
+      _noteStatus(response);
       if (response.statusCode != HttpStatus.ok) {
         await response.drain<void>();
         return null;
@@ -217,6 +229,7 @@ class ExternalControllerClient {
           ? MitmDecryptedHosts.fromJson(json)
           : null;
     } catch (_) {
+      unauthorized = false;
       return null;
     }
   }
@@ -236,6 +249,7 @@ class ExternalControllerClient {
         request.headers.set(HttpHeaders.authorizationHeader, 'Bearer $secret');
       }
       final response = await request.close().timeout(_fetchTimeout);
+      _noteStatus(response);
       if (response.statusCode != HttpStatus.ok) {
         await response.drain<void>();
         return null;
@@ -249,6 +263,7 @@ class ExternalControllerClient {
           ? MitmExchangeList.fromJson(json)
           : null;
     } catch (_) {
+      unauthorized = false;
       return null;
     }
   }
@@ -268,6 +283,7 @@ class ExternalControllerClient {
         request.headers.set(HttpHeaders.authorizationHeader, 'Bearer $secret');
       }
       final response = await request.close().timeout(_fetchTimeout);
+      _noteStatus(response);
       if (response.statusCode != HttpStatus.ok) {
         await response.drain<void>();
         return null;
@@ -279,6 +295,7 @@ class ExternalControllerClient {
       final json = jsonDecode(body);
       return json is Map<String, Object?> ? MitmExchange.fromJson(json) : null;
     } catch (_) {
+      unauthorized = false;
       return null;
     }
   }
@@ -298,6 +315,7 @@ class ExternalControllerClient {
         request.headers.set(HttpHeaders.authorizationHeader, 'Bearer $secret');
       }
       final httpResponse = await request.close().timeout(_fetchTimeout);
+      _noteStatus(httpResponse);
       if (httpResponse.statusCode != HttpStatus.ok) {
         await httpResponse.drain<void>();
         return null;
@@ -309,6 +327,7 @@ class ExternalControllerClient {
       final json = jsonDecode(body);
       return json is Map<String, Object?> ? MitmBody.fromJson(json) : null;
     } catch (_) {
+      unauthorized = false;
       return null;
     }
   }
@@ -328,10 +347,12 @@ class ExternalControllerClient {
       request.headers.contentType = ContentType.json;
       request.write(jsonEncode({'name': proxyName}));
       final response = await request.close().timeout(_fetchTimeout);
+      _noteStatus(response);
       await response.drain<void>();
       return response.statusCode == HttpStatus.noContent ||
           response.statusCode == HttpStatus.ok;
     } catch (_) {
+      unauthorized = false;
       return false;
     }
   }
@@ -352,10 +373,12 @@ class ExternalControllerClient {
       request.headers.contentType = ContentType.json;
       request.write(jsonEncode({'mode': mode.name}));
       final response = await request.close().timeout(_fetchTimeout);
+      _noteStatus(response);
       await response.drain<void>();
       return response.statusCode == HttpStatus.noContent ||
           response.statusCode == HttpStatus.ok;
     } catch (_) {
+      unauthorized = false;
       return false;
     }
   }
@@ -381,10 +404,12 @@ class ExternalControllerClient {
         request.headers.set(HttpHeaders.authorizationHeader, 'Bearer $secret');
       }
       final response = await request.close().timeout(_fetchTimeout);
+      _noteStatus(response);
       await response.drain<void>();
       return response.statusCode == HttpStatus.noContent ||
           response.statusCode == HttpStatus.ok;
     } catch (_) {
+      unauthorized = false;
       return false;
     }
   }

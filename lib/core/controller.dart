@@ -249,7 +249,9 @@ extension type CoreController._(CoreHandlerInterface _interface)
     if (preloadInvoke == null) {
       return _interface.setupConfig(params);
     }
-    await (_interface.setupConfig(params), preloadInvoke()).wait;
+    // The tunnel reads the shared state when it starts, so the new config must be applied before the preload starts it.
+    await _interface.setupConfig(params);
+    await preloadInvoke();
   }
 
   Future<List<Group>> getProxiesGroups({
