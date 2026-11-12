@@ -221,6 +221,9 @@ final class CoreMessageRouter {
         "geo.update",
         "probe.outboundIp",
         "profile.clearEffect",
+        // Read-only snapshot from the same config: a transient extension
+        // miss falls back instead of failing. Never add state-changing calls.
+        "route.watch",
       ].contains(method)
   }
 
