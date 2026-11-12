@@ -1,6 +1,7 @@
 import Foundation
 import NetworkExtension
 import Shared
+import WidgetKit
 import os
 
 @MainActor
@@ -25,6 +26,7 @@ final class TunnelCoordinator {
   private var requestGeneration: UInt64 = 0
   private var tunnelRequest: TunnelRequest?
   private var tunnelWait: TunnelWait?
+  private var tunnelWaitTimeoutTask: Task<Void, Never>?
   private var isCoordinatorRunning = false
   // A start that supersedes a stop before it stopped anything must still
   // cycle the tunnel, or a restart meant to apply new options is lost.
@@ -235,6 +237,7 @@ final class TunnelCoordinator {
     while isCurrent(request) {
       // A stored extension error past this point belongs to this attempt.
       managerStore.clearTunnelLastError()
+      managerStore.clearTunnelStage()
       lastStartOptionsSummary = nil
       let loadedManager = try await managerStore.loadManager()
       guard isCurrent(request) else {
@@ -418,6 +421,12 @@ final class TunnelCoordinator {
       return
     }
 
+    // A stop that never reaches the extension must not leave on-demand free to restart the tunnel on the next network change.
+    await managerStore.disableOnDemand(manager: manager)
+    guard isCurrent(request) else {
+      return
+    }
+
     let status = manager.connection.status
     recordObservedTunnelStatus(status, notifyExternal: false)
     if status.tunnelState == .stopped {
@@ -461,6 +470,14 @@ final class TunnelCoordinator {
         continuation: continuation
       )
       tunnelWait = wait
+      tunnelWaitTimeoutTask?.cancel()
+      tunnelWaitTimeoutTask = Task { [weak self] in
+        try? await Task.sleep(nanoseconds: 30_000_000_000)
+        guard let self else {
+          return
+        }
+        self.resolveTunnelWait(wait, result: .status(manager.connection.status))
+      }
       consumeWaitStatus(manager.connection.status)
     }
   }
@@ -502,6 +519,8 @@ final class TunnelCoordinator {
       return
     }
     tunnelWait = nil
+    tunnelWaitTimeoutTask?.cancel()
+    tunnelWaitTimeoutTask = nil
     wait.continuation.resume(returning: result)
   }
 
@@ -664,7 +683,9 @@ final class TunnelCoordinator {
     let summary = lastStartOptionsSummary
     lastStartOptionsSummary = nil
     if parts.isEmpty {
-      let stage = managerStore.tunnelStage().map { " stage: \($0)" } ?? ""
+      let stage = managerStore.tunnelStage().flatMap {
+        $0 == "已停止" ? nil : "，阶段：\($0)"
+      } ?? ""
       onTunnelFailure(
         "tunnel did not connect: \(summary ?? "start options unknown") #24\(stage)"
       )
@@ -678,6 +699,9 @@ final class TunnelCoordinator {
       return
     }
     reportedTunnelState = state
+    WidgetCenter.shared.reloadTimelines(
+      ofKind: "\(Bundle.main.bundleIdentifier!).Widget.Status"
+    )
     onTunnelStateChanged(state)
   }
 

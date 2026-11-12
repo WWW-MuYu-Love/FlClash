@@ -2,21 +2,39 @@ import Foundation
 import os
 
 private enum AppCoreMethod: String {
-  case initClash
-  case getIsInit
-  case validateConfig
-  case getProfileConfig
-  case decryptAgeConfig
-  case generateAgeKeyPair
-  case convertAgeSecretKeyToPublicKey
-  case deleteManagedPath
-  case updateGeoData
-  case getCountryCode
+  // Raw values are the Dart wire names; anything else silently routes to the tunnel core.
+  case coreInit = "core.init"
+  case coreInitialized = "core.initialized"
+  case coreGc = "core.gc"
+  case coreMemory = "core.memory"
+  case coreCrash = "core.crash"
+  case configValidate = "config.validate"
+  case configDecrypt = "config.decrypt"
+  case configRead = "config.read"
+  case profileBase = "profile.base"
+  case profileOutbounds = "profile.outbounds"
+  case profileBuild = "profile.build"
+  case shareLinkEncode = "shareLink.encode"
+  case shareLinkDecode = "shareLink.decode"
+  case filterValidate = "filter.validate"
+  case proxyValidate = "proxy.validate"
+  case proxyConvert = "proxy.convert"
+  case ruleSetCompile = "ruleSet.compile"
+  case ruleSetDump = "ruleSet.dump"
+  case mitmValidate = "mitm.validate"
+  case mitmIssueCertificate = "mitm.issueCertificate"
 }
 
 private enum ConfigurationCoreMethod: String {
-  case setupConfig
-  case updateConfig
+  case setupConfig = "config.setup"
+  case updateConfig = "config.update"
+}
+
+// The app core must never bind a listener: every listener belongs to the
+// extension, so these go there with no app fallback.
+private enum ExtensionOnlyMethod: String {
+  case listenerStart = "listener.start"
+  case listenerStop = "listener.stop"
 }
 
 private struct CoreRoutingError: LocalizedError {
@@ -90,6 +108,13 @@ final class CoreMessageRouter {
           response,
           networkExtensionActive ? .networkExtension : .app
         )
+      } else if let method,
+        ExtensionOnlyMethod(rawValue: method) != nil
+      {
+        routedResult = (
+          try await sendCoreMessage(data, route: .networkExtension),
+          .networkExtension
+        )
       } else {
         routedResult = try await sendRoutedCoreMessage(
           data,
@@ -131,9 +156,21 @@ final class CoreMessageRouter {
   }
 
   func shutdownAppCore() async -> Bool {
-    let methodCall = #"{"method":"shutdown","arguments":null}"#
+    let methodCall = #"{"method":"core.shutdown","arguments":null}"#
     return await withCheckedContinuation { continuation in
+      let gate = ResumeGate()
+      let timeout = DispatchWorkItem {
+        guard gate.claim() else {
+          return
+        }
+        continuation.resume(returning: false)
+      }
+      DispatchQueue.main.asyncAfter(deadline: .now() + 10, execute: timeout)
       IOSCoreBridge.invokeMethod(methodCall) { [weak self] response in
+        timeout.cancel()
+        guard gate.claim() else {
+          return
+        }
         guard let response,
           let data = response.data(using: .utf8),
           let payload = try? JSONSerialization.jsonObject(with: data)
@@ -226,36 +263,66 @@ final class CoreMessageRouter {
     method: ConfigurationCoreMethod,
     networkExtensionActive: Bool
   ) async throws -> String {
-    let appData: Data
+    var appData = data
     if networkExtensionActive && method == .updateConfig {
       appData = try replacingArgument(
-        in: data,
+        in: appData,
         key: "external-controller",
         with: ""
       )
-    } else {
-      appData = data
+      appData = try replacingArgument(
+        in: appData,
+        key: "geo-auto-update",
+        with: false
+      )
+    }
+    if networkExtensionActive && method == .setupConfig {
+      // The extension owns geo updates while it routes; the app copy must not run its own.
+      appData = try replacingArgument(
+        in: appData,
+        key: "geo-auto-update",
+        with: false
+      )
     }
 
     let appResponse = try await sendCoreMessage(appData, route: .app)
+    if isConfigRejected(appResponse) {
+      // The app core fell back to its built-in default, so the extension keeps its previous config; say so in the error.
+      return appResponseWithForkNote(appResponse)
+    }
     guard networkExtensionActive,
       currentRoute == .networkExtension,
-      methodResponseHasEmptyStringResult(appResponse)
+      methodResponseSucceeded(appResponse)
     else {
       return appResponse
     }
 
-    let networkExtensionData = method == .updateConfig
-      ? try replacingArgument(
-        in: data,
-        key: "geo-auto-update",
+    var extensionData = data
+    if method == .setupConfig {
+      extensionData = try replacingArgument(
+        in: extensionData,
+        key: "skip-dns-listen",
         with: false
       )
-      : data
-    return try await sendCoreMessage(
-      networkExtensionData,
-      route: .networkExtension
-    )
+      extensionData = try replacingArgument(
+        in: extensionData,
+        key: "skip-external-controller",
+        with: false
+      )
+    }
+
+    do {
+      return try await sendCoreMessage(
+        extensionData,
+        route: .networkExtension
+      )
+    } catch {
+      throw CoreRoutingError(
+        code: "extension_config_failed",
+        message:
+          "App core applied the config, but the extension core did not receive it: \(error.localizedDescription)"
+      )
+    }
   }
 
   private func sendCoreMessage(
@@ -270,19 +337,41 @@ final class CoreMessageRouter {
           message: "invalid method call"
         )
       }
-      let response: String? = await withCheckedContinuation {
-        (continuation: CheckedContinuation<String?, Never>) in
+      return try await withCheckedThrowingContinuation {
+        (continuation: CheckedContinuation<String, Error>) in
+        let gate = ResumeGate()
+        let timeout = DispatchWorkItem {
+          guard gate.claim() else {
+            return
+          }
+          continuation.resume(
+            throwing: CoreRoutingError(
+              code: "core_timeout",
+              message: "app core did not answer in 30 seconds"
+            )
+          )
+        }
+        DispatchQueue.main.asyncAfter(
+          deadline: .now() + 30,
+          execute: timeout
+        )
         IOSCoreBridge.invokeMethod(methodCall) { value in
+          timeout.cancel()
+          guard gate.claim() else {
+            return
+          }
+          guard let value else {
+            continuation.resume(
+              throwing: CoreRoutingError(
+                code: "empty_response",
+                message: "empty app core response"
+              )
+            )
+            return
+          }
           continuation.resume(returning: value)
         }
       }
-      guard let response else {
-        throw CoreRoutingError(
-          code: "empty_response",
-          message: "empty app core response"
-        )
-      }
-      return response
     case .networkExtension:
       return try await tunnelController.sendProviderMessage(data)
     }
@@ -325,17 +414,35 @@ final class CoreMessageRouter {
     }
   }
 
-  private func methodResponseHasEmptyStringResult(
-    _ response: String
-  ) -> Bool {
+  private func isConfigRejected(_ response: String) -> Bool {
     guard let data = response.data(using: .utf8),
       let object = try? JSONSerialization.jsonObject(with: data)
         as? [String: Any],
-      methodResponseSucceeded(object)
+      let error = object["error"] as? [String: Any]
     else {
       return false
     }
-    return object["result"] as? String == ""
+    return error["code"] as? String == "config_rejected"
+  }
+
+  private func appResponseWithForkNote(_ response: String) -> String {
+    guard let data = response.data(using: .utf8),
+      var object = try? JSONSerialization.jsonObject(with: data)
+        as? [String: Any],
+      var error = object["error"] as? [String: Any],
+      let message = error["message"] as? String
+    else {
+      return response
+    }
+    error["message"] =
+      "\(message); the extension core keeps its previous config"
+    object["error"] = error
+    guard let forked = try? JSONSerialization.data(withJSONObject: object),
+      let forkedResponse = String(data: forked, encoding: .utf8)
+    else {
+      return response
+    }
+    return forkedResponse
   }
 
   private func methodResponseSucceeded(_ response: String) -> Bool {
@@ -398,5 +505,22 @@ final class CoreMessageRouter {
 
   private func log(_ message: String) {
     logger.debug("\(message, privacy: .public)")
+  }
+}
+
+// A continuation resumed by at most one of the response and the timeout;
+// the timeout only stops waiting, never cancels the underlying call.
+final class ResumeGate: @unchecked Sendable {
+  private let lock = NSLock()
+  private var claimed = false
+
+  func claim() -> Bool {
+    lock.lock()
+    defer { lock.unlock() }
+    guard !claimed else {
+      return false
+    }
+    claimed = true
+    return true
   }
 }

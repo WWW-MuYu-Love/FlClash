@@ -21,6 +21,7 @@ const (
 	coreGCMethod          CoreMethod = "core.gc"
 	coreMemoryMethod      CoreMethod = "core.memory"
 	coreCrashMethod       CoreMethod = "core.crash"
+	coreShutdownMethod    CoreMethod = "core.shutdown"
 
 	configSetupMethod    CoreMethod = "config.setup"
 	configUpdateMethod   CoreMethod = "config.update"

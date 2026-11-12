@@ -100,11 +100,24 @@ final class PacketTunnelProvider: NEPacketTunnelProvider {
       self.logger.info(
         "quickSetup initParams=\(initParams, privacy: .public)"
       )
-      self.sharedStateStore.saveStage("quickSetup started")
+      self.sharedStateStore.saveStage("核心初始化中")
+      let startGuard = TunnelStartGuard()
+      let watchdog = DispatchWorkItem {
+        guard startGuard.claim() else {
+          return
+        }
+        self.sharedStateStore.saveLastError("核心初始化超时")
+        completionHandler(PacketTunnelProviderError.couldNotStartCoreTun)
+      }
+      DispatchQueue.main.asyncAfter(deadline: .now() + 25, execute: watchdog)
       NECoreBridge.quickSetup(
         withInitParams: initParams,
         setupParams: setupParams
       ) { result in
+        watchdog.cancel()
+        guard startGuard.claim() else {
+          return
+        }
         if let result,
           !result.isEmpty
         {
@@ -146,6 +159,7 @@ final class PacketTunnelProvider: NEPacketTunnelProvider {
           started ? "startTun ok" : "startTun failed"
         )
         if started {
+          self.sharedStateStore.clearLastError()
           self.sharedStateStore.saveRunTime(vpnOptions: snapshot.data)
         } else {
           self.sharedStateStore.saveLastError("could not start core TUN")
@@ -163,6 +177,8 @@ final class PacketTunnelProvider: NEPacketTunnelProvider {
   ) {
     logger.info("stopTunnel reason=\(reason.rawValue, privacy: .public)")
     sharedStateStore.clearRunTime()
+    sharedStateStore.clearLastError()
+    sharedStateStore.saveStage("已停止")
     reloadWidgets()
     eventQueue.stop()
     NECoreBridge.stopTun()
@@ -211,7 +227,6 @@ final class PacketTunnelProvider: NEPacketTunnelProvider {
     logger.debug(
       "handleAppMessage bytes=\(messageData.count, privacy: .public)"
     )
-    eventQueue.markCoreResponsive()
     guard let completionHandler else {
       logger.warning("handleAppMessage ignored: missing completion handler")
       return
@@ -301,5 +316,21 @@ private enum PacketTunnelProviderError: LocalizedError {
     case .couldNotStartCoreTun:
       return "could not start core TUN"
     }
+  }
+}
+
+// startTunnel's completion handler runs exactly once: the quickSetup callback and the watchdog race to claim it.
+private final class TunnelStartGuard: @unchecked Sendable {
+  private let lock = NSLock()
+  private var done = false
+
+  func claim() -> Bool {
+    lock.lock()
+    defer { lock.unlock() }
+    guard !done else {
+      return false
+    }
+    done = true
+    return true
   }
 }

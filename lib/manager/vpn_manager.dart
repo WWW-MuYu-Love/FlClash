@@ -29,12 +29,20 @@ class _VpnContainerState extends ConsumerState<VpnManager> with TileListener {
       vpnOptionsProvider.select((state) => state.value?.effective),
       (prev, next) {
         final running = ref.read(runningVpnOptionsProvider)?.effective;
-        if (next != null &&
-            prev != next &&
-            running != null &&
-            running != next) {
-          _showRestartTip();
+        if (next == null ||
+            prev == next ||
+            running == null ||
+            running == next) {
+          return;
         }
+        // Turning VPN off stops the run outright: a tip alone would leave the dashboard showing a run with no tunnel behind it.
+        if (!next.enable) {
+          if (ref.read(isStartProvider)) {
+            unawaited(ref.read(setupActionProvider.notifier).setRunning(false));
+          }
+          return;
+        }
+        _showRestartTip();
       },
     );
     // A failed tunnel start is otherwise silent: the dashboard shows the

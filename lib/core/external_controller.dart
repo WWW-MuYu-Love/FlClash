@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:fl_clash/enum/enum.dart';
 import 'package:fl_clash/models/models.dart';
 
 class ExternalControllerSnapshot {
@@ -124,6 +125,17 @@ class ExternalControllerClient {
 
   static const _fetchTimeout = Duration(seconds: 2);
 
+  /// True when the last controller call failed with 401: the tunnel is up, only the secret is stale.
+  bool unauthorized = false;
+
+  void _noteStatus(HttpClientResponse response) {
+    unauthorized = response.statusCode == HttpStatus.unauthorized;
+  }
+
+  // /memory ticks once a second and its first sample is zero, so reading
+  // a real value takes two ticks.
+  static const _memoryReadTimeout = Duration(seconds: 4);
+
   Future<ExternalControllerSnapshot?> fetchConnections() async {
     try {
       final request = await _http
@@ -133,6 +145,7 @@ class ExternalControllerClient {
         request.headers.set(HttpHeaders.authorizationHeader, 'Bearer $secret');
       }
       final response = await request.close().timeout(_fetchTimeout);
+      _noteStatus(response);
       if (response.statusCode != HttpStatus.ok) {
         await response.drain<void>();
         return null;
@@ -143,6 +156,51 @@ class ExternalControllerClient {
           .timeout(_fetchTimeout);
       return ExternalControllerSnapshot.fromJson(jsonDecode(body));
     } catch (_) {
+      unauthorized = false;
+      return null;
+    }
+  }
+
+  // GET /memory returns the core behind 9090's resident memory. The
+  // endpoint streams one JSON object per second, and its first sample
+  // is always zero, so this reads until the first non-zero `inuse`
+  // and then closes the connection instead of waiting for the stream
+  // to end.
+  Future<int?> fetchMemory() async {
+    try {
+      final request = await _http
+          .getUrl(baseUri.replace(path: '/memory'))
+          .timeout(_fetchTimeout);
+      if (secret.isNotEmpty) {
+        request.headers.set(HttpHeaders.authorizationHeader, 'Bearer $secret');
+      }
+      final response = await request.close().timeout(_fetchTimeout);
+      _noteStatus(response);
+      if (response.statusCode != HttpStatus.ok) {
+        await response.drain<void>();
+        return null;
+      }
+      var read = 0;
+      await for (final line
+          in response
+              .transform(utf8.decoder)
+              .transform(const LineSplitter())
+              .timeout(_memoryReadTimeout)) {
+        read++;
+        final json = jsonDecode(line);
+        if (json is Map<String, Object?>) {
+          final inuse = json['inuse'];
+          if (inuse is num && inuse > 0) {
+            return inuse.toInt();
+          }
+        }
+        if (read >= 3) {
+          break;
+        }
+      }
+      return null;
+    } catch (_) {
+      unauthorized = false;
       return null;
     }
   }
@@ -162,10 +220,38 @@ class ExternalControllerClient {
       request.headers.contentType = ContentType.json;
       request.write(jsonEncode({'name': proxyName}));
       final response = await request.close().timeout(_fetchTimeout);
+      _noteStatus(response);
       await response.drain<void>();
       return response.statusCode == HttpStatus.noContent ||
           response.statusCode == HttpStatus.ok;
     } catch (_) {
+      unauthorized = false;
+      return false;
+    }
+  }
+
+  // PATCH /configs changes the routing mode on the core behind 9090.
+  // The extension core answers 204 on success, so a false return means
+  // the request itself failed (the tunnel is down or 9090 is unreachable).
+  Future<bool> setMode(Mode mode) async {
+    try {
+      final request = await _http
+          .patchUrl(
+            baseUri.replace(pathSegments: [...baseUri.pathSegments, 'configs']),
+          )
+          .timeout(_fetchTimeout);
+      if (secret.isNotEmpty) {
+        request.headers.set(HttpHeaders.authorizationHeader, 'Bearer $secret');
+      }
+      request.headers.contentType = ContentType.json;
+      request.write(jsonEncode({'mode': mode.name}));
+      final response = await request.close().timeout(_fetchTimeout);
+      _noteStatus(response);
+      await response.drain<void>();
+      return response.statusCode == HttpStatus.noContent ||
+          response.statusCode == HttpStatus.ok;
+    } catch (_) {
+      unauthorized = false;
       return false;
     }
   }
@@ -191,10 +277,12 @@ class ExternalControllerClient {
         request.headers.set(HttpHeaders.authorizationHeader, 'Bearer $secret');
       }
       final response = await request.close().timeout(_fetchTimeout);
+      _noteStatus(response);
       await response.drain<void>();
       return response.statusCode == HttpStatus.noContent ||
           response.statusCode == HttpStatus.ok;
     } catch (_) {
+      unauthorized = false;
       return false;
     }
   }

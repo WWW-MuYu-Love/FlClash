@@ -207,7 +207,26 @@ class ProxiesAction extends _$ProxiesAction {
     if (!result.changed) {
       return;
     }
-    await _syncSelectionToExternalController(groupName, proxyName);
+    final synced = await _syncSelectionToExternalController(
+      groupName,
+      proxyName,
+    );
+    if (!synced) {
+      final client = ref.read(externalControllerClientProvider);
+      if (client.unauthorized) {
+        // The tunnel is up and the router already delivered the switch, so there is nothing to roll back.
+        _reportExternalControllerFailure(
+          'changeProxy($groupName -> $proxyName)',
+          client,
+        );
+      } else {
+        profilesAction.updateCurrentSelectedMap(groupName, rollbackName);
+        dialogs.showBanner(
+          currentAppLocalizations.changeProxyFailedTip,
+          level: BannerLevel.error,
+        );
+      }
+    }
     try {
       if (ref.read(appSettingProvider).closeConnections) {
         await _closeConnectionsAfterSelection();
@@ -222,39 +241,53 @@ class ProxiesAction extends _$ProxiesAction {
     }
   }
 
-  // The connections a selection change leaves behind belong to the
-  // extension core when VPN is on; close them through 9090 and fall back
-  // to the App core when it is down. The reset branch above stays on the
-  // App core: the external controller has no resolver-reset endpoint.
+  // The App core owns no connections while the VPN is on, so falling back there would silently close nothing.
   Future<void> _closeConnectionsAfterSelection() async {
-    final closed = await ref
-        .read(externalControllerClientProvider)
-        .closeConnections();
-    if (!closed) {
-      await _core.closeConnections();
+    final client = ref.read(externalControllerClientProvider);
+    final closed = await client.closeConnections();
+    if (closed) {
+      return;
     }
+    if (ref.read(runningVpnOptionsProvider)?.enable == true) {
+      if (client.unauthorized) {
+        _reportExternalControllerFailure('closeConnections', client);
+      } else {
+        commonPrint.log(
+          'closeConnections external controller sync failed',
+          logLevel: LogLevel.warning,
+        );
+        dialogs.showBanner(
+          currentAppLocalizations.closeConnectionsFailedTip,
+          level: BannerLevel.error,
+        );
+      }
+      return;
+    }
+    await _core.closeConnections();
   }
 
   // The App core is not the routing core when the VPN is on: the extension
   // core owns 9090 and keeps its own selection, so propagate the change.
   // 9090 is bound by the extension only, so with the tunnel down nothing
   // listens; skip the attempt instead of warning on every change.
-  Future<void> _syncSelectionToExternalController(
+  Future<bool> _syncSelectionToExternalController(
     String groupName,
     String proxyName,
   ) async {
     if (ref.read(runningVpnOptionsProvider)?.enable != true) {
-      return;
+      return true;
     }
-    final applied = await ref
-        .read(externalControllerClientProvider)
-        .selectProxy(groupName, proxyName);
+    final client = ref.read(externalControllerClientProvider);
+    final applied = await _pushToExternalController(
+      () => client.selectProxy(groupName, proxyName),
+    );
     if (!applied) {
       commonPrint.log(
         'changeProxy($groupName -> $proxyName) external controller sync failed',
         logLevel: LogLevel.warning,
       );
     }
+    return applied;
   }
 
   Future<void> updateProvider(

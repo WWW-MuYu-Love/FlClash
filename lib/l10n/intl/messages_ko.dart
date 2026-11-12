@@ -416,6 +416,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "close": MessageLookupByLibrary.simpleMessage("닫기"),
     "closeConnection": MessageLookupByLibrary.simpleMessage("연결 닫기"),
     "closeConnections": MessageLookupByLibrary.simpleMessage("연결 종료"),
+    "closeConnectionsFailedTip": MessageLookupByLibrary.simpleMessage(
+      "연결을 닫지 못했습니다. 터널 컨트롤러에 연결할 수 없습니다",
+    ),
     "color": MessageLookupByLibrary.simpleMessage("색상"),
     "colorStyle": MessageLookupByLibrary.simpleMessage("색상 스타일"),
     "columns": MessageLookupByLibrary.simpleMessage("열"),
@@ -663,6 +666,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "emptyFallback": MessageLookupByLibrary.simpleMessage("빈 폴백"),
     "emptyTip": m26,
     "en": MessageLookupByLibrary.simpleMessage("영어"),
+    "enableVpnFirst": MessageLookupByLibrary.simpleMessage("먼저 VPN을 켜세요"),
     "enabled": MessageLookupByLibrary.simpleMessage("사용"),
     "entries": MessageLookupByLibrary.simpleMessage("개 항목"),
     "error": MessageLookupByLibrary.simpleMessage("오류"),
@@ -698,6 +702,12 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "externalControllerSecret": MessageLookupByLibrary.simpleMessage(
       "외부 컨트롤러 시크릿",
+    ),
+    "externalControllerSecretMismatch": MessageLookupByLibrary.simpleMessage(
+      "컨트롤러 secret이 동기화되지 않았습니다. 터널을 다시 시작하면 다시 동기화됩니다.",
+    ),
+    "externalControllerSyncFailed": MessageLookupByLibrary.simpleMessage(
+      "이 변경사항을 터널에 동기화하지 못했습니다. 적용되지 않았을 수 있습니다",
     ),
     "externalLink": MessageLookupByLibrary.simpleMessage("외부 링크"),
     "extraLarge": MessageLookupByLibrary.simpleMessage("매우 크게"),
@@ -1102,6 +1112,9 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "mitmInstallUserCaTip": MessageLookupByLibrary.simpleMessage(
       "root가 감지되지 않아 사용자 인증서로만 설치할 수 있습니다. 사용자 인증서를 신뢰하는 앱(주로 브라우저)만 복호화되고 다른 앱은 나열한 호스트에 연결하지 못하므로 해당 호스트는 나열하지 마세요. Android 11부터는 시스템 설정에서 직접 설치를 마쳐야 합니다.",
+    ),
+    "mitmIosTrustSteps": MessageLookupByLibrary.simpleMessage(
+      "파일 앱에서 인증서를 설치한 뒤 설정 → 일반 → VPN 및 기기 관리에서 해당 인증서를 완전히 신뢰하도록 설정하세요.",
     ),
     "mitmMissingStores": m58,
     "mitmModule": MessageLookupByLibrary.simpleMessage("모듈"),

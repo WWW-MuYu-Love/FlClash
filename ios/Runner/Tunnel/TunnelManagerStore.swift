@@ -180,7 +180,13 @@ final class TunnelManagerStore {
       rules.append(disconnectRule)
     }
 
-    if configuration.alwaysOn {
+    // A connect rule after the disconnect rule makes the VPN come back on
+    // its own when the phone leaves a disconnect SSID; without it the
+    // tunnel would stay down until the user starts it again. The rules
+    // only take effect while on-demand is enabled, which the tunnel
+    // disables when the user stops it, so this never starts a VPN the
+    // user did not ask for.
+    if configuration.alwaysOn || !configuration.disconnectSSIDs.isEmpty {
       let connectWifi = NEOnDemandRuleConnect()
       connectWifi.interfaceTypeMatch = .wiFi
       rules.append(connectWifi)
@@ -226,6 +232,28 @@ final class TunnelManagerStore {
 
   func clearTunnelLastError() {
     sharedStateStore.clearTunnelLastError()
+  }
+
+  func clearTunnelStage() {
+    sharedStateStore.clearTunnelStage()
+  }
+
+  func disableOnDemand(manager: NETunnelProviderManager) async {
+    manager.isOnDemandEnabled = false
+    do {
+      try await withCheckedThrowingContinuation {
+        (continuation: CheckedContinuation<Void, Error>) in
+        manager.saveToPreferences { error in
+          if let error {
+            continuation.resume(throwing: error)
+          } else {
+            continuation.resume()
+          }
+        }
+      }
+    } catch {
+      log("disableOnDemand save failed: \(error.localizedDescription)")
+    }
   }
 
   private func isRetryablePreferenceError(_ error: Error) -> Bool {

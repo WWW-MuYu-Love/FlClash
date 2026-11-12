@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:drift/native.dart';
 import 'package:fl_clash/common/common.dart';
 import 'package:fl_clash/core/controller.dart';
+import 'package:fl_clash/core/external_controller.dart';
 import 'package:fl_clash/core/interface.dart';
 import 'package:fl_clash/core/method.dart';
 import 'package:fl_clash/database/database.dart' as db;
@@ -23,6 +24,21 @@ import 'package:riverpod/riverpod.dart';
 import '../helpers/test_profiles.dart';
 
 class MockCoreHandlerInterface extends Mock implements CoreHandlerInterface {}
+
+class MockExternalControllerClient extends Mock
+    implements ExternalControllerClient {}
+
+const _runningVpnOptions = VpnOptions(
+  enable: true,
+  port: 7890,
+  ipv6: false,
+  dnsHijacking: false,
+  accessControlProps: AccessControlProps(),
+  allowBypass: false,
+  systemProxy: false,
+  bypassDomain: [],
+  stack: 'gvisor',
+);
 
 const _testUrl = 'http://delay.test';
 
@@ -88,15 +104,37 @@ void main() {
 
   setUp(() => reset(core));
 
-  ProviderContainer buildContainer({Profile? profile}) {
+  ProviderContainer buildContainer({
+    Profile? profile,
+    ExternalControllerClient? externalController,
+  }) {
     final container = ProviderContainer(
       overrides: [
         coreHandlerProvider.overrideWithValue(CoreController.scoped(core)),
         profilesProvider.overrideWith(() => TestProfiles([?profile])),
         currentProfileIdProvider.overrideWithBuild((_, _) => profile?.id),
+        if (externalController != null)
+          externalControllerClientProvider.overrideWithValue(
+            externalController,
+          ),
       ],
     );
     addTearDown(container.dispose);
+    return container;
+  }
+
+  ProviderContainer runningVpnContainer({
+    Profile? profile,
+    ExternalControllerClient? externalController,
+  }) {
+    final container = buildContainer(
+      profile: profile,
+      externalController: externalController,
+    );
+    container.read(initProvider.notifier).value = true;
+    container.read(runTimeProvider.notifier).value = 1;
+    container.read(runningVpnOptionsProvider.notifier).value =
+        _runningVpnOptions;
     return container;
   }
 
@@ -331,6 +369,52 @@ void main() {
         'Proxy': 'HK-01',
       });
     });
+
+    test(
+      'rolls the selection back when the tunnel controller sync fails',
+      () async {
+        final externalController = MockExternalControllerClient();
+        when(
+          () => externalController.selectProxy(any(), any()),
+        ).thenAnswer((_) async => false);
+        when(() => externalController.unauthorized).thenReturn(false);
+        final container = runningVpnContainer(
+          profile: _selectedProfile('HK-00'),
+          externalController: externalController,
+        );
+
+        await actionOf(
+          container,
+        ).changeProxy(groupName: 'Proxy', proxyName: 'HK-01');
+
+        expect(container.read(currentProfileProvider)?.selectedMap, {
+          'Proxy': 'HK-00',
+        });
+      },
+    );
+
+    test(
+      'keeps the selection when the tunnel controller answers 401',
+      () async {
+        final externalController = MockExternalControllerClient();
+        when(
+          () => externalController.selectProxy(any(), any()),
+        ).thenAnswer((_) async => false);
+        when(() => externalController.unauthorized).thenReturn(true);
+        final container = runningVpnContainer(
+          profile: _selectedProfile('HK-00'),
+          externalController: externalController,
+        );
+
+        await actionOf(
+          container,
+        ).changeProxy(groupName: 'Proxy', proxyName: 'HK-01');
+
+        expect(container.read(currentProfileProvider)?.selectedMap, {
+          'Proxy': 'HK-01',
+        });
+      },
+    );
 
     test('rolls the selection back when the switch fails', () async {
       when(() => core.changeProxy(any())).thenThrow(StateError('core down'));

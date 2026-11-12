@@ -71,7 +71,8 @@ func reportMissingDelayTestProxy(name string) {
 	logError("delay test: %q is not part of the applied config", name)
 }
 
-// A nil answer means the test never got a slot, which says nothing about the proxy.
+// A test that never got a slot answers failed, not nil: the proxy was never
+// probed, and a nil would read as an empty result on the Dart side.
 func handleTestDelay(params *TestDelayParams) *Delay {
 	url := params.TestUrl
 	if url == "" {
@@ -90,7 +91,7 @@ func handleTestDelay(params *TestDelayParams) *Delay {
 		timeout = timeoutFromMillis(params.Timeout, defaultDelayTestTimeout)
 	}
 	if !delayTestSlots.acquireWithin(context.Background(), timeout) {
-		return nil
+		return result
 	}
 	defer delayTestSlots.release()
 
