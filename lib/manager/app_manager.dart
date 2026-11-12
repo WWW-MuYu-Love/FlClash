@@ -119,11 +119,14 @@ class AppEnvManager extends ConsumerWidget {
 
   const AppEnvManager({super.key, required this.child});
 
-  String? _bannerMessage({required bool safeMode}) {
+  String? _bannerMessage({
+    required bool safeMode,
+    required bool showEnvBanner,
+  }) {
     if (safeMode) {
       return 'SAFE MODE';
     }
-    if (!globalState.isPre) {
+    if (!showEnvBanner || !globalState.isPre) {
       return null;
     }
     return kDebugMode ? 'DEBUG' : globalState.appEnv.toUpperCase();
@@ -131,7 +134,12 @@ class AppEnvManager extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final message = _bannerMessage(safeMode: ref.watch(safeModeProvider));
+    final message = _bannerMessage(
+      safeMode: ref.watch(safeModeProvider),
+      showEnvBanner: ref.watch(
+        appSettingProvider.select((state) => state.showEnvBanner),
+      ),
+    );
     if (message == null) {
       return child;
     }

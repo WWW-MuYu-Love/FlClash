@@ -203,6 +203,7 @@
   "autoCloseConnections": "Автозакрытие соединений",
   "onlyStatisticsProxy": "Учитывать только трафик прокси",
   "showNotificationStopAction": "Кнопка остановки в уведомлении",
+  "showEnvBanner": "Показывать водяной знак окружения",
   "pureBlackMode": "Чисто чёрный режим",
   "sidebar": "Боковая панель",
   "backgroundBlur": "Размытие фона",

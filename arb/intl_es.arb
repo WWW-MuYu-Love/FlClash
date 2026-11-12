@@ -203,6 +203,7 @@
   "autoCloseConnections": "Cerrar conexiones automáticamente",
   "onlyStatisticsProxy": "Contar solo el tráfico del proxy",
   "showNotificationStopAction": "Botón de detener en la notificación",
+  "showEnvBanner": "Mostrar marca de agua del entorno",
   "pureBlackMode": "Modo negro puro",
   "sidebar": "Barra lateral",
   "backgroundBlur": "Desenfoque de fondo",

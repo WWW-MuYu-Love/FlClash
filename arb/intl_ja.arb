@@ -203,6 +203,7 @@
   "autoCloseConnections": "接続を自動的に閉じる",
   "onlyStatisticsProxy": "プロキシトラフィックのみ集計",
   "showNotificationStopAction": "通知に停止ボタンを表示",
+  "showEnvBanner": "環境ウォーターマークを表示",
   "pureBlackMode": "ピュアブラックモード",
   "sidebar": "サイドバー",
   "backgroundBlur": "背景のぼかし",

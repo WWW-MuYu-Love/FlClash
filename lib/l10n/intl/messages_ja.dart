@@ -1680,6 +1680,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "別のデバイスの FlClash でスキャンすると、このプロファイルをインポートできます。",
     ),
     "show": MessageLookupByLibrary.simpleMessage("表示"),
+    "showEnvBanner": MessageLookupByLibrary.simpleMessage("環境ウォーターマークを表示"),
     "showLess": MessageLookupByLibrary.simpleMessage("折りたたむ"),
     "showMore": MessageLookupByLibrary.simpleMessage("展開"),
     "showNotificationStopAction": MessageLookupByLibrary.simpleMessage(

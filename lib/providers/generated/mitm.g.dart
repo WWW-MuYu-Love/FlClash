@@ -9,15 +9,17 @@ part of '../mitm.dart';
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
 /// Hosts with recorded decrypted exchanges. On iOS the persisted
-/// captures on the shared disk are read first, so hosts stay listed
-/// after the tunnel stops; the live core only adds in-flight hosts.
+/// captures on the shared disk are the source, so hosts stay listed
+/// after the tunnel stops. Live in-flight hosts need the 9090
+/// controller, which is not wired up yet.
 
 @ProviderFor(mitmDecryptedHosts)
 final mitmDecryptedHostsProvider = MitmDecryptedHostsProvider._();
 
 /// Hosts with recorded decrypted exchanges. On iOS the persisted
-/// captures on the shared disk are read first, so hosts stay listed
-/// after the tunnel stops; the live core only adds in-flight hosts.
+/// captures on the shared disk are the source, so hosts stay listed
+/// after the tunnel stops. Live in-flight hosts need the 9090
+/// controller, which is not wired up yet.
 
 final class MitmDecryptedHostsProvider
     extends
@@ -28,8 +30,9 @@ final class MitmDecryptedHostsProvider
         >
     with $FutureModifier<Set<String>>, $FutureProvider<Set<String>> {
   /// Hosts with recorded decrypted exchanges. On iOS the persisted
-  /// captures on the shared disk are read first, so hosts stay listed
-  /// after the tunnel stops; the live core only adds in-flight hosts.
+  /// captures on the shared disk are the source, so hosts stay listed
+  /// after the tunnel stops. Live in-flight hosts need the 9090
+  /// controller, which is not wired up yet.
   MitmDecryptedHostsProvider._()
     : super(
         from: null,
@@ -57,7 +60,7 @@ final class MitmDecryptedHostsProvider
 }
 
 String _$mitmDecryptedHostsHash() =>
-    r'084ab6a214e52589e8b91713436e83d7ca625b0a';
+    r'1d95b513370a49b7ebdbd3cc68a67764c8530676';
 
 @ProviderFor(MitmCa)
 final mitmCaProvider = MitmCaProvider._();
@@ -202,14 +205,16 @@ abstract class _$MitmTrustState extends $AsyncNotifier<MitmTrustCheck> {
 
 /// Fetched again while shown, until the connection has closed and none of its
 /// requests is pending. Keyed by host: the capture store never sees the
-/// tracker's ids, and on iOS it lives in the extension core behind 9090.
+/// tracker's ids. On iOS the store is the persisted captures on the
+/// shared disk; in-flight exchanges are not visible yet.
 
 @ProviderFor(mitmExchanges)
 final mitmExchangesProvider = MitmExchangesFamily._();
 
 /// Fetched again while shown, until the connection has closed and none of its
 /// requests is pending. Keyed by host: the capture store never sees the
-/// tracker's ids, and on iOS it lives in the extension core behind 9090.
+/// tracker's ids. On iOS the store is the persisted captures on the
+/// shared disk; in-flight exchanges are not visible yet.
 
 final class MitmExchangesProvider
     extends
@@ -221,7 +226,8 @@ final class MitmExchangesProvider
     with $FutureModifier<MitmExchangeList>, $FutureProvider<MitmExchangeList> {
   /// Fetched again while shown, until the connection has closed and none of its
   /// requests is pending. Keyed by host: the capture store never sees the
-  /// tracker's ids, and on iOS it lives in the extension core behind 9090.
+  /// tracker's ids. On iOS the store is the persisted captures on the
+  /// shared disk; in-flight exchanges are not visible yet.
   MitmExchangesProvider._({
     required MitmExchangesFamily super.from,
     required String super.argument,
@@ -270,7 +276,8 @@ String _$mitmExchangesHash() => r'30f99cd0b68aa839e2f1fd919d17779383bf7f4e';
 
 /// Fetched again while shown, until the connection has closed and none of its
 /// requests is pending. Keyed by host: the capture store never sees the
-/// tracker's ids, and on iOS it lives in the extension core behind 9090.
+/// tracker's ids. On iOS the store is the persisted captures on the
+/// shared disk; in-flight exchanges are not visible yet.
 
 final class MitmExchangesFamily extends $Family
     with $FunctionalFamilyOverride<FutureOr<MitmExchangeList>, String> {
@@ -285,7 +292,8 @@ final class MitmExchangesFamily extends $Family
 
   /// Fetched again while shown, until the connection has closed and none of its
   /// requests is pending. Keyed by host: the capture store never sees the
-  /// tracker's ids, and on iOS it lives in the extension core behind 9090.
+  /// tracker's ids. On iOS the store is the persisted captures on the
+  /// shared disk; in-flight exchanges are not visible yet.
 
   MitmExchangesProvider call(String host) =>
       MitmExchangesProvider._(argument: host, from: this);
@@ -349,7 +357,7 @@ final class MitmExchangeProvider
   }
 }
 
-String _$mitmExchangeHash() => r'89914a2d122cda05a2afa7a1329bf9c5a6e5c5f1';
+String _$mitmExchangeHash() => r'26168e6d020573ae4ad8390ee9a8f60fa0e34dc0';
 
 final class MitmExchangeFamily extends $Family
     with $FunctionalFamilyOverride<FutureOr<MitmExchange?>, int> {
@@ -430,7 +438,7 @@ final class MitmBodyProvider
   }
 }
 
-String _$mitmBodyHash() => r'c937d37220616333d3375799f876734efbafee9a';
+String _$mitmBodyHash() => r'307225ea43dd6faf376f687b76c7cc45cfb0079e';
 
 final class MitmBodyFamily extends $Family
     with
