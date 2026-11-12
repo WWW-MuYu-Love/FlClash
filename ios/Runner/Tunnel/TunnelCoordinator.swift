@@ -268,8 +268,10 @@ final class TunnelCoordinator {
           }
           continue
         }
-        finishTunnelRequest(request, actualState: .running)
-        return
+        if request.preferenceRetryCount == 0 {
+          finishTunnelRequest(request, actualState: .running)
+          return
+        }
       }
       if status.tunnelState == nil {
         guard await settleBeforeStart(manager: manager, request: request) else {
@@ -289,7 +291,7 @@ final class TunnelCoordinator {
         guard isCurrent(request) else {
           return
         }
-        if finishRunningRequestIfSatisfied(request, manager: manager) {
+        if finishRunningRequestIfSatisfied(request, manager: manager, error: error) {
           return
         }
         throw error
@@ -307,7 +309,7 @@ final class TunnelCoordinator {
         guard isCurrent(request) else {
           return
         }
-        if finishRunningRequestIfSatisfied(request, manager: manager) {
+        if finishRunningRequestIfSatisfied(request, manager: manager, error: error) {
           return
         }
         throw error
@@ -345,7 +347,7 @@ final class TunnelCoordinator {
         try manager.connection.startVPNTunnel(options: options)
         log("start requested")
       } catch {
-        if finishRunningRequestIfSatisfied(request, manager: manager) {
+        if finishRunningRequestIfSatisfied(request, manager: manager, error: error) {
           return
         }
         throw error
@@ -542,13 +544,23 @@ final class TunnelCoordinator {
 
   private func finishRunningRequestIfSatisfied(
     _ request: TunnelRequest,
-    manager: NETunnelProviderManager
+    manager: NETunnelProviderManager,
+    error: Error
   ) -> Bool {
     let status = manager.connection.status
     recordObservedTunnelStatus(status, notifyExternal: false)
     guard status.tunnelState == .running else {
       return false
     }
+    // A retryable preference error still gets its retry while the tunnel runs: only a persisted save makes the new rules survive a reload.
+    if request.preferenceRetryCount == 0,
+      managerStore.isRetryablePreferenceError(error)
+    {
+      return false
+    }
+    logger.error(
+      "start finished with tunnel running despite error: \(error.localizedDescription, privacy: .public)"
+    )
     finishTunnelRequest(request, actualState: .running)
     return true
   }
@@ -685,21 +697,33 @@ final class TunnelCoordinator {
   }
 
   private func reportStartFailure() {
+    let signing = TunnelDiagnostics.signingStatus()
     let parts = [lastStartError, managerStore.tunnelLastError()]
       .compactMap { $0 }
       .filter { !$0.isEmpty }
     lastStartError = nil
     let summary = lastStartOptionsSummary
     lastStartOptionsSummary = nil
-    if parts.isEmpty {
-      let stage = managerStore.tunnelStage().flatMap {
-        $0 == "已停止" ? nil : "，阶段：\($0)"
-      } ?? ""
+    switch signing {
+    case .profileMissing:
       onTunnelFailure(
-        "隧道未连接：\(summary ?? "启动参数未知") #24\(stage)"
+        "VPN 扩展未签名：本次安装没有给扩展嵌入签名文件，VPN 无法启动。请用 SideKite + 付费证书重装 #24"
       )
-    } else {
-      onTunnelFailure(parts.joined(separator: "、") + " #24")
+    case .packetTunnelMissing:
+      onTunnelFailure(
+        "VPN 扩展未签名：本次安装未把 packet-tunnel-provider 权限签进扩展，VPN 无法启动。请用 SideKite + 付费证书重装 #24"
+      )
+    case .signed, .unknown, .noExtension:
+      if parts.isEmpty {
+        let stage = managerStore.tunnelStage().flatMap {
+          $0 == "已停止" ? nil : "，阶段：\($0)"
+        } ?? ""
+        onTunnelFailure(
+          "隧道未连接：\(summary ?? "启动参数未知") #24\(stage)"
+        )
+      } else {
+        onTunnelFailure(parts.joined(separator: "、") + " #24")
+      }
     }
     onTunnelDiagnostics(
       TunnelDiagnostics.collect(
@@ -801,20 +825,46 @@ private enum TunnelDiagnostics {
     return lines.joined(separator: "\n")
   }
 
-  private static func installedExtensions() -> [String] {
+  enum SigningStatus {
+    case signed
+    case unknown
+    case noExtension
+    case profileMissing
+    case packetTunnelMissing
+  }
+
+  static func signingStatus() -> SigningStatus {
+    guard let inspected = inspectExtensions() else {
+      return .unknown
+    }
+    let expected = "\(Bundle.main.bundleIdentifier ?? "").NECore"
+    guard let target = inspected.first(where: { $0.bundleId == expected })
+    else {
+      return inspected.isEmpty ? .noExtension : .unknown
+    }
+    if target.profileMissing {
+      return .profileMissing
+    }
+    return target.packetTunnel ? .signed : .packetTunnelMissing
+  }
+
+  private struct ExtensionInspection {
+    let bundleId: String
+    let profileMissing: Bool
+    let packetTunnel: Bool
+    let groups: [String]
+  }
+
+  private static func inspectExtensions() -> [ExtensionInspection]? {
     guard
       let plugIns = try? FileManager.default.contentsOfDirectory(
         at: Bundle.main.bundleURL.appendingPathComponent("PlugIns"),
         includingPropertiesForKeys: nil
       )
     else {
-      return ["appex=PlugIns unreadable"]
+      return nil
     }
-    let appexURLs = plugIns.filter { $0.pathExtension == "appex" }
-    if appexURLs.isEmpty {
-      return ["appex=none installed"]
-    }
-    return appexURLs.map { url in
+    return plugIns.filter { $0.pathExtension == "appex" }.map { url in
       let bundleId =
         Bundle(url: url)?.infoDictionary?["CFBundleIdentifier"] as? String
         ?? url.deletingPathExtension().lastPathComponent
@@ -824,7 +874,12 @@ private enum TunnelDiagnostics {
         ),
         let entitlements = extractEntitlements(from: data)
       else {
-        return "appex=\(bundleId) profile=missing"
+        return ExtensionInspection(
+          bundleId: bundleId,
+          profileMissing: true,
+          packetTunnel: false,
+          groups: []
+        )
       }
       let networkExtension =
         entitlements["com.apple.developer.networking.networkextension"]
@@ -832,8 +887,28 @@ private enum TunnelDiagnostics {
       let groups =
         entitlements["com.apple.security.application-groups"] as? [String]
         ?? []
+      return ExtensionInspection(
+        bundleId: bundleId,
+        profileMissing: false,
+        packetTunnel: networkExtension.contains("packet-tunnel-provider"),
+        groups: groups
+      )
+    }
+  }
+
+  private static func installedExtensions() -> [String] {
+    guard let inspected = inspectExtensions() else {
+      return ["appex=PlugIns unreadable"]
+    }
+    if inspected.isEmpty {
+      return ["appex=none installed"]
+    }
+    return inspected.map { item in
+      if item.profileMissing {
+        return "appex=\(item.bundleId) profile=missing"
+      }
       return
-        "appex=\(bundleId) packetTunnel=\(networkExtension.contains("packet-tunnel-provider")) groups=\(groups)"
+        "appex=\(item.bundleId) packetTunnel=\(item.packetTunnel) groups=\(item.groups)"
     }
   }
 

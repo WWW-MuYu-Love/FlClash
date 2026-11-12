@@ -229,7 +229,7 @@ final class TunnelManagerStore {
     }
   }
 
-  private func isRetryablePreferenceError(_ error: Error) -> Bool {
+  func isRetryablePreferenceError(_ error: Error) -> Bool {
     let error = error as NSError
     guard error.domain == NEVPNErrorDomain,
       let code = NEVPNError.Code(rawValue: error.code)

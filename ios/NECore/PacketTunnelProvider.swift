@@ -12,6 +12,7 @@ final class PacketTunnelProvider: NEPacketTunnelProvider {
   private lazy var ssidDirectController = SsidDirectController(
     sharedStateStore: sharedStateStore
   )
+  private var cachedManager: NETunnelProviderManager?
   private let logger = Logger(
     subsystem: PacketTunnelEnvironment.extensionBundleIdentifier,
     category: "PacketTunnelProvider"
@@ -62,6 +63,8 @@ final class PacketTunnelProvider: NEPacketTunnelProvider {
       completionHandler(PacketTunnelProviderError.missingVPNOptions)
       return
     }
+    // The entry point cleared the previous error, so any error recorded here means the forwarded config failed and this start fell back to the cached snapshot.
+    let stagedStartError = sharedStateStore.loadLastError()
     let vpnOptions = snapshot.options
     logger.info(
       "startTunnel options stack=\(vpnOptions.stack, privacy: .public) ipv6=\(vpnOptions.ipv6, privacy: .public) captureDns=\(vpnOptions.captureDns, privacy: .public) systemProxy=\(vpnOptions.systemProxy, privacy: .public)"
@@ -162,12 +165,20 @@ final class PacketTunnelProvider: NEPacketTunnelProvider {
           started ? "隧道启动成功" : "隧道启动失败"
         )
         if started {
-          self.sharedStateStore.clearLastError()
+          if let stagedStartError {
+            self.sharedStateStore.saveStage("转发配置失败，已用缓存配置")
+            self.logger.error(
+              "startTunnel using cached config after forwarded config failed: \(stagedStartError, privacy: .public)"
+            )
+          } else {
+            self.sharedStateStore.clearLastError()
+          }
           self.sharedStateStore.saveRunTime(vpnOptions: snapshot.data)
           // The core (and its 9090 controller) is up, so the SSID watcher
           // can switch the mode to direct on a direct SSID and restore it
           // on leaving, without the main app running.
           self.ssidDirectController.start()
+          self.cacheManagerForStop()
         } else {
           self.sharedStateStore.saveLastError("无法启动核心隧道")
         }
@@ -199,31 +210,77 @@ final class PacketTunnelProvider: NEPacketTunnelProvider {
         self.logger.error(
           "stopTunnel loadAllFromPreferences error=\(error.localizedDescription, privacy: .public)"
         )
+        self.disableOnDemandRetrying(completionHandler: completionHandler)
+        return
+      }
+      guard let manager = self.matchingManager(in: managers) else {
         completionHandler()
         return
       }
+      self.cachedManager = manager
+      self.disableOnDemand(manager: manager, completionHandler: completionHandler)
+    }
+  }
+
+  private func matchingManager(
+    in managers: [NETunnelProviderManager]?
+  ) -> NETunnelProviderManager? {
+    managers?.first(where: { manager in
       guard
-        let manager = managers?.first(where: { manager in
-          guard
-            let proto = manager.protocolConfiguration
-              as? NETunnelProviderProtocol
-          else {
-            return false
-          }
-          return proto.providerBundleIdentifier == PacketTunnelEnvironment.extensionBundleIdentifier
-        })
+        let proto = manager.protocolConfiguration
+          as? NETunnelProviderProtocol
       else {
-        completionHandler()
-        return
+        return false
       }
-      manager.isOnDemandEnabled = false
-      manager.saveToPreferences { error in
-        if let error {
-          self.logger.error(
-            "stopTunnel saveToPreferences error=\(error.localizedDescription, privacy: .public)"
+      return proto.providerBundleIdentifier == PacketTunnelEnvironment.extensionBundleIdentifier
+    })
+  }
+
+  private func disableOnDemand(
+    manager: NETunnelProviderManager,
+    completionHandler: @escaping () -> Void
+  ) {
+    manager.isOnDemandEnabled = false
+    manager.saveToPreferences { error in
+      if let error {
+        self.logger.error(
+          "stopTunnel saveToPreferences error=\(error.localizedDescription, privacy: .public)"
+        )
+      }
+      completionHandler()
+    }
+  }
+
+  // One fresh retry first: a freshly loaded manager carries the latest rules, while the cached one may predate an in-app save.
+  private func disableOnDemandRetrying(
+    completionHandler: @escaping () -> Void
+  ) {
+    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+      NETunnelProviderManager.loadAllFromPreferences { managers, _ in
+        if let manager = self.matchingManager(in: managers) {
+          self.cachedManager = manager
+          self.disableOnDemand(
+            manager: manager,
+            completionHandler: completionHandler
           )
+          return
         }
-        completionHandler()
+        guard let cachedManager = self.cachedManager else {
+          completionHandler()
+          return
+        }
+        self.disableOnDemand(
+          manager: cachedManager,
+          completionHandler: completionHandler
+        )
+      }
+    }
+  }
+
+  private func cacheManagerForStop() {
+    NETunnelProviderManager.loadAllFromPreferences { managers, _ in
+      if let manager = self.matchingManager(in: managers) {
+        self.cachedManager = manager
       }
     }
   }

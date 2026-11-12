@@ -118,6 +118,7 @@ final class CoreMessageRouter {
       } else {
         routedResult = try await sendRoutedCoreMessage(
           data,
+          method: method,
           selectedRoute: route(
             method: method,
             defaultRoute: selectedRoute
@@ -189,13 +190,16 @@ final class CoreMessageRouter {
 
   private func sendRoutedCoreMessage(
     _ data: Data,
+    method: String?,
     selectedRoute: CoreRoute
   ) async throws -> (response: String, route: CoreRoute) {
     do {
       let response = try await sendCoreMessage(data, route: selectedRoute)
       return (response, selectedRoute)
     } catch {
-      guard selectedRoute == .networkExtension else {
+      guard selectedRoute == .networkExtension,
+        Self.allowsAppFallback(method)
+      else {
         throw error
       }
       log(
@@ -204,6 +208,20 @@ final class CoreMessageRouter {
       let response = try await sendCoreMessage(data, route: .app)
       return (response, .app)
     }
+  }
+
+  private static func allowsAppFallback(_ method: String?) -> Bool {
+    guard let method else {
+      return false
+    }
+    return method.hasPrefix("mitm.") || method.hasPrefix("provider.")
+      || [
+        "proxy.list",
+        "proxy.testDelay",
+        "geo.update",
+        "probe.outboundIp",
+        "profile.clearEffect",
+      ].contains(method)
   }
 
   private func sendNotificationStop(
@@ -317,13 +335,14 @@ final class CoreMessageRouter {
         route: .networkExtension
       )
     } catch {
-      // The push is best-effort: the extension re-reads the config from the
-      // shared state on start, and mode changes also reach it over the 9090
-      // controller, so a failed push must not fail the setup/update itself.
       let code = (error as? ProviderMessageError)?.code ?? "unknown"
-      log(
+      logError(
         "config push to extension failed method=\(method.rawValue) code=\(code): \(error.localizedDescription)"
       )
+      // Only setupConfig is best-effort: the extension re-reads its yaml on start, but an update never rewrites it.
+      guard method == .setupConfig else {
+        throw error
+      }
       return appResponse
     }
   }
@@ -508,6 +527,10 @@ final class CoreMessageRouter {
 
   private func log(_ message: String) {
     logger.debug("\(message, privacy: .public)")
+  }
+
+  private func logError(_ message: String) {
+    logger.error("\(message, privacy: .public)")
   }
 }
 
