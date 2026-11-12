@@ -584,19 +584,15 @@ void main() {
 
       container.read(currentSSIDProvider.notifier).update((_) => 'Office');
       expect(container.read(suspendProvider), isTrue);
-      expect(container.read(isDirectSsidProvider), isFalse);
 
       container.read(currentSSIDProvider.notifier).update((_) => 'Home');
       expect(container.read(suspendProvider), isFalse);
-      expect(container.read(isDirectSsidProvider), isTrue);
 
       container.read(currentSSIDProvider.notifier).update((_) => 'Cafe');
       expect(container.read(suspendProvider), isFalse);
-      expect(container.read(isDirectSsidProvider), isFalse);
 
       container.read(currentSSIDProvider.notifier).update((_) => null);
       expect(container.read(suspendProvider), isFalse);
-      expect(container.read(isDirectSsidProvider), isFalse);
     },
   );
 

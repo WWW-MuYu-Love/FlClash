@@ -65,6 +65,10 @@ class _ConnectivityManagerState extends ConsumerState<ConnectivityManager>
         }
       },
     );
+    // Cold start emits no connectivity event, so read the current network
+    // once up front; otherwise an already-connected excluded SSID stays
+    // unpublished until the next resume or network change.
+    unawaited(_refreshOnResume());
   }
 
   @override
