@@ -21,6 +21,8 @@ import 'package:fl_clash/views/config/scripts.dart';
 import 'package:fl_clash/views/config/sniffer.dart';
 import 'package:fl_clash/views/config/tun.dart';
 import 'package:fl_clash/views/config/user_agents.dart';
+import 'package:fl_clash/views/dashboard/widgets/zashboard.dart';
+import 'package:fl_clash/views/dashboard/zashboard_view.dart';
 import 'package:fl_clash/views/hotkey.dart';
 import 'package:fl_clash/views/profiles/custom/custom.dart';
 import 'package:fl_clash/views/profiles/custom/custom_proxies.dart';
@@ -37,8 +39,10 @@ import 'package:flutter_test/flutter_test.dart';
 import '../helpers/test_app.dart';
 import '../helpers/test_database_providers.dart';
 import '../helpers/test_profiles.dart';
+import '../helpers/test_webview_platform.dart';
 import '../helpers/host_scaffold.dart';
 import 'package:prism_ui/prism_ui.dart';
+import 'package:webview_flutter_platform_interface/webview_flutter_platform_interface.dart';
 
 Finder _portField(String label) => find.descendant(
   of: find.widgetWithText(FormRow, label),
@@ -287,6 +291,13 @@ void main() {
         .read(viewSizeProvider.notifier)
         .update((_) => const Size(500, 1000));
 
+    // Widget tests run on Linux, where the in-app web view is unavailable.
+    final webViewPlatform = TestWebViewPlatform();
+    WebViewPlatform.instance = webViewPlatform;
+    final defaultAvailable = zashboardInAppWebViewAvailable;
+    zashboardInAppWebViewAvailable = () => true;
+    addTearDown(() => zashboardInAppWebViewAvailable = defaultAvailable);
+
     const launcherChannel = MethodChannel('plugins.flutter.io/url_launcher');
     final launchedUrls = <String>[];
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
@@ -316,11 +327,17 @@ void main() {
       await tester.pump();
     }
     await tester.tap(find.text('Zashboard'));
-    await tester.pump();
-    await tester.pump();
+    await tester.pumpAndSettle();
 
-    expect(launchedUrls, [
-      'http://127.0.0.1:9090/ui?hostname=127.0.0.1&port=9090&secret=AbC123xYz987',
+    expect(launchedUrls, isEmpty);
+    expect(find.byType(ZashboardView), findsOneWidget);
+    expect(webViewPlatform.createdControllers.single.loadedUris, [
+      Uri.parse(
+        'http://127.0.0.1:9090/ui?hostname=127.0.0.1&port=9090&secret=AbC123xYz987',
+      ),
+    ]);
+    expect(webViewPlatform.createdControllers.single.javaScriptModes, [
+      JavaScriptMode.unrestricted,
     ]);
     expect(tester.takeException(), null);
   });
@@ -366,6 +383,12 @@ void main() {
         .read(viewSizeProvider.notifier)
         .update((_) => const Size(500, 1000));
 
+    final webViewPlatform = TestWebViewPlatform();
+    WebViewPlatform.instance = webViewPlatform;
+    final defaultAvailable = zashboardInAppWebViewAvailable;
+    zashboardInAppWebViewAvailable = () => true;
+    addTearDown(() => zashboardInAppWebViewAvailable = defaultAvailable);
+
     const launcherChannel = MethodChannel('plugins.flutter.io/url_launcher');
     final launchedUrls = <String>[];
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
@@ -395,10 +418,13 @@ void main() {
       await tester.pump();
     }
     await tester.tap(find.text('Zashboard'));
-    await tester.pump();
-    await tester.pump();
+    await tester.pumpAndSettle();
 
-    expect(launchedUrls, ['http://127.0.0.1:9090/ui']);
+    expect(launchedUrls, isEmpty);
+    expect(find.byType(ZashboardView), findsOneWidget);
+    expect(webViewPlatform.createdControllers.single.loadedUris, [
+      Uri.parse('http://127.0.0.1:9090/ui'),
+    ]);
     expect(tester.takeException(), null);
   });
 
