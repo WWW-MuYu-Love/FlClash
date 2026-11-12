@@ -164,10 +164,9 @@ final class PacketTunnelProvider: NEPacketTunnelProvider {
         if started {
           self.sharedStateStore.clearLastError()
           self.sharedStateStore.saveRunTime(vpnOptions: snapshot.data)
-          // The core is up, so start the SSID watcher: it tracks direct
-          // SSIDs and restores the mode on leaving, without the main app
-          // running. The mode switch itself is deferred (9090 not wired),
-          // so it watches and logs but leaves the mode unchanged.
+          // The core (and its 9090 controller) is up, so the SSID watcher
+          // can switch the mode to direct on a direct SSID and restore it
+          // on leaving, without the main app running.
           self.ssidDirectController.start()
         } else {
           self.sharedStateStore.saveLastError("could not start core TUN")
