@@ -54,7 +54,7 @@ workflows:
     scripts:
       - name: Init submodules
         script: |
-          git submodule update --init --recursive || true
+          git submodule update --init --recursive
       - name: Toolchain versions
         script: |
           flutter --version

@@ -5,7 +5,6 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"syscall"
 	"testing"
 )
 
@@ -19,13 +18,12 @@ func TestRedirectStderr(t *testing.T) {
 	resetRedirectStderrDone()
 	defer resetRedirectStderrDone()
 	homeDir := t.TempDir()
-	saved, err := syscall.Dup(2)
+	saved, err := saveStderr()
 	if err != nil {
 		t.Fatalf("dup stderr: %v", err)
 	}
 	defer func() {
-		_ = syscall.Dup2(saved, 2)
-		_ = syscall.Close(saved)
+		_ = restoreStderr(saved)
 	}()
 	redirectStderrToPanicLog(homeDir)
 	if _, err := fmt.Fprintln(os.Stderr, "panic: test boom"); err != nil {
@@ -50,13 +48,12 @@ func TestRedirectStderrRotatesOversizedLog(t *testing.T) {
 	if err := os.WriteFile(path, []byte(oldContent), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	saved, err := syscall.Dup(2)
+	saved, err := saveStderr()
 	if err != nil {
 		t.Fatalf("dup stderr: %v", err)
 	}
 	defer func() {
-		_ = syscall.Dup2(saved, 2)
-		_ = syscall.Close(saved)
+		_ = restoreStderr(saved)
 	}()
 	redirectStderr(path)
 	if _, err := fmt.Fprintln(os.Stderr, "panic: after rotation"); err != nil {
@@ -105,13 +102,12 @@ func TestRedirectStderrToPanicLogRetriesAfterFailure(t *testing.T) {
 		t.Fatal("first redirect with an unusable home must fail")
 	}
 	homeDir := t.TempDir()
-	saved, err := syscall.Dup(2)
+	saved, err := saveStderr()
 	if err != nil {
 		t.Fatalf("dup stderr: %v", err)
 	}
 	defer func() {
-		_ = syscall.Dup2(saved, 2)
-		_ = syscall.Close(saved)
+		_ = restoreStderr(saved)
 	}()
 	if err := redirectStderrToPanicLog(homeDir); err != nil {
 		t.Fatalf("retry with a usable home must succeed: %v", err)

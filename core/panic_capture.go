@@ -6,7 +6,6 @@ import (
 	"path/filepath"
 	"runtime/debug"
 	"sync"
-	"syscall"
 )
 
 // A Go runtime panic in a background goroutine exits the process with
@@ -59,7 +58,7 @@ func redirectStderr(path string) error {
 		return err
 	}
 	// Held open for the life of the process: closing it would close fd 2.
-	if err := syscall.Dup2(int(file.Fd()), 2); err != nil {
+	if err := dupFileToStderr(file); err != nil {
 		_ = file.Close()
 		return err
 	}
