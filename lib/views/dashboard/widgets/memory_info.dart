@@ -102,6 +102,11 @@ Future<MemorySnapshot> _readSnapshot(WidgetRef ref) async {
   // On iOS the extension core is a separate process behind 9090. On
   // Android and desktop 9090 is the app core itself, so asking it would
   // count the same memory twice.
+  // Read sequentially on purpose: the extension read takes ~2s (/memory
+  // ticks once a second and its first sample is zero), so it stretches
+  // this card's cadence to ~4s. Splitting it into its own poller would
+  // need partial-snapshot merging in both this card and the detail sheet,
+  // for a slowly-moving value that is at most one cycle stale.
   final extensionRss = system.isIOS
       ? await ref.read(externalControllerClientProvider).fetchMemory()
       : null;

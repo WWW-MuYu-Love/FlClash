@@ -1,6 +1,12 @@
 import AVFoundation
 import AVKit
+import os
 import UIKit
+
+private let logger = Logger(
+  subsystem: Bundle.main.bundleIdentifier ?? "love.muyu.flclash",
+  category: "BackgroundKeepAlive"
+)
 
 /// Keeps the app alive in the background on iOS so the system does not
 /// suspend it. Two mechanisms, both making iOS treat the app as still in
@@ -33,6 +39,8 @@ final class BackgroundKeepAlive: NSObject {
   private var pipPossibleObserver: NSKeyValueObservation?
   private var pipRetryTimer: Timer?
   private var pipRetryCount = 0
+  private var pipArmed = false
+  private var pipRetryExhausted = false
   private var foregroundObserver: NSObjectProtocol?
   private var backgroundObserver: NSObjectProtocol?
 
@@ -67,9 +75,10 @@ final class BackgroundKeepAlive: NSObject {
     pipRetryTimer?.invalidate()
   }
 
-  /// The mode name Dart sends: "off", "silentAudio", "pictureInPicture".
-  /// Unknown values stop the keepalive.
-  func setMode(_ name: String) {
+  /// The mode name Dart sends; unknown values stop the keepalive. Returns
+  /// whether the requested mode is actually running: a failed start returns
+  /// false (PiP reports armed; its window only opens on backgrounding).
+  func setMode(_ name: String) -> Bool {
     let next: Mode
     switch name {
     case "silentAudio":
@@ -79,18 +88,32 @@ final class BackgroundKeepAlive: NSObject {
     default:
       next = .off
     }
-    guard next != mode else {
-      return
+    if next == mode {
+      return isArmed(next)
     }
     mode = next
     stopAll()
     switch next {
     case .off:
-      break
+      return true
     case .silentAudio:
-      startSilentAudio()
+      return startSilentAudio()
     case .pictureInPicture:
-      startPictureInPicture()
+      return startPictureInPicture()
+    }
+  }
+
+  private func isArmed(_ mode: Mode) -> Bool {
+    switch mode {
+    case .off:
+      return true
+    case .silentAudio:
+      return audioEngine != nil
+    case .pictureInPicture:
+      if pipArmed {
+        return true
+      }
+      return startPictureInPicture()
     }
   }
 
@@ -101,7 +124,7 @@ final class BackgroundKeepAlive: NSObject {
 
   // MARK: - Silent audio
 
-  private func startSilentAudio() {
+  private func startSilentAudio() -> Bool {
     let session = AVAudioSession.sharedInstance()
     do {
       try session.setCategory(
@@ -111,7 +134,8 @@ final class BackgroundKeepAlive: NSObject {
       )
       try session.setActive(true)
     } catch {
-      return
+      logger.error("silent audio keepalive failed to activate audio session: \(error.localizedDescription, privacy: .public)")
+      return false
     }
     let engine = AVAudioEngine()
     let playerNode = AVAudioPlayerNode()
@@ -121,7 +145,8 @@ final class BackgroundKeepAlive: NSObject {
       channels: 1,
     )
     guard let format else {
-      return
+      logger.error("silent audio keepalive failed: no audio format")
+      return false
     }
     engine.connect(playerNode, to: engine.mainMixerNode, format: format)
     // One second of silence, looped forever. The buffer is all zeros, so
@@ -130,7 +155,8 @@ final class BackgroundKeepAlive: NSObject {
       pcmFormat: format,
       frameCapacity: AVAudioFrameCount(format.sampleRate),
     ) else {
-      return
+      logger.error("silent audio keepalive failed: no audio buffer")
+      return false
     }
     buffer.frameLength = buffer.frameCapacity
     if let channelData = buffer.floatChannelData {
@@ -141,11 +167,13 @@ final class BackgroundKeepAlive: NSObject {
     do {
       try engine.start()
     } catch {
-      return
+      logger.error("silent audio keepalive failed to start engine: \(error.localizedDescription, privacy: .public)")
+      return false
     }
     playerNode.play()
     audioEngine = engine
     audioPlayerNode = playerNode
+    return true
   }
 
   private func stopSilentAudio() {
@@ -177,15 +205,17 @@ final class BackgroundKeepAlive: NSObject {
     }
   }
 
-  private func startPictureInPicture() {
+  private func startPictureInPicture() -> Bool {
     guard AVPictureInPictureController.isPictureInPictureSupported() else {
-      return
+      logger.error("PiP keepalive unavailable: picture in picture not supported")
+      return false
     }
     guard let videoURL = Bundle.main.url(
       forResource: "keepalive",
       withExtension: "mp4",
     ) else {
-      return
+      logger.error("PiP keepalive unavailable: keepalive.mp4 missing from bundle")
+      return false
     }
     activatePlaybackSession()
     let item = AVPlayerItem(url: videoURL)
@@ -200,15 +230,14 @@ final class BackgroundKeepAlive: NSObject {
     let container = UIView(frame: CGRect(x: 0, y: 0, width: 1, height: 1))
     layer.frame = container.bounds
     container.layer.addSublayer(layer)
-    if let window = UIApplication.shared.connectedScenes
-      .compactMap({ $0 as? UIWindowScene })
-      .flatMap({ $0.windows })
-      .first(where: { $0.isKeyWindow })
-    {
-      window.addSubview(container)
+    guard attachPipContainer(container) else {
+      logger.error("PiP keepalive not armed: no key window to host the player layer")
+      return false
     }
     guard let controller = AVPictureInPictureController(playerLayer: layer) else {
-      return
+      container.removeFromSuperview()
+      logger.error("PiP keepalive failed: could not create picture in picture controller")
+      return false
     }
     controller.delegate = self
     pipPlayer = player
@@ -216,6 +245,9 @@ final class BackgroundKeepAlive: NSObject {
     pipPlayerLayer = layer
     pipContainerView = container
     pipController = controller
+    pipRetryCount = 0
+    pipRetryExhausted = false
+    pipArmed = true
     // The player is often not ready the instant the app backgrounds, so
     // PiP is impossible at that moment and never retried. Watch for it
     // becoming possible and start it then.
@@ -234,6 +266,22 @@ final class BackgroundKeepAlive: NSObject {
     if UIApplication.shared.applicationState == .background {
       startPipIfNeeded()
     }
+    return true
+  }
+
+  private func attachPipContainer(_ container: UIView) -> Bool {
+    guard container.superview == nil else {
+      return true
+    }
+    guard let window = UIApplication.shared.connectedScenes
+      .compactMap({ $0 as? UIWindowScene })
+      .flatMap({ $0.windows })
+      .first(where: { $0.isKeyWindow })
+    else {
+      return false
+    }
+    window.addSubview(container)
+    return true
   }
 
   private func stopPictureInPicture() {
@@ -242,6 +290,8 @@ final class BackgroundKeepAlive: NSObject {
     pipRetryTimer?.invalidate()
     pipRetryTimer = nil
     pipRetryCount = 0
+    pipArmed = false
+    pipRetryExhausted = false
     if pipController?.isPictureInPictureActive == true {
       pipController?.stopPictureInPicture()
     }
@@ -260,6 +310,14 @@ final class BackgroundKeepAlive: NSObject {
   private func didEnterBackground() {
     guard mode == .pictureInPicture else {
       return
+    }
+    if !pipArmed {
+      // A foreground start that failed gets one fresh attempt now.
+      _ = startPictureInPicture()
+    } else if pipRetryExhausted {
+      pipRetryCount = 0
+      pipRetryExhausted = false
+      logger.debug("retrying picture in picture after earlier retries ran out")
     }
     startPipIfNeeded()
   }
@@ -286,11 +344,16 @@ final class BackgroundKeepAlive: NSObject {
     pipRetryTimer?.invalidate()
     pipRetryTimer = nil
     pipRetryCount = 0
+    pipRetryExhausted = false
     controller.startPictureInPicture()
   }
 
   private func schedulePipRetry() {
     guard pipRetryCount < 10 else {
+      if !pipRetryExhausted {
+        pipRetryExhausted = true
+        logger.error("picture in picture keepalive gave up after 10 retries; will try again on the next background entry")
+      }
       return
     }
     pipRetryTimer?.invalidate()
