@@ -384,6 +384,23 @@ class SetupAction extends _$SetupAction {
     await setRunning(true);
   }
 
+  /// iOS only: start or stop just the tunnel for a VPN-switch flip, while
+  /// the App core keeps running. False off iOS, where the switch still
+  /// needs a service restart.
+  Future<bool> setTunnelEnabled(bool enable) async {
+    if (!system.isIOS) {
+      return false;
+    }
+    return _listenerScheduler.run(() async {
+      if (enable) {
+        // The extension reads the shared state when the tunnel starts.
+        await _syncSharedState();
+      }
+      await setCoreRunning(enable);
+      return true;
+    });
+  }
+
   void _rollbackRunning(_RunRequest request) {
     if (!_isCurrent(request)) {
       return;
