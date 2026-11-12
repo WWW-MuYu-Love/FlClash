@@ -355,8 +355,7 @@ class _MitmSideView extends ConsumerWidget {
               title: bodyTitle,
               items: [ListItem(title: Text(appLocalizations.inProgress))],
             ),
-          if (kept)
-            MitmBodySection(title: bodyTitle, content: content),
+          if (kept) MitmBodySection(title: bodyTitle, content: content),
           if (bodyError != null)
             generateSection(
               title: bodyTitle,

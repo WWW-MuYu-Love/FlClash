@@ -275,9 +275,7 @@ Future<MitmBodyContent?> mitmBody(
           id,
           response: response,
         ) ??
-        await ref
-            .read(coreHandlerProvider)
-            .getMitmBody(id, response: response);
+        await ref.read(coreHandlerProvider).getMitmBody(id, response: response);
   } else {
     body = await ref
         .read(coreHandlerProvider)
