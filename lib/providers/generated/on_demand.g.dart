@@ -9,59 +9,6 @@ part of '../on_demand.dart';
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
 
-@ProviderFor(DirectSsidRestoreMode)
-final directSsidRestoreModeProvider = DirectSsidRestoreModeProvider._();
-
-final class DirectSsidRestoreModeProvider
-    extends $NotifierProvider<DirectSsidRestoreMode, Mode?> {
-  DirectSsidRestoreModeProvider._()
-    : super(
-        from: null,
-        argument: null,
-        retry: null,
-        name: r'directSsidRestoreModeProvider',
-        isAutoDispose: false,
-        dependencies: null,
-        $allTransitiveDependencies: null,
-      );
-
-  @override
-  String debugGetCreateSourceHash() => _$directSsidRestoreModeHash();
-
-  @$internal
-  @override
-  DirectSsidRestoreMode create() => DirectSsidRestoreMode();
-
-  /// {@macro riverpod.override_with_value}
-  Override overrideWithValue(Mode? value) {
-    return $ProviderOverride(
-      origin: this,
-      providerOverride: $SyncValueProvider<Mode?>(value),
-    );
-  }
-}
-
-String _$directSsidRestoreModeHash() =>
-    r'3b966265f6b3ced8f9d573a6c8cf78a9b619edce';
-
-abstract class _$DirectSsidRestoreMode extends $Notifier<Mode?> {
-  Mode? build();
-  @$mustCallSuper
-  @override
-  WhenComplete runBuild() {
-    final ref = this.ref as $Ref<Mode?, Mode?>;
-    final element =
-        ref.element
-            as $ClassProviderElement<
-              AnyNotifier<Mode?, Mode?>,
-              Mode?,
-              Object?,
-              Object?
-            >;
-    return element.handleCreate(ref, build);
-  }
-}
-
 @ProviderFor(LocationPermissions)
 final locationPermissionsProvider = LocationPermissionsProvider._();
 

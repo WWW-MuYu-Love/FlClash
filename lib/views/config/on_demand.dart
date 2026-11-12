@@ -13,11 +13,18 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:wifi_ssid/wifi_ssid.dart';
 
 class OnDemandView extends ConsumerStatefulWidget {
-  const OnDemandView({super.key, this.isAndroid, this.isMacOS, this.isWindows});
+  const OnDemandView({
+    super.key,
+    this.isAndroid,
+    this.isMacOS,
+    this.isWindows,
+    this.isIOS,
+  });
 
   final bool? isAndroid;
   final bool? isMacOS;
   final bool? isWindows;
+  final bool? isIOS;
 
   @override
   ConsumerState createState() => _OnDemandViewState();
@@ -38,7 +45,10 @@ class _OnDemandViewState extends ConsumerState<OnDemandView>
 
   bool get _isWindows => widget.isWindows ?? system.isWindows;
 
-  bool get _needsLocationPermission => _isAndroid || _isMacOS || _isWindows;
+  bool get _isIOS => widget.isIOS ?? system.isIOS;
+
+  bool get _needsLocationPermission =>
+      _isAndroid || _isMacOS || _isWindows || _isIOS;
 
   void _handlePermanentlyDeniedLocationPermission() {
     if (_isMacOS) {
@@ -50,7 +60,7 @@ class _OnDemandViewState extends ConsumerState<OnDemandView>
           text: appLocalizations.locationPermissionGuide(appName),
         ),
       );
-    } else if (_isAndroid) {
+    } else if (_isAndroid || _isIOS) {
       app?.openAppSettings();
     } else if (_isWindows) {
       unawaited(_promptLocationSettings());

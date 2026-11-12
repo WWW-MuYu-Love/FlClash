@@ -1085,54 +1085,6 @@ final class SuspendProvider extends $FunctionalProvider<bool, bool, bool>
 
 String _$suspendHash() => r'8f3b4e5f5f41f2a69537fd9b1158e64e9e7648f3';
 
-/// The current SSID is excluded with the direct action: the tunnel keeps
-/// running and the proxy mode switches to direct instead of suspending.
-
-@ProviderFor(isDirectSsid)
-final isDirectSsidProvider = IsDirectSsidProvider._();
-
-/// The current SSID is excluded with the direct action: the tunnel keeps
-/// running and the proxy mode switches to direct instead of suspending.
-
-final class IsDirectSsidProvider extends $FunctionalProvider<bool, bool, bool>
-    with $Provider<bool> {
-  /// The current SSID is excluded with the direct action: the tunnel keeps
-  /// running and the proxy mode switches to direct instead of suspending.
-  IsDirectSsidProvider._()
-    : super(
-        from: null,
-        argument: null,
-        retry: null,
-        name: r'isDirectSsidProvider',
-        isAutoDispose: true,
-        dependencies: null,
-        $allTransitiveDependencies: null,
-      );
-
-  @override
-  String debugGetCreateSourceHash() => _$isDirectSsidHash();
-
-  @$internal
-  @override
-  $ProviderElement<bool> $createElement($ProviderPointer pointer) =>
-      $ProviderElement(pointer);
-
-  @override
-  bool create(Ref ref) {
-    return isDirectSsid(ref);
-  }
-
-  /// {@macro riverpod.override_with_value}
-  Override overrideWithValue(bool value) {
-    return $ProviderOverride(
-      origin: this,
-      providerOverride: $SyncValueProvider<bool>(value),
-    );
-  }
-}
-
-String _$isDirectSsidHash() => r'8621684116e33ed547ada9e11e2d38563187b7e4';
-
 @ProviderFor(DynamicColor)
 final dynamicColorProvider = DynamicColorProvider._();
 
