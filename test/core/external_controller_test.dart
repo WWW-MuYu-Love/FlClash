@@ -507,4 +507,84 @@ void main() {
       expect(await dead.closeConnection('42'), isFalse);
     });
   });
+  group('ExternalControllerClient mitm', () {
+    late HttpServer server;
+    late ExternalControllerClient client;
+
+    setUp(() async {
+      server = await _serve((request) async {
+        request.response.headers.contentType = ContentType.json;
+        final path = request.uri.path;
+        if (path == '/mitm/hosts') {
+          request.response.write('{"hosts":["movies.muyu.love"]}');
+        } else if (path == '/mitm/exchanges') {
+          request.response.write(
+            '{"capturing":true,"exchanges":[{"id":7,"start":"2026-11-12T04:00:00.000Z","method":"GET","url":"https://movies.muyu.love/play","status":200}]}',
+          );
+        } else if (path == '/mitm/exchange') {
+          request.response.write(
+            '{"id":7,"start":"2026-11-12T04:00:00.000Z","method":"GET","url":"https://movies.muyu.love/play","status":200,"connection":"1"}',
+          );
+        } else if (path == '/mitm/body') {
+          request.response.write('{"data":"aGVsbG8=","truncated":false}');
+        } else {
+          request.response.statusCode = HttpStatus.notFound;
+        }
+        await request.response.close();
+      });
+      client = ExternalControllerClient(
+        baseUri: Uri.parse('http://127.0.0.1:${server.port}'),
+      );
+    });
+
+    tearDown(() async {
+      client.close();
+      await server.close(force: true);
+    });
+
+    test('reads decrypted hosts and exchanges for a host', () async {
+      final hosts = await client.fetchMitmDecryptedHosts();
+      expect(hosts?.hosts, ['movies.muyu.love']);
+
+      final list = await client.fetchMitmExchangesByHost('movies.muyu.love');
+      expect(list?.capturing, isTrue);
+      expect(list?.exchanges, hasLength(1));
+      expect(list?.exchanges.first.url, 'https://movies.muyu.love/play');
+
+      final exchange = await client.fetchMitmExchange(7);
+      expect(exchange?.id, 7);
+      expect(exchange?.connection, '1');
+
+      final body = await client.fetchMitmBody(7, response: true);
+      expect(body?.data, 'aGVsbG8=');
+    });
+
+    test('returns null when the controller answers 401', () async {
+      await server.close(force: true);
+      server = await _serve((request) async {
+        request.response.statusCode = HttpStatus.unauthorized;
+        await request.response.close();
+      });
+      client = ExternalControllerClient(
+        baseUri: Uri.parse('http://127.0.0.1:${server.port}'),
+      );
+
+      expect(await client.fetchMitmDecryptedHosts(), isNull);
+      expect(await client.fetchMitmExchangesByHost('a.test'), isNull);
+      expect(await client.fetchMitmExchange(7), isNull);
+      expect(await client.fetchMitmBody(7, response: true), isNull);
+    });
+
+    test('returns null when nothing listens', () async {
+      final port = server.port;
+      await server.close(force: true);
+      final dead = ExternalControllerClient(
+        baseUri: Uri.parse('http://127.0.0.1:$port'),
+      );
+      addTearDown(dead.close);
+
+      expect(await dead.fetchMitmDecryptedHosts(), isNull);
+      expect(await dead.fetchMitmExchangesByHost('a.test'), isNull);
+    });
+  });
 }
