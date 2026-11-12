@@ -1,7 +1,9 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:fl_clash/common/common.dart';
+import 'package:fl_clash/enum/enum.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:package_info_plus/package_info_plus.dart';
@@ -11,7 +13,9 @@ import 'package:path_provider_foundation/path_provider_foundation.dart';
 
 /// iOS: the NECore extension can only read the shared App Group container,
 /// so the data directory moves there, copying any files the app already
-/// wrote under its own support directory first.
+/// wrote under its own support directory first. A stamp in the group
+/// directory records the source and its newest mtime; on a later run,
+/// source files newer than the stamp are copied over the target again.
 @visibleForTesting
 Future<Directory> migrateIOSDataDirectory({
   required Directory supportDirectory,
@@ -26,6 +30,12 @@ Future<Directory> migrateIOSDataDirectory({
       equals(supportDirectory.path, appGroupDirectory.path)) {
     return appGroupDirectory;
   }
+  final stamp = await _readMigrationStamp(appGroupDirectory);
+  final sourceMaxMtime = await _newestMtime(supportDirectory);
+  final sourceChanged =
+      stamp != null &&
+      equals(stamp.source, supportDirectory.path) &&
+      sourceMaxMtime > stamp.sourceMaxMtime;
   await for (final entity in supportDirectory.list(recursive: true)) {
     final targetPath = join(
       appGroupDirectory.path,
@@ -33,12 +43,81 @@ Future<Directory> migrateIOSDataDirectory({
     );
     if (entity is Directory) {
       await Directory(targetPath).create(recursive: true);
-    } else if (entity is File && !await File(targetPath).exists()) {
-      await File(targetPath).parent.create(recursive: true);
-      await entity.copy(targetPath);
+    } else if (entity is File) {
+      final target = File(targetPath);
+      var copy = !await target.exists();
+      if (!copy && sourceChanged) {
+        final mtime = await entity.lastModified();
+        copy = mtime.millisecondsSinceEpoch > stamp.sourceMaxMtime;
+      }
+      if (copy) {
+        await target.parent.create(recursive: true);
+        await entity.copy(targetPath);
+      }
     }
   }
+  await _writeMigrationStamp(
+    appGroupDirectory,
+    source: supportDirectory.path,
+    sourceMaxMtime: sourceMaxMtime,
+  );
   return appGroupDirectory;
+}
+
+const _migrationStampFileName = '.ios-migration.json';
+
+Future<({String source, int sourceMaxMtime})?> _readMigrationStamp(
+  Directory appGroupDirectory,
+) async {
+  try {
+    final file = File(join(appGroupDirectory.path, _migrationStampFileName));
+    if (!await file.exists()) {
+      return null;
+    }
+    final json = jsonDecode(await file.readAsString()) as Map<String, Object?>;
+    final source = json['source'] as String?;
+    final sourceMaxMtime = json['sourceMaxMtime'] as int?;
+    if (source == null || sourceMaxMtime == null) {
+      return null;
+    }
+    return (source: source, sourceMaxMtime: sourceMaxMtime);
+  } catch (_) {
+    return null;
+  }
+}
+
+Future<void> _writeMigrationStamp(
+  Directory appGroupDirectory, {
+  required String source,
+  required int sourceMaxMtime,
+}) async {
+  try {
+    final file = File(join(appGroupDirectory.path, _migrationStampFileName));
+    await file.writeAsString(
+      jsonEncode({
+        'source': source,
+        'sourceMaxMtime': sourceMaxMtime,
+        'migratedAt': DateTime.now().millisecondsSinceEpoch,
+      }),
+    );
+  } catch (_) {}
+}
+
+Future<int> _newestMtime(Directory directory) async {
+  var newest = 0;
+  await for (final entity in directory.list(recursive: true)) {
+    if (entity is File) {
+      try {
+        final mtime = (await entity.lastModified()).millisecondsSinceEpoch;
+        if (mtime > newest) {
+          newest = mtime;
+        }
+      } catch (_) {
+        continue;
+      }
+    }
+  }
+  return newest;
 }
 
 /// App Groups listed in the install's own provisioning profile, read
@@ -54,7 +133,11 @@ Future<List<String>> profileAppGroups() async {
       'getProfileAppGroups',
     );
     return groups?.map((group) => group.toString()).toList() ?? [];
-  } catch (_) {
+  } catch (error) {
+    commonPrint.log(
+      'failed to read profile app groups: $error',
+      logLevel: LogLevel.error,
+    );
     return [];
   }
 }
@@ -81,6 +164,7 @@ Future<String> resolveIOSAppGroupPath({
       return path;
     }
   }
+  commonPrint.log('未找到共享容器，已回落到 App 私有目录', logLevel: LogLevel.error);
   return '';
 }
 
@@ -136,7 +220,11 @@ class AppPath {
           supportDirectory: support,
           appGroupPath: appGroupPath,
         );
-      } catch (_) {
+      } catch (error) {
+        commonPrint.log(
+          'failed to resolve iOS app group, using support directory: $error',
+          logLevel: LogLevel.error,
+        );
         return support;
       }
     });
