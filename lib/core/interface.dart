@@ -88,8 +88,9 @@ abstract class CoreHandlerInterface {
     CoreMethod method, {
     Object? arguments,
     Duration? timeout,
+    CoreRoute? route,
   }) async {
-    await _call(method, arguments: arguments, timeout: timeout);
+    await _call(method, arguments: arguments, timeout: timeout, route: route);
   }
 
   /// For calls whose callers never wait on them, so a Core that is gone or
@@ -350,7 +351,8 @@ abstract class CoreHandlerInterface {
 
   Future<void> resetConnections() => _command(CoreMethod.connectionReset);
 
-  Future<void> clearDnsCache() => _command(CoreMethod.dnsClearCache);
+  Future<void> clearDnsCache({CoreRoute? route}) =>
+      _command(CoreMethod.dnsClearCache, route: route);
 
   Future<void> reportNetworkChange() => _command(CoreMethod.networkChanged);
 

@@ -424,6 +424,32 @@ class ExternalControllerClient {
     }
   }
 
+  // POST /cache/dns/flush clears the DNS cache on the core behind 9090.
+  // The core answers 204; a false return means the request itself failed
+  // (the tunnel is down or 9090 is unreachable).
+  Future<bool> clearDnsCache() async {
+    try {
+      final request = await _http
+          .postUrl(
+            baseUri.replace(
+              pathSegments: [...baseUri.pathSegments, 'cache', 'dns', 'flush'],
+            ),
+          )
+          .timeout(_fetchTimeout);
+      if (secret.isNotEmpty) {
+        request.headers.set(HttpHeaders.authorizationHeader, 'Bearer $secret');
+      }
+      final response = await request.close().timeout(_fetchTimeout);
+      _noteStatus(response);
+      await response.drain<void>();
+      return response.statusCode == HttpStatus.noContent ||
+          response.statusCode == HttpStatus.ok;
+    } catch (_) {
+      unauthorized = false;
+      return false;
+    }
+  }
+
   // GET /mitm/hosts returns the hosts with recorded decrypted exchanges.
   Future<MitmDecryptedHosts?> fetchMitmDecryptedHosts() async {
     try {

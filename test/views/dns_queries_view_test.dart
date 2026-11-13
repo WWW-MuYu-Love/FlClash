@@ -1,5 +1,6 @@
 import 'package:fl_clash/common/common.dart';
 import 'package:fl_clash/core/controller.dart';
+import 'package:fl_clash/core/external_controller.dart';
 import 'package:fl_clash/core/interface.dart';
 import 'package:fl_clash/core/method.dart';
 import 'package:fl_clash/enum/enum.dart';
@@ -19,6 +20,21 @@ import '../helpers/test_app.dart';
 import '../helpers/test_profiles.dart';
 
 class _MockCoreHandlerInterface extends Mock implements CoreHandlerInterface {}
+
+class _MockExternalControllerClient extends Mock
+    implements ExternalControllerClient {}
+
+const _runningVpnOptions = VpnOptions(
+  enable: true,
+  port: 7890,
+  ipv6: false,
+  dnsHijacking: false,
+  accessControlProps: AccessControlProps(),
+  allowBypass: false,
+  systemProxy: false,
+  bypassDomain: [],
+  stack: 'gvisor',
+);
 
 const _tableSize = Size(1400, 1000);
 const _listSize = Size(600, 1000);
@@ -53,13 +69,16 @@ void main() {
 
   late ProviderContainer container;
   late _MockCoreHandlerInterface core;
+  late _MockExternalControllerClient controllerClient;
 
   setUp(() {
     core = _MockCoreHandlerInterface();
+    controllerClient = _MockExternalControllerClient();
     container = ProviderContainer(
       overrides: [
         profilesProvider.overrideWith(TestProfiles.new),
         coreHandlerProvider.overrideWithValue(CoreController.scoped(core)),
+        externalControllerClientProvider.overrideWithValue(controllerClient),
       ],
     );
     globalState.container = container;
@@ -472,6 +491,45 @@ void main() {
 
     expect(find.text('Failed to clear DNS cache'), findsOneWidget);
     expect(find.text('DNS cache cleared'), findsNothing);
+
+    await teardownView(tester);
+  });
+
+  testWidgets('with the tunnel up the broom clears the cache via 9090', (
+    tester,
+  ) async {
+    when(() => controllerClient.clearDnsCache()).thenAnswer((_) async => true);
+    container.read(runningVpnOptionsProvider.notifier).value =
+        _runningVpnOptions;
+    await pumpDnsQueries(tester);
+
+    await tester.tap(find.byGlyph(AppGlyphs.broom));
+    await tester.pumpAndSettle();
+
+    verify(() => controllerClient.clearDnsCache()).called(1);
+    verifyNever(() => core.clearDnsCache(route: any(named: 'route')));
+    expect(find.text('DNS cache cleared'), findsOneWidget);
+
+    await teardownView(tester);
+  });
+
+  testWidgets('when 9090 cannot clear it falls back to the App core', (
+    tester,
+  ) async {
+    when(() => controllerClient.clearDnsCache()).thenAnswer((_) async => false);
+    when(
+      () => core.clearDnsCache(route: CoreRoute.app),
+    ).thenAnswer((_) async {});
+    container.read(runningVpnOptionsProvider.notifier).value =
+        _runningVpnOptions;
+    await pumpDnsQueries(tester);
+
+    await tester.tap(find.byGlyph(AppGlyphs.broom));
+    await tester.pumpAndSettle();
+
+    verify(() => controllerClient.clearDnsCache()).called(1);
+    verify(() => core.clearDnsCache(route: CoreRoute.app)).called(1);
+    expect(find.text('DNS cache cleared'), findsOneWidget);
 
     await teardownView(tester);
   });

@@ -871,6 +871,8 @@ void main() {
           request.response.write(
             '{"data":"hello","truncated":false,"encoding":""}',
           );
+        } else if (path == '/cache/dns/flush') {
+          request.response.statusCode = HttpStatus.noContent;
         } else {
           request.response.statusCode = HttpStatus.notFound;
         }
@@ -915,6 +917,10 @@ void main() {
       expect(result?.body, '203.0.113.7');
       expect(result?.chains, ['DIRECT']);
       expect(result?.coreEpoch, 3);
+    });
+
+    test('clears the DNS cache', () async {
+      expect(await client.clearDnsCache(), isTrue);
     });
 
     test('reads the MITM captures', () async {

@@ -103,8 +103,18 @@ class _DnsQueriesViewState extends ConsumerState<DnsQueriesView>
     final appLocalizations = context.appLocalizations;
     var cleared = false;
     try {
-      await ref.read(coreHandlerProvider).clearDnsCache();
-      cleared = true;
+      final tunnelUp = ref.read(runningVpnOptionsProvider)?.enable == true;
+      if (tunnelUp) {
+        cleared = await ref
+            .read(externalControllerClientProvider)
+            .clearDnsCache();
+      }
+      if (!cleared) {
+        await ref
+            .read(coreHandlerProvider)
+            .clearDnsCache(route: tunnelUp ? CoreRoute.app : null);
+        cleared = true;
+      }
     } catch (error) {
       commonPrint.log(
         'clearDnsCache error: $error',
