@@ -176,7 +176,12 @@ Future<RealProfile> _makeRealProfileTask(MakeRealProfileState data) async {
       rawConfig['iptables'] = {'enable': false};
     }
   }
-  rawConfig['external-ui'] = '';
+  // The controller serves /ui from external-ui. The path stays relative:
+  // each core resolves it against its own home (the app core's private
+  // container, the extension core's FlClash folder in the App Group), and
+  // no absolute path passes both cores' safe-path check. The name stays
+  // cleared so the UI updater skips its download.
+  rawConfig['external-ui'] = 'ui/zashboard';
   switch (realPatchConfig.interfaceNameMode) {
     case InterfaceNameMode.clear:
       rawConfig['interface-name'] = '';
@@ -185,10 +190,9 @@ Future<RealProfile> _makeRealProfileTask(MakeRealProfileState data) async {
     case InterfaceNameMode.custom:
       rawConfig['interface-name'] = realPatchConfig.interfaceName;
   }
+  // The URL stays cleared: a set URL would make mihomo try to download
+  // the UI on every start.
   rawConfig['external-ui-url'] = '';
-  // mihomo auto-downloads the web UI whenever external-ui-name is set,
-  // even with the URL cleared, so the name must be cleared too or every
-  // start fails downloading from an empty URL.
   rawConfig['external-ui-name'] = '';
   rawConfig.addAll(realPatchConfig.generalOverrideJson);
   rawConfig['log-level'] = realPatchConfig.logLevel.name;

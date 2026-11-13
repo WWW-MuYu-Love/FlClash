@@ -225,6 +225,11 @@ void main() {
     );
   });
 
+  test('the shared iOS dir is null where there is no app group', () async {
+    // Tests run off iOS, so there is no App Group container to share.
+    expect(await appPath.sharedIOSFlClashDirPath, isNull);
+  });
+
   test('resolves the app group derived from the bundle id', () async {
     const derivedPath = '/groups/derived';
     const profilePath = '/groups/profile';

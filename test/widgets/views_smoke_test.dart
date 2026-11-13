@@ -1,9 +1,11 @@
+import 'package:fl_clash/core/external_controller.dart';
 import 'package:fl_clash/enum/enum.dart';
 import 'package:fl_clash/features/form/form.dart';
 import 'package:fl_clash/models/models.dart';
 import 'package:fl_clash/providers/action.dart';
 import 'package:fl_clash/providers/app.dart';
 import 'package:fl_clash/providers/config.dart';
+import 'package:fl_clash/providers/core.dart';
 import 'package:fl_clash/providers/database.dart';
 import 'package:fl_clash/providers/state.dart';
 import 'package:fl_clash/state.dart';
@@ -19,6 +21,8 @@ import 'package:fl_clash/views/config/scripts.dart';
 import 'package:fl_clash/views/config/sniffer.dart';
 import 'package:fl_clash/views/config/tun.dart';
 import 'package:fl_clash/views/config/user_agents.dart';
+import 'package:fl_clash/views/dashboard/widgets/zashboard.dart';
+import 'package:fl_clash/views/dashboard/zashboard_view.dart';
 import 'package:fl_clash/views/hotkey.dart';
 import 'package:fl_clash/views/profiles/custom/custom.dart';
 import 'package:fl_clash/views/profiles/custom/custom_proxies.dart';
@@ -27,6 +31,7 @@ import 'package:fl_clash/views/proxies/list.dart';
 import 'package:fl_clash/views/proxies/tab.dart';
 import 'package:fl_clash/views/theme.dart';
 import 'package:fl_clash/views/views.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -34,8 +39,10 @@ import 'package:flutter_test/flutter_test.dart';
 import '../helpers/test_app.dart';
 import '../helpers/test_database_providers.dart';
 import '../helpers/test_profiles.dart';
+import '../helpers/test_webview_platform.dart';
 import '../helpers/host_scaffold.dart';
 import 'package:prism_ui/prism_ui.dart';
+import 'package:webview_flutter_platform_interface/webview_flutter_platform_interface.dart';
 
 Finder _portField(String label) => find.descendant(
   of: find.widgetWithText(FormRow, label),
@@ -510,6 +517,278 @@ void main() {
     }
 
     await tester.pumpWidget(const SizedBox.shrink());
+  });
+
+  testWidgets('zashboard opens the panel with the controller secret', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(500, 1000);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    const runningOptions = VpnOptions(
+      enable: true,
+      port: 7890,
+      ipv6: false,
+      dnsHijacking: false,
+      accessControlProps: AccessControlProps(
+        enable: false,
+        mode: AccessControlMode.acceptSelected,
+        acceptList: [],
+        rejectList: [],
+      ),
+      allowBypass: false,
+      systemProxy: true,
+      bypassDomain: [],
+      stack: 'mixed',
+    );
+    final client = ExternalControllerClient(
+      baseUri: Uri.parse('http://127.0.0.1:9090'),
+      secret: 'AbC123xYz987',
+    );
+    addTearDown(client.close);
+    final container = ProviderContainer(
+      overrides: [
+        profilesProvider.overrideWith(TestProfiles.new),
+        runningVpnOptionsProvider.overrideWithValue(runningOptions),
+        externalControllerClientProvider.overrideWithValue(client),
+      ],
+    );
+    addTearDown(container.dispose);
+    globalState.container = container;
+    container
+        .read(viewSizeProvider.notifier)
+        .update((_) => const Size(500, 1000));
+
+    // Widget tests run on Linux, where the in-app web view is unavailable.
+    final webViewPlatform = TestWebViewPlatform();
+    WebViewPlatform.instance = webViewPlatform;
+    final defaultAvailable = zashboardInAppWebViewAvailable;
+    zashboardInAppWebViewAvailable = () => true;
+    addTearDown(() => zashboardInAppWebViewAvailable = defaultAvailable);
+
+    const launcherChannel = MethodChannel('plugins.flutter.io/url_launcher');
+    final launchedUrls = <String>[];
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(launcherChannel, (call) async {
+          if (call.method == 'launch') {
+            launchedUrls.add((call.arguments as Map)['url'] as String);
+            return true;
+          }
+          return null;
+        });
+    addTearDown(
+      () => TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(launcherChannel, null),
+    );
+
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: const TestApp(child: DashboardView()),
+      ),
+    );
+    await tester.pump();
+
+    final scrollables = find.byType(Scrollable);
+    for (var index = 0; index < 8; index++) {
+      await tester.drag(scrollables.first, const Offset(0, -700));
+      await tester.pump();
+    }
+    await tester.tap(find.text('Zashboard'));
+    await tester.pumpAndSettle();
+
+    expect(launchedUrls, isEmpty);
+    expect(find.byType(ZashboardView), findsOneWidget);
+    expect(webViewPlatform.createdControllers.single.loadedUris, [
+      Uri.parse(
+        'http://127.0.0.1:9090/ui?hostname=127.0.0.1&port=9090&secret=AbC123xYz987',
+      ),
+    ]);
+    expect(webViewPlatform.createdControllers.single.javaScriptModes, [
+      JavaScriptMode.unrestricted,
+    ]);
+    expect(tester.takeException(), null);
+  });
+
+  testWidgets('zashboard opens the bare panel url without a secret', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(500, 1000);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    const runningOptions = VpnOptions(
+      enable: true,
+      port: 7890,
+      ipv6: false,
+      dnsHijacking: false,
+      accessControlProps: AccessControlProps(
+        enable: false,
+        mode: AccessControlMode.acceptSelected,
+        acceptList: [],
+        rejectList: [],
+      ),
+      allowBypass: false,
+      systemProxy: true,
+      bypassDomain: [],
+      stack: 'mixed',
+    );
+    final client = ExternalControllerClient(
+      baseUri: Uri.parse('http://127.0.0.1:9090'),
+    );
+    addTearDown(client.close);
+    final container = ProviderContainer(
+      overrides: [
+        profilesProvider.overrideWith(TestProfiles.new),
+        runningVpnOptionsProvider.overrideWithValue(runningOptions),
+        externalControllerClientProvider.overrideWithValue(client),
+      ],
+    );
+    addTearDown(container.dispose);
+    globalState.container = container;
+    container
+        .read(viewSizeProvider.notifier)
+        .update((_) => const Size(500, 1000));
+
+    final webViewPlatform = TestWebViewPlatform();
+    WebViewPlatform.instance = webViewPlatform;
+    final defaultAvailable = zashboardInAppWebViewAvailable;
+    zashboardInAppWebViewAvailable = () => true;
+    addTearDown(() => zashboardInAppWebViewAvailable = defaultAvailable);
+
+    const launcherChannel = MethodChannel('plugins.flutter.io/url_launcher');
+    final launchedUrls = <String>[];
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(launcherChannel, (call) async {
+          if (call.method == 'launch') {
+            launchedUrls.add((call.arguments as Map)['url'] as String);
+            return true;
+          }
+          return null;
+        });
+    addTearDown(
+      () => TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(launcherChannel, null),
+    );
+
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: const TestApp(child: DashboardView()),
+      ),
+    );
+    await tester.pump();
+
+    final scrollables = find.byType(Scrollable);
+    for (var index = 0; index < 8; index++) {
+      await tester.drag(scrollables.first, const Offset(0, -700));
+      await tester.pump();
+    }
+    await tester.tap(find.text('Zashboard'));
+    await tester.pumpAndSettle();
+
+    expect(launchedUrls, isEmpty);
+    expect(find.byType(ZashboardView), findsOneWidget);
+    expect(webViewPlatform.createdControllers.single.loadedUris, [
+      Uri.parse('http://127.0.0.1:9090/ui'),
+    ]);
+    expect(tester.takeException(), null);
+  });
+
+  testWidgets('zashboard shows the secret mismatch instead of the panel', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(500, 1000);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    const runningOptions = VpnOptions(
+      enable: true,
+      port: 7890,
+      ipv6: false,
+      dnsHijacking: false,
+      accessControlProps: AccessControlProps(
+        enable: false,
+        mode: AccessControlMode.acceptSelected,
+        acceptList: [],
+        rejectList: [],
+      ),
+      allowBypass: false,
+      systemProxy: true,
+      bypassDomain: [],
+      stack: 'mixed',
+    );
+    final client = ExternalControllerClient(
+      baseUri: Uri.parse('http://127.0.0.1:9090'),
+      secret: 'secret',
+    )..unauthorized = true;
+    addTearDown(client.close);
+    final container = ProviderContainer(
+      overrides: [
+        profilesProvider.overrideWith(TestProfiles.new),
+        runningVpnOptionsProvider.overrideWithValue(runningOptions),
+        externalControllerClientProvider.overrideWithValue(client),
+      ],
+    );
+    addTearDown(container.dispose);
+    globalState.container = container;
+    container
+        .read(viewSizeProvider.notifier)
+        .update((_) => const Size(500, 1000));
+
+    final webViewPlatform = TestWebViewPlatform();
+    WebViewPlatform.instance = webViewPlatform;
+    final defaultAvailable = zashboardInAppWebViewAvailable;
+    zashboardInAppWebViewAvailable = () => true;
+    addTearDown(() => zashboardInAppWebViewAvailable = defaultAvailable);
+
+    const launcherChannel = MethodChannel('plugins.flutter.io/url_launcher');
+    final launchedUrls = <String>[];
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(launcherChannel, (call) async {
+          if (call.method == 'launch') {
+            launchedUrls.add((call.arguments as Map)['url'] as String);
+            return true;
+          }
+          return null;
+        });
+    addTearDown(
+      () => TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(launcherChannel, null),
+    );
+
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: const TestApp(child: DashboardView()),
+      ),
+    );
+    await tester.pump();
+
+    final scrollables = find.byType(Scrollable);
+    for (var index = 0; index < 8; index++) {
+      await tester.drag(scrollables.first, const Offset(0, -700));
+      await tester.pump();
+    }
+    await tester.tap(find.text('Zashboard'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+
+    expect(launchedUrls, isEmpty);
+    expect(find.byType(ZashboardView), findsNothing);
+    expect(webViewPlatform.createdControllers, isEmpty);
+    expect(
+      find.text(
+        'The controller secret is out of sync. '
+        'Restart the tunnel to sync it again.',
+      ),
+      findsOneWidget,
+    );
+    expect(tester.takeException(), null);
   });
 }
 

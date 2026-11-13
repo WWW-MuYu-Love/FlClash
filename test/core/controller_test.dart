@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:archive/archive.dart';
 import 'package:fl_clash/common/exception.dart';
 import 'package:fl_clash/core/controller.dart';
 import 'package:fl_clash/core/desktop/model.dart';
@@ -9,6 +10,7 @@ import 'package:fl_clash/core/method.dart';
 import 'package:fl_clash/enum/enum.dart';
 import 'package:fl_clash/models/models.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:path/path.dart';
 import 'package:test/test.dart';
 
 class MockCoreHandlerInterface extends Mock implements CoreHandlerInterface {}
@@ -380,6 +382,85 @@ void main() {
       when(() => mock.clearEffect(42)).thenAnswer((_) async {});
       await controller.clearEffect(42);
       verify(() => mock.clearEffect(42)).called(1);
+    });
+  });
+
+  group('zashboard', () {
+    late Directory tempDir;
+
+    setUp(() {
+      tempDir = Directory.systemTemp.createTempSync('zashboard_test');
+    });
+
+    tearDown(() async {
+      if (await tempDir.exists()) {
+        await tempDir.delete(recursive: true);
+      }
+    });
+
+    List<int> buildZashboardZip() {
+      final archive = Archive();
+      archive.addFile(ArchiveFile.string('dist/index.html', '<html></html>'));
+      archive.addFile(
+        ArchiveFile.string('dist/assets/app.js', 'console.log(1);'),
+      );
+      archive.addFile(ArchiveFile.string('dist/../evil.txt', 'evil'));
+      return ZipEncoder().encode(archive);
+    }
+
+    test(
+      'extracts the bundled archive, stripping dist/, and records the version',
+      () async {
+        final target = Directory(join(tempDir.path, 'ui', 'zashboard'));
+        await CoreController.extractZashboardArchive(
+          zipBytes: buildZashboardZip(),
+          targetDir: target,
+          version: '3.30.0',
+        );
+
+        expect(
+          await File(join(target.path, 'index.html')).readAsString(),
+          '<html></html>',
+        );
+        expect(
+          await File(join(target.path, 'assets', 'app.js')).readAsString(),
+          'console.log(1);',
+        );
+        expect(
+          await File(
+            join(target.path, '.flclash-zashboard-version'),
+          ).readAsString(),
+          '3.30.0',
+        );
+        // The traversal entry never lands outside the target, or inside it.
+        expect(await File(join(tempDir.path, 'evil.txt')).exists(), isFalse);
+        expect(await File(join(target.path, 'evil.txt')).exists(), isFalse);
+      },
+    );
+
+    test('a newer version replaces stale files', () async {
+      final target = Directory(join(tempDir.path, 'ui', 'zashboard'));
+      await CoreController.extractZashboardArchive(
+        zipBytes: buildZashboardZip(),
+        targetDir: target,
+        version: '3.30.0',
+      );
+      final stale = File(join(target.path, 'stale.txt'));
+      await stale.writeAsString('old');
+      expect(await stale.exists(), isTrue);
+
+      await CoreController.extractZashboardArchive(
+        zipBytes: buildZashboardZip(),
+        targetDir: target,
+        version: '3.31.0',
+      );
+      expect(await stale.exists(), isFalse);
+      expect(
+        await File(
+          join(target.path, '.flclash-zashboard-version'),
+        ).readAsString(),
+        '3.31.0',
+      );
     });
   });
 }

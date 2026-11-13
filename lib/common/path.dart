@@ -190,6 +190,21 @@ class AppPath {
     }
   }
 
+  /// The FlClash folder inside the iOS App Group container, shared with
+  /// the extension core. Null when there is no App Group (non-iOS, or
+  /// unresolved): files the extension must read belong here, since the
+  /// extension core cannot reach the app's private container.
+  Future<String?> get sharedIOSFlClashDirPath async {
+    if (!system.isIOS) {
+      return null;
+    }
+    final appGroupPath = await _resolveIOSAppGroupPath();
+    if (appGroupPath.isEmpty) {
+      return null;
+    }
+    return join(appGroupPath, sharedFlClashDirectoryName);
+  }
+
   Future<String> _resolveIOSAppGroupPath() async {
     final packageInfo = await PackageInfo.fromPlatform();
     return resolveIOSAppGroupPath(

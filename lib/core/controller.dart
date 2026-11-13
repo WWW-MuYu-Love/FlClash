@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:archive/archive.dart';
 import 'package:fl_clash/common/common.dart';
 import 'package:fl_clash/core/core.dart';
 import 'package:fl_clash/core/interface.dart';
@@ -76,9 +77,95 @@ extension type CoreController._(CoreHandlerInterface _interface)
     }
   }
 
+  /// Bundled zashboard panel, served by the external controller at /ui.
+  static const zashboardVersion = '3.30.0';
+  static const _zashboardAsset = 'assets/data/zashboard.zip';
+  static const _zashboardVersionFile = '.flclash-zashboard-version';
+
+  static Future<void> initZashboard() async {
+    final homePath = await appPath.homeDirPath;
+    await _initZashboardDir(Directory(join(homePath, 'ui', 'zashboard')));
+    // The extension core serves /ui from its own home in the App Group.
+    final sharedDir = await appPath.sharedIOSFlClashDirPath;
+    if (sharedDir != null) {
+      await _initZashboardDir(Directory(join(sharedDir, 'ui', 'zashboard')));
+    }
+  }
+
+  static Future<void> _initZashboardDir(Directory targetDir) async {
+    try {
+      final versionFile = File(join(targetDir.path, _zashboardVersionFile));
+      if (await versionFile.exists() &&
+          (await versionFile.readAsString()).trim() == zashboardVersion) {
+        return;
+      }
+      final data = await rootBundle.load(_zashboardAsset);
+      final List<int> bytes = data.buffer.asUint8List();
+      await extractZashboardArchive(
+        zipBytes: bytes,
+        targetDir: targetDir,
+        version: zashboardVersion,
+      );
+    } catch (e) {
+      // A failed extraction only leaves /ui empty; the core still starts.
+      commonPrint.log(
+        'Failed to initialize zashboard: $e',
+        logLevel: LogLevel.error,
+      );
+    }
+  }
+
+  /// Extracts the bundled archive into [targetDir], stripping dist/.
+  @visibleForTesting
+  static Future<void> extractZashboardArchive({
+    required List<int> zipBytes,
+    required Directory targetDir,
+    required String version,
+  }) async {
+    final archive = ZipDecoder().decodeBytes(zipBytes);
+    if (await targetDir.exists()) {
+      await targetDir.delete(recursive: true);
+    }
+    await targetDir.create(recursive: true);
+    for (final file in archive.files) {
+      if (!file.isFile) {
+        continue;
+      }
+      final outPath = _zashboardEntryPath(targetDir.path, file.name);
+      if (outPath == null) {
+        continue;
+      }
+      await Directory(dirname(outPath)).create(recursive: true);
+      await File(outPath).writeAsBytes(file.content as List<int>, flush: true);
+    }
+    await File(
+      join(targetDir.path, _zashboardVersionFile),
+    ).writeAsString(version, flush: true);
+  }
+
+  static String? _zashboardEntryPath(String targetDirPath, String name) {
+    var relative = name.replaceAll('\\', '/');
+    if (relative.startsWith('dist/')) {
+      relative = relative.substring('dist/'.length);
+    }
+    final normalized = posix.normalize(relative);
+    if (normalized.isEmpty ||
+        posix.isAbsolute(normalized) ||
+        normalized == '..' ||
+        normalized.startsWith('../')) {
+      return null;
+    }
+    final outPath = normalize(join(targetDirPath, normalized));
+    if (!isWithin(targetDirPath, outPath)) {
+      return null;
+    }
+    return outPath;
+  }
+
   Future<void> init(int version) async {
     await ensureHomeDir();
     await initGeo();
+    await initZashboard();
     final homeDirPath = await appPath.homeDirPath;
     await _interface.init(InitParams(homeDir: homeDirPath, version: version));
   }
