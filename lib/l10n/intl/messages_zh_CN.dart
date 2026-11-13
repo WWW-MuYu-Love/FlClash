@@ -707,7 +707,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "extensionCore": MessageLookupByLibrary.simpleMessage("扩展内核"),
     "externalController": MessageLookupByLibrary.simpleMessage("外部控制器"),
     "externalControllerDesc": MessageLookupByLibrary.simpleMessage(
-      "外部控制器开启后，可通过 9090 端口控制内核。",
+      "外部控制器已开启，可通过 9090 端口控制内核。",
     ),
     "externalControllerSecret": MessageLookupByLibrary.simpleMessage("外部控制器密钥"),
     "externalControllerSecretMismatch": MessageLookupByLibrary.simpleMessage(

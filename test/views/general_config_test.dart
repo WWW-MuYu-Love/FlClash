@@ -88,6 +88,16 @@ void main() {
     expect(find.text('IPv6'), findsNothing);
   });
 
+  testWidgets('shows the controller secret and no controller switch', (
+    tester,
+  ) async {
+    await pumpGeneralView(tester);
+    final l = currentAppLocalizations;
+
+    expect(find.text(l.externalControllerSecret), findsOneWidget);
+    expect(find.text(l.externalController), findsNothing);
+  });
+
   testWidgets('the test URL takes only a URL', (tester) async {
     container
         .read(patchClashConfigProvider.notifier)

@@ -285,10 +285,7 @@ class GeneralView extends ConsumerWidget {
     ];
   }
 
-  List<Widget> _inboundItems({
-    required bool authentication,
-    required bool externalController,
-  }) {
+  List<Widget> _inboundItems({required bool authentication}) {
     return [
       const PortItem(),
       _clashToggle(
@@ -296,19 +293,7 @@ class GeneralView extends ConsumerWidget {
         select: (state) => state.allowLan,
         update: (state, value) => state.copyWith(allowLan: value),
       ),
-      _clashToggle(
-        title: (l) => l.externalController,
-        select: (state) =>
-            state.externalController == ExternalControllerStatus.open,
-        update: (state, value) => state
-            .copyWith(
-              externalController: value
-                  ? ExternalControllerStatus.open
-                  : ExternalControllerStatus.close,
-            )
-            .ensureControllerSecret(),
-      ),
-      if (externalController) const ExternalControllerSecretItem(),
+      const ExternalControllerSecretItem(),
       const AuthenticationItem(),
       if (authentication) ...const [
         AuthenticationAccountItem(),
@@ -394,11 +379,6 @@ class GeneralView extends ConsumerWidget {
     final authentication = ref.watch(
       networkSettingProvider.select((state) => state.authentication.enable),
     );
-    final externalController = ref.watch(
-      patchClashConfigProvider.select(
-        (state) => state.externalController == ExternalControllerStatus.open,
-      ),
-    );
     return BaseScaffold(
       title: appLocalizations.general,
       body: ListView(
@@ -419,10 +399,7 @@ class GeneralView extends ConsumerWidget {
           ),
           generateSection(
             title: appLocalizations.inbound,
-            items: _inboundItems(
-              authentication: authentication,
-              externalController: externalController,
-            ),
+            items: _inboundItems(authentication: authentication),
             footer: appLocalizations.externalControllerDesc,
           ),
           generateSection(

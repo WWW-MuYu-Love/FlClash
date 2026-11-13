@@ -1117,7 +1117,10 @@ void main() {
       when(() => core.updateConfig(any())).thenAnswer((_) async {});
       final patchScope = buildPatchScoped(
         core: core,
-        patchConfig: const PatchClashConfig(secret: 'abc'),
+        patchConfig: const PatchClashConfig(
+          secret: 'abc',
+          externalController: ExternalControllerStatus.close,
+        ),
       );
 
       await patchScope.action.updateConfig();

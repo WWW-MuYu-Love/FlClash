@@ -2179,7 +2179,7 @@ abstract class PatchClashConfig with _$PatchClashConfig {
     @JsonKey(name: 'geodata-loader')
     GeodataLoader geodataLoader,
     @JsonKey(name: 'global-ua') String? globalUa,
-    @Default(ExternalControllerStatus.close)
+    @Default(ExternalControllerStatus.open)
     @JsonKey(name: 'external-controller')
     ExternalControllerStatus externalController,
     @Default('') String secret,
@@ -2392,9 +2392,6 @@ extension PatchClashConfigExt on PatchClashConfig {
   );
 
   PatchClashConfig ensureControllerSecret() {
-    if (externalController == ExternalControllerStatus.close) {
-      return secret.isEmpty ? this : copyWith(secret: '');
-    }
     return secret.isEmpty ? copyWith(secret: generateRandomSecret(32)) : this;
   }
 }

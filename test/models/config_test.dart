@@ -565,13 +565,13 @@ void main() {
   });
 
   group('PatchClashConfig JSON round-trip', () {
-    test('defaults match Clash patch defaults', () {
+    test('defaults keep the external controller open', () {
       const config = PatchClashConfig();
 
       expect(config.mixedPort, defaultMixedPort);
       expect(config.allowLan, false);
       expect(config.mode, Mode.rule);
-      expect(config.externalController, ExternalControllerStatus.close);
+      expect(config.externalController, ExternalControllerStatus.open);
       expect(config.geodataLoader, GeodataLoader.memconservative);
       expect(config.interfaceNameMode, InterfaceNameMode.clear);
       expect(config.interfaceName, '');
@@ -625,51 +625,31 @@ void main() {
   });
 
   group('PatchClashConfig.ensureControllerSecret', () {
-    const open = PatchClashConfig(
-      externalController: ExternalControllerStatus.open,
-    );
-
-    test('leaves a closed controller without a secret as it is', () {
-      const closed = PatchClashConfig();
-
-      expect(identical(closed.ensureControllerSecret(), closed), isTrue);
-    });
-
-    test('gives an open controller a secret of its own', () {
-      final ensured = open.ensureControllerSecret();
+    test('generates a secret once when empty and keeps it', () {
+      final ensured = const PatchClashConfig().ensureControllerSecret();
 
       expect(ensured.secret, matches(RegExp(r'^[A-Za-z0-9]{32}$')));
       expect(ensured.externalController, ExternalControllerStatus.open);
+      expect(ensured.ensureControllerSecret().secret, ensured.secret);
     });
 
-    test('is idempotent, so a secret the user chose or was shown stays', () {
-      final ensured = open.ensureControllerSecret();
-
-      expect(ensured.ensureControllerSecret().secret, ensured.secret);
+    test('keeps a secret the user chose', () {
       expect(
-        open.copyWith(secret: 'mine').ensureControllerSecret().secret,
+        const PatchClashConfig(secret: 'mine').ensureControllerSecret().secret,
         'mine',
       );
     });
 
-    test(
-      'drops the secret with the controller, and opening again rotates it',
-      () {
-        final first = open.ensureControllerSecret();
-        final closed = first
-            .copyWith(externalController: ExternalControllerStatus.close)
-            .ensureControllerSecret();
-        final second = closed
-            .copyWith(externalController: ExternalControllerStatus.open)
-            .ensureControllerSecret();
+    test('never clears the secret when the controller is closed', () {
+      final closed = const PatchClashConfig(secret: 'mine')
+          .copyWith(externalController: ExternalControllerStatus.close)
+          .ensureControllerSecret();
 
-        expect(closed.secret, isEmpty);
-        expect(second.secret, isNot(first.secret));
-      },
-    );
+      expect(closed.secret, 'mine');
+    });
 
     test('reaches the Core through the update params', () {
-      final params = open
+      final params = const PatchClashConfig()
           .copyWith(secret: 'abc')
           .toUpdateParams(
             authentication: const [],
@@ -758,7 +738,7 @@ void main() {
         logLevel: LogLevel.debug,
         ipv6: true,
         tcpConcurrent: false,
-        externalController: ExternalControllerStatus.open,
+        externalController: ExternalControllerStatus.close,
         secret: 'secret',
         unifiedDelay: false,
         geoAutoUpdate: true,

@@ -924,7 +924,7 @@ _PatchClashConfig _$PatchClashConfigFromJson(Map<String, dynamic> json) =>
             _$ExternalControllerStatusEnumMap,
             json['external-controller'],
           ) ??
-          ExternalControllerStatus.close,
+          ExternalControllerStatus.open,
       secret: json['secret'] as String? ?? '',
       hosts:
           (json['hosts'] as Map<String, dynamic>?)?.map(

@@ -156,7 +156,7 @@
   "search": "搜索",
   "allowBypass": "允许应用绕过VPN",
   "externalController": "外部控制器",
-  "externalControllerDesc": "外部控制器开启后，可通过 9090 端口控制内核。",
+  "externalControllerDesc": "外部控制器已开启，可通过 9090 端口控制内核。",
   "externalControllerSecret": "外部控制器密钥",
   "externalControllerSecretMismatch": "控制器 secret 不同步，重启隧道可重新同步",
   "externalControllerSyncFailed": "未能同步到隧道，该设置可能未生效",

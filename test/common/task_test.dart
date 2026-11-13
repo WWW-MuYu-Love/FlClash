@@ -525,7 +525,11 @@ void main() {
       expect(open['external-controller'], '127.0.0.1:9090');
       expect(open['secret'], 'from-the-app');
 
-      final closed = await build(const PatchClashConfig());
+      final closed = await build(
+        const PatchClashConfig(
+          externalController: ExternalControllerStatus.close,
+        ),
+      );
       expect(closed['secret'], '');
       final missingSecret = await build(
         const PatchClashConfig(
