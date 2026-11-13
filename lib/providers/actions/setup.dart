@@ -46,6 +46,25 @@ Future<bool> _pushToExternalController(Future<bool> Function() attempt) async {
   }
 }
 
+// mihomo's PATCH /configs schema decodes only these fields.
+Map<String, Object?> _patchConfigsBody(UpdateParams params) {
+  final json = params.toJson();
+  final body = <String, Object?>{
+    'mode': json['mode'],
+    'log-level': json['log-level'],
+    'mixed-port': json['mixed-port'],
+    'allow-lan': json['allow-lan'],
+    'find-process-mode': json['find-process-mode'],
+  };
+  if (params.ipv6 != null) {
+    body['ipv6'] = params.ipv6;
+  }
+  if (params.tcpConcurrent != null) {
+    body['tcp-concurrent'] = params.tcpConcurrent;
+  }
+  return body;
+}
+
 @Riverpod(keepAlive: true)
 class SetupAction extends _$SetupAction {
   CoreController get _core => ref.read(coreHandlerProvider);
@@ -58,6 +77,7 @@ class SetupAction extends _$SetupAction {
   _SetupInputs? _appliedInputs;
   var _lastPushDuration = Duration.zero;
   var _pendingForceApply = false;
+  Map<String, Object?>? _lastPatchedConfigBody;
 
   bool get _isRunning => _startTime != null && _startTime!.isBeforeNow;
 
@@ -371,6 +391,37 @@ class SetupAction extends _$SetupAction {
     _core.resetTraffic();
   }
 
+  Future<bool> _patchExtensionConfig(
+    UpdateParams params,
+    PatchClashConfig effective,
+  ) async {
+    if (ref.read(runningVpnOptionsProvider)?.enable != true) {
+      return false;
+    }
+    if (effective.externalController.value.isEmpty) {
+      return false;
+    }
+    final body = _patchConfigsBody(params);
+    if (mapEquals(body, _lastPatchedConfigBody)) {
+      return false;
+    }
+    final patched = await ref
+        .read(externalControllerClientProvider)
+        .patchConfigs(body);
+    if (patched) {
+      _lastPatchedConfigBody = body;
+      commonPrint.log(
+        'updateConfig: pushed UpdateParams to the extension via 9090',
+      );
+    } else {
+      commonPrint.log(
+        'updateConfig: 9090 PATCH /configs failed, falling back to XPC',
+        logLevel: LogLevel.warning,
+      );
+    }
+    return patched;
+  }
+
   @visibleForTesting
   Future<void> updateConfig() async {
     await globalState.safeRun(() async {
@@ -381,12 +432,27 @@ class SetupAction extends _$SetupAction {
         return;
       }
       final networkSetting = ref.read(networkSettingProvider);
-      await _core.updateConfig(
-        _effectivePatchConfig(patchConfig).toUpdateParams(
-          authentication: networkSetting.authentication.credentials,
-          options: ref.read(coreOptionsProvider),
-        ),
+      final effective = _effectivePatchConfig(patchConfig);
+      final params = effective.toUpdateParams(
+        authentication: networkSetting.authentication.credentials,
+        options: ref.read(coreOptionsProvider),
       );
+      final patched = await _patchExtensionConfig(params, effective);
+      try {
+        await _core.updateConfig(params);
+      } on CoreMethodException catch (error) {
+        if (patched && error.code == 'extension_config_failed') {
+          commonPrint.log(
+            'updateConfig: extension received the UpdateParams fields via '
+            '9090; XPC-only fields (tun, external-controller, secret, '
+            'unified-delay, authentication, geo-*, options) were not '
+            'delivered: ${error.message}',
+            logLevel: LogLevel.warning,
+          );
+          return;
+        }
+        rethrow;
+      }
     });
   }
 

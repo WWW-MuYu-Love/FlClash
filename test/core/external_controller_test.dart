@@ -470,6 +470,94 @@ void main() {
     });
   });
 
+  group('ExternalControllerClient.patchConfigs', () {
+    late HttpServer server;
+    late ExternalControllerClient client;
+
+    setUp(() async {
+      server = await _serve((request) async {
+        request.response.statusCode = HttpStatus.noContent;
+        await request.response.close();
+      });
+      client = ExternalControllerClient(
+        baseUri: Uri.parse('http://127.0.0.1:${server.port}'),
+      );
+    });
+
+    tearDown(() async {
+      client.close();
+      await server.close(force: true);
+    });
+
+    test(
+      'PATCHes the given fields to /configs with the bearer secret',
+      () async {
+        var seenMethod = '';
+        var seenPath = '';
+        var seenBody = '';
+        var seenAuth = '';
+        await server.close(force: true);
+        server = await _serve((request) async {
+          seenMethod = request.method;
+          seenPath = request.uri.path;
+          seenAuth =
+              request.headers.value(HttpHeaders.authorizationHeader) ?? '';
+          seenBody = await utf8.decodeStream(request);
+          request.response.statusCode = HttpStatus.noContent;
+          await request.response.close();
+        });
+        final authed = ExternalControllerClient(
+          baseUri: Uri.parse('http://127.0.0.1:${server.port}'),
+          secret: 's3cret',
+        );
+        addTearDown(authed.close);
+
+        expect(await authed.patchConfigs({'mode': 'direct'}), isTrue);
+        expect(seenMethod, 'PATCH');
+        expect(seenPath, '/configs');
+        expect(jsonDecode(seenBody), {'mode': 'direct'});
+        expect(seenAuth, 'Bearer s3cret');
+      },
+    );
+
+    test('returns true on 200 as well as 204', () async {
+      await server.close(force: true);
+      server = await _serve((request) async {
+        request.response.statusCode = HttpStatus.ok;
+        await request.response.close();
+      });
+      client = ExternalControllerClient(
+        baseUri: Uri.parse('http://127.0.0.1:${server.port}'),
+      );
+
+      expect(await client.patchConfigs({'mode': 'rule'}), isTrue);
+    });
+
+    test('returns false on a non-success status', () async {
+      await server.close(force: true);
+      server = await _serve((request) async {
+        request.response.statusCode = HttpStatus.badRequest;
+        await request.response.close();
+      });
+      client = ExternalControllerClient(
+        baseUri: Uri.parse('http://127.0.0.1:${server.port}'),
+      );
+
+      expect(await client.patchConfigs({'mode': 'rule'}), isFalse);
+    });
+
+    test('returns false without throwing when nothing listens', () async {
+      final port = server.port;
+      await server.close(force: true);
+      final dead = ExternalControllerClient(
+        baseUri: Uri.parse('http://127.0.0.1:$port'),
+      );
+      addTearDown(dead.close);
+
+      expect(await dead.patchConfigs({'mode': 'rule'}), isFalse);
+    });
+  });
+
   group('ExternalControllerClient.closeConnections', () {
     late HttpServer server;
     late ExternalControllerClient client;

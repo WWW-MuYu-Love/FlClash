@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:fl_clash/common/common.dart';
 import 'package:fl_clash/core/controller.dart';
+import 'package:fl_clash/core/external_controller.dart';
 import 'package:fl_clash/core/interface.dart';
 import 'package:fl_clash/core/method.dart';
 import 'package:fl_clash/core/spill.dart';
@@ -30,6 +31,9 @@ import '../helpers/preferences.dart';
 import '../helpers/test_profiles.dart';
 
 class _MockCoreHandlerInterface extends Mock implements CoreHandlerInterface {}
+
+class _MockExternalControllerClient extends Mock
+    implements ExternalControllerClient {}
 
 // checkAndUpdateAndCopy checks the file system before it refreshes, so its
 // failure tests need appPath to resolve to a real, writable directory.
@@ -141,6 +145,7 @@ void main() {
       ),
     );
     registerFallbackValue(const SetupBase(path: '', overlay: ''));
+    registerFallbackValue(<String, Object?>{});
     registerFallbackValue(
       const UpdateParams(
         tun: Tun(),
@@ -897,6 +902,248 @@ void main() {
       );
 
       expect(params.externalController, ExternalControllerStatus.close);
+    });
+
+    ({
+      ProviderContainer scoped,
+      TestSetupAction action,
+      _MockExternalControllerClient externalController,
+    })
+    buildPatchScoped({
+      required _MockCoreHandlerInterface core,
+      PatchClashConfig patchConfig = const PatchClashConfig(
+        externalController: ExternalControllerStatus.open,
+        secret: 'abc',
+      ),
+      bool tunnelUp = true,
+    }) {
+      final externalController = _MockExternalControllerClient();
+      final action = TestSetupAction();
+      final scoped = ProviderContainer(
+        overrides: [
+          profilesProvider.overrideWith(TestProfiles.new),
+          setupActionProvider.overrideWith(() => action),
+          coreHandlerProvider.overrideWithValue(CoreController.scoped(core)),
+          externalControllerClientProvider.overrideWithValue(
+            externalController,
+          ),
+        ],
+      );
+      addTearDown(scoped.dispose);
+      scoped.read(setupActionProvider.notifier);
+      scoped.listen(runningVpnOptionsProvider, (_, _) {});
+      scoped.read(patchClashConfigProvider.notifier).value = patchConfig;
+      if (tunnelUp) {
+        scoped
+            .read(runningVpnOptionsProvider.notifier)
+            .value = const VpnOptions(
+          enable: true,
+          port: 7890,
+          ipv6: false,
+          dnsHijacking: false,
+          accessControlProps: AccessControlProps(),
+          allowBypass: false,
+          systemProxy: false,
+          bypassDomain: [],
+          stack: 'gvisor',
+        );
+      }
+      return (
+        scoped: scoped,
+        action: action,
+        externalController: externalController,
+      );
+    }
+
+    List<String?> capturePrints() {
+      final printed = <String?>[];
+      final originalPrint = debugPrint;
+      debugPrint = (message, {wrapWidth}) => printed.add(message);
+      addTearDown(() => debugPrint = originalPrint);
+      return printed;
+    }
+
+    const extensionConfigFailed = CoreMethodException(
+      code: 'extension_config_failed',
+      message:
+          'App core applied the config, but the extension core did not receive it: empty_response: empty network extension response',
+    );
+
+    test(
+      'patches the UpdateParams mihomo fields via 9090 before XPC',
+      () async {
+        final order = <String>[];
+        Map<String, Object?>? patchedBody;
+        final core = _MockCoreHandlerInterface();
+        when(() => core.updateConfig(any())).thenAnswer((_) async {
+          order.add('xpc');
+        });
+        final patchScope = buildPatchScoped(
+          core: core,
+          patchConfig: const PatchClashConfig(
+            externalController: ExternalControllerStatus.open,
+            secret: 'abc',
+            mode: Mode.direct,
+            logLevel: LogLevel.debug,
+            mixedPort: 7891,
+            allowLan: true,
+            findProcessMode: FindProcessMode.off,
+            ipv6: true,
+            tcpConcurrent: false,
+            generalOverrideKeys: {
+              GeneralOverrideKey.ipv6,
+              GeneralOverrideKey.tcpConcurrent,
+            },
+          ),
+        );
+        when(
+          () => patchScope.externalController.patchConfigs(any()),
+        ).thenAnswer((invocation) async {
+          order.add('patch');
+          patchedBody =
+              invocation.positionalArguments.single as Map<String, Object?>;
+          return true;
+        });
+
+        await patchScope.action.updateConfig();
+
+        expect(order, ['patch', 'xpc']);
+        expect(patchedBody, {
+          'mode': 'direct',
+          'log-level': 'debug',
+          'mixed-port': 7891,
+          'allow-lan': true,
+          'find-process-mode': 'off',
+          'ipv6': true,
+          'tcp-concurrent': false,
+        });
+        final params =
+            verify(() => core.updateConfig(captureAny())).captured.single
+                as UpdateParams;
+        expect(params.mode, Mode.direct);
+        expect(params.secret, 'abc');
+        expect(params.externalController, ExternalControllerStatus.open);
+      },
+    );
+
+    test('a patched config that XPC also accepts shows no banner', () async {
+      await AppLocalizations.load(const Locale('en'));
+      final printed = capturePrints();
+      final core = _MockCoreHandlerInterface();
+      when(() => core.updateConfig(any())).thenAnswer((_) async {});
+      final patchScope = buildPatchScoped(core: core);
+      when(
+        () => patchScope.externalController.patchConfigs(any()),
+      ).thenAnswer((_) async => true);
+
+      await patchScope.action.updateConfig();
+
+      verify(() => patchScope.externalController.patchConfigs(any())).called(1);
+      verify(() => core.updateConfig(any())).called(1);
+      expect(
+        printed.where((line) => line?.contains('banner: ') ?? false),
+        isEmpty,
+      );
+    });
+
+    test(
+      'a patched config suppresses the banner when XPC answers nothing',
+      () async {
+        await AppLocalizations.load(const Locale('en'));
+        final printed = capturePrints();
+        final core = _MockCoreHandlerInterface();
+        when(() => core.updateConfig(any())).thenThrow(extensionConfigFailed);
+        final patchScope = buildPatchScoped(core: core);
+        when(
+          () => patchScope.externalController.patchConfigs(any()),
+        ).thenAnswer((_) async => true);
+
+        await patchScope.action.updateConfig();
+
+        verify(
+          () => patchScope.externalController.patchConfigs(any()),
+        ).called(1);
+        expect(
+          printed.where((line) => line?.contains('banner: ') ?? false),
+          isEmpty,
+        );
+        expect(
+          printed.any(
+            (line) =>
+                line?.contains(
+                  'updateConfig: extension received the UpdateParams fields via 9090',
+                ) ??
+                false,
+          ),
+          isTrue,
+        );
+      },
+    );
+
+    test(
+      'a failed patch still shows the banner when XPC answers nothing',
+      () async {
+        await AppLocalizations.load(const Locale('en'));
+        final printed = capturePrints();
+        final core = _MockCoreHandlerInterface();
+        when(() => core.updateConfig(any())).thenThrow(extensionConfigFailed);
+        final patchScope = buildPatchScoped(core: core);
+        when(
+          () => patchScope.externalController.patchConfigs(any()),
+        ).thenAnswer((_) async => false);
+
+        await patchScope.action.updateConfig();
+
+        expect(
+          printed.any((line) => line?.contains('banner: ') ?? false),
+          isTrue,
+        );
+      },
+    );
+
+    test('skips the patch while the tunnel is down', () async {
+      final core = _MockCoreHandlerInterface();
+      when(() => core.updateConfig(any())).thenAnswer((_) async {});
+      final patchScope = buildPatchScoped(core: core, tunnelUp: false);
+
+      await patchScope.action.updateConfig();
+
+      verifyNever(() => patchScope.externalController.patchConfigs(any()));
+      verify(() => core.updateConfig(any())).called(1);
+    });
+
+    test('skips the patch while the external controller is closed', () async {
+      final core = _MockCoreHandlerInterface();
+      when(() => core.updateConfig(any())).thenAnswer((_) async {});
+      final patchScope = buildPatchScoped(
+        core: core,
+        patchConfig: const PatchClashConfig(secret: 'abc'),
+      );
+
+      await patchScope.action.updateConfig();
+
+      verifyNever(() => patchScope.externalController.patchConfigs(any()));
+      verify(() => core.updateConfig(any())).called(1);
+    });
+
+    test('skips the patch when only the capture flag changed', () async {
+      final core = _MockCoreHandlerInterface();
+      when(() => core.updateConfig(any())).thenAnswer((_) async {});
+      final patchScope = buildPatchScoped(core: core);
+      when(
+        () => patchScope.externalController.patchConfigs(any()),
+      ).thenAnswer((_) async => true);
+
+      await patchScope.action.updateConfig();
+      patchScope.scoped
+          .read(patchClashConfigProvider.notifier)
+          .update(
+            (state) => state.copyWith(mitm: state.mitm.copyWith(capture: true)),
+          );
+      await patchScope.action.updateConfig();
+
+      verify(() => patchScope.externalController.patchConfigs(any())).called(1);
+      verify(() => core.updateConfig(any())).called(2);
     });
   });
 

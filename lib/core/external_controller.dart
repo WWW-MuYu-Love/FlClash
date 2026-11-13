@@ -205,6 +205,28 @@ class ExternalControllerClient {
     }
   }
 
+  // PATCH /configs applies the given fields on the core behind 9090.
+  Future<bool> patchConfigs(Map<String, Object?> body) async {
+    try {
+      final request = await _http
+          .patchUrl(baseUri.replace(path: '/configs'))
+          .timeout(_fetchTimeout);
+      if (secret.isNotEmpty) {
+        request.headers.set(HttpHeaders.authorizationHeader, 'Bearer $secret');
+      }
+      request.headers.contentType = ContentType.json;
+      request.write(jsonEncode(body));
+      final response = await request.close().timeout(_fetchTimeout);
+      _noteStatus(response);
+      await response.drain<void>();
+      return response.statusCode == HttpStatus.noContent ||
+          response.statusCode == HttpStatus.ok;
+    } catch (_) {
+      unauthorized = false;
+      return false;
+    }
+  }
+
   Future<bool> selectProxy(String groupName, String proxyName) async {
     try {
       final request = await _http
