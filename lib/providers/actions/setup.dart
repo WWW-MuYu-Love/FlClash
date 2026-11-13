@@ -955,12 +955,27 @@ class SetupAction extends _$SetupAction {
               preloadInvoke: preloadInvoke,
             );
           } on CoreMethodException catch (error) {
-            if (error.code != 'config_rejected') {
+            if (error.code == 'extension_config_failed') {
+              // The App core applied the config; only the best-effort push
+              // to the extension failed (XPC empty_response while the tunnel
+              // is up). The extension reads the new config from shared state
+              // at its next start, so this must not fail the setup or roll
+              // the running tunnel back.
+              commonPrint.log(
+                'extension did not receive the config: ${error.message}',
+                logLevel: LogLevel.warning,
+              );
+              dialogs.showBanner(
+                userFacingErrorMessage(error, currentAppLocalizations),
+                level: BannerLevel.error,
+              );
+            } else if (error.code != 'config_rejected') {
               rethrow;
+            } else {
+              globalState.lastConfigCounts = configCountsOf(const {});
+              await globalState.safeRun(() => onUpdated?.call());
+              throw MessageException(error.message);
             }
-            globalState.lastConfigCounts = configCountsOf(const {});
-            await globalState.safeRun(() => onUpdated?.call());
-            throw MessageException(error.message);
           }
         } catch (e, s) {
           setupFailed = true;
