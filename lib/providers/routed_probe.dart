@@ -18,7 +18,7 @@ part 'generated/routed_probe.g.dart';
 /// not a substitute while it is up, so the probe gives 9090 a second chance
 /// instead of falling back immediately.
 @riverpod
-Duration probe9090RetryDelay(Ref ref) => const Duration(seconds: 2);
+Duration probe9090RetryDelay(Ref ref) => const Duration(seconds: 5);
 
 enum ProbePhase { empty, probing, fresh, failed }
 
