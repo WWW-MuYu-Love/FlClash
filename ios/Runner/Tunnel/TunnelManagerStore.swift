@@ -93,36 +93,6 @@ final class TunnelManagerStore {
     }
   }
 
-  /// Loads the manager from preferences, bypassing the cache.
-  func loadFreshManager() async throws -> NETunnelProviderManager? {
-    try await withCheckedThrowingContinuation { continuation in
-      let request = ManagerLoadRequest(
-        createIfNeeded: false,
-        continuation: continuation
-      )
-      switch cacheState {
-      case .unloaded:
-        startManagerLoad(requests: [request], reloadCount: 0)
-      case .loading(
-        let id,
-        let generation,
-        let reloadCount,
-        var requests
-      ):
-        requests.append(request)
-        cacheState = .loading(
-          id: id,
-          generation: generation,
-          reloadCount: reloadCount,
-          requests: requests
-        )
-      case .loaded:
-        cacheState = .unloaded
-        startManagerLoad(requests: [request], reloadCount: 0)
-      }
-    }
-  }
-
   @discardableResult
   func invalidateCachedManager(forPreferenceError error: Error) -> Bool {
     guard isRetryablePreferenceError(error) else {

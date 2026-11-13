@@ -100,26 +100,9 @@ final class TunnelController {
   }
 
   func sendProviderMessage(_ data: Data) async throws -> String {
-    do {
-      return try await sendProviderMessage(data, freshSession: false)
-    } catch let error as ProviderMessageError
-      where error.code == "empty_response"
-    {
-      // A nil reply can mean a stale cached session: retry on a fresh load.
-      logger.debug("sendProviderMessage empty response, retrying with a fresh session")
-      return try await sendProviderMessage(data, freshSession: true)
-    }
-  }
-
-  private func sendProviderMessage(
-    _ data: Data,
-    freshSession: Bool
-  ) async throws -> String {
     let manager: NETunnelProviderManager?
     do {
-      manager = freshSession
-        ? try await managerStore.loadFreshManager()
-        : try await managerStore.loadManager(createIfNeeded: false)
+      manager = try await managerStore.loadManager(createIfNeeded: false)
     } catch {
       throw ProviderMessageError(
         code: "network_extension_error",
@@ -136,9 +119,6 @@ final class TunnelController {
       )
     }
 
-    logger.debug(
-      "sendProviderMessage session=\(String(describing: session)) fresh=\(freshSession)"
-    )
     return try await withCheckedThrowingContinuation { continuation in
       let gate = ResumeGate()
       let timeout = DispatchWorkItem {
