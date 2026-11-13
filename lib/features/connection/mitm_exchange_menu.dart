@@ -179,7 +179,6 @@ Future<MitmBody?> _body(WidgetRef ref, MitmExchange exchange, bool response) {
   }
   return readRoutedMitmBody(
     coreHandler: ref.read(coreHandlerProvider),
-    externalClient: ref.read(externalControllerClientProvider),
     tunnelRunning: ref.read(runningVpnOptionsProvider)?.enable == true,
     id: exchange.id,
     response: response,

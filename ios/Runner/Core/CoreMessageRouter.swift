@@ -37,7 +37,7 @@ private enum ExtensionOnlyMethod: String {
   case listenerStop = "listener.stop"
 }
 
-// Live reads the routing core owns; the app core's answer would be stale, and 9090 can answer instead.
+// Live reads the routing core owns; the app core's answer would be stale.
 private enum NoAppFallbackMethod: String {
   case trafficCurrent = "traffic.current"
   case trafficTotal = "traffic.total"

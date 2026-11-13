@@ -173,23 +173,14 @@ final class TunnelManagerStore {
     }
 
     var rules: [NEOnDemandRule] = []
-    // Only the disconnect SSIDs get a disconnect rule: a direct SSID must
-    // keep the tunnel up so the extension can switch the core to direct.
-    let disconnectSSIDs = configuration.disconnectSSIDs
-    if !disconnectSSIDs.isEmpty {
+    if !configuration.excludeSSIDs.isEmpty {
       let disconnectRule = NEOnDemandRuleDisconnect()
-      disconnectRule.ssidMatch = disconnectSSIDs
+      disconnectRule.ssidMatch = configuration.excludeSSIDs
       disconnectRule.interfaceTypeMatch = .wiFi
       rules.append(disconnectRule)
     }
 
-    // A connect rule after the disconnect rule makes the VPN come back on
-    // its own when the phone leaves a disconnect SSID; without it the
-    // tunnel would stay down until the user starts it again. The rules
-    // only take effect while on-demand is enabled, which the tunnel
-    // disables when the user stops it, so this never starts a VPN the
-    // user did not ask for.
-    if configuration.alwaysOn || !disconnectSSIDs.isEmpty {
+    if configuration.alwaysOn {
       let connectWifi = NEOnDemandRuleConnect()
       connectWifi.interfaceTypeMatch = .wiFi
       rules.append(connectWifi)
@@ -202,7 +193,7 @@ final class TunnelManagerStore {
     manager.onDemandRules = rules.isEmpty ? nil : rules
     manager.isOnDemandEnabled = enableOnDemand && !rules.isEmpty
     log(
-      "applyOnDemandRules disconnectSSIDs=\(disconnectSSIDs) directSSIDs=\(configuration.directSSIDs) enabled=\(manager.isOnDemandEnabled)"
+      "applyOnDemandRules excludeSSIDs=\(configuration.excludeSSIDs) enabled=\(manager.isOnDemandEnabled)"
     )
   }
 

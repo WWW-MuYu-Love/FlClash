@@ -184,11 +184,15 @@ abstract class CoreHandlerInterface {
     return _query(CoreMethod.proxyList, _model(ProxiesData.fromJson));
   }
 
-  Future<ChangeProxyResult> changeProxy(ChangeProxyParams params) {
+  Future<ChangeProxyResult> changeProxy(
+    ChangeProxyParams params, {
+    CoreRoute? route,
+  }) {
     return _query(
       CoreMethod.proxySelect,
       _model(ChangeProxyResult.fromJson),
       arguments: params.toJson(),
+      route: route,
     );
   }
 
@@ -196,12 +200,13 @@ abstract class CoreHandlerInterface {
     return _find(CoreMethod.proxyDefinition, _json, arguments: {'name': name});
   }
 
-  Future<Delay> testDelay(TestDelayParams params) {
+  Future<Delay> testDelay(TestDelayParams params, {CoreRoute? route}) {
     return _query(
       CoreMethod.proxyTestDelay,
       _model(Delay.fromJson),
       arguments: params.toJson(),
       timeout: delayTestGuardDuration,
+      route: route,
     );
   }
 

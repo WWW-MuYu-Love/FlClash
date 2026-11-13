@@ -10,7 +10,7 @@ import (
 )
 
 func TestProbeRoutes(t *testing.T) {
-	// The routes run the probes in the process-wide core. An unknown name
+	// The route runs the probe in the process-wide core. An unknown name
 	// selects no checker, so the sweep answers an empty list without
 	// touching the network.
 	post := func(handler http.HandlerFunc, target, body string) *httptest.ResponseRecorder {
@@ -37,26 +37,5 @@ func TestProbeRoutes(t *testing.T) {
 	}
 	if rec := post(handleServiceCheckRoute, "/probe/services", `{bad`); rec.Code != http.StatusBadRequest {
 		t.Errorf("services bad body status = %d, want 400", rec.Code)
-	}
-
-	routes := post(
-		handleCheckRoutesRoute,
-		"/route/check",
-		`{"routes":[]}`,
-	)
-	if routes.Code != http.StatusOK {
-		t.Fatalf("routes status = %d, want 200", routes.Code)
-	}
-	var check struct {
-		Held []bool `json:"held"`
-	}
-	if err := json.Unmarshal(routes.Body.Bytes(), &check); err != nil {
-		t.Fatalf("routes body: %v", err)
-	}
-	if check.Held == nil {
-		t.Errorf("held = nil, want an (empty) array")
-	}
-	if rec := post(handleCheckRoutesRoute, "/route/check", `{bad`); rec.Code != http.StatusBadRequest {
-		t.Errorf("routes bad body status = %d, want 400", rec.Code)
 	}
 }

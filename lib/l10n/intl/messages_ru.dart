@@ -810,7 +810,6 @@ class MessageLookup extends MessageLookupByLibrary {
     "disclaimerWarrantyTitle": MessageLookupByLibrary.simpleMessage(
       "Отсутствие гарантий",
     ),
-    "disconnect": MessageLookupByLibrary.simpleMessage("Отключить"),
     "disconnected": MessageLookupByLibrary.simpleMessage("Отключено"),
     "discoverNewVersion": MessageLookupByLibrary.simpleMessage(
       "Доступна новая версия",
@@ -877,7 +876,7 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "excludeSsids": MessageLookupByLibrary.simpleMessage("Исключённые SSID"),
     "excludeSsidsDesc": MessageLookupByLibrary.simpleMessage(
-      "При подключении к Wi-Fi с исключённым SSID приложение автоматически отключается или переключается в режим прямого подключения согласно настройке этого SSID.",
+      "При подключении к Wi-Fi с исключённым SSID состояние работы приложения переключается автоматически.",
     ),
     "excludeUid": MessageLookupByLibrary.simpleMessage(
       "Исключённые ID пользователей",

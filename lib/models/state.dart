@@ -171,13 +171,6 @@ abstract class SharedState with _$SharedState {
     required String stopText,
     required bool onlyStatisticsProxy,
     @Default(true) bool showStopAction,
-    // The native side reads these from the App Group to enforce the
-    // exclude-SSID actions without the main app running: the system
-    // disconnects the VPN on the disconnect SSIDs via on-demand rules,
-    // and the extension switches the core to direct on the direct SSIDs.
-    @Default([]) List<String> excludeSSIDs,
-    @Default([]) List<String> directSSIDs,
-    @Default('') String controllerSecret,
   }) = _SharedState;
 
   factory SharedState.fromJson(Map<String, Object?> json) =>

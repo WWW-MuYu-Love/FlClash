@@ -57,11 +57,14 @@ class _AppStateManagerState extends ConsumerState<AppStateManager>
         ref.read(proxiesActionProvider.notifier).updateGroupsDebounce();
       }
     });
-    // The exclude-SSID actions are enforced by the native side so they
-    // keep working when this app is killed in the background: the system
-    // disconnects the VPN on the disconnect SSIDs via on-demand rules, and
-    // the extension switches the core to direct on the direct SSIDs. The
-    // lists and the controller secret reach them through the shared state.
+    // iOS has no suspend state to sync to the core.
+    if (!system.isIOS) {
+      ref.listenManual(suspendProvider, (prev, next) {
+        if (prev != next) {
+          ref.read(setupActionProvider.notifier).syncSuspend();
+        }
+      });
+    }
     final systemDns = systemDnsCoordinator;
     if (systemDns != null) {
       ref.listenManual(shouldPatchSystemDnsProvider, (prev, next) {

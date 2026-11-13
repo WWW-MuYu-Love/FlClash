@@ -581,58 +581,6 @@ abstract class _$ExcludeSSIDs extends $Notifier<List<String>> {
   }
 }
 
-@ProviderFor(DirectSSIDs)
-final directSSIDsProvider = DirectSSIDsProvider._();
-
-final class DirectSSIDsProvider
-    extends $NotifierProvider<DirectSSIDs, List<String>> {
-  DirectSSIDsProvider._()
-    : super(
-        from: null,
-        argument: null,
-        retry: null,
-        name: r'directSSIDsProvider',
-        isAutoDispose: true,
-        dependencies: null,
-        $allTransitiveDependencies: null,
-      );
-
-  @override
-  String debugGetCreateSourceHash() => _$directSSIDsHash();
-
-  @$internal
-  @override
-  DirectSSIDs create() => DirectSSIDs();
-
-  /// {@macro riverpod.override_with_value}
-  Override overrideWithValue(List<String> value) {
-    return $ProviderOverride(
-      origin: this,
-      providerOverride: $SyncValueProvider<List<String>>(value),
-    );
-  }
-}
-
-String _$directSSIDsHash() => r'7380d5072f1e26c65f75ccd36452ff78e32f0955';
-
-abstract class _$DirectSSIDs extends $Notifier<List<String>> {
-  List<String> build();
-  @$mustCallSuper
-  @override
-  WhenComplete runBuild() {
-    final ref = this.ref as $Ref<List<String>, List<String>>;
-    final element =
-        ref.element
-            as $ClassProviderElement<
-              AnyNotifier<List<String>, List<String>>,
-              List<String>,
-              Object?,
-              Object?
-            >;
-    return element.handleCreate(ref, build);
-  }
-}
-
 @ProviderFor(_config)
 final configProvider = _ConfigProvider._();
 
@@ -671,4 +619,4 @@ final class _ConfigProvider extends $FunctionalProvider<Config, Config, Config>
   }
 }
 
-String _$_configHash() => r'ac92b8745d2b706afb339ed8e345437f8211caa9';
+String _$_configHash() => r'a9e717216fc1ca6b3526907bd578c4982bb6961a';

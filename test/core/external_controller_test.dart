@@ -507,87 +507,6 @@ void main() {
       expect(await dead.closeConnection('42'), isFalse);
     });
   });
-  group('ExternalControllerClient mitm', () {
-    late HttpServer server;
-    late ExternalControllerClient client;
-
-    setUp(() async {
-      server = await _serve((request) async {
-        request.response.headers.contentType = ContentType.json;
-        final path = request.uri.path;
-        if (path == '/mitm/hosts') {
-          request.response.write('{"hosts":["movies.muyu.love"]}');
-        } else if (path == '/mitm/exchanges') {
-          request.response.write(
-            '{"capturing":true,"exchanges":[{"id":7,"start":"2026-11-12T04:00:00.000Z","method":"GET","url":"https://movies.muyu.love/play","status":200}]}',
-          );
-        } else if (path == '/mitm/exchange') {
-          request.response.write(
-            '{"id":7,"start":"2026-11-12T04:00:00.000Z","method":"GET","url":"https://movies.muyu.love/play","status":200,"connection":"1"}',
-          );
-        } else if (path == '/mitm/body') {
-          request.response.write('{"data":"aGVsbG8=","truncated":false}');
-        } else {
-          request.response.statusCode = HttpStatus.notFound;
-        }
-        await request.response.close();
-      });
-      client = ExternalControllerClient(
-        baseUri: Uri.parse('http://127.0.0.1:${server.port}'),
-      );
-    });
-
-    tearDown(() async {
-      client.close();
-      await server.close(force: true);
-    });
-
-    test('reads decrypted hosts and exchanges for a host', () async {
-      final hosts = await client.fetchMitmDecryptedHosts();
-      expect(hosts?.hosts, ['movies.muyu.love']);
-
-      final list = await client.fetchMitmExchangesByHost('movies.muyu.love');
-      expect(list?.capturing, isTrue);
-      expect(list?.exchanges, hasLength(1));
-      expect(list?.exchanges.first.url, 'https://movies.muyu.love/play');
-
-      final exchange = await client.fetchMitmExchange(7);
-      expect(exchange?.id, 7);
-      expect(exchange?.connection, '1');
-
-      final body = await client.fetchMitmBody(7, response: true);
-      expect(body?.data, 'aGVsbG8=');
-    });
-
-    test('returns null when the controller answers 401', () async {
-      await server.close(force: true);
-      server = await _serve((request) async {
-        request.response.statusCode = HttpStatus.unauthorized;
-        await request.response.close();
-      });
-      client = ExternalControllerClient(
-        baseUri: Uri.parse('http://127.0.0.1:${server.port}'),
-      );
-
-      expect(await client.fetchMitmDecryptedHosts(), isNull);
-      expect(await client.fetchMitmExchangesByHost('a.test'), isNull);
-      expect(await client.fetchMitmExchange(7), isNull);
-      expect(await client.fetchMitmBody(7, response: true), isNull);
-    });
-
-    test('returns null when nothing listens', () async {
-      final port = server.port;
-      await server.close(force: true);
-      final dead = ExternalControllerClient(
-        baseUri: Uri.parse('http://127.0.0.1:$port'),
-      );
-      addTearDown(dead.close);
-
-      expect(await dead.fetchMitmDecryptedHosts(), isNull);
-      expect(await dead.fetchMitmExchangesByHost('a.test'), isNull);
-    });
-  });
-
   group('ExternalControllerClient probe', () {
     late HttpServer server;
     late ExternalControllerClient client;
@@ -600,14 +519,6 @@ void main() {
           request.response.write(
             '[{"name":"google","status":"ok","delay":66,"checked-at":1794513170800,"core-epoch":0,"route-version":0}]',
           );
-        } else if (path == '/route/check') {
-          request.response.write(
-            '{"core-epoch":0,"route-version":0,"held":[true]}',
-          );
-        } else if (path.startsWith('/proxies/') && path.endsWith('/delay')) {
-          request.response.write('{"delay":66}');
-        } else if (path == '/cache/dns/flush') {
-          request.response.statusCode = HttpStatus.noContent;
         } else {
           request.response.statusCode = HttpStatus.notFound;
         }
@@ -623,61 +534,13 @@ void main() {
       await server.close(force: true);
     });
 
-    test('reads the delay, the sweep and the route check', () async {
-      final delay = await client.fetchDelay(
-        'proxy',
-        'https://www.gstatic.com/generate_204',
-        const Duration(seconds: 5),
-      );
-      expect(delay?.value, 66);
-
+    test('reads the sweep', () async {
       final items = await client.fetchServiceCheck(
         const ServiceCheckParams(timeout: 10000),
       );
       expect(items, hasLength(1));
       expect(items?.first.name, 'google');
       expect(items?.first.status, 'ok');
-
-      final checked = await client.fetchRouteCheck(const CheckRoutesParams());
-      expect(checked?.held, [true]);
-
-      expect(await client.clearDnsCache(), isTrue);
-    });
-
-    test('maps a gateway timeout to a timed-out delay', () async {
-      await server.close(force: true);
-      server = await _serve((request) async {
-        request.response.statusCode = HttpStatus.gatewayTimeout;
-        await request.response.close();
-      });
-      client = ExternalControllerClient(
-        baseUri: Uri.parse('http://127.0.0.1:${server.port}'),
-      );
-
-      final delay = await client.fetchDelay(
-        'proxy',
-        'https://www.gstatic.com/generate_204',
-        const Duration(seconds: 5),
-      );
-      expect(delay?.value, -1);
-    });
-
-    test('maps a failed test to a failed delay', () async {
-      await server.close(force: true);
-      server = await _serve((request) async {
-        request.response.statusCode = HttpStatus.serviceUnavailable;
-        await request.response.close();
-      });
-      client = ExternalControllerClient(
-        baseUri: Uri.parse('http://127.0.0.1:${server.port}'),
-      );
-
-      final delay = await client.fetchDelay(
-        'proxy',
-        'https://www.gstatic.com/generate_204',
-        const Duration(seconds: 5),
-      );
-      expect(delay?.value, -2);
     });
 
     test('returns null when the controller answers 401', () async {
@@ -691,21 +554,11 @@ void main() {
       );
 
       expect(
-        await client.fetchDelay(
-          'proxy',
-          'https://example.test',
-          const Duration(seconds: 5),
-        ),
-        isNull,
-      );
-      expect(
         await client.fetchServiceCheck(
           const ServiceCheckParams(timeout: 10000),
         ),
         isNull,
       );
-      expect(await client.fetchRouteCheck(const CheckRoutesParams()), isNull);
-      expect(await client.clearDnsCache(), isFalse);
     });
   });
 }

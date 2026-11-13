@@ -362,11 +362,7 @@ class _LiveFeedState extends ConsumerState<_LiveFeed>
       return;
     }
     if (ref.read(runningVpnOptionsProvider)?.enable == true) {
-      throw MessageException(
-        client.unauthorized
-            ? currentAppLocalizations.externalControllerSecretMismatch
-            : currentAppLocalizations.closeConnectionsFailedTip,
-      );
+      throw MessageException(currentAppLocalizations.closeConnectionsFailedTip);
     }
     await _core.closeConnections();
   }
@@ -400,23 +396,7 @@ class _LiveFeedState extends ConsumerState<_LiveFeed>
       if (ref.read(coreStatusProvider) != CoreStatus.connected) {
         return const [];
       }
-      try {
-        return await _core.getConnections();
-      } on CoreMethodException catch (error) {
-        // The extension core owns the connections when the VPN is on: ask
-        // it over 9090 when the routed call did not reach it.
-        if (error.code != 'empty_response' ||
-            ref.read(runningVpnOptionsProvider)?.enable != true) {
-          rethrow;
-        }
-        final snapshot = await ref
-            .read(externalControllerClientProvider)
-            .fetchConnections();
-        if (snapshot == null) {
-          rethrow;
-        }
-        return snapshot.connections;
-      }
+      return await _core.getConnections();
     } catch (error) {
       commonPrint.log(
         'updateConnections error: $error',
@@ -467,11 +447,7 @@ class _LiveFeedState extends ConsumerState<_LiveFeed>
       return;
     }
     if (ref.read(runningVpnOptionsProvider)?.enable == true) {
-      throw MessageException(
-        client.unauthorized
-            ? currentAppLocalizations.externalControllerSecretMismatch
-            : currentAppLocalizations.closeConnectionsFailedTip,
-      );
+      throw MessageException(currentAppLocalizations.closeConnectionsFailedTip);
     }
     await _core.closeConnection(id);
   }

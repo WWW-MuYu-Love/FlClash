@@ -186,7 +186,7 @@ class ProxiesAction extends _$ProxiesAction {
     profilesAction.updateCurrentSelectedMap(groupName, proxyName);
     final ChangeProxyResult result;
     try {
-      result = await _core.changeProxy(
+      result = await _changeProxy(
         ChangeProxyParams(groupName: groupName, proxyName: proxyName),
       );
       if (result.message.isNotEmpty) {
@@ -212,20 +212,11 @@ class ProxiesAction extends _$ProxiesAction {
       proxyName,
     );
     if (!synced) {
-      final client = ref.read(externalControllerClientProvider);
-      if (client.unauthorized) {
-        // The tunnel is up and the router already delivered the switch, so there is nothing to roll back.
-        _reportExternalControllerFailure(
-          'changeProxy($groupName -> $proxyName)',
-          client,
-        );
-      } else {
-        profilesAction.updateCurrentSelectedMap(groupName, rollbackName);
-        dialogs.showBanner(
-          currentAppLocalizations.changeProxyFailedTip,
-          level: BannerLevel.error,
-        );
-      }
+      profilesAction.updateCurrentSelectedMap(groupName, rollbackName);
+      dialogs.showBanner(
+        currentAppLocalizations.changeProxyFailedTip,
+        level: BannerLevel.error,
+      );
     }
     try {
       if (ref.read(appSettingProvider).closeConnections) {
@@ -249,18 +240,14 @@ class ProxiesAction extends _$ProxiesAction {
       return;
     }
     if (ref.read(runningVpnOptionsProvider)?.enable == true) {
-      if (client.unauthorized) {
-        _reportExternalControllerFailure('closeConnections', client);
-      } else {
-        commonPrint.log(
-          'closeConnections external controller sync failed',
-          logLevel: LogLevel.warning,
-        );
-        dialogs.showBanner(
-          currentAppLocalizations.closeConnectionsFailedTip,
-          level: BannerLevel.error,
-        );
-      }
+      commonPrint.log(
+        'closeConnections external controller sync failed',
+        logLevel: LogLevel.warning,
+      );
+      dialogs.showBanner(
+        currentAppLocalizations.closeConnectionsFailedTip,
+        level: BannerLevel.error,
+      );
       return;
     }
     await _core.closeConnections();
@@ -494,6 +481,18 @@ class ProxiesAction extends _$ProxiesAction {
     }
   }
 
+  Future<ChangeProxyResult> _changeProxy(ChangeProxyParams params) async {
+    try {
+      return await _core.changeProxy(params);
+    } on CoreMethodException catch (error) {
+      if (error.code != 'empty_response' ||
+          ref.read(runningVpnOptionsProvider)?.enable != true) {
+        rethrow;
+      }
+      return _core.changeProxy(params, route: CoreRoute.app);
+    }
+  }
+
   Future<Delay> _testDelay(_DelayTestJob job, _DelayTestTarget target) async {
     try {
       return await _core.testDelay(
@@ -508,13 +507,14 @@ class ProxiesAction extends _$ProxiesAction {
           ref.read(runningVpnOptionsProvider)?.enable != true) {
         rethrow;
       }
-      final routed = await ref
-          .read(externalControllerClientProvider)
-          .fetchDelay(target.proxyName, target.testUrl, job.timeout);
-      if (routed == null) {
-        rethrow;
-      }
-      return routed;
+      return _core.testDelay(
+        TestDelayParams(
+          proxyName: target.proxyName,
+          testUrl: target.testUrl,
+          timeout: job.timeout.inMilliseconds,
+        ),
+        route: CoreRoute.app,
+      );
     }
   }
 
@@ -527,20 +527,7 @@ class ProxiesAction extends _$ProxiesAction {
       _scheduleDelayFlush();
     }
     try {
-      var delay = await _testDelay(job, target);
-      // A failed or timed-out answer may come from the App core, which is
-      // not the routing core when the VPN is on: ask the extension core
-      // over 9090, whose answer is authoritative.
-      final value = delay.value;
-      if ((value == null || value < 0) &&
-          ref.read(runningVpnOptionsProvider)?.enable == true) {
-        final routed = await ref
-            .read(externalControllerClientProvider)
-            .fetchDelay(target.proxyName, target.testUrl, job.timeout);
-        if (routed != null) {
-          delay = routed;
-        }
-      }
+      final delay = await _testDelay(job, target);
       if (!job.cancelled) {
         setDelay(delay);
       }

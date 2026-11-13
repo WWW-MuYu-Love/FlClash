@@ -31,8 +31,7 @@ class ConnectivityManager extends ConsumerStatefulWidget {
       _ConnectivityManagerState();
 }
 
-class _ConnectivityManagerState extends ConsumerState<ConnectivityManager>
-    with WidgetsBindingObserver {
+class _ConnectivityManagerState extends ConsumerState<ConnectivityManager> {
   late final StreamSubscription subscription;
   late final SsidReader _readSsid =
       widget.readSsid ?? WifiSsidManager.instance.getSsid;
@@ -43,7 +42,6 @@ class _ConnectivityManagerState extends ConsumerState<ConnectivityManager>
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addObserver(this);
     final stream =
         widget.connectivityStream ?? Connectivity().onConnectivityChanged;
     subscription = stream.listen(_handleResults);
@@ -65,31 +63,6 @@ class _ConnectivityManagerState extends ConsumerState<ConnectivityManager>
         }
       },
     );
-    // Cold start emits no connectivity event, so read the current network
-    // once up front; otherwise an already-connected excluded SSID stays
-    // unpublished until the next resume or network change.
-    unawaited(_refreshOnResume());
-  }
-
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed) {
-      unawaited(_refreshOnResume());
-    }
-  }
-
-  // A Wi-Fi to Wi-Fi switch may not move the connectivity stream, and the
-  // app may have been suspended while the network changed, so re-read the
-  // current network and SSID when coming back to the foreground. This is
-  // what lets the direct/disconnect action restore the previous mode.
-  Future<void> _refreshOnResume() async {
-    try {
-      final results = await Connectivity().checkConnectivity();
-      _onWifi = results.contains(ConnectivityResult.wifi);
-    } catch (_) {
-      // Fall through to the SSID read with the last known state.
-    }
-    unawaited(_updateSsid());
   }
 
   void _handleResults(List<ConnectivityResult> results) {
@@ -133,7 +106,6 @@ class _ConnectivityManagerState extends ConsumerState<ConnectivityManager>
 
   @override
   void dispose() {
-    WidgetsBinding.instance.removeObserver(this);
     subscription.cancel();
     super.dispose();
   }

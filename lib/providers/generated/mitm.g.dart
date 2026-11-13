@@ -8,18 +8,9 @@ part of '../mitm.dart';
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
-/// Hosts with recorded decrypted exchanges. On iOS the persisted
-/// captures on the shared disk are the source, so hosts stay listed
-/// after the tunnel stops. Live in-flight hosts need the 9090
-/// controller, which is not wired up yet.
 
 @ProviderFor(mitmDecryptedHosts)
 final mitmDecryptedHostsProvider = MitmDecryptedHostsProvider._();
-
-/// Hosts with recorded decrypted exchanges. On iOS the persisted
-/// captures on the shared disk are the source, so hosts stay listed
-/// after the tunnel stops. Live in-flight hosts need the 9090
-/// controller, which is not wired up yet.
 
 final class MitmDecryptedHostsProvider
     extends
@@ -29,10 +20,6 @@ final class MitmDecryptedHostsProvider
           FutureOr<Set<String>>
         >
     with $FutureModifier<Set<String>>, $FutureProvider<Set<String>> {
-  /// Hosts with recorded decrypted exchanges. On iOS the persisted
-  /// captures on the shared disk are the source, so hosts stay listed
-  /// after the tunnel stops. Live in-flight hosts need the 9090
-  /// controller, which is not wired up yet.
   MitmDecryptedHostsProvider._()
     : super(
         from: null,
@@ -60,7 +47,7 @@ final class MitmDecryptedHostsProvider
 }
 
 String _$mitmDecryptedHostsHash() =>
-    r'1d95b513370a49b7ebdbd3cc68a67764c8530676';
+    r'6e3729bc7f18c8a770cc7ac053a7c014dcea6de8';
 
 @ProviderFor(MitmCa)
 final mitmCaProvider = MitmCaProvider._();
@@ -205,16 +192,14 @@ abstract class _$MitmTrustState extends $AsyncNotifier<MitmTrustCheck> {
 
 /// Fetched again while shown, until the connection has closed and none of its
 /// requests is pending. Keyed by host: the capture store never sees the
-/// tracker's ids. On iOS the store is the persisted captures on the
-/// shared disk; in-flight exchanges are not visible yet.
+/// tracker's ids.
 
 @ProviderFor(mitmExchanges)
 final mitmExchangesProvider = MitmExchangesFamily._();
 
 /// Fetched again while shown, until the connection has closed and none of its
 /// requests is pending. Keyed by host: the capture store never sees the
-/// tracker's ids. On iOS the store is the persisted captures on the
-/// shared disk; in-flight exchanges are not visible yet.
+/// tracker's ids.
 
 final class MitmExchangesProvider
     extends
@@ -226,8 +211,7 @@ final class MitmExchangesProvider
     with $FutureModifier<MitmExchangeList>, $FutureProvider<MitmExchangeList> {
   /// Fetched again while shown, until the connection has closed and none of its
   /// requests is pending. Keyed by host: the capture store never sees the
-  /// tracker's ids. On iOS the store is the persisted captures on the
-  /// shared disk; in-flight exchanges are not visible yet.
+  /// tracker's ids.
   MitmExchangesProvider._({
     required MitmExchangesFamily super.from,
     required String super.argument,
@@ -272,12 +256,11 @@ final class MitmExchangesProvider
   }
 }
 
-String _$mitmExchangesHash() => r'30f99cd0b68aa839e2f1fd919d17779383bf7f4e';
+String _$mitmExchangesHash() => r'c6d6dacf26c35b2efb1544fca16000194ce7f7a6';
 
 /// Fetched again while shown, until the connection has closed and none of its
 /// requests is pending. Keyed by host: the capture store never sees the
-/// tracker's ids. On iOS the store is the persisted captures on the
-/// shared disk; in-flight exchanges are not visible yet.
+/// tracker's ids.
 
 final class MitmExchangesFamily extends $Family
     with $FunctionalFamilyOverride<FutureOr<MitmExchangeList>, String> {
@@ -292,8 +275,7 @@ final class MitmExchangesFamily extends $Family
 
   /// Fetched again while shown, until the connection has closed and none of its
   /// requests is pending. Keyed by host: the capture store never sees the
-  /// tracker's ids. On iOS the store is the persisted captures on the
-  /// shared disk; in-flight exchanges are not visible yet.
+  /// tracker's ids.
 
   MitmExchangesProvider call(String host) =>
       MitmExchangesProvider._(argument: host, from: this);
@@ -357,7 +339,7 @@ final class MitmExchangeProvider
   }
 }
 
-String _$mitmExchangeHash() => r'26168e6d020573ae4ad8390ee9a8f60fa0e34dc0';
+String _$mitmExchangeHash() => r'6166dc9f37639441f4ecbaac46513f860bd793b4';
 
 final class MitmExchangeFamily extends $Family
     with $FunctionalFamilyOverride<FutureOr<MitmExchange?>, int> {
@@ -438,7 +420,7 @@ final class MitmBodyProvider
   }
 }
 
-String _$mitmBodyHash() => r'307225ea43dd6faf376f687b76c7cc45cfb0079e';
+String _$mitmBodyHash() => r'a90c643d98355f6c1dcd60adc8226729addb266b';
 
 final class MitmBodyFamily extends $Family
     with

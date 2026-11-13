@@ -9,9 +9,6 @@ final class PacketTunnelProvider: NEPacketTunnelProvider {
   private lazy var eventQueue = NECoreEventQueue(
     sharedStateStore: sharedStateStore
   )
-  private lazy var ssidDirectController = SsidDirectController(
-    sharedStateStore: sharedStateStore
-  )
   private let logger = Logger(
     subsystem: PacketTunnelEnvironment.extensionBundleIdentifier,
     category: "PacketTunnelProvider"
@@ -164,10 +161,6 @@ final class PacketTunnelProvider: NEPacketTunnelProvider {
         if started {
           self.sharedStateStore.clearLastError()
           self.sharedStateStore.saveRunTime(vpnOptions: snapshot.data)
-          // The core (and its 9090 controller) is up, so the SSID watcher
-          // can switch the mode to direct on a direct SSID and restore it
-          // on leaving, without the main app running.
-          self.ssidDirectController.start()
         } else {
           self.sharedStateStore.saveLastError("无法启动核心 TUN")
         }
@@ -188,7 +181,6 @@ final class PacketTunnelProvider: NEPacketTunnelProvider {
     sharedStateStore.saveStage("已停止")
     reloadWidgets()
     eventQueue.stop()
-    ssidDirectController.stop()
     NECoreBridge.stopTun()
     guard reason == .userInitiated else {
       completionHandler()

@@ -377,7 +377,6 @@ void main() {
         when(
           () => externalController.selectProxy(any(), any()),
         ).thenAnswer((_) async => false);
-        when(() => externalController.unauthorized).thenReturn(false);
         final container = runningVpnContainer(
           profile: _selectedProfile('HK-00'),
           externalController: externalController,
@@ -389,29 +388,6 @@ void main() {
 
         expect(container.read(currentProfileProvider)?.selectedMap, {
           'Proxy': 'HK-00',
-        });
-      },
-    );
-
-    test(
-      'keeps the selection when the tunnel controller answers 401',
-      () async {
-        final externalController = MockExternalControllerClient();
-        when(
-          () => externalController.selectProxy(any(), any()),
-        ).thenAnswer((_) async => false);
-        when(() => externalController.unauthorized).thenReturn(true);
-        final container = runningVpnContainer(
-          profile: _selectedProfile('HK-00'),
-          externalController: externalController,
-        );
-
-        await actionOf(
-          container,
-        ).changeProxy(groupName: 'Proxy', proxyName: 'HK-01');
-
-        expect(container.read(currentProfileProvider)?.selectedMap, {
-          'Proxy': 'HK-01',
         });
       },
     );

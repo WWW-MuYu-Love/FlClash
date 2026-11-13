@@ -95,14 +95,6 @@ class ExcludeSSIDs extends _$ExcludeSSIDs with AutoDisposeNotifierMixin {
   }
 }
 
-@riverpod
-class DirectSSIDs extends _$DirectSSIDs with AutoDisposeNotifierMixin {
-  @override
-  List<String> build() {
-    return [];
-  }
-}
-
 @Riverpod(name: 'configProvider')
 Config _config(Ref ref) {
   final appSettingProps = ref.watch(appSettingProvider);
@@ -116,7 +108,6 @@ Config _config(Ref ref) {
   final proxiesStyleProps = ref.watch(proxiesStyleSettingProvider);
   final patchClashConfig = ref.watch(patchClashConfigProvider);
   final excludeSSIDs = ref.watch(excludeSSIDsProvider);
-  final directSSIDs = ref.watch(directSSIDsProvider);
   return Config(
     appSettingProps: appSettingProps,
     windowProps: windowProps,
@@ -129,7 +120,6 @@ Config _config(Ref ref) {
     proxiesStyleProps: proxiesStyleProps,
     patchClashConfig: patchClashConfig,
     excludeSSIDs: excludeSSIDs,
-    directSSIDs: directSSIDs,
   );
 }
 
@@ -147,7 +137,6 @@ void writeConfig(Ref ref, Config config) {
   ref.read(patchClashConfigProvider.notifier).value = config.patchClashConfig
       .ensureControllerSecret();
   ref.read(excludeSSIDsProvider.notifier).value = config.excludeSSIDs;
-  ref.read(directSSIDsProvider.notifier).value = config.directSSIDs;
 }
 
 List<Override> buildConfigOverrides(Config config) {
@@ -169,6 +158,5 @@ List<Override> buildConfigOverrides(Config config) {
       (_, _) => config.patchClashConfig,
     ),
     excludeSSIDsProvider.overrideWithBuild((_, _) => config.excludeSSIDs),
-    directSSIDsProvider.overrideWithBuild((_, _) => config.directSSIDs),
   ];
 }
