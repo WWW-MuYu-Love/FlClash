@@ -575,10 +575,18 @@ func (e *Engine) intercept(ctx context.Context, req *http.Request, invoker mitmp
 		return e.exchange.Intercept(ctx, e, req, invoker)
 	}
 	requestRewriteActions(e, req)
-	resp, err := invoker.Invoke(req)
+	mapped, _ := mapLocalResponse(e, req, rawURL)
+	var resp *http.Response
+	var err error
+	if mapped != nil {
+		resp = mapped
+	} else {
+		resp, err = invoker.Invoke(req)
+	}
 	if err != nil {
 		return resp, err
 	}
+	responseBodyRewrite(e, resp, rawURL)
 	responseRewriteActions(e, resp, rawURL)
 	return resp, nil
 }

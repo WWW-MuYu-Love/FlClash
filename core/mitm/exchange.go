@@ -2,11 +2,15 @@ package mitm
 
 import (
 	"bytes"
+	"compress/gzip"
 	"context"
 	"encoding/base64"
+	"fmt"
 	"io"
+	"mime"
 	"net/http"
 	"net/url"
+	"path/filepath"
 	"regexp"
 	"sort"
 	"strconv"
@@ -20,6 +24,10 @@ import (
 
 // maxRecordedBody caps how much of a body the store keeps per side.
 const maxRecordedBody = 1 << 20 // 1 MiB
+
+// maxRewriteBodySize caps a body a rewrite may buffer. Larger bodies pass
+// through untouched.
+const maxRewriteBodySize = 16 << 20
 
 // Action is one rewrite or observation applied to an exchange (MitmAction).
 type Action struct {
@@ -134,8 +142,8 @@ func (s *ExchangeStore) NextConnectionID() string {
 
 // Intercept runs on every decrypted request: it records the exchange, applies
 // the configured rewrites, and returns the (possibly rewritten) response.
-// Bodies are teed, never buffered and replaced: the request body is read by
-// the upstream during Invoke, the response body by the client after Intercept returns.
+// Bodies are teed, never buffered and replaced, unless a body rewrite or a
+// map-local rule applies to the exchange.
 func (s *ExchangeStore) Intercept(ctx context.Context, e *Engine, req *http.Request, invoker mitmproxy.HTTPDelegatedInvoker) (*http.Response, error) {
 	connID := connectionIDFromContext(ctx)
 	start := time.Now()
@@ -159,7 +167,19 @@ func (s *ExchangeStore) Intercept(ctx context.Context, e *Engine, req *http.Requ
 	s.add(ex)
 	s.applyRequestRewrites(e, req, ex)
 
-	resp, err := invoker.Invoke(req)
+	var resp *http.Response
+	var err error
+	mapped, mapActions := mapLocalResponse(e, req, ex.OriginalURL)
+	if len(mapActions) > 0 {
+		s.mu.Lock()
+		ex.Actions = append(ex.Actions, mapActions...)
+		s.mu.Unlock()
+	}
+	if mapped != nil {
+		resp = mapped
+	} else {
+		resp, err = invoker.Invoke(req)
+	}
 	if reqCapture != nil {
 		body, truncated := reqCapture.snapshot()
 		s.mu.Lock()
@@ -180,6 +200,7 @@ func (s *ExchangeStore) Intercept(ctx context.Context, e *Engine, req *http.Requ
 	ex.Status = resp.StatusCode
 	ex.ResponseHeader = cloneHeader(resp.Header)
 	s.mu.Unlock()
+	s.applyResponseBodyRewrite(e, resp, ex)
 	if resp.Body != nil {
 		resp.Body = newTeeBody(resp.Body, !e.recordBodies(), func(capture *cappedCapture) {
 			s.finishResponse(ex, start, capture)
@@ -672,4 +693,273 @@ func matchURLPattern(pattern, rawurl string) bool {
 
 func parseURL(s string) (*url.URL, error) {
 	return url.Parse(s)
+}
+
+type bodyRewriteRule struct {
+	phase       string
+	pattern     string
+	regex       *regexp.Regexp
+	replacement string
+	line        string
+}
+
+func parseBodyRewriteLine(line string) *bodyRewriteRule {
+	parts := splitRewriteLine(line)
+	if len(parts) < 3 {
+		return nil
+	}
+	var phase string
+	switch parts[0] {
+	case "http-request":
+		phase = "request"
+	case "http-response":
+		phase = "response"
+	default:
+		return nil
+	}
+	re, err := regexp.Compile(parts[2])
+	if err != nil {
+		return nil
+	}
+	return &bodyRewriteRule{
+		phase:       phase,
+		pattern:     parts[1],
+		regex:       re,
+		replacement: strings.Join(parts[3:], " "),
+		line:        line,
+	}
+}
+
+func (s *ExchangeStore) applyResponseBodyRewrite(e *Engine, resp *http.Response, ex *Exchange) {
+	actions := responseBodyRewrite(e, resp, ex.OriginalURL)
+	if len(actions) == 0 {
+		return
+	}
+	s.mu.Lock()
+	ex.Actions = append(ex.Actions, actions...)
+	s.mu.Unlock()
+}
+
+func responseBodyRewrite(e *Engine, resp *http.Response, rawURL string) []Action {
+	e.mu.RLock()
+	lines := append([]string(nil), e.config.BodyRewrite...)
+	e.mu.RUnlock()
+	var matched []*bodyRewriteRule
+	for _, line := range lines {
+		rule := parseBodyRewriteLine(line)
+		if rule == nil || rule.phase != "response" {
+			continue
+		}
+		if matchURLPattern(rule.pattern, rawURL) {
+			matched = append(matched, rule)
+		}
+	}
+	fired := rewriteResponseBody(resp, matched)
+	if len(fired) == 0 {
+		return nil
+	}
+	actions := make([]Action, len(fired))
+	for i, rule := range fired {
+		actions[i] = Action{Kind: "body-rewrite", Phase: "response", Detail: rule.line}
+	}
+	return actions
+}
+
+func rewriteResponseBody(resp *http.Response, rules []*bodyRewriteRule) []*bodyRewriteRule {
+	if resp.Body == nil || len(rules) == 0 {
+		return nil
+	}
+	raw, complete := readCappedBody(resp.Body)
+	if !complete {
+		resp.Body = io.NopCloser(io.MultiReader(bytes.NewReader(raw), resp.Body))
+		return nil
+	}
+	if len(raw) == 0 {
+		resp.Body = io.NopCloser(bytes.NewReader(raw))
+		return nil
+	}
+	gzipped := contentEncodingIs(resp, "gzip")
+	plain := raw
+	if gzipped {
+		decoded, err := gunzipBytes(raw)
+		if err != nil {
+			resp.Body = io.NopCloser(bytes.NewReader(raw))
+			return nil
+		}
+		plain = decoded
+	}
+	rewritten := plain
+	var fired []*bodyRewriteRule
+	for _, rule := range rules {
+		if rule.regex.Match(rewritten) {
+			rewritten = rule.regex.ReplaceAll(rewritten, []byte(rule.replacement))
+			fired = append(fired, rule)
+		}
+	}
+	if len(fired) == 0 {
+		resp.Body = io.NopCloser(bytes.NewReader(raw))
+		return nil
+	}
+	out := rewritten
+	if gzipped {
+		encoded, err := gzipBytes(rewritten)
+		if err != nil {
+			resp.Body = io.NopCloser(bytes.NewReader(raw))
+			return nil
+		}
+		out = encoded
+	}
+	resp.Body = io.NopCloser(bytes.NewReader(out))
+	resp.ContentLength = int64(len(out))
+	resp.Header.Set("Content-Length", strconv.Itoa(len(out)))
+	resp.Header.Del("Transfer-Encoding")
+	return fired
+}
+
+func readCappedBody(r io.Reader) ([]byte, bool) {
+	buf, err := io.ReadAll(io.LimitReader(r, maxRewriteBodySize+1))
+	if err != nil {
+		return buf, false
+	}
+	return buf, len(buf) <= maxRewriteBodySize
+}
+
+func contentEncodingIs(resp *http.Response, want string) bool {
+	return strings.EqualFold(strings.TrimSpace(resp.Header.Get("Content-Encoding")), want)
+}
+
+func gunzipBytes(raw []byte) ([]byte, error) {
+	zr, err := gzip.NewReader(bytes.NewReader(raw))
+	if err != nil {
+		return nil, err
+	}
+	defer zr.Close()
+	decoded, err := io.ReadAll(io.LimitReader(zr, maxRewriteBodySize+1))
+	if err != nil {
+		return nil, err
+	}
+	if len(decoded) > maxRewriteBodySize {
+		return nil, fmt.Errorf("decompressed body exceeds %d bytes", maxRewriteBodySize)
+	}
+	return decoded, nil
+}
+
+func gzipBytes(plain []byte) ([]byte, error) {
+	var buf bytes.Buffer
+	w := gzip.NewWriter(&buf)
+	if _, err := w.Write(plain); err != nil {
+		return nil, err
+	}
+	if err := w.Close(); err != nil {
+		return nil, err
+	}
+	return buf.Bytes(), nil
+}
+
+type mapLocalRule struct {
+	pattern    string
+	dataType   string
+	data       string
+	statusCode int
+	header     http.Header
+	line       string
+}
+
+func parseMapLocalLine(line string) *mapLocalRule {
+	parts := splitRewriteLine(line)
+	if len(parts) < 1 {
+		return nil
+	}
+	rule := &mapLocalRule{pattern: parts[0], dataType: "file", statusCode: 200, header: http.Header{}, line: line}
+	for _, field := range parts[1:] {
+		key, value, ok := strings.Cut(field, "=")
+		if !ok {
+			continue
+		}
+		switch strings.ToLower(strings.TrimSpace(key)) {
+		case "data-type":
+			rule.dataType = strings.ToLower(strings.TrimSpace(value))
+		case "data":
+			rule.data = value
+		case "status-code":
+			if code, err := strconv.Atoi(strings.TrimSpace(value)); err == nil && code >= 100 && code <= 999 {
+				rule.statusCode = code
+			}
+		case "header":
+			for _, pair := range strings.Split(value, "|") {
+				if kv := splitHeaderValue(pair); kv != nil {
+					rule.header.Add(kv[0], kv[1])
+				}
+			}
+		}
+	}
+	return rule
+}
+
+func mapLocalResponse(e *Engine, req *http.Request, rawURL string) (*http.Response, []Action) {
+	e.mu.RLock()
+	lines := append([]string(nil), e.config.MapLocal...)
+	e.mu.RUnlock()
+	for _, line := range lines {
+		rule := parseMapLocalLine(line)
+		if rule == nil || !matchURLPattern(rule.pattern, rawURL) {
+			continue
+		}
+		content, err := mapLocalContent(e, rule)
+		if err != nil {
+			return nil, []Action{{Kind: "map-local", Phase: "response", Detail: line + " (" + err.Error() + ")"}}
+		}
+		return mapLocalServe(req, rule, content), []Action{{Kind: "map-local", Phase: "response", Detail: line}}
+	}
+	return nil, nil
+}
+
+func mapLocalContent(e *Engine, rule *mapLocalRule) ([]byte, error) {
+	switch rule.dataType {
+	case "text":
+		return []byte(rule.data), nil
+	case "base64":
+		data, err := base64.StdEncoding.DecodeString(rule.data)
+		if err != nil {
+			return nil, fmt.Errorf("bad base64 data: %w", err)
+		}
+		return data, nil
+	default:
+		return e.readResource(rule.data)
+	}
+}
+
+func mapLocalServe(req *http.Request, rule *mapLocalRule, content []byte) *http.Response {
+	header := http.Header{}
+	for name, values := range rule.header {
+		for _, v := range values {
+			header.Add(name, v)
+		}
+	}
+	if header.Get("Content-Type") == "" {
+		header.Set("Content-Type", mapLocalContentType(rule))
+	}
+	header.Set("Content-Length", strconv.Itoa(len(content)))
+	proto := req.Proto
+	if proto == "" {
+		proto = "HTTP/1.1"
+	}
+	return &http.Response{
+		Status:        fmt.Sprintf("%d %s", rule.statusCode, http.StatusText(rule.statusCode)),
+		StatusCode:    rule.statusCode,
+		Proto:         proto,
+		Header:        header,
+		Body:          io.NopCloser(bytes.NewReader(content)),
+		ContentLength: int64(len(content)),
+		Request:       req,
+	}
+}
+
+func mapLocalContentType(rule *mapLocalRule) string {
+	if rule.dataType == "file" {
+		if typ := mime.TypeByExtension(filepath.Ext(rule.data)); typ != "" {
+			return typ
+		}
+	}
+	return "text/plain; charset=utf-8"
 }
