@@ -558,6 +558,25 @@ void main() {
       expect(snapshot.total, 15000);
     });
 
+    test(
+      'an in-process Core whose RSS matches the app RSS is not double-counted',
+      () {
+        // On iOS the App Core runs in the app process, so its RSS is the app
+        // RSS itself; only its Go runtime is carved out, and the extension
+        // still adds on top.
+        final snapshot = MemorySnapshot.resolve(
+          rss: 4100,
+          core: core,
+          coreInProcess: true,
+          extensionRss: 5000,
+        );
+        expect(snapshot.app, 4100 - 1800);
+        expect(snapshot.coreTotal, 1800);
+        expect(snapshot.extensionTotal, 5000);
+        expect(snapshot.total, 4100 + 5000);
+      },
+    );
+
     test('a stopped extension leaves only the app and Core', () {
       final snapshot = MemorySnapshot.resolve(
         rss: 10000,
