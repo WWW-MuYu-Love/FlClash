@@ -373,6 +373,69 @@ void main() {
       );
     });
 
+    test('logs the method name on an empty response', () async {
+      await lib.start();
+      globalState.isAttach = true;
+      addTearDown(() => globalState.isAttach = false);
+      service.onInvokeMethod = (call) => CoreMethodResponse(
+        id: call.id,
+        error: const CoreMethodError(
+          code: 'empty_response',
+          message: 'empty network extension response',
+        ),
+      );
+
+      await expectLater(
+        lib.invokeMethod(method: CoreMethod.trafficCurrent),
+        throwsA(
+          isA<CoreMethodException>().having(
+            (error) => error.code,
+            'code',
+            'empty_response',
+          ),
+        ),
+      );
+
+      final payloads = container
+          .read(logsProvider)
+          .list
+          .map((log) => log.payload);
+      expect(
+        payloads,
+        contains(contains('xpc empty_response: traffic.current')),
+      );
+    });
+
+    test('does not log the diagnostic for other errors', () async {
+      await lib.start();
+      globalState.isAttach = true;
+      addTearDown(() => globalState.isAttach = false);
+      service.onInvokeMethod = (call) => CoreMethodResponse(
+        id: call.id,
+        error: const CoreMethodError(
+          code: 'transport_error',
+          message: 'transport error',
+        ),
+      );
+
+      await expectLater(
+        lib.invokeMethod(method: CoreMethod.trafficCurrent),
+        throwsA(
+          isA<CoreMethodException>().having(
+            (error) => error.code,
+            'code',
+            'transport_error',
+          ),
+        ),
+      );
+
+      final payloads = container
+          .read(logsProvider)
+          .list
+          .map((log) => log.payload);
+      expect(payloads, everyElement(isNot(contains('xpc empty_response'))));
+    });
+
     testWidgets('gives up instead of hanging when no connection arrives', (
       tester,
     ) async {

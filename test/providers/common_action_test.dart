@@ -193,8 +193,28 @@ void main() {
       return (container, client);
     }
 
-    test('takes the totals from the core and never asks 9090', () async {
+    test('takes the totals from 9090 and never asks the core', () async {
       final (container, client) = buildExternalContainer(snapshot);
+      when(
+        () => core.getTraffic(any()),
+      ).thenAnswer((_) async => const Traffic(up: 10, down: 20));
+      when(
+        () => core.getTotalTraffic(any()),
+      ).thenAnswer((_) async => const Traffic(up: 100, down: 200));
+
+      await container.read(commonActionProvider.notifier).updateTraffic();
+
+      expect(
+        container.read(totalTrafficProvider),
+        const Traffic(up: 5000, down: 9000),
+      );
+      expect(client.fetchConnectionsCalls, 1);
+      verifyNever(() => core.getTraffic(any()));
+      verifyNever(() => core.getTotalTraffic(any()));
+    });
+
+    test('falls back to the core when 9090 is unreachable', () async {
+      final (container, client) = buildExternalContainer(null);
       when(
         () => core.getTraffic(any()),
       ).thenAnswer((_) async => const Traffic(up: 10, down: 20));
@@ -209,35 +229,13 @@ void main() {
         container.read(totalTrafficProvider),
         const Traffic(up: 100, down: 200),
       );
-      expect(client.fetchConnectionsCalls, 0);
+      expect(client.fetchConnectionsCalls, 1);
       verify(() => core.getTraffic(any())).called(1);
       verify(() => core.getTotalTraffic(any())).called(1);
-    });
-
-    test('falls back to 9090 when the core fails', () async {
-      final (container, client) = buildExternalContainer(snapshot);
-      when(() => core.getTraffic(any())).thenThrow(StateError('core down'));
-      when(
-        () => core.getTotalTraffic(any()),
-      ).thenThrow(StateError('core down'));
-
-      await container.read(commonActionProvider.notifier).updateTraffic();
-
-      expect(
-        container.read(totalTrafficProvider),
-        const Traffic(up: 5000, down: 9000),
-      );
-      expect(client.fetchConnectionsCalls, 1);
     });
   });
 
   group('CommonAction.updateTraffic XPC backoff', () {
-    const snapshot = ExternalControllerSnapshot(
-      uploadTotal: 5000,
-      downloadTotal: 9000,
-      connections: [],
-    );
-
     const emptyResponse = CoreMethodException(
       code: 'empty_response',
       message: 'empty network extension response',
@@ -245,7 +243,7 @@ void main() {
 
     (ProviderContainer, _FakeExternalControllerClient, CommonAction)
     buildBackoffContainer() {
-      final client = _FakeExternalControllerClient(snapshot);
+      final client = _FakeExternalControllerClient(null);
       final container = ProviderContainer(
         overrides: [
           coreHandlerProvider.overrideWithValue(CoreController.scoped(core)),
@@ -256,27 +254,47 @@ void main() {
       return (container, client, container.read(commonActionProvider.notifier));
     }
 
+    /// The general stub is registered first so the App-core stub wins.
+    void stubEmptyXpcWithAppCoreFallback() {
+      when(() => core.getTraffic(any())).thenThrow(emptyResponse);
+      when(() => core.getTotalTraffic(any())).thenThrow(emptyResponse);
+      when(
+        () => core.getTraffic(any(), route: CoreRoute.app),
+      ).thenAnswer((_) async => const Traffic(up: 1, down: 2));
+      when(
+        () => core.getTotalTraffic(any(), route: CoreRoute.app),
+      ).thenAnswer((_) async => const Traffic(up: 3, down: 4));
+    }
+
+    /// An omitted `route` matches only unrouted calls; verify counts once.
+    void expectXpcCalls(int count) {
+      verify(() => core.getTraffic(any())).called(count);
+    }
+
     test(
-      'skips XPC for a minute after an empty response and uses 9090',
+      'skips XPC for 30 seconds after an empty response and uses the App core',
       () async {
         final (container, client, action) = buildBackoffContainer();
         var now = DateTime(2026, 11, 14);
         action.clock = () => now;
-        when(() => core.getTraffic(any())).thenThrow(emptyResponse);
-        when(() => core.getTotalTraffic(any())).thenThrow(emptyResponse);
+        stubEmptyXpcWithAppCoreFallback();
 
         await action.updateTraffic();
         expect(client.fetchConnectionsCalls, 1);
+        expect(
+          container.read(totalTrafficProvider),
+          const Traffic(up: 3, down: 4),
+        );
 
         now = now.add(const Duration(seconds: 10));
         await action.updateTraffic();
         expect(client.fetchConnectionsCalls, 2);
         expect(
           container.read(totalTrafficProvider),
-          const Traffic(up: 5000, down: 9000),
+          const Traffic(up: 3, down: 4),
         );
-        verify(() => core.getTraffic(any())).called(1);
-        verify(() => core.getTotalTraffic(any())).called(1);
+        expectXpcCalls(1);
+        verify(() => core.getTraffic(any(), route: CoreRoute.app)).called(2);
       },
     );
 
@@ -284,30 +302,27 @@ void main() {
       final (_, client, action) = buildBackoffContainer();
       var now = DateTime(2026, 11, 14);
       action.clock = () => now;
-      when(() => core.getTraffic(any())).thenThrow(emptyResponse);
-      when(() => core.getTotalTraffic(any())).thenThrow(emptyResponse);
+      stubEmptyXpcWithAppCoreFallback();
 
       await action.updateTraffic();
       expect(client.fetchConnectionsCalls, 1);
 
-      now = now.add(const Duration(seconds: 61));
+      now = now.add(const Duration(seconds: 31));
       await action.updateTraffic();
       expect(client.fetchConnectionsCalls, 2);
-      verify(() => core.getTraffic(any())).called(2);
-      verify(() => core.getTotalTraffic(any())).called(2);
+      expectXpcCalls(2);
     });
 
     test('an XPC success clears the backoff at once', () async {
       final (_, client, action) = buildBackoffContainer();
       var now = DateTime(2026, 11, 14);
       action.clock = () => now;
-      when(() => core.getTraffic(any())).thenThrow(emptyResponse);
-      when(() => core.getTotalTraffic(any())).thenThrow(emptyResponse);
+      stubEmptyXpcWithAppCoreFallback();
 
       await action.updateTraffic();
       expect(client.fetchConnectionsCalls, 1);
 
-      now = now.add(const Duration(seconds: 61));
+      now = now.add(const Duration(seconds: 31));
       when(
         () => core.getTraffic(any()),
       ).thenAnswer((_) async => const Traffic(up: 10, down: 20));
@@ -315,12 +330,11 @@ void main() {
         () => core.getTotalTraffic(any()),
       ).thenAnswer((_) async => const Traffic(up: 100, down: 200));
       await action.updateTraffic();
-      expect(client.fetchConnectionsCalls, 1);
+      expect(client.fetchConnectionsCalls, 2);
 
       await action.updateTraffic();
-      expect(client.fetchConnectionsCalls, 1);
-      verify(() => core.getTraffic(any())).called(3);
-      verify(() => core.getTotalTraffic(any())).called(3);
+      expect(client.fetchConnectionsCalls, 3);
+      expectXpcCalls(3);
     });
 
     test('other errors do not start the backoff', () async {
@@ -338,8 +352,7 @@ void main() {
 
       now = now.add(const Duration(seconds: 10));
       await action.updateTraffic();
-      verify(() => core.getTraffic(any())).called(2);
-      verify(() => core.getTotalTraffic(any())).called(2);
+      expectXpcCalls(2);
     });
   });
 

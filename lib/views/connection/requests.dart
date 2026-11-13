@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:fl_clash/common/common.dart';
 import 'package:fl_clash/core/controller.dart';
 import 'package:fl_clash/core/method.dart';
+import 'package:fl_clash/core/xpc_backoff.dart';
 import 'package:fl_clash/enum/enum.dart';
 import 'package:fl_clash/features/features.dart';
 import 'package:fl_clash/models/models.dart';
@@ -336,6 +337,9 @@ class _LiveFeedState extends ConsumerState<_LiveFeed>
   CoreController get _core => ref.read(coreHandlerProvider);
 
   final _speedRanker = TrackerSpeedRanker();
+
+  // Backs off the connections XPC call; 9090 covers it while backed off.
+  final _connectionsBackoff = XpcEmptyBackoff();
   late final ScrollController _scrollController;
   var _loaded = false;
   // A sheet's one controller opens where the recent feed reads, its far end.
@@ -396,8 +400,20 @@ class _LiveFeedState extends ConsumerState<_LiveFeed>
       if (ref.read(coreStatusProvider) != CoreStatus.connected) {
         return const [];
       }
+      // 9090 answers the connections first.
+      final snapshot = await ref
+          .read(externalControllerClientProvider)
+          .fetchConnections();
+      if (snapshot != null) {
+        return snapshot.connections;
+      }
+      if (_connectionsBackoff.isBackedOff) {
+        return await _core.getConnections(route: CoreRoute.app);
+      }
       try {
-        return await _core.getConnections();
+        final result = await _core.getConnections();
+        _connectionsBackoff.noteSuccess();
+        return result;
       } on CoreMethodException catch (error) {
         // The extension core owns the connections when the VPN is on: ask
         // it over 9090 when the routed call did not reach it.
@@ -405,12 +421,7 @@ class _LiveFeedState extends ConsumerState<_LiveFeed>
             ref.read(runningVpnOptionsProvider)?.enable != true) {
           rethrow;
         }
-        final snapshot = await ref
-            .read(externalControllerClientProvider)
-            .fetchConnections();
-        if (snapshot != null) {
-          return snapshot.connections;
-        }
+        _connectionsBackoff.noteEmptyResponse();
         // Last resort: the App core answers with its own list, usually
         // empty while the tunnel is up.
         return await _core.getConnections(route: CoreRoute.app);

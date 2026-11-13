@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:fl_clash/common/common.dart';
+import 'package:fl_clash/enum/enum.dart';
 import 'package:fl_clash/plugins/service.dart';
 import 'package:fl_clash/providers/providers.dart';
 import 'package:fl_clash/state.dart';
@@ -225,15 +226,26 @@ class CoreLib extends CoreHandlerInterface {
       );
     }
     final id = '${++_methodCallId}';
-    final response = await _service!.invokeMethod(
-      CoreMethodCall(
-        id: id,
-        method: method,
-        arguments: arguments,
-        route: route,
-      ),
-    );
-    return response.unwrap<Object?>();
+    try {
+      final response = await _service!.invokeMethod(
+        CoreMethodCall(
+          id: id,
+          method: method,
+          arguments: arguments,
+          route: route,
+        ),
+      );
+      return response.unwrap<Object?>();
+    } on CoreMethodException catch (error) {
+      if (error.code == 'empty_response') {
+        // Name the unanswered call so the log shows which piece failed.
+        commonPrint.log(
+          'xpc empty_response: ${method.wireName}',
+          logLevel: LogLevel.warning,
+        );
+      }
+      rethrow;
+    }
   }
 }
 

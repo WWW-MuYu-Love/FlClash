@@ -443,7 +443,9 @@ void main() {
         expect(container.read(currentProfileProvider)?.selectedMap, {
           'Proxy': 'HK-01',
         });
-        verifyNever(() => externalController.selectProxy(any(), any()));
+        // 9090 is tried first; the Core applied it, so the sync that
+        // would call selectProxy a second time must not run.
+        verify(() => externalController.selectProxy(any(), any())).called(1);
       },
     );
 

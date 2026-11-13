@@ -369,7 +369,7 @@ void main() {
     },
   );
 
-  test('falls back to 9090 when the Core does not answer', () async {
+  test('asks 9090 first and never calls the Core when it answers', () async {
     final (scope, client) = runningContainer(
       controllerItems: [_item('youtube')],
     );
@@ -381,6 +381,7 @@ void main() {
     await pumpEventQueue();
 
     expect(client.fetchServiceCheckCalls, 1);
+    verifyNever(() => core.serviceCheck(any()));
     verifyNever(() => core.serviceCheck(any(), route: CoreRoute.app));
     final state = stateOf(scope);
     expect(state.entryOf(ServiceTarget.youtube).phase, ProbePhase.fresh);
@@ -404,6 +405,7 @@ void main() {
     await pumpEventQueue();
 
     expect(client.fetchServiceCheckCalls, 1);
+    verify(() => core.serviceCheck(any())).called(1);
     verify(() => core.serviceCheck(any(), route: CoreRoute.app)).called(1);
     final state = stateOf(scope);
     expect(state.entryOf(ServiceTarget.youtube).phase, ProbePhase.fresh);

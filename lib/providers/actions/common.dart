@@ -7,17 +7,12 @@ class CommonAction extends _$CommonAction {
   CancelToken? _updateCancelToken;
   final _externalTrafficSampler = ExternalTrafficSampler();
 
-  // Skip XPC traffic for a minute after an empty response; 9090 covers it.
-  static const _xpcTrafficBackoff = Duration(minutes: 1);
+  final _xpcTrafficBackoff = XpcEmptyBackoff();
 
   @visibleForTesting
-  DateTime Function() clock = DateTime.now;
-
-  DateTime? _xpcTrafficBackoffUntil;
-
-  bool get _xpcTrafficBackedOff =>
-      _xpcTrafficBackoffUntil != null &&
-      clock().isBefore(_xpcTrafficBackoffUntil!);
+  DateTime Function() get clock => _xpcTrafficBackoff.clock;
+  @visibleForTesting
+  set clock(DateTime Function() value) => _xpcTrafficBackoff.clock = value;
 
   @override
   void build() {}
@@ -69,8 +64,17 @@ class CommonAction extends _$CommonAction {
       final onlyStatisticsProxy = ref.read(
         appSettingProvider.select((state) => state.onlyStatisticsProxy),
       );
-      final xpcBackedOff = _xpcTrafficBackedOff;
-      final [traffic, totalTraffic] = xpcBackedOff
+      // 9090 answers traffic first.
+      final external = await _readExternalTraffic();
+      if (external != null) {
+        final (instant, total) = external;
+        if (instant != null) {
+          ref.read(trafficsProvider.notifier).addTraffic(instant);
+        }
+        ref.read(totalTrafficProvider.notifier).value = total;
+        return;
+      }
+      final [traffic, totalTraffic] = _xpcTrafficBackoff.isBackedOff
           ? const <Traffic?>[null, null]
           : await Future.wait([
               _readTraffic(
@@ -89,15 +93,6 @@ class CommonAction extends _$CommonAction {
         if (totalTraffic != null) {
           ref.read(totalTrafficProvider.notifier).value = totalTraffic;
         }
-        return;
-      }
-      final external = await _readExternalTraffic();
-      if (external != null) {
-        final (instant, total) = external;
-        if (instant != null) {
-          ref.read(trafficsProvider.notifier).addTraffic(instant);
-        }
-        ref.read(totalTrafficProvider.notifier).value = total;
         return;
       }
       // Last resort: the App core answers with its own traffic. It moves
@@ -149,14 +144,14 @@ class CommonAction extends _$CommonAction {
     try {
       final result = await request();
       if (trackXpcBackoff) {
-        _xpcTrafficBackoffUntil = null;
+        _xpcTrafficBackoff.noteSuccess();
       }
       return result;
     } catch (error) {
       if (trackXpcBackoff &&
           error is CoreMethodException &&
           error.code == 'empty_response') {
-        _xpcTrafficBackoffUntil = clock().add(_xpcTrafficBackoff);
+        _xpcTrafficBackoff.noteEmptyResponse();
       }
       commonPrint.log(
         'updateTraffic error: $error',

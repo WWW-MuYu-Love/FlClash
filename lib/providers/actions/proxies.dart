@@ -46,6 +46,9 @@ class ProxiesAction extends _$ProxiesAction {
 
   final Map<String, String> _pendingSelectedRollback = {};
 
+  final _proxySelectBackoff = XpcEmptyBackoff();
+  final _delayTestBackoff = XpcEmptyBackoff();
+
   @override
   void build() {
     ref.onDispose(() => _delayFlushTimer?.cancel());
@@ -491,15 +494,7 @@ class ProxiesAction extends _$ProxiesAction {
   }
 
   Future<_ProxyChangeOutcome> _changeProxy(ChangeProxyParams params) async {
-    try {
-      final result = await _core.changeProxy(params);
-      return (result: result, appliedToRoutingCore: true);
-    } on CoreMethodException catch (error) {
-      if (error.code != 'empty_response' ||
-          ref.read(runningVpnOptionsProvider)?.enable != true) {
-        rethrow;
-      }
-      // The App core routes nothing while the tunnel runs: try 9090 first.
+    if (ref.read(runningVpnOptionsProvider)?.enable == true) {
       final applied = await ref
           .read(externalControllerClientProvider)
           .selectProxy(params.groupName, params.proxyName);
@@ -509,25 +504,53 @@ class ProxiesAction extends _$ProxiesAction {
           appliedToRoutingCore: true,
         );
       }
+    }
+    if (_proxySelectBackoff.isBackedOff) {
+      final result = await _core.changeProxy(params, route: CoreRoute.app);
+      return (result: result, appliedToRoutingCore: false);
+    }
+    try {
+      final result = await _core.changeProxy(params);
+      _proxySelectBackoff.noteSuccess();
+      return (result: result, appliedToRoutingCore: true);
+    } on CoreMethodException catch (error) {
+      if (error.code != 'empty_response' ||
+          ref.read(runningVpnOptionsProvider)?.enable != true) {
+        rethrow;
+      }
+      _proxySelectBackoff.noteEmptyResponse();
       final result = await _core.changeProxy(params, route: CoreRoute.app);
       return (result: result, appliedToRoutingCore: false);
     }
   }
 
   Future<Delay> _testDelay(_DelayTestJob job, _DelayTestTarget target) async {
+    if (_delayTestBackoff.isBackedOff) {
+      return _core.testDelay(
+        TestDelayParams(
+          proxyName: target.proxyName,
+          testUrl: target.testUrl,
+          timeout: job.timeout.inMilliseconds,
+        ),
+        route: CoreRoute.app,
+      );
+    }
     try {
-      return await _core.testDelay(
+      final delay = await _core.testDelay(
         TestDelayParams(
           proxyName: target.proxyName,
           testUrl: target.testUrl,
           timeout: job.timeout.inMilliseconds,
         ),
       );
+      _delayTestBackoff.noteSuccess();
+      return delay;
     } on CoreMethodException catch (error) {
       if (error.code != 'empty_response' ||
           ref.read(runningVpnOptionsProvider)?.enable != true) {
         rethrow;
       }
+      _delayTestBackoff.noteEmptyResponse();
       return _core.testDelay(
         TestDelayParams(
           proxyName: target.proxyName,

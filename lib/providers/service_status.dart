@@ -2,6 +2,7 @@ import 'package:fl_clash/common/constant.dart';
 import 'package:fl_clash/common/mixin.dart';
 import 'package:fl_clash/common/service_probe.dart';
 import 'package:fl_clash/core/method.dart';
+import 'package:fl_clash/core/xpc_backoff.dart';
 import 'package:fl_clash/models/models.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -17,6 +18,8 @@ part 'generated/service_status.g.dart';
 @Riverpod(keepAlive: true)
 class ServiceStatus extends _$ServiceStatus
     with RoutedProbe<ServiceTarget, ServiceCheck> {
+  final _serviceCheckBackoff = XpcEmptyBackoff();
+
   @override
   RoutedProbeState<ServiceTarget, ServiceCheck> build() => buildProbe();
 
@@ -50,23 +53,30 @@ class ServiceStatus extends _$ServiceStatus
     RouteState route,
   ) async {
     Map<ServiceTarget, ServiceCheck> checks;
-    try {
+    final items = await _serviceCheckOver9090(route, target);
+    if (items != null) {
+      checks = serviceChecksOf(items);
+    } else if (_serviceCheckBackoff.isBackedOff) {
       checks = await checkServices(
         ref.read(coreHandlerProvider),
         proxyName: route.proxied ? '' : directOutbound,
         targets: [target],
+        route: CoreRoute.app,
       );
-    } on CoreMethodException catch (error) {
-      // The routing core answers the sweep over 9090 when the routed call
-      // did not reach it, and the app core answers it when 9090 is gone too.
-      if (error.code != 'empty_response' ||
-          ref.read(runningVpnOptionsProvider)?.enable != true) {
-        rethrow;
-      }
-      final items = await _serviceCheckOver9090(route, target);
-      if (items != null) {
-        checks = serviceChecksOf(items);
-      } else {
+    } else {
+      try {
+        checks = await checkServices(
+          ref.read(coreHandlerProvider),
+          proxyName: route.proxied ? '' : directOutbound,
+          targets: [target],
+        );
+        _serviceCheckBackoff.noteSuccess();
+      } on CoreMethodException catch (error) {
+        if (error.code != 'empty_response' ||
+            ref.read(runningVpnOptionsProvider)?.enable != true) {
+          rethrow;
+        }
+        _serviceCheckBackoff.noteEmptyResponse();
         checks = await checkServices(
           ref.read(coreHandlerProvider),
           proxyName: route.proxied ? '' : directOutbound,
