@@ -2365,8 +2365,13 @@ final tunnelErrorProvider = TunnelErrorProvider._();
 /// Wired to the service channel's `tunnelError` reports.
 
 final class TunnelErrorProvider
-    extends $FunctionalProvider<String?, String?, String?>
-    with $Provider<String?> {
+    extends
+        $FunctionalProvider<
+          TunnelStartFailure?,
+          TunnelStartFailure?,
+          TunnelStartFailure?
+        >
+    with $Provider<TunnelStartFailure?> {
   /// The last iOS tunnel start failure; null elsewhere or when none happened.
   /// Wired to the service channel's `tunnelError` reports.
   TunnelErrorProvider._()
@@ -2385,24 +2390,25 @@ final class TunnelErrorProvider
 
   @$internal
   @override
-  $ProviderElement<String?> $createElement($ProviderPointer pointer) =>
-      $ProviderElement(pointer);
+  $ProviderElement<TunnelStartFailure?> $createElement(
+    $ProviderPointer pointer,
+  ) => $ProviderElement(pointer);
 
   @override
-  String? create(Ref ref) {
+  TunnelStartFailure? create(Ref ref) {
     return tunnelError(ref);
   }
 
   /// {@macro riverpod.override_with_value}
-  Override overrideWithValue(String? value) {
+  Override overrideWithValue(TunnelStartFailure? value) {
     return $ProviderOverride(
       origin: this,
-      providerOverride: $SyncValueProvider<String?>(value),
+      providerOverride: $SyncValueProvider<TunnelStartFailure?>(value),
     );
   }
 }
 
-String _$tunnelErrorHash() => r'c8a0ee5aa5460f49df4ba843441ad1dd9c3a5227';
+String _$tunnelErrorHash() => r'056c68759a468ee2f9ba4c656cc4e62c7d62e538';
 
 @ProviderFor(CurrentSSID)
 final currentSSIDProvider = CurrentSSIDProvider._();

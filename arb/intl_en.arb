@@ -1111,5 +1111,12 @@
   "coreProcessExitUnconfirmed": "Core process exit unconfirmed",
   "coreUnavailable": "Core is not connected",
   "coreEmptyResult": "Core answered with nothing",
-  "coreSpillOutsideDirectory": "Core wrote a file outside its spill directory"
+  "coreSpillOutsideDirectory": "Core wrote a file outside its spill directory",
+  "tunnelStartConfigInvalid": "The VPN configuration is invalid or stale. Try turning the VPN off and on again.",
+  "tunnelStartConfigDisabled": "The VPN configuration is disabled. Allow FlClash VPN in Settings.",
+  "tunnelStartExtensionFailed": "The extension failed to start: {detail}",
+  "tunnelStartNotStarted": "The tunnel did not connect",
+  "tunnelStartNotStartedDetail": "The tunnel did not connect: {detail}",
+  "tunnelStartFailed": "The tunnel failed to start",
+  "tunnelStartFailedDetail": "The tunnel failed to start: {detail}"
 }

@@ -46,7 +46,10 @@ class _VpnContainerState extends ConsumerState<VpnManager> with TileListener {
     // core running while the system VPN never connects.
     ref.listenManual(tunnelErrorProvider, (prev, next) {
       if (next != null && next != prev) {
-        dialogs.showBanner(next, level: BannerLevel.error);
+        dialogs.showBanner(
+          tunnelStartFailureMessage(next, currentAppLocalizations),
+          level: BannerLevel.error,
+        );
       }
     });
   }

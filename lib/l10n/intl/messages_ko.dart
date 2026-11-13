@@ -253,13 +253,19 @@ class MessageLookup extends MessageLookupByLibrary {
 
   static String m103(transport) => "${transport} 요청 헤더";
 
-  static String m104(label) => "${label}은(는) URL이어야 합니다";
+  static String m104(detail) => "확장 프로그램을 시작하지 못했습니다: ${detail}";
 
-  static String m105(date) => "${date}까지 유효";
+  static String m105(detail) => "터널을 시작하지 못했습니다: ${detail}";
 
-  static String m106(count) => "${Intl.plural(count, other: '${count}년 전')}";
+  static String m106(detail) => "터널에 연결되지 않았습니다: ${detail}";
 
-  static String m107(count) => "${Intl.plural(count, other: '${count}년 전')}";
+  static String m107(label) => "${label}은(는) URL이어야 합니다";
+
+  static String m108(date) => "${date}까지 유효";
+
+  static String m109(count) => "${Intl.plural(count, other: '${count}년 전')}";
+
+  static String m110(count) => "${Intl.plural(count, other: '${count}년 전')}";
 
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
@@ -1838,6 +1844,19 @@ class MessageLookup extends MessageLookupByLibrary {
     "tunOverrideDesc": MessageLookupByLibrary.simpleMessage(
       "여기에 추가한 항목은 모든 프로필의 TUN 설정을 대체합니다. 추가하지 않은 항목은 프로필 자체 설정을 유지합니다. 사용자 지정 프로필이 직접 추가한 항목이 우선합니다.",
     ),
+    "tunnelStartConfigDisabled": MessageLookupByLibrary.simpleMessage(
+      "VPN 구성이 비활성화되어 있습니다. 설정에서 FlClash VPN을 허용하세요.",
+    ),
+    "tunnelStartConfigInvalid": MessageLookupByLibrary.simpleMessage(
+      "VPN 구성이 유효하지 않거나 오래되었습니다. VPN을 껐다가 다시 켜 보세요.",
+    ),
+    "tunnelStartExtensionFailed": m104,
+    "tunnelStartFailed": MessageLookupByLibrary.simpleMessage("터널을 시작하지 못했습니다"),
+    "tunnelStartFailedDetail": m105,
+    "tunnelStartNotStarted": MessageLookupByLibrary.simpleMessage(
+      "터널에 연결되지 않았습니다",
+    ),
+    "tunnelStartNotStartedDetail": m106,
     "turnOff": MessageLookupByLibrary.simpleMessage("끄기"),
     "turnOn": MessageLookupByLibrary.simpleMessage("켜기"),
     "udpRelayMode": MessageLookupByLibrary.simpleMessage("UDP 릴레이 모드"),
@@ -1881,14 +1900,14 @@ class MessageLookup extends MessageLookupByLibrary {
     "uploadBandwidth": MessageLookupByLibrary.simpleMessage("업로드 대역폭"),
     "url": MessageLookupByLibrary.simpleMessage("URL"),
     "urlRewrite": MessageLookupByLibrary.simpleMessage("URL 재작성"),
-    "urlTip": m104,
+    "urlTip": m107,
     "useHosts": MessageLookupByLibrary.simpleMessage("hosts 사용"),
     "useSystemHosts": MessageLookupByLibrary.simpleMessage("시스템 hosts 사용"),
     "usedShort": MessageLookupByLibrary.simpleMessage("사용"),
     "usedTraffic": MessageLookupByLibrary.simpleMessage("사용한 트래픽"),
     "userAgent": MessageLookupByLibrary.simpleMessage("User-Agent"),
     "username": MessageLookupByLibrary.simpleMessage("사용자 이름"),
-    "validUntil": m105,
+    "validUntil": m108,
     "value": MessageLookupByLibrary.simpleMessage("값"),
     "view": MessageLookupByLibrary.simpleMessage("보기"),
     "viewAll": MessageLookupByLibrary.simpleMessage("모두 보기"),
@@ -1903,8 +1922,8 @@ class MessageLookup extends MessageLookupByLibrary {
     "writeToSystemDesc": MessageLookupByLibrary.simpleMessage(
       "시스템에 기록하면 시스템 시계도 설정합니다. Android에서는 무시됩니다.",
     ),
-    "yearsAgo": m106,
-    "yearsAgoShort": m107,
+    "yearsAgo": m109,
+    "yearsAgoShort": m110,
     "yes": MessageLookupByLibrary.simpleMessage("예"),
     "zhCN": MessageLookupByLibrary.simpleMessage("중국어 간체"),
   };

@@ -220,6 +220,32 @@ String userFacingErrorMessage(Object error, AppLocalizations appLocalizations) {
       };
 }
 
+/// A diagnosed iOS tunnel start failure: a code the app localizes plus
+/// the underlying detail text for the generic fallbacks. The code comes
+/// from the Runner, which classifies the NEVPNError behind the failure.
+typedef TunnelStartFailure = ({String code, String detail});
+
+String tunnelStartFailureMessage(
+  TunnelStartFailure failure,
+  AppLocalizations appLocalizations,
+) {
+  return switch (failure.code) {
+    'config_invalid' => appLocalizations.tunnelStartConfigInvalid,
+    'config_disabled' => appLocalizations.tunnelStartConfigDisabled,
+    'extension_failed' => appLocalizations.tunnelStartExtensionFailed(
+      failure.detail,
+    ),
+    'not_started' =>
+      failure.detail.isEmpty
+          ? appLocalizations.tunnelStartNotStarted
+          : appLocalizations.tunnelStartNotStartedDetail(failure.detail),
+    _ =>
+      failure.detail.isEmpty
+          ? appLocalizations.tunnelStartFailed
+          : appLocalizations.tunnelStartFailedDetail(failure.detail),
+  };
+}
+
 /// The variable segment of a Dart-constructed core error message, or null
 /// when the message does not match the shape its throw site builds.
 String? _segment(String message, String prefix, String suffix) {

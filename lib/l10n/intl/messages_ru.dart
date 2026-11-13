@@ -276,14 +276,20 @@ class MessageLookup extends MessageLookupByLibrary {
 
   static String m103(transport) => "Заголовки ${transport}";
 
-  static String m104(label) => "Значение «${label}» должно быть URL";
+  static String m104(detail) => "Не удалось запустить расширение: ${detail}";
 
-  static String m105(date) => "Действителен до ${date}";
+  static String m105(detail) => "Не удалось запустить туннель: ${detail}";
 
-  static String m106(count) =>
+  static String m106(detail) => "Туннель не подключился: ${detail}";
+
+  static String m107(label) => "Значение «${label}» должно быть URL";
+
+  static String m108(date) => "Действителен до ${date}";
+
+  static String m109(count) =>
       "${Intl.plural(count, one: '${count} год назад', few: '${count} года назад', many: '${count} лет назад', other: '${count} года назад')}";
 
-  static String m107(count) =>
+  static String m110(count) =>
       "${Intl.plural(count, one: '${count} г. назад', few: '${count} г. назад', many: '${count} л. назад', other: '${count} г. назад')}";
 
   final messages = _notInlinedMessages(_notInlinedMessages);
@@ -2285,6 +2291,21 @@ class MessageLookup extends MessageLookupByLibrary {
     "tunOverrideDesc": MessageLookupByLibrary.simpleMessage(
       "Добавленные здесь параметры заменяют настройки TUN всех профилей; остальные остаются такими, как в профиле. Параметры, добавленные в самом пользовательском профиле, имеют приоритет.",
     ),
+    "tunnelStartConfigDisabled": MessageLookupByLibrary.simpleMessage(
+      "Конфигурация VPN отключена. Разрешите VPN FlClash в настройках.",
+    ),
+    "tunnelStartConfigInvalid": MessageLookupByLibrary.simpleMessage(
+      "Конфигурация VPN недействительна или устарела. Выключите и снова включите VPN.",
+    ),
+    "tunnelStartExtensionFailed": m104,
+    "tunnelStartFailed": MessageLookupByLibrary.simpleMessage(
+      "Не удалось запустить туннель",
+    ),
+    "tunnelStartFailedDetail": m105,
+    "tunnelStartNotStarted": MessageLookupByLibrary.simpleMessage(
+      "Туннель не подключился",
+    ),
+    "tunnelStartNotStartedDetail": m106,
     "turnOff": MessageLookupByLibrary.simpleMessage("Выключить"),
     "turnOn": MessageLookupByLibrary.simpleMessage("Включить"),
     "udpRelayMode": MessageLookupByLibrary.simpleMessage(
@@ -2332,7 +2353,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "uploadBandwidth": MessageLookupByLibrary.simpleMessage("Скорость отдачи"),
     "url": MessageLookupByLibrary.simpleMessage("URL"),
     "urlRewrite": MessageLookupByLibrary.simpleMessage("Перезапись URL"),
-    "urlTip": m104,
+    "urlTip": m107,
     "useHosts": MessageLookupByLibrary.simpleMessage("Использовать hosts"),
     "useSystemHosts": MessageLookupByLibrary.simpleMessage(
       "Использовать системный hosts",
@@ -2343,7 +2364,7 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "userAgent": MessageLookupByLibrary.simpleMessage("User-Agent"),
     "username": MessageLookupByLibrary.simpleMessage("Имя пользователя"),
-    "validUntil": m105,
+    "validUntil": m108,
     "value": MessageLookupByLibrary.simpleMessage("Значение"),
     "view": MessageLookupByLibrary.simpleMessage("Просмотр"),
     "viewAll": MessageLookupByLibrary.simpleMessage("Показать всё"),
@@ -2364,8 +2385,8 @@ class MessageLookup extends MessageLookupByLibrary {
     "writeToSystemDesc": MessageLookupByLibrary.simpleMessage(
       "«Записывать в систему» также устанавливает системные часы; Android это игнорирует.",
     ),
-    "yearsAgo": m106,
-    "yearsAgoShort": m107,
+    "yearsAgo": m109,
+    "yearsAgoShort": m110,
     "yes": MessageLookupByLibrary.simpleMessage("Да"),
     "zhCN": MessageLookupByLibrary.simpleMessage("Упрощённый китайский"),
   };

@@ -9,7 +9,7 @@ final class TunnelCoordinator {
   private let managerStore: TunnelManagerStore
   private let onTunnelStateChanged: (TunnelTarget) -> Void
   private let onConnectionStateChanged: (String) -> Void
-  private let onTunnelFailure: (String) -> Void
+  private let onTunnelFailure: ((code: String, detail: String)) -> Void
   private let onExternalStart: () -> Void
   private let onExternalStop: () -> Void
   private let logger = Logger(
@@ -20,7 +20,7 @@ final class TunnelCoordinator {
   private var observedTunnelStatus: NEVPNStatus?
   private var reportedTunnelState: TunnelTarget?
   private var publishedTunnelState: TunnelTarget?
-  private var lastStartError: String?
+  private var lastStartError: NSError?
   private var lastStartOptionsSummary: String?
 
   private var requestGeneration: UInt64 = 0
@@ -40,7 +40,7 @@ final class TunnelCoordinator {
     managerStore: TunnelManagerStore,
     onTunnelStateChanged: @escaping (TunnelTarget) -> Void,
     onConnectionStateChanged: @escaping (String) -> Void,
-    onTunnelFailure: @escaping (String) -> Void,
+    onTunnelFailure: @escaping ((code: String, detail: String)) -> Void,
     onExternalStart: @escaping () -> Void,
     onExternalStop: @escaping () -> Void
   ) {
@@ -208,7 +208,7 @@ final class TunnelCoordinator {
         guard isCurrent(request) else {
           return
         }
-        lastStartError = error.localizedDescription
+        lastStartError = error as NSError
         let status = observedTunnelStatus
         if request.preferenceRetryCount == 0,
           managerStore.invalidateCachedManager(forPreferenceError: error)
@@ -676,22 +676,57 @@ final class TunnelCoordinator {
   }
 
   private func reportStartFailure() {
-    let parts = [lastStartError, managerStore.tunnelLastError()]
-      .compactMap { $0 }
-      .filter { !$0.isEmpty }
+    let appError = lastStartError
     lastStartError = nil
+    let extensionError = managerStore.tunnelLastError()
     let summary = lastStartOptionsSummary
     lastStartOptionsSummary = nil
-    if parts.isEmpty {
-      let stage = managerStore.tunnelStage().flatMap {
-        $0 == "已停止" ? nil : "，阶段：\($0)"
-      } ?? ""
-      onTunnelFailure(
-        "隧道未能连接：\(summary ?? "启动选项未知") #24\(stage)"
+    onTunnelFailure(
+      tunnelStartDiagnosis(
+        appError: appError,
+        extensionError: extensionError,
+        summary: summary
       )
-    } else {
-      onTunnelFailure(parts.joined(separator: " / ") + " #24")
+    )
+  }
+
+  /// The reason the tunnel did not start, as a code the app localizes plus
+  /// the underlying detail. The app error is the direct throw from loading
+  /// preferences or startVPNTunnel, so it is classified by its NEVPNError
+  /// code. An extension error means the extension launched and failed
+  /// inside startTunnel. Neither means the tunnel never became active.
+  private func tunnelStartDiagnosis(
+    appError: NSError?,
+    extensionError: String?,
+    summary: String?
+  ) -> (code: String, detail: String) {
+    if let appError {
+      if appError.domain == NEVPNErrorDomain,
+        let vpnCode = NEVPNError.Code(rawValue: appError.code)
+      {
+        switch vpnCode {
+        case .configurationInvalid, .configurationStale:
+          return ("config_invalid", appError.localizedDescription)
+        case .configurationDisabled:
+          return ("config_disabled", appError.localizedDescription)
+        default:
+          return ("unknown", appError.localizedDescription)
+        }
+      }
+      return ("unknown", appError.localizedDescription)
     }
+    if let extensionError, !extensionError.isEmpty {
+      return ("extension_failed", extensionError)
+    }
+    let stage = managerStore.tunnelStage().flatMap {
+      $0 == "已停止" ? nil : "阶段：\($0)"
+    }
+    let detail =
+      [summary, stage]
+      .compactMap { $0 }
+      .filter { !$0.isEmpty }
+      .joined(separator: "，")
+    return ("not_started", detail)
   }
 
   private func reportTunnelState(_ state: TunnelTarget) {

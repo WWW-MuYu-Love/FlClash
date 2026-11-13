@@ -1111,5 +1111,12 @@
   "coreProcessExitUnconfirmed": "进程退出未确认",
   "coreUnavailable": "核心未连接",
   "coreEmptyResult": "核心没有返回结果",
-  "coreSpillOutsideDirectory": "核心写入了数据目录之外的文件"
+  "coreSpillOutsideDirectory": "核心写入了数据目录之外的文件",
+  "tunnelStartConfigInvalid": "VPN 配置无效或已过期，请重新开启 VPN",
+  "tunnelStartConfigDisabled": "VPN 配置未开启，请在“设置”中允许 FlClash 的 VPN",
+  "tunnelStartExtensionFailed": "扩展启动失败：{detail}",
+  "tunnelStartNotStarted": "隧道未能连接",
+  "tunnelStartNotStartedDetail": "隧道未能连接：{detail}",
+  "tunnelStartFailed": "隧道启动失败",
+  "tunnelStartFailedDetail": "隧道启动失败：{detail}"
 }

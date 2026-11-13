@@ -1111,5 +1111,12 @@
   "coreProcessExitUnconfirmed": "Sortie du processus non confirmée",
   "coreUnavailable": "Le cœur n'est pas connecté",
   "coreEmptyResult": "Le cœur n'a rien renvoyé",
-  "coreSpillOutsideDirectory": "Le cœur a écrit un fichier en dehors de son répertoire"
+  "coreSpillOutsideDirectory": "Le cœur a écrit un fichier en dehors de son répertoire",
+  "tunnelStartConfigInvalid": "La configuration VPN est invalide ou obsolète. Éteignez puis rallumez le VPN.",
+  "tunnelStartConfigDisabled": "La configuration VPN est désactivée. Autorisez le VPN FlClash dans Réglages.",
+  "tunnelStartExtensionFailed": "L'extension n'a pas pu démarrer : {detail}",
+  "tunnelStartNotStarted": "Le tunnel ne s'est pas connecté",
+  "tunnelStartNotStartedDetail": "Le tunnel ne s'est pas connecté : {detail}",
+  "tunnelStartFailed": "Le tunnel n'a pas pu démarrer",
+  "tunnelStartFailedDetail": "Le tunnel n'a pas pu démarrer : {detail}"
 }

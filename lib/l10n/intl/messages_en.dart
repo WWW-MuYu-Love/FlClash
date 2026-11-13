@@ -278,14 +278,20 @@ class MessageLookup extends MessageLookupByLibrary {
 
   static String m103(transport) => "${transport} Headers";
 
-  static String m104(label) => "${label} must be a URL";
+  static String m104(detail) => "The extension failed to start: ${detail}";
 
-  static String m105(date) => "Valid until ${date}";
+  static String m105(detail) => "The tunnel failed to start: ${detail}";
 
-  static String m106(count) =>
+  static String m106(detail) => "The tunnel did not connect: ${detail}";
+
+  static String m107(label) => "${label} must be a URL";
+
+  static String m108(date) => "Valid until ${date}";
+
+  static String m109(count) =>
       "${Intl.plural(count, one: '1 year ago', other: '${count} years ago')}";
 
-  static String m107(count) => "${Intl.plural(count, other: '${count}y ago')}";
+  static String m110(count) => "${Intl.plural(count, other: '${count}y ago')}";
 
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
@@ -2180,6 +2186,21 @@ class MessageLookup extends MessageLookupByLibrary {
     "tunOverrideDesc": MessageLookupByLibrary.simpleMessage(
       "Entries added here replace the TUN settings of every profile; anything not added keeps the profile\'s own setting. Entries a custom profile adds itself take precedence.",
     ),
+    "tunnelStartConfigDisabled": MessageLookupByLibrary.simpleMessage(
+      "The VPN configuration is disabled. Allow FlClash VPN in Settings.",
+    ),
+    "tunnelStartConfigInvalid": MessageLookupByLibrary.simpleMessage(
+      "The VPN configuration is invalid or stale. Try turning the VPN off and on again.",
+    ),
+    "tunnelStartExtensionFailed": m104,
+    "tunnelStartFailed": MessageLookupByLibrary.simpleMessage(
+      "The tunnel failed to start",
+    ),
+    "tunnelStartFailedDetail": m105,
+    "tunnelStartNotStarted": MessageLookupByLibrary.simpleMessage(
+      "The tunnel did not connect",
+    ),
+    "tunnelStartNotStartedDetail": m106,
     "turnOff": MessageLookupByLibrary.simpleMessage("Turn off"),
     "turnOn": MessageLookupByLibrary.simpleMessage("Turn on"),
     "udpRelayMode": MessageLookupByLibrary.simpleMessage("UDP relay mode"),
@@ -2225,14 +2246,14 @@ class MessageLookup extends MessageLookupByLibrary {
     "uploadBandwidth": MessageLookupByLibrary.simpleMessage("Upload bandwidth"),
     "url": MessageLookupByLibrary.simpleMessage("URL"),
     "urlRewrite": MessageLookupByLibrary.simpleMessage("URL rewrite"),
-    "urlTip": m104,
+    "urlTip": m107,
     "useHosts": MessageLookupByLibrary.simpleMessage("Use hosts"),
     "useSystemHosts": MessageLookupByLibrary.simpleMessage("Use system hosts"),
     "usedShort": MessageLookupByLibrary.simpleMessage("used"),
     "usedTraffic": MessageLookupByLibrary.simpleMessage("Used traffic"),
     "userAgent": MessageLookupByLibrary.simpleMessage("User-Agent"),
     "username": MessageLookupByLibrary.simpleMessage("Username"),
-    "validUntil": m105,
+    "validUntil": m108,
     "value": MessageLookupByLibrary.simpleMessage("Value"),
     "view": MessageLookupByLibrary.simpleMessage("View"),
     "viewAll": MessageLookupByLibrary.simpleMessage("View all"),
@@ -2249,8 +2270,8 @@ class MessageLookup extends MessageLookupByLibrary {
     "writeToSystemDesc": MessageLookupByLibrary.simpleMessage(
       "Write to system also sets the system clock; Android ignores it.",
     ),
-    "yearsAgo": m106,
-    "yearsAgoShort": m107,
+    "yearsAgo": m109,
+    "yearsAgoShort": m110,
     "yes": MessageLookupByLibrary.simpleMessage("Yes"),
     "zhCN": MessageLookupByLibrary.simpleMessage("Simplified Chinese"),
   };

@@ -202,7 +202,7 @@ void _setVpn(WidgetRef ref, bool value) => ref
 String _vpnSubtitle(
   BuildContext context,
   TunnelState? tunnelState,
-  String? tunnelError,
+  TunnelStartFailure? tunnelError,
   bool enabled,
 ) {
   final appLocalizations = context.appLocalizations;
@@ -216,7 +216,8 @@ String _vpnSubtitle(
     TunnelState.disconnected =>
       tunnelError == null
           ? appLocalizations.disconnected
-          : '${appLocalizations.disconnected}: $tunnelError',
+          : '${appLocalizations.disconnected}: '
+                '${tunnelStartFailureMessage(tunnelError, appLocalizations)}',
   };
 }
 

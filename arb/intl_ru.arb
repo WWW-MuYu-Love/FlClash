@@ -1111,5 +1111,12 @@
   "coreProcessExitUnconfirmed": "Выход процесса не подтверждён",
   "coreUnavailable": "Ядро не подключено",
   "coreEmptyResult": "Ядро ничего не ответило",
-  "coreSpillOutsideDirectory": "Ядро записало файл вне своего каталога"
+  "coreSpillOutsideDirectory": "Ядро записало файл вне своего каталога",
+  "tunnelStartConfigInvalid": "Конфигурация VPN недействительна или устарела. Выключите и снова включите VPN.",
+  "tunnelStartConfigDisabled": "Конфигурация VPN отключена. Разрешите VPN FlClash в настройках.",
+  "tunnelStartExtensionFailed": "Не удалось запустить расширение: {detail}",
+  "tunnelStartNotStarted": "Туннель не подключился",
+  "tunnelStartNotStartedDetail": "Туннель не подключился: {detail}",
+  "tunnelStartFailed": "Не удалось запустить туннель",
+  "tunnelStartFailedDetail": "Не удалось запустить туннель: {detail}"
 }

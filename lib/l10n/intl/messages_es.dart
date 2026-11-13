@@ -286,14 +286,20 @@ class MessageLookup extends MessageLookupByLibrary {
 
   static String m103(transport) => "Encabezados ${transport}";
 
-  static String m104(label) => "${label} debe ser una URL";
+  static String m104(detail) => "No se pudo iniciar la extensión: ${detail}";
 
-  static String m105(date) => "Válido hasta el ${date}";
+  static String m105(detail) => "No se pudo iniciar el túnel: ${detail}";
 
-  static String m106(count) =>
+  static String m106(detail) => "El túnel no se conectó: ${detail}";
+
+  static String m107(label) => "${label} debe ser una URL";
+
+  static String m108(date) => "Válido hasta el ${date}";
+
+  static String m109(count) =>
       "${Intl.plural(count, one: 'hace 1 año', other: 'hace ${count} años')}";
 
-  static String m107(count) =>
+  static String m110(count) =>
       "${Intl.plural(count, other: 'hace ${count} a')}";
 
   final messages = _notInlinedMessages(_notInlinedMessages);
@@ -2353,6 +2359,21 @@ class MessageLookup extends MessageLookupByLibrary {
     "tunOverrideDesc": MessageLookupByLibrary.simpleMessage(
       "Las entradas añadidas aquí sustituyen los ajustes de TUN de todos los perfiles; lo que no añadas conserva el ajuste del propio perfil. Las entradas que añade un perfil personalizado tienen prioridad.",
     ),
+    "tunnelStartConfigDisabled": MessageLookupByLibrary.simpleMessage(
+      "La configuración de VPN está desactivada. Permite la VPN de FlClash en Ajustes.",
+    ),
+    "tunnelStartConfigInvalid": MessageLookupByLibrary.simpleMessage(
+      "La configuración de VPN no es válida o está desactualizada. Apaga y enciende la VPN de nuevo.",
+    ),
+    "tunnelStartExtensionFailed": m104,
+    "tunnelStartFailed": MessageLookupByLibrary.simpleMessage(
+      "No se pudo iniciar el túnel",
+    ),
+    "tunnelStartFailedDetail": m105,
+    "tunnelStartNotStarted": MessageLookupByLibrary.simpleMessage(
+      "El túnel no se conectó",
+    ),
+    "tunnelStartNotStartedDetail": m106,
     "turnOff": MessageLookupByLibrary.simpleMessage("Desactivar"),
     "turnOn": MessageLookupByLibrary.simpleMessage("Activar"),
     "udpRelayMode": MessageLookupByLibrary.simpleMessage(
@@ -2402,7 +2423,7 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "url": MessageLookupByLibrary.simpleMessage("URL"),
     "urlRewrite": MessageLookupByLibrary.simpleMessage("Reescritura de URL"),
-    "urlTip": m104,
+    "urlTip": m107,
     "useHosts": MessageLookupByLibrary.simpleMessage("Usar hosts"),
     "useSystemHosts": MessageLookupByLibrary.simpleMessage(
       "Usar hosts del sistema",
@@ -2411,7 +2432,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "usedTraffic": MessageLookupByLibrary.simpleMessage("Tráfico usado"),
     "userAgent": MessageLookupByLibrary.simpleMessage("User-Agent"),
     "username": MessageLookupByLibrary.simpleMessage("Usuario"),
-    "validUntil": m105,
+    "validUntil": m108,
     "value": MessageLookupByLibrary.simpleMessage("Valor"),
     "view": MessageLookupByLibrary.simpleMessage("Ver"),
     "viewAll": MessageLookupByLibrary.simpleMessage("Ver todo"),
@@ -2430,8 +2451,8 @@ class MessageLookup extends MessageLookupByLibrary {
     "writeToSystemDesc": MessageLookupByLibrary.simpleMessage(
       "Escribir en el sistema también ajusta el reloj del sistema; Android lo ignora.",
     ),
-    "yearsAgo": m106,
-    "yearsAgoShort": m107,
+    "yearsAgo": m109,
+    "yearsAgoShort": m110,
     "yes": MessageLookupByLibrary.simpleMessage("Sí"),
     "zhCN": MessageLookupByLibrary.simpleMessage("Chino simplificado"),
   };

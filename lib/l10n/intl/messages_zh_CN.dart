@@ -245,13 +245,19 @@ class MessageLookup extends MessageLookupByLibrary {
 
   static String m103(transport) => "${transport} 请求头";
 
-  static String m104(label) => "${label}必须为URL";
+  static String m104(detail) => "扩展启动失败：${detail}";
 
-  static String m105(date) => "有效期至 ${date}";
+  static String m105(detail) => "隧道启动失败：${detail}";
 
-  static String m106(count) => "${count} 年前";
+  static String m106(detail) => "隧道未能连接：${detail}";
 
-  static String m107(count) => "${count} 年前";
+  static String m107(label) => "${label}必须为URL";
+
+  static String m108(date) => "有效期至 ${date}";
+
+  static String m109(count) => "${count} 年前";
+
+  static String m110(count) => "${count} 年前";
 
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
@@ -1680,6 +1686,17 @@ class MessageLookup extends MessageLookupByLibrary {
     "tunOverrideDesc": MessageLookupByLibrary.simpleMessage(
       "添加的项会覆写所有配置的虚拟网卡设置，未添加的项沿用配置自身的设置。自定义配置自己添加的项优先。",
     ),
+    "tunnelStartConfigDisabled": MessageLookupByLibrary.simpleMessage(
+      "VPN 配置未开启，请在“设置”中允许 FlClash 的 VPN",
+    ),
+    "tunnelStartConfigInvalid": MessageLookupByLibrary.simpleMessage(
+      "VPN 配置无效或已过期，请重新开启 VPN",
+    ),
+    "tunnelStartExtensionFailed": m104,
+    "tunnelStartFailed": MessageLookupByLibrary.simpleMessage("隧道启动失败"),
+    "tunnelStartFailedDetail": m105,
+    "tunnelStartNotStarted": MessageLookupByLibrary.simpleMessage("隧道未能连接"),
+    "tunnelStartNotStartedDetail": m106,
     "turnOff": MessageLookupByLibrary.simpleMessage("关闭"),
     "turnOn": MessageLookupByLibrary.simpleMessage("开启"),
     "udpRelayMode": MessageLookupByLibrary.simpleMessage("UDP 中继模式"),
@@ -1715,14 +1732,14 @@ class MessageLookup extends MessageLookupByLibrary {
     "uploadBandwidth": MessageLookupByLibrary.simpleMessage("上行带宽"),
     "url": MessageLookupByLibrary.simpleMessage("URL"),
     "urlRewrite": MessageLookupByLibrary.simpleMessage("URL 重写"),
-    "urlTip": m104,
+    "urlTip": m107,
     "useHosts": MessageLookupByLibrary.simpleMessage("使用Hosts"),
     "useSystemHosts": MessageLookupByLibrary.simpleMessage("使用系统Hosts"),
     "usedShort": MessageLookupByLibrary.simpleMessage("已用"),
     "usedTraffic": MessageLookupByLibrary.simpleMessage("已用流量"),
     "userAgent": MessageLookupByLibrary.simpleMessage("用户代理"),
     "username": MessageLookupByLibrary.simpleMessage("用户名"),
-    "validUntil": m105,
+    "validUntil": m108,
     "value": MessageLookupByLibrary.simpleMessage("值"),
     "view": MessageLookupByLibrary.simpleMessage("查看"),
     "viewAll": MessageLookupByLibrary.simpleMessage("查看全部"),
@@ -1737,8 +1754,8 @@ class MessageLookup extends MessageLookupByLibrary {
     "writeToSystemDesc": MessageLookupByLibrary.simpleMessage(
       "写入系统会同时设置系统时钟，Android 上不生效。",
     ),
-    "yearsAgo": m106,
-    "yearsAgoShort": m107,
+    "yearsAgo": m109,
+    "yearsAgoShort": m110,
     "yes": MessageLookupByLibrary.simpleMessage("是"),
     "zhCN": MessageLookupByLibrary.simpleMessage("中文简体"),
   };

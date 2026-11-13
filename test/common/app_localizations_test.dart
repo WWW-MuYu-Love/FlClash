@@ -500,4 +500,70 @@ void main() {
       );
     });
   });
+
+  group('tunnel start failures name the reason', () {
+    test('diagnosed failures name their cause', () {
+      expect(
+        tunnelStartFailureMessage((
+          code: 'config_invalid',
+          detail: 'The configuration is invalid',
+        ), appLocalizations),
+        appLocalizations.tunnelStartConfigInvalid,
+      );
+      expect(
+        tunnelStartFailureMessage((
+          code: 'config_disabled',
+          detail: 'The configuration is disabled',
+        ), appLocalizations),
+        appLocalizations.tunnelStartConfigDisabled,
+      );
+      expect(
+        tunnelStartFailureMessage((
+          code: 'extension_failed',
+          detail: '核心初始化超时',
+        ), appLocalizations),
+        appLocalizations.tunnelStartExtensionFailed('核心初始化超时'),
+      );
+      expect(
+        tunnelStartFailureMessage((
+          code: 'not_started',
+          detail: '',
+        ), appLocalizations),
+        appLocalizations.tunnelStartNotStarted,
+      );
+      expect(
+        tunnelStartFailureMessage((
+          code: 'not_started',
+          detail: '已发送启动选项（含配置文件），阶段：核心初始化中',
+        ), appLocalizations),
+        appLocalizations.tunnelStartNotStartedDetail(
+          '已发送启动选项（含配置文件），阶段：核心初始化中',
+        ),
+      );
+    });
+
+    test('undiagnosed failures keep the detail', () {
+      expect(
+        tunnelStartFailureMessage((
+          code: 'unknown',
+          detail: '',
+        ), appLocalizations),
+        appLocalizations.tunnelStartFailed,
+      );
+      expect(
+        tunnelStartFailureMessage((
+          code: 'unknown',
+          detail: 'something broke',
+        ), appLocalizations),
+        appLocalizations.tunnelStartFailedDetail('something broke'),
+      );
+      expect(
+        tunnelStartFailureMessage((
+          code: 'weird_code',
+          detail: 'x',
+        ), appLocalizations),
+        appLocalizations.tunnelStartFailedDetail('x'),
+      );
+    });
+  });
 }

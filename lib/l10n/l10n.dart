@@ -9416,6 +9416,76 @@ class AppLocalizations {
       args: [],
     );
   }
+
+  /// `The VPN configuration is invalid or stale. Try turning the VPN off and on again.`
+  String get tunnelStartConfigInvalid {
+    return Intl.message(
+      'The VPN configuration is invalid or stale. Try turning the VPN off and on again.',
+      name: 'tunnelStartConfigInvalid',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `The VPN configuration is disabled. Allow FlClash VPN in Settings.`
+  String get tunnelStartConfigDisabled {
+    return Intl.message(
+      'The VPN configuration is disabled. Allow FlClash VPN in Settings.',
+      name: 'tunnelStartConfigDisabled',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `The extension failed to start: {detail}`
+  String tunnelStartExtensionFailed(Object detail) {
+    return Intl.message(
+      'The extension failed to start: $detail',
+      name: 'tunnelStartExtensionFailed',
+      desc: '',
+      args: [detail],
+    );
+  }
+
+  /// `The tunnel did not connect`
+  String get tunnelStartNotStarted {
+    return Intl.message(
+      'The tunnel did not connect',
+      name: 'tunnelStartNotStarted',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `The tunnel did not connect: {detail}`
+  String tunnelStartNotStartedDetail(Object detail) {
+    return Intl.message(
+      'The tunnel did not connect: $detail',
+      name: 'tunnelStartNotStartedDetail',
+      desc: '',
+      args: [detail],
+    );
+  }
+
+  /// `The tunnel failed to start`
+  String get tunnelStartFailed {
+    return Intl.message(
+      'The tunnel failed to start',
+      name: 'tunnelStartFailed',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `The tunnel failed to start: {detail}`
+  String tunnelStartFailedDetail(Object detail) {
+    return Intl.message(
+      'The tunnel failed to start: $detail',
+      name: 'tunnelStartFailedDetail',
+      desc: '',
+      args: [detail],
+    );
+  }
 }
 
 class AppLocalizationDelegate extends LocalizationsDelegate<AppLocalizations> {

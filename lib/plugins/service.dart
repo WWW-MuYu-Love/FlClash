@@ -38,6 +38,23 @@ abstract mixin class ServiceListener {
 
 enum TunnelState { pending, connected, disconnected }
 
+/// Reads a tunnel start failure report from the service channel. The
+/// Runner sends a map with the diagnosis code and the detail; a bare
+/// string from an older sender is kept as an undiagnosed failure.
+TunnelStartFailure _tunnelStartFailure(Object? arguments) {
+  if (arguments is Map) {
+    final code = arguments['code'];
+    final detail = arguments['detail'];
+    if (code is String && detail is String) {
+      return (code: code, detail: detail);
+    }
+  }
+  if (arguments is String) {
+    return (code: 'unknown', detail: arguments);
+  }
+  return (code: 'unknown', detail: '');
+}
+
 class Service {
   static Service? _instance;
   late MethodChannel methodChannel;
@@ -47,9 +64,9 @@ class Service {
 
   ValueListenable<TunnelState> get tunnelState => _tunnelState;
 
-  final _tunnelError = ValueNotifier<String?>(null);
+  final _tunnelError = ValueNotifier<TunnelStartFailure?>(null);
 
-  ValueListenable<String?> get tunnelError => _tunnelError;
+  ValueListenable<TunnelStartFailure?> get tunnelError => _tunnelError;
 
   final ObserverList<ServiceListener> _listeners =
       ObserverList<ServiceListener>();
@@ -72,9 +89,12 @@ class Service {
           );
           break;
         case 'tunnelError':
-          final message = call.arguments as String;
-          _tunnelError.value = message;
-          commonPrint.log('Tunnel failed: $message', logLevel: LogLevel.error);
+          final failure = _tunnelStartFailure(call.arguments);
+          _tunnelError.value = failure;
+          commonPrint.log(
+            'Tunnel failed: ${failure.code} ${failure.detail}',
+            logLevel: LogLevel.error,
+          );
           break;
         case 'event':
           final methodCall = CoreMethodCall.fromJson(

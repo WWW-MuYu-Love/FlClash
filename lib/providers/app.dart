@@ -670,7 +670,7 @@ TunnelState? tunnelState(Ref ref) {
 /// The last iOS tunnel start failure; null elsewhere or when none happened.
 /// Wired to the service channel's `tunnelError` reports.
 @Riverpod(keepAlive: true)
-String? tunnelError(Ref ref) {
+TunnelStartFailure? tunnelError(Ref ref) {
   if (!system.isIOS) {
     return null;
   }

@@ -1111,5 +1111,12 @@
   "coreProcessExitUnconfirmed": "プロセスの終了が確認できませんでした",
   "coreUnavailable": "コアに接続していません",
   "coreEmptyResult": "コアから結果が返されませんでした",
-  "coreSpillOutsideDirectory": "コアがディレクトリの外にファイルを書き込みました"
+  "coreSpillOutsideDirectory": "コアがディレクトリの外にファイルを書き込みました",
+  "tunnelStartConfigInvalid": "VPN 構成が無効か古くなっています。VPN を一度オフにしてから再度オンにしてください。",
+  "tunnelStartConfigDisabled": "VPN 構成が無効になっています。「設定」で FlClash の VPN を許可してください。",
+  "tunnelStartExtensionFailed": "拡張機能を開始できませんでした：{detail}",
+  "tunnelStartNotStarted": "トンネルに接続できませんでした",
+  "tunnelStartNotStartedDetail": "トンネルに接続できませんでした：{detail}",
+  "tunnelStartFailed": "トンネルを開始できませんでした",
+  "tunnelStartFailedDetail": "トンネルを開始できませんでした：{detail}"
 }

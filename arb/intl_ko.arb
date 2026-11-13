@@ -1111,5 +1111,12 @@
   "coreProcessExitUnconfirmed": "프로세스 종료가 확인되지 않았습니다",
   "coreUnavailable": "코어에 연결되지 않았습니다",
   "coreEmptyResult": "코어가 결과를 반환하지 않았습니다",
-  "coreSpillOutsideDirectory": "코어가 디렉터리 밖에 파일을 썼습니다"
+  "coreSpillOutsideDirectory": "코어가 디렉터리 밖에 파일을 썼습니다",
+  "tunnelStartConfigInvalid": "VPN 구성이 유효하지 않거나 오래되었습니다. VPN을 껐다가 다시 켜 보세요.",
+  "tunnelStartConfigDisabled": "VPN 구성이 비활성화되어 있습니다. 설정에서 FlClash VPN을 허용하세요.",
+  "tunnelStartExtensionFailed": "확장 프로그램을 시작하지 못했습니다: {detail}",
+  "tunnelStartNotStarted": "터널에 연결되지 않았습니다",
+  "tunnelStartNotStartedDetail": "터널에 연결되지 않았습니다: {detail}",
+  "tunnelStartFailed": "터널을 시작하지 못했습니다",
+  "tunnelStartFailedDetail": "터널을 시작하지 못했습니다: {detail}"
 }
