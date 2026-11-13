@@ -386,6 +386,183 @@ void main() {
     });
   });
 
+  group('ExternalControllerClient.fetchDelay', () {
+    late HttpServer server;
+    late ExternalControllerClient client;
+
+    setUp(() async {
+      server = await _serve((request) async {
+        request.response.headers.contentType = ContentType.json;
+        request.response.write(jsonEncode({'delay': 123}));
+        await request.response.close();
+      });
+      client = ExternalControllerClient(
+        baseUri: Uri.parse('http://127.0.0.1:${server.port}'),
+      );
+    });
+
+    tearDown(() async {
+      client.close();
+      await server.close(force: true);
+    });
+
+    test('reads the delay from /proxies/{name}/delay', () async {
+      var seenPath = '';
+      var seenQuery = <String, String>{};
+      await server.close(force: true);
+      server = await _serve((request) async {
+        seenPath = request.uri.path;
+        seenQuery = request.uri.queryParameters;
+        request.response.headers.contentType = ContentType.json;
+        request.response.write(jsonEncode({'delay': 42}));
+        await request.response.close();
+      });
+      client = ExternalControllerClient(
+        baseUri: Uri.parse('http://127.0.0.1:${server.port}'),
+      );
+
+      final delay = await client.fetchDelay(
+        proxyName: 'HK-01',
+        testUrl: 'http://www.gstatic.com/generate_204',
+        timeout: 8000,
+      );
+
+      expect(delay, 42);
+      expect(seenPath, '/proxies/HK-01/delay');
+      expect(seenQuery['url'], 'http://www.gstatic.com/generate_204');
+      expect(seenQuery['timeout'], '8000');
+    });
+
+    test('URL-encodes a proxy name with special characters', () async {
+      var seenPath = '';
+      await server.close(force: true);
+      server = await _serve((request) async {
+        seenPath = request.uri.path;
+        request.response.headers.contentType = ContentType.json;
+        request.response.write(jsonEncode({'delay': 7}));
+        await request.response.close();
+      });
+      client = ExternalControllerClient(
+        baseUri: Uri.parse('http://127.0.0.1:${server.port}'),
+      );
+
+      final delay = await client.fetchDelay(
+        proxyName: '日本 自动',
+        testUrl: 'http://example.test',
+        timeout: 5000,
+      );
+
+      expect(delay, 7);
+      expect(
+        seenPath,
+        '/proxies/%E6%97%A5%E6%9C%AC%20%E8%87%AA%E5%8A%A8/delay',
+      );
+    });
+
+    test('sends the secret as a bearer token when set', () async {
+      var seenAuth = '';
+      await server.close(force: true);
+      server = await _serve((request) async {
+        seenAuth = request.headers.value(HttpHeaders.authorizationHeader) ?? '';
+        request.response.headers.contentType = ContentType.json;
+        request.response.write(jsonEncode({'delay': 9}));
+        await request.response.close();
+      });
+      final authed = ExternalControllerClient(
+        baseUri: Uri.parse('http://127.0.0.1:${server.port}'),
+        secret: 's3cret',
+      );
+      addTearDown(authed.close);
+
+      final delay = await authed.fetchDelay(
+        proxyName: 'HK-01',
+        testUrl: 'http://example.test',
+        timeout: 8000,
+      );
+
+      expect(delay, 9);
+      expect(seenAuth, 'Bearer s3cret');
+    });
+
+    test('returns null when the controller answers 404', () async {
+      await server.close(force: true);
+      server = await _serve((request) async {
+        request.response.statusCode = HttpStatus.notFound;
+        await request.response.close();
+      });
+      client = ExternalControllerClient(
+        baseUri: Uri.parse('http://127.0.0.1:${server.port}'),
+      );
+
+      expect(
+        await client.fetchDelay(
+          proxyName: 'HK-01',
+          testUrl: 'http://example.test',
+          timeout: 8000,
+        ),
+        isNull,
+      );
+    });
+
+    test('returns null when the test itself fails', () async {
+      await server.close(force: true);
+      server = await _serve((request) async {
+        request.response.statusCode = HttpStatus.serviceUnavailable;
+        await request.response.close();
+      });
+      client = ExternalControllerClient(
+        baseUri: Uri.parse('http://127.0.0.1:${server.port}'),
+      );
+
+      expect(
+        await client.fetchDelay(
+          proxyName: 'HK-01',
+          testUrl: 'http://example.test',
+          timeout: 8000,
+        ),
+        isNull,
+      );
+    });
+
+    test('returns null on a malformed body', () async {
+      await server.close(force: true);
+      server = await _serve((request) async {
+        request.response.write('not json');
+        await request.response.close();
+      });
+      client = ExternalControllerClient(
+        baseUri: Uri.parse('http://127.0.0.1:${server.port}'),
+      );
+
+      expect(
+        await client.fetchDelay(
+          proxyName: 'HK-01',
+          testUrl: 'http://example.test',
+          timeout: 8000,
+        ),
+        isNull,
+      );
+    });
+
+    test('returns null when nothing listens', () async {
+      final port = server.port;
+      await server.close(force: true);
+      final dead = ExternalControllerClient(
+        baseUri: Uri.parse('http://127.0.0.1:$port'),
+      );
+      addTearDown(dead.close);
+
+      expect(
+        await dead.fetchDelay(
+          proxyName: 'HK-01',
+          testUrl: 'http://example.test',
+          timeout: 8000,
+        ),
+        isNull,
+      );
+    });
+  });
+
   group('ExternalControllerClient.selectProxy', () {
     late HttpServer server;
     late ExternalControllerClient client;

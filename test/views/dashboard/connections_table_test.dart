@@ -1,6 +1,7 @@
 import 'package:fl_clash/common/common.dart';
 import 'package:fl_clash/core/controller.dart';
 import 'package:fl_clash/core/interface.dart';
+import 'package:fl_clash/core/method.dart';
 import 'package:fl_clash/enum/enum.dart';
 import 'package:fl_clash/models/models.dart';
 import 'package:fl_clash/providers/providers.dart';
@@ -149,7 +150,7 @@ void main() {
   testWidgets('the table keeps the newest rows, sorts every connection and '
       'counts them all', (tester) async {
     final core = _MockCore();
-    when(() => core.getConnections()).thenAnswer(
+    when(() => core.getConnections(route: CoreRoute.app)).thenAnswer(
       (_) async => [
         for (var index = 0; index < 150; index++)
           _connection(

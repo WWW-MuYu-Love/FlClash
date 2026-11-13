@@ -3,7 +3,6 @@ import 'dart:math';
 
 import 'package:fl_clash/common/common.dart';
 import 'package:fl_clash/core/method.dart';
-import 'package:fl_clash/core/xpc_backoff.dart';
 import 'package:fl_clash/enum/enum.dart';
 import 'package:fl_clash/l10n/l10n.dart';
 import 'package:fl_clash/models/models.dart';
@@ -135,38 +134,14 @@ Future<CoreMemoryReading?> _readCoreMemory(WidgetRef ref) async {
   }
 }
 
-// Backs off the extension-memory XPC call; 9090 covers it while backed off.
-final _extensionMemoryBackoff = XpcEmptyBackoff();
-
-@visibleForTesting
-XpcEmptyBackoff get extensionMemoryBackoffForTest => _extensionMemoryBackoff;
-
-// Same XPC → 9090 chain as the core reading, without the App-core
-// fallback: that memory is already the core reading.
+// 9090 answers the extension memory; when it is gone the split stays
+// empty. The App core's memory is already the core reading, so it must
+// not be returned here.
 Future<int?> _readExtensionMemory(WidgetRef ref) async {
   if (ref.read(runningVpnOptionsProvider)?.enable != true) {
     return null;
   }
-  final inuse = await ref.read(externalControllerClientProvider).fetchMemory();
-  if (inuse != null) {
-    return inuse;
-  }
-  if (_extensionMemoryBackoff.isBackedOff) {
-    return null;
-  }
-  try {
-    final stats = await ref
-        .read(coreHandlerProvider)
-        .getMemoryStats(route: CoreRoute.networkExtension);
-    _extensionMemoryBackoff.noteSuccess();
-    return stats.rss;
-  } on CoreMethodException catch (error) {
-    if (error.code != 'empty_response') {
-      return null;
-    }
-    _extensionMemoryBackoff.noteEmptyResponse();
-    return null;
-  }
+  return ref.read(externalControllerClientProvider).fetchMemory();
 }
 
 class MemoryInfo extends ConsumerStatefulWidget {

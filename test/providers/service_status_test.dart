@@ -70,7 +70,9 @@ void main() {
   setUp(() {
     core = _MockCore();
     sweeps = [];
-    when(() => core.serviceCheck(any())).thenAnswer((invocation) async {
+    when(() => core.serviceCheck(any(), route: CoreRoute.app)).thenAnswer((
+      invocation,
+    ) async {
       final params =
           invocation.positionalArguments.single as ServiceCheckParams;
       sweeps.add(params);
@@ -158,7 +160,9 @@ void main() {
   test('shows each answer as it lands', () async {
     final scope = container();
     final gates = <String, Completer<List<ServiceCheckItem>>>{};
-    when(() => core.serviceCheck(any())).thenAnswer((invocation) {
+    when(() => core.serviceCheck(any(), route: CoreRoute.app)).thenAnswer((
+      invocation,
+    ) {
       final params =
           invocation.positionalArguments.single as ServiceCheckParams;
       return (gates[params.names.single] = Completer()).future;
@@ -180,7 +184,9 @@ void main() {
     'checks',
     (tester) async {
       final scope = container();
-      when(() => core.serviceCheck(any())).thenAnswer((invocation) {
+      when(() => core.serviceCheck(any(), route: CoreRoute.app)).thenAnswer((
+        invocation,
+      ) {
         sweeps.add(invocation.positionalArguments.single as ServiceCheckParams);
         return Completer<List<ServiceCheckItem>>().future;
       });
@@ -216,13 +222,16 @@ void main() {
     await pumpEventQueue();
 
     verifyNever(() => core.serviceCheck(any()));
+    verifyNever(() => core.serviceCheck(any(), route: CoreRoute.app));
     expect(stateOf(scope).isLoading(ServiceTarget.bilibili), isFalse);
   });
 
   test('marks a target loading while its check is in flight', () async {
     final scope = container();
     final gate = Completer<List<ServiceCheckItem>>();
-    when(() => core.serviceCheck(any())).thenAnswer((_) => gate.future);
+    when(
+      () => core.serviceCheck(any(), route: CoreRoute.app),
+    ).thenAnswer((_) => gate.future);
 
     notifierOf(scope).watch(ServiceTarget.youtube);
     await pumpEventQueue();
@@ -238,7 +247,9 @@ void main() {
     () async {
       final scope = container();
       final gate = Completer<List<ServiceCheckItem>>();
-      when(() => core.serviceCheck(any())).thenAnswer((_) => gate.future);
+      when(
+        () => core.serviceCheck(any(), route: CoreRoute.app),
+      ).thenAnswer((_) => gate.future);
       final notifier = notifierOf(scope);
 
       notifier.watch(ServiceTarget.youtube);
@@ -250,7 +261,7 @@ void main() {
       gate.complete([_item('youtube')]);
       await pumpEventQueue();
 
-      verify(() => core.serviceCheck(any())).called(1);
+      verify(() => core.serviceCheck(any(), route: CoreRoute.app)).called(1);
     },
   );
 
@@ -274,7 +285,9 @@ void main() {
   testWidgets(
     'a timeout is shown as a status and retried once the app resumes',
     (tester) async {
-      when(() => core.serviceCheck(any())).thenAnswer((invocation) async {
+      when(() => core.serviceCheck(any(), route: CoreRoute.app)).thenAnswer((
+        invocation,
+      ) async {
         final params =
             invocation.positionalArguments.single as ServiceCheckParams;
         sweeps.add(params);
@@ -325,7 +338,9 @@ void main() {
     final scope = container();
     final gate = Completer<List<ServiceCheckItem>>();
     var first = true;
-    when(() => core.serviceCheck(any())).thenAnswer((invocation) {
+    when(() => core.serviceCheck(any(), route: CoreRoute.app)).thenAnswer((
+      invocation,
+    ) {
       final params =
           invocation.positionalArguments.single as ServiceCheckParams;
       sweeps.add(params);
@@ -390,9 +405,6 @@ void main() {
 
   test('falls back to the app core when 9090 is gone too', () async {
     final (scope, client) = runningContainer(controllerItems: null);
-    when(() => core.serviceCheck(any())).thenThrow(
-      const CoreMethodException(code: 'empty_response', message: 'empty'),
-    );
     when(() => core.serviceCheck(any(), route: CoreRoute.app)).thenAnswer((
       invocation,
     ) async {
@@ -405,7 +417,7 @@ void main() {
     await pumpEventQueue();
 
     expect(client.fetchServiceCheckCalls, 1);
-    verify(() => core.serviceCheck(any())).called(1);
+    verifyNever(() => core.serviceCheck(any()));
     verify(() => core.serviceCheck(any(), route: CoreRoute.app)).called(1);
     final state = stateOf(scope);
     expect(state.entryOf(ServiceTarget.youtube).phase, ProbePhase.fresh);

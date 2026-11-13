@@ -46,8 +46,13 @@ class ProxiesAction extends _$ProxiesAction {
 
   final Map<String, String> _pendingSelectedRollback = {};
 
-  final _proxySelectBackoff = XpcEmptyBackoff();
   final _delayTestBackoff = XpcEmptyBackoff();
+
+  @visibleForTesting
+  DateTime Function() get delayBackoffClock => _delayTestBackoff.clock;
+  @visibleForTesting
+  set delayBackoffClock(DateTime Function() value) =>
+      _delayTestBackoff.clock = value;
 
   @override
   void build() {
@@ -504,62 +509,53 @@ class ProxiesAction extends _$ProxiesAction {
           appliedToRoutingCore: true,
         );
       }
-    }
-    if (_proxySelectBackoff.isBackedOff) {
+      // 9090 did not apply it: the App core answers, but it is not the
+      // routing core while the tunnel is up, so the selection rolls back
+      // unless the sync below applies it.
       final result = await _core.changeProxy(params, route: CoreRoute.app);
       return (result: result, appliedToRoutingCore: false);
     }
-    try {
-      final result = await _core.changeProxy(params);
-      _proxySelectBackoff.noteSuccess();
-      return (result: result, appliedToRoutingCore: true);
-    } on CoreMethodException catch (error) {
-      if (error.code != 'empty_response' ||
-          ref.read(runningVpnOptionsProvider)?.enable != true) {
-        rethrow;
-      }
-      _proxySelectBackoff.noteEmptyResponse();
-      final result = await _core.changeProxy(params, route: CoreRoute.app);
-      return (result: result, appliedToRoutingCore: false);
-    }
+    // The tunnel is down, so the App core is the routing core; the
+    // unrouted call reaches it in-process, with no XPC involved.
+    final result = await _core.changeProxy(params);
+    return (result: result, appliedToRoutingCore: true);
   }
 
   Future<Delay> _testDelay(_DelayTestJob job, _DelayTestTarget target) async {
-    if (_delayTestBackoff.isBackedOff) {
-      return _core.testDelay(
-        TestDelayParams(
-          proxyName: target.proxyName,
-          testUrl: target.testUrl,
-          timeout: job.timeout.inMilliseconds,
-        ),
-        route: CoreRoute.app,
-      );
-    }
-    try {
-      final delay = await _core.testDelay(
-        TestDelayParams(
-          proxyName: target.proxyName,
-          testUrl: target.testUrl,
-          timeout: job.timeout.inMilliseconds,
-        ),
-      );
-      _delayTestBackoff.noteSuccess();
-      return delay;
-    } on CoreMethodException catch (error) {
-      if (error.code != 'empty_response' ||
-          ref.read(runningVpnOptionsProvider)?.enable != true) {
-        rethrow;
+    final params = TestDelayParams(
+      proxyName: target.proxyName,
+      testUrl: target.testUrl,
+      timeout: job.timeout.inMilliseconds,
+    );
+    if (ref.read(runningVpnOptionsProvider)?.enable == true) {
+      // 9090 answers the delay first; the App core measures the same
+      // proxy when 9090 is gone or backed off.
+      if (!_delayTestBackoff.isBackedOff) {
+        final delayMs = await ref
+            .read(externalControllerClientProvider)
+            .fetchDelay(
+              proxyName: target.proxyName,
+              testUrl: target.testUrl,
+              timeout: job.timeout.inMilliseconds,
+            );
+        if (delayMs != null) {
+          _delayTestBackoff.noteSuccess();
+          return Delay(
+            name: target.proxyName,
+            url: target.testUrl,
+            value: delayMs,
+          );
+        }
+        // 9090 answered nothing: the controller may be unreachable, so
+        // back off it for 30s. The App core below measures the same proxy,
+        // so the delay is still real.
+        _delayTestBackoff.noteEmptyResponse();
       }
-      _delayTestBackoff.noteEmptyResponse();
-      return _core.testDelay(
-        TestDelayParams(
-          proxyName: target.proxyName,
-          testUrl: target.testUrl,
-          timeout: job.timeout.inMilliseconds,
-        ),
-        route: CoreRoute.app,
-      );
+      return _core.testDelay(params, route: CoreRoute.app);
     }
+    // The tunnel is down, so the App core is the routing core; the
+    // unrouted call reaches it in-process, with no XPC involved.
+    return _core.testDelay(params);
   }
 
   Future<void> _runDelayTest(_DelayTestJob job, _DelayTestTarget target) async {

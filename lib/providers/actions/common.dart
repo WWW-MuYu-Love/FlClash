@@ -7,13 +7,6 @@ class CommonAction extends _$CommonAction {
   CancelToken? _updateCancelToken;
   final _externalTrafficSampler = ExternalTrafficSampler();
 
-  final _xpcTrafficBackoff = XpcEmptyBackoff();
-
-  @visibleForTesting
-  DateTime Function() get clock => _xpcTrafficBackoff.clock;
-  @visibleForTesting
-  set clock(DateTime Function() value) => _xpcTrafficBackoff.clock = value;
-
   @override
   void build() {}
 
@@ -74,29 +67,9 @@ class CommonAction extends _$CommonAction {
         ref.read(totalTrafficProvider.notifier).value = total;
         return;
       }
-      final [traffic, totalTraffic] = _xpcTrafficBackoff.isBackedOff
-          ? const <Traffic?>[null, null]
-          : await Future.wait([
-              _readTraffic(
-                () => _core.getTraffic(onlyStatisticsProxy),
-                trackXpcBackoff: true,
-              ),
-              _readTraffic(
-                () => _core.getTotalTraffic(onlyStatisticsProxy),
-                trackXpcBackoff: true,
-              ),
-            ]);
-      if (traffic != null || totalTraffic != null) {
-        if (traffic != null) {
-          ref.read(trafficsProvider.notifier).addTraffic(traffic);
-        }
-        if (totalTraffic != null) {
-          ref.read(totalTrafficProvider.notifier).value = totalTraffic;
-        }
-        return;
-      }
-      // Last resort: the App core answers with its own traffic. It moves
-      // no traffic while the tunnel is up, so this is usually zero.
+      // 9090 answers traffic first; when it is gone the App core answers
+      // with its own traffic. It moves no traffic while the tunnel is up,
+      // so this is usually zero.
       final [appTraffic, appTotalTraffic] = await Future.wait([
         _readTraffic(
           () => _core.getTraffic(onlyStatisticsProxy, route: CoreRoute.app),
@@ -137,22 +110,10 @@ class CommonAction extends _$CommonAction {
     );
   }
 
-  Future<Traffic?> _readTraffic(
-    Future<Traffic> Function() request, {
-    bool trackXpcBackoff = false,
-  }) async {
+  Future<Traffic?> _readTraffic(Future<Traffic> Function() request) async {
     try {
-      final result = await request();
-      if (trackXpcBackoff) {
-        _xpcTrafficBackoff.noteSuccess();
-      }
-      return result;
+      return await request();
     } catch (error) {
-      if (trackXpcBackoff &&
-          error is CoreMethodException &&
-          error.code == 'empty_response') {
-        _xpcTrafficBackoff.noteEmptyResponse();
-      }
       commonPrint.log(
         'updateTraffic error: $error',
         logLevel: coreFailureLogLevel(error),

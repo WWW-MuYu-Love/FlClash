@@ -377,9 +377,6 @@ void main() {
         when(
           () => externalController.selectProxy(any(), any()),
         ).thenAnswer((_) async => false);
-        when(() => core.changeProxy(any())).thenThrow(
-          const CoreMethodException(code: 'empty_response', message: 'empty'),
-        );
         when(
           () => core.changeProxy(any(), route: CoreRoute.app),
         ).thenAnswer((_) async => const ChangeProxyResult(changed: true));
@@ -395,6 +392,7 @@ void main() {
         expect(container.read(currentProfileProvider)?.selectedMap, {
           'Proxy': 'HK-00',
         });
+        verifyNever(() => core.changeProxy(any()));
       },
     );
 
@@ -405,9 +403,6 @@ void main() {
         when(
           () => externalController.selectProxy(any(), any()),
         ).thenAnswer((_) async => true);
-        when(() => core.changeProxy(any())).thenThrow(
-          const CoreMethodException(code: 'empty_response', message: 'empty'),
-        );
         final container = runningVpnContainer(
           profile: _selectedProfile('HK-00'),
           externalController: externalController,
@@ -421,33 +416,40 @@ void main() {
           'Proxy': 'HK-01',
         });
         verifyNever(() => core.changeProxy(any(), route: CoreRoute.app));
+        verifyNever(() => core.changeProxy(any()));
       },
     );
 
-    test(
-      'skips the controller sync once the Core applied the selection',
-      () async {
-        final externalController = MockExternalControllerClient();
-        when(
-          () => externalController.selectProxy(any(), any()),
-        ).thenAnswer((_) async => false);
-        final container = runningVpnContainer(
-          profile: _selectedProfile('HK-00'),
-          externalController: externalController,
-        );
+    test('rolls the selection back when 9090 does not apply it', () async {
+      final externalController = MockExternalControllerClient();
+      when(
+        () => externalController.selectProxy(any(), any()),
+      ).thenAnswer((_) async => false);
+      when(
+        () => externalController.closeConnections(),
+      ).thenAnswer((_) async => true);
+      when(
+        () => core.changeProxy(any(), route: CoreRoute.app),
+      ).thenAnswer((_) async => const ChangeProxyResult(changed: true));
+      final container = runningVpnContainer(
+        profile: _selectedProfile('HK-00'),
+        externalController: externalController,
+      );
 
-        await actionOf(
-          container,
-        ).changeProxy(groupName: 'Proxy', proxyName: 'HK-01');
+      await actionOf(
+        container,
+      ).changeProxy(groupName: 'Proxy', proxyName: 'HK-01');
 
-        expect(container.read(currentProfileProvider)?.selectedMap, {
-          'Proxy': 'HK-01',
-        });
-        // 9090 is tried first; the Core applied it, so the sync that
-        // would call selectProxy a second time must not run.
-        verify(() => externalController.selectProxy(any(), any())).called(1);
-      },
-    );
+      // The App core is not the routing core while the tunnel is up, so
+      // the selection rolls back when 9090 does not apply it.
+      expect(container.read(currentProfileProvider)?.selectedMap, {
+        'Proxy': 'HK-00',
+      });
+      verifyNever(() => core.changeProxy(any()));
+      // 9090 is tried once by the select and three times by the sync
+      // retry (initial attempt plus two retries).
+      verify(() => externalController.selectProxy(any(), any())).called(4);
+    });
 
     test('rolls the selection back when the switch fails', () async {
       when(() => core.changeProxy(any())).thenThrow(StateError('core down'));
@@ -911,6 +913,120 @@ void main() {
 
       expect(container.read(delayDataSourceProvider), isEmpty);
       expect(container.read(pendingDelayTestsProvider), isEmpty);
+    });
+
+    test('measures the delay through 9090 when the tunnel is up', () async {
+      final externalController = MockExternalControllerClient();
+      when(
+        () => externalController.fetchDelay(
+          proxyName: any(named: 'proxyName'),
+          testUrl: any(named: 'testUrl'),
+          timeout: any(named: 'timeout'),
+        ),
+      ).thenAnswer((_) async => 42);
+      final container = _delayContainer(
+        () => runningVpnContainer(externalController: externalController),
+      );
+
+      await actionOf(container).delayTest(const [_proxy]);
+
+      expect(container.read(delayDataSourceProvider)[_testUrl]?['HK-01'], 42);
+      verify(
+        () => externalController.fetchDelay(
+          proxyName: 'HK-01',
+          testUrl: _testUrl,
+          timeout: any(named: 'timeout'),
+        ),
+      ).called(1);
+      verifyNever(() => core.testDelay(any()));
+      verifyNever(() => core.testDelay(any(), route: CoreRoute.app));
+    });
+
+    test('falls back to the app core when 9090 answers nothing', () async {
+      final externalController = MockExternalControllerClient();
+      when(
+        () => externalController.fetchDelay(
+          proxyName: any(named: 'proxyName'),
+          testUrl: any(named: 'testUrl'),
+          timeout: any(named: 'timeout'),
+        ),
+      ).thenAnswer((_) async => null);
+      when(() => core.testDelay(any(), route: CoreRoute.app)).thenAnswer(
+        (invocation) async => Delay(
+          name:
+              (invocation.positionalArguments[0] as TestDelayParams).proxyName,
+          url: _testUrl,
+          value: 10,
+        ),
+      );
+      final container = _delayContainer(
+        () => runningVpnContainer(externalController: externalController),
+      );
+
+      await actionOf(container).delayTest(const [_proxy]);
+
+      expect(container.read(delayDataSourceProvider)[_testUrl]?['HK-01'], 10);
+      verify(
+        () => externalController.fetchDelay(
+          proxyName: 'HK-01',
+          testUrl: _testUrl,
+          timeout: any(named: 'timeout'),
+        ),
+      ).called(1);
+      verify(() => core.testDelay(any(), route: CoreRoute.app)).called(1);
+      verifyNever(() => core.testDelay(any()));
+    });
+
+    test('skips 9090 for 30 seconds after it answers nothing', () async {
+      final externalController = MockExternalControllerClient();
+      when(
+        () => externalController.fetchDelay(
+          proxyName: any(named: 'proxyName'),
+          testUrl: any(named: 'testUrl'),
+          timeout: any(named: 'timeout'),
+        ),
+      ).thenAnswer((_) async => null);
+      when(() => core.testDelay(any(), route: CoreRoute.app)).thenAnswer(
+        (invocation) async => Delay(
+          name:
+              (invocation.positionalArguments[0] as TestDelayParams).proxyName,
+          url: _testUrl,
+          value: 10,
+        ),
+      );
+      final container = _delayContainer(
+        () => runningVpnContainer(externalController: externalController),
+      );
+      final action = actionOf(container);
+      var now = DateTime(2026, 11, 14);
+      action.delayBackoffClock = () => now;
+
+      await action.delayTest(const [_proxy]);
+      await action.delayTest(const [_proxy]);
+
+      // 9090 is tried once; the second run skips it while backed off.
+      verify(
+        () => externalController.fetchDelay(
+          proxyName: 'HK-01',
+          testUrl: _testUrl,
+          timeout: any(named: 'timeout'),
+        ),
+      ).called(1);
+      verify(() => core.testDelay(any(), route: CoreRoute.app)).called(2);
+      verifyNever(() => core.testDelay(any()));
+
+      // After the backoff window, 9090 is tried again. The earlier
+      // verify consumed the first fetchDelay call, so only the new
+      // one is counted here.
+      now = now.add(const Duration(seconds: 31));
+      await action.delayTest(const [_proxy]);
+      verify(
+        () => externalController.fetchDelay(
+          proxyName: 'HK-01',
+          testUrl: _testUrl,
+          timeout: any(named: 'timeout'),
+        ),
+      ).called(1);
     });
   });
 

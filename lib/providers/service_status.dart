@@ -2,12 +2,10 @@ import 'package:fl_clash/common/constant.dart';
 import 'package:fl_clash/common/mixin.dart';
 import 'package:fl_clash/common/service_probe.dart';
 import 'package:fl_clash/core/method.dart';
-import 'package:fl_clash/core/xpc_backoff.dart';
 import 'package:fl_clash/models/models.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
-import 'app.dart';
 import 'config.dart';
 import 'core.dart';
 import 'route_state.dart';
@@ -18,8 +16,6 @@ part 'generated/service_status.g.dart';
 @Riverpod(keepAlive: true)
 class ServiceStatus extends _$ServiceStatus
     with RoutedProbe<ServiceTarget, ServiceCheck> {
-  final _serviceCheckBackoff = XpcEmptyBackoff();
-
   @override
   RoutedProbeState<ServiceTarget, ServiceCheck> build() => buildProbe();
 
@@ -56,34 +52,14 @@ class ServiceStatus extends _$ServiceStatus
     final items = await _serviceCheckOver9090(route, target);
     if (items != null) {
       checks = serviceChecksOf(items);
-    } else if (_serviceCheckBackoff.isBackedOff) {
+    } else {
+      // 9090 is gone: the App core answers the check.
       checks = await checkServices(
         ref.read(coreHandlerProvider),
         proxyName: route.proxied ? '' : directOutbound,
         targets: [target],
         route: CoreRoute.app,
       );
-    } else {
-      try {
-        checks = await checkServices(
-          ref.read(coreHandlerProvider),
-          proxyName: route.proxied ? '' : directOutbound,
-          targets: [target],
-        );
-        _serviceCheckBackoff.noteSuccess();
-      } on CoreMethodException catch (error) {
-        if (error.code != 'empty_response' ||
-            ref.read(runningVpnOptionsProvider)?.enable != true) {
-          rethrow;
-        }
-        _serviceCheckBackoff.noteEmptyResponse();
-        checks = await checkServices(
-          ref.read(coreHandlerProvider),
-          proxyName: route.proxied ? '' : directOutbound,
-          targets: [target],
-          route: CoreRoute.app,
-        );
-      }
     }
     final check = checks[target];
     return {

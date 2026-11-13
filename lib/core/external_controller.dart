@@ -205,6 +205,57 @@ class ExternalControllerClient {
     }
   }
 
+  // GET /proxies/{name}/delay?url=<testUrl>&timeout=<ms> measures the
+  // delay through the named proxy on the core behind 9090. A null return
+  // means the request itself failed (the tunnel is down, the proxy does
+  // not exist, or the secret is stale); the core answers 503 when the
+  // test itself fails. The `expected` status range is omitted, so any
+  // status counts as a success.
+  Future<int?> fetchDelay({
+    required String proxyName,
+    required String testUrl,
+    required int timeout,
+  }) async {
+    final httpTimeout = coreGuardFor(timeout);
+    try {
+      final request = await _http
+          .getUrl(
+            baseUri.replace(
+              pathSegments: [
+                ...baseUri.pathSegments,
+                'proxies',
+                proxyName,
+                'delay',
+              ],
+              queryParameters: {'url': testUrl, 'timeout': '$timeout'},
+            ),
+          )
+          .timeout(_fetchTimeout);
+      if (secret.isNotEmpty) {
+        request.headers.set(HttpHeaders.authorizationHeader, 'Bearer $secret');
+      }
+      final response = await request.close().timeout(httpTimeout);
+      _noteStatus(response);
+      if (response.statusCode != HttpStatus.ok) {
+        await response.drain<void>();
+        return null;
+      }
+      final body = await response
+          .transform(utf8.decoder)
+          .join()
+          .timeout(_fetchTimeout);
+      final json = jsonDecode(body);
+      if (json is! Map<String, Object?>) {
+        return null;
+      }
+      final delay = json['delay'];
+      return delay is num ? delay.toInt() : null;
+    } catch (_) {
+      unauthorized = false;
+      return null;
+    }
+  }
+
   // PATCH /configs applies the given fields on the core behind 9090.
   Future<bool> patchConfigs(Map<String, Object?> body) async {
     try {

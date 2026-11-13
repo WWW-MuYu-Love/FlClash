@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:fl_clash/common/common.dart';
 import 'package:fl_clash/core/controller.dart';
 import 'package:fl_clash/core/method.dart';
-import 'package:fl_clash/core/xpc_backoff.dart';
 import 'package:fl_clash/enum/enum.dart';
 import 'package:fl_clash/features/features.dart';
 import 'package:fl_clash/models/models.dart';
@@ -94,10 +93,6 @@ mixin ConnectionsPolling<T extends ConsumerStatefulWidget>
   var tcpCount = 0;
   var udpCount = 0;
 
-  // List and count back off independently.
-  final _connectionsBackoff = XpcEmptyBackoff();
-  final _connectionCountBackoff = XpcEmptyBackoff();
-
   bool get pollsConnections;
 
   CoreController get _core => ref.read(coreHandlerProvider);
@@ -162,23 +157,9 @@ mixin ConnectionsPolling<T extends ConsumerStatefulWidget>
     if (snapshot != null) {
       return snapshot.connections;
     }
-    if (_connectionsBackoff.isBackedOff) {
-      return _core.getConnections(route: CoreRoute.app);
-    }
-    try {
-      final result = await _core.getConnections();
-      _connectionsBackoff.noteSuccess();
-      return result;
-    } on CoreMethodException catch (error) {
-      if (error.code != 'empty_response' ||
-          ref.read(runningVpnOptionsProvider)?.enable != true) {
-        rethrow;
-      }
-      _connectionsBackoff.noteEmptyResponse();
-      // Last resort: the App core answers with its own list. It owns no
-      // connections while the tunnel is up, so this is usually empty.
-      return _core.getConnections(route: CoreRoute.app);
-    }
+    // 9090 is gone: the App core answers with its own list. It owns no
+    // connections while the tunnel is up, so this is usually empty.
+    return _core.getConnections(route: CoreRoute.app);
   }
 
   Future<int> _readConnectionCount() async {
@@ -188,23 +169,9 @@ mixin ConnectionsPolling<T extends ConsumerStatefulWidget>
     if (snapshot != null) {
       return snapshot.connections.length;
     }
-    if (_connectionCountBackoff.isBackedOff) {
-      return _core.getConnectionCount(route: CoreRoute.app);
-    }
-    try {
-      final result = await _core.getConnectionCount();
-      _connectionCountBackoff.noteSuccess();
-      return result;
-    } on CoreMethodException catch (error) {
-      if (error.code != 'empty_response' ||
-          ref.read(runningVpnOptionsProvider)?.enable != true) {
-        rethrow;
-      }
-      _connectionCountBackoff.noteEmptyResponse();
-      // Last resort: the App core answers with its own count, usually
-      // zero while the tunnel is up.
-      return _core.getConnectionCount(route: CoreRoute.app);
-    }
+    // 9090 is gone: the App core answers with its own count, usually
+    // zero while the tunnel is up.
+    return _core.getConnectionCount(route: CoreRoute.app);
   }
 }
 
