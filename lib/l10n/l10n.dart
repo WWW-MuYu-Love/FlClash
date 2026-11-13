@@ -4346,16 +4346,6 @@ class AppLocalizations {
     );
   }
 
-  /// `Turn on VPN first`
-  String get enableVpnFirst {
-    return Intl.message(
-      'Turn on VPN first',
-      name: 'enableVpnFirst',
-      desc: '',
-      args: [],
-    );
-  }
-
   /// `Restart`
   String get restart {
     return Intl.message('Restart', name: 'restart', desc: '', args: []);

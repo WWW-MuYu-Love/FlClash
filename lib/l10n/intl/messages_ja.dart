@@ -698,7 +698,6 @@ class MessageLookup extends MessageLookupByLibrary {
     "emptyFallback": MessageLookupByLibrary.simpleMessage("空グループのフォールバック"),
     "emptyTip": m30,
     "en": MessageLookupByLibrary.simpleMessage("英語"),
-    "enableVpnFirst": MessageLookupByLibrary.simpleMessage("先に VPN をオンにしてください"),
     "enabled": MessageLookupByLibrary.simpleMessage("有効"),
     "entries": MessageLookupByLibrary.simpleMessage(" 件"),
     "error": MessageLookupByLibrary.simpleMessage("エラー"),

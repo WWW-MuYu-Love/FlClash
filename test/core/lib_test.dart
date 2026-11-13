@@ -283,6 +283,60 @@ void main() {
     });
   });
 
+  group('iOS core-only listeners', () {
+    test(
+      'a listener start with VPN off binds the App core listeners',
+      () async {
+        container
+            .read(vpnSettingProvider.notifier)
+            .update((state) => state.copyWith(enable: false));
+        final iosLib = CoreLib.scoped(service, listenerManagedByService: true);
+        await iosLib.start();
+        service.onInvokeMethod = (_) => const CoreMethodResponse(id: '1');
+
+        await iosLib.startListener();
+
+        expect(service.calls, isNot(contains('start')));
+        expect(service.invokedCalls.map((call) => (call.method, call.route)), [
+          (CoreMethod.listenerStart, CoreRoute.app),
+        ]);
+      },
+    );
+
+    test(
+      'a listener stop in core-only mode stops the App core listeners',
+      () async {
+        container
+            .read(vpnSettingProvider.notifier)
+            .update((state) => state.copyWith(enable: false));
+        final iosLib = CoreLib.scoped(service, listenerManagedByService: true);
+        await iosLib.start();
+        service.onInvokeMethod = (_) => const CoreMethodResponse(id: '1');
+        await iosLib.startListener();
+        service.calls.clear();
+        service.invokedCalls.clear();
+
+        await iosLib.stopListener();
+
+        expect(service.calls, isNot(contains('stop')));
+        expect(service.invokedCalls.map((call) => (call.method, call.route)), [
+          (CoreMethod.listenerStop, CoreRoute.app),
+        ]);
+      },
+    );
+
+    test('a listener start with VPN on starts the service', () async {
+      final iosLib = CoreLib.scoped(service, listenerManagedByService: true);
+      await iosLib.start();
+      service.onInvokeMethod = (_) => const CoreMethodResponse(id: '1');
+
+      await iosLib.startListener();
+
+      expect(service.calls.last, 'start');
+      expect(service.invokedCalls, isEmpty);
+    });
+  });
+
   group('invokeMethod', () {
     test('assigns an increasing call id per request', () async {
       await lib.start();

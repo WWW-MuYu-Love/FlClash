@@ -539,7 +539,6 @@
   "turnOn": "オンにする",
   "turnOff": "オフにする",
   "vpnConfigChangeDetected": "VPN関連の設定が変更されました。タップして再起動",
-  "enableVpnFirst": "先に VPN をオンにしてください",
   "restart": "再起動",
   "speedStatistics": "速度統計",
   "resetPageChangesTip": "このページには変更があります。リセットしてもよろしいですか？",

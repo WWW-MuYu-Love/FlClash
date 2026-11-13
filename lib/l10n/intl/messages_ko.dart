@@ -686,7 +686,6 @@ class MessageLookup extends MessageLookupByLibrary {
     "emptyFallback": MessageLookupByLibrary.simpleMessage("빈 폴백"),
     "emptyTip": m30,
     "en": MessageLookupByLibrary.simpleMessage("영어"),
-    "enableVpnFirst": MessageLookupByLibrary.simpleMessage("먼저 VPN을 켜세요"),
     "enabled": MessageLookupByLibrary.simpleMessage("사용"),
     "entries": MessageLookupByLibrary.simpleMessage("개 항목"),
     "error": MessageLookupByLibrary.simpleMessage("오류"),

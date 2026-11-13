@@ -539,7 +539,6 @@
   "turnOn": "Turn on",
   "turnOff": "Turn off",
   "vpnConfigChangeDetected": "VPN settings changed. Tap to restart",
-  "enableVpnFirst": "Turn on VPN first",
   "restart": "Restart",
   "speedStatistics": "Speed statistics",
   "resetPageChangesTip": "This page has changes. Are you sure you want to reset?",

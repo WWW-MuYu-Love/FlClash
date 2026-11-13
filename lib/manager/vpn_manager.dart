@@ -76,10 +76,11 @@ class _VpnContainerState extends ConsumerState<VpnManager> with TileListener {
         ref.read(suspendProvider)) {
       return;
     }
+    // The tunnel went away; the Core keeps running. The switch flip hands
+    // its listeners over to the App core, so only the tunnel stops.
     ref
         .read(vpnSettingProvider.notifier)
         .update((state) => state.copyWith(enable: false));
-    unawaited(ref.read(setupActionProvider.notifier).setRunning(false));
   }
 
   void _showRestartTip() {

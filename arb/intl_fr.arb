@@ -539,7 +539,6 @@
   "turnOn": "Activer",
   "turnOff": "Désactiver",
   "vpnConfigChangeDetected": "La configuration liée au VPN a changé. Appuyez pour redémarrer",
-  "enableVpnFirst": "Activez d'abord le VPN",
   "restart": "Redémarrer",
   "speedStatistics": "Statistiques de débit",
   "resetPageChangesTip": "Cette page contient des modifications. Voulez-vous vraiment réinitialiser ?",

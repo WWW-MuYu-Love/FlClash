@@ -17,6 +17,10 @@ class CoreLib extends CoreHandlerInterface {
   final Service? _service;
   final bool _listenerManagedByService;
 
+  // iOS only: which side started the running listeners. The service owns
+  // them while the tunnel runs; the App core owns them in core-only mode.
+  var _listenersStartedByService = true;
+
   Completer<bool> _connectedCompleter = Completer<bool>();
   Future<CoreLifecycleResult>? _closeOperation;
   int _lifecycleRevision = 0;
@@ -116,19 +120,10 @@ class CoreLib extends CoreHandlerInterface {
     return _stop(allowClosed: true);
   }
 
-  // The service opens and closes the Core's listeners itself and reports a run
-  // that ends, so once it takes the command the Core's own answer is moot.
   @override
   Future<void> startListener() async {
-    // iOS: the NECore applies the config (and starts the listeners) via
-    // quickSetup when the tunnel starts; only start the service here.
     if (_listenerManagedByService) {
-      if (!await _service!.start()) {
-        throw const CoreMethodException(
-          code: 'service_refused',
-          message: 'The iOS service did not start',
-        );
-      }
+      await _startIOSListener();
       return;
     }
     await _ignoreUnanswered(super.startListener);
@@ -140,8 +135,43 @@ class CoreLib extends CoreHandlerInterface {
     }
   }
 
+  Future<void> _startIOSListener() async {
+    if (!await _isVpnEnabled()) {
+      await invokeMethod(
+        method: CoreMethod.listenerStart,
+        route: CoreRoute.app,
+      );
+      _listenersStartedByService = false;
+      return;
+    }
+    // The service opens and closes the Core's listeners itself and reports a
+    // run that ends, so once it takes the command the Core's own answer is moot.
+    if (!await _service!.start()) {
+      throw const CoreMethodException(
+        code: 'service_refused',
+        message: 'The iOS service did not start',
+      );
+    }
+    _listenersStartedByService = true;
+  }
+
+  Future<bool> _isVpnEnabled() async {
+    final vpnOptions = await globalState.container.read(
+      vpnOptionsProvider.future,
+    );
+    return vpnOptions.enable;
+  }
+
   @override
   Future<void> stopListener() async {
+    if (_listenerManagedByService && !_listenersStartedByService) {
+      // Core-only mode: stop the App core's own listeners (best-effort).
+      await _ignoreUnanswered(
+        () =>
+            invokeMethod(method: CoreMethod.listenerStop, route: CoreRoute.app),
+      );
+      return;
+    }
     final serviceStopped = await _service!.stop();
     if (!_listenerManagedByService) {
       await _ignoreUnanswered(super.stopListener);

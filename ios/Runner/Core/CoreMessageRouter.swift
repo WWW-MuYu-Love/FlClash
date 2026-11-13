@@ -30,8 +30,9 @@ private enum ConfigurationCoreMethod: String {
   case updateConfig = "config.update"
 }
 
-// The app core must never bind a listener: every listener belongs to the
-// extension, so these go there with no app fallback.
+// The extension owns the listeners while the tunnel runs; the App core
+// binds its own only in core-only mode (VPN off), through a Dart-pinned app
+// route. Without a pin these go to the extension, with no app fallback.
 private enum ExtensionOnlyMethod: String {
   case listenerStart = "listener.start"
   case listenerStop = "listener.stop"
@@ -132,9 +133,10 @@ final class CoreMessageRouter {
       } else if let method,
         ExtensionOnlyMethod(rawValue: method) != nil
       {
+        let route = methodCallRoute(data) ?? .networkExtension
         routedResult = (
-          try await sendCoreMessage(data, route: .networkExtension),
-          .networkExtension
+          try await sendCoreMessage(data, route: route),
+          route
         )
       } else {
         routedResult = try await sendRoutedCoreMessage(

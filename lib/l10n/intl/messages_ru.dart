@@ -855,9 +855,6 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "emptyTip": m30,
     "en": MessageLookupByLibrary.simpleMessage("Английский"),
-    "enableVpnFirst": MessageLookupByLibrary.simpleMessage(
-      "Сначала включите VPN",
-    ),
     "enabled": MessageLookupByLibrary.simpleMessage("Включено"),
     "entries": MessageLookupByLibrary.simpleMessage(" записей"),
     "error": MessageLookupByLibrary.simpleMessage("Ошибка"),

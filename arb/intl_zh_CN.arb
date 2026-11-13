@@ -539,7 +539,6 @@
   "turnOn": "开启",
   "turnOff": "关闭",
   "vpnConfigChangeDetected": "VPN 相关配置已改动，点击重启",
-  "enableVpnFirst": "请先打开 VPN",
   "restart": "重启",
   "speedStatistics": "网速统计",
   "resetPageChangesTip": "当前页面存在更改，确定重置吗？",

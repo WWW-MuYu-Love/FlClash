@@ -204,18 +204,6 @@ class SetupAction extends _$SetupAction {
   }
 
   Future<bool> _start(_RunRequest request) async {
-    if (system.isIOS && !request.resume) {
-      // With VPN off there is no tunnel to start; refusing keeps the dashboard honest.
-      final vpnOptions = await ref.read(vpnOptionsProvider.future);
-      if (!vpnOptions.enable) {
-        dialogs.showBanner(
-          currentAppLocalizations.enableVpnFirst,
-          level: BannerLevel.error,
-        );
-        _rollbackRunning(request);
-        return false;
-      }
-    }
     if (request.initialize) {
       var applied = false;
       try {
@@ -293,9 +281,6 @@ class SetupAction extends _$SetupAction {
 
   Future<void> _setListening(bool running) async {
     final vpnOptions = await ref.read(vpnOptionsProvider.future);
-    if (running && system.isIOS && !vpnOptions.enable) {
-      throw MessageException(currentAppLocalizations.enableVpnFirst);
-    }
     try {
       await setCoreRunning(running);
     } catch (error) {
@@ -339,19 +324,25 @@ class SetupAction extends _$SetupAction {
     await setRunning(true);
   }
 
-  /// iOS only: start or stop just the tunnel for a VPN-switch flip, while
-  /// the App core keeps running. False off iOS, where the switch still
-  /// needs a service restart.
+  /// iOS only: move just the listeners across a VPN-switch flip, while the
+  /// Core keeps running. False off iOS, where the switch still needs a
+  /// service restart.
   Future<bool> setTunnelEnabled(bool enable) async {
     if (!system.isIOS) {
       return false;
     }
     return _listenerScheduler.run(() async {
+      if (!ref.read(isStartProvider)) {
+        return true;
+      }
+      // Stop the listeners the switch just left, then start them on the side
+      // it now selects: the tunnel, or the App core itself with VPN off.
+      await setCoreRunning(false);
       if (enable) {
         // The extension reads the shared state when the tunnel starts.
         await _syncSharedState();
       }
-      await setCoreRunning(enable);
+      await setCoreRunning(true);
       return true;
     });
   }

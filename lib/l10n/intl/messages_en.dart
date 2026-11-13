@@ -820,7 +820,6 @@ class MessageLookup extends MessageLookupByLibrary {
     "emptyFallback": MessageLookupByLibrary.simpleMessage("Empty fallback"),
     "emptyTip": m30,
     "en": MessageLookupByLibrary.simpleMessage("English"),
-    "enableVpnFirst": MessageLookupByLibrary.simpleMessage("Turn on VPN first"),
     "enabled": MessageLookupByLibrary.simpleMessage("Enabled"),
     "entries": MessageLookupByLibrary.simpleMessage(" entries"),
     "error": MessageLookupByLibrary.simpleMessage("Error"),

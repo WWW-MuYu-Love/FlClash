@@ -875,9 +875,6 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "emptyTip": m30,
     "en": MessageLookupByLibrary.simpleMessage("Inglés"),
-    "enableVpnFirst": MessageLookupByLibrary.simpleMessage(
-      "Activa primero la VPN",
-    ),
     "enabled": MessageLookupByLibrary.simpleMessage("Activado"),
     "entries": MessageLookupByLibrary.simpleMessage(" entradas"),
     "error": MessageLookupByLibrary.simpleMessage("Error"),

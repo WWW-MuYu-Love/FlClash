@@ -640,7 +640,6 @@ class MessageLookup extends MessageLookupByLibrary {
     "emptyFallback": MessageLookupByLibrary.simpleMessage("空组兜底"),
     "emptyTip": m30,
     "en": MessageLookupByLibrary.simpleMessage("英语"),
-    "enableVpnFirst": MessageLookupByLibrary.simpleMessage("请先打开 VPN"),
     "enabled": MessageLookupByLibrary.simpleMessage("已开启"),
     "entries": MessageLookupByLibrary.simpleMessage("个条目"),
     "error": MessageLookupByLibrary.simpleMessage("错误"),
