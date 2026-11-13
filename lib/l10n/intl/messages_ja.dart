@@ -728,6 +728,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "extend": MessageLookupByLibrary.simpleMessage("拡張"),
     "extendMode": MessageLookupByLibrary.simpleMessage("拡張モード"),
     "extendScript": MessageLookupByLibrary.simpleMessage("拡張スクリプト"),
+    "extensionCore": MessageLookupByLibrary.simpleMessage("拡張コア"),
     "externalController": MessageLookupByLibrary.simpleMessage("外部コントローラー"),
     "externalControllerDesc": MessageLookupByLibrary.simpleMessage(
       "外部コントローラーを有効にすると、ポート 9090 でコアを制御できます。",
@@ -1103,7 +1104,9 @@ class MessageLookup extends MessageLookupByLibrary {
       "コアはアプリと同じプロセスで動作します。コア分はランタイム統計から推定し、残りはアプリと共有メモリとして計上します。",
     ),
     "memoryInfo": MessageLookupByLibrary.simpleMessage("メモリ情報"),
-    "memoryInfoDesc": MessageLookupByLibrary.simpleMessage("アプリとコアが使用するメモリ"),
+    "memoryInfoDesc": MessageLookupByLibrary.simpleMessage(
+      "アプリ、コア、拡張コアが使用するメモリ",
+    ),
     "memoryReleased": MessageLookupByLibrary.simpleMessage("メモリを解放しました"),
     "memoryReleasedSize": m54,
     "messageTest": MessageLookupByLibrary.simpleMessage("メッセージテスト"),

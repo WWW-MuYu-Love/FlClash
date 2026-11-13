@@ -12,6 +12,7 @@ class DashboardColors {
     required this.track,
     required this.thumb,
     required this.series2,
+    required this.series3,
     required this.ok,
     required this.okContainer,
     required this.onOkContainer,
@@ -34,6 +35,10 @@ class DashboardColors {
         colorScheme.primary.withValues(alpha: 0.45),
         card,
       ),
+      series3: Color.alphaBlend(
+        colorScheme.tertiary.withValues(alpha: 0.45),
+        card,
+      ),
       ok: colorScheme.success,
       okContainer: colorScheme.successContainer,
       onOkContainer: colorScheme.onSuccessContainer,
@@ -52,6 +57,7 @@ class DashboardColors {
   final Color track;
   final Color thumb;
   final Color series2;
+  final Color series3;
   final Color ok;
   final Color okContainer;
   final Color onOkContainer;

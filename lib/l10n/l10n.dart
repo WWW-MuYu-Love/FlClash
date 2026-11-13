@@ -971,6 +971,16 @@ class AppLocalizations {
     return Intl.message('Core', name: 'core', desc: '', args: []);
   }
 
+  /// `Extension core`
+  String get extensionCore {
+    return Intl.message(
+      'Extension core',
+      name: 'extensionCore',
+      desc: '',
+      args: [],
+    );
+  }
+
   /// `Tab animation`
   String get tabAnimation {
     return Intl.message(
@@ -7669,10 +7679,10 @@ class AppLocalizations {
     );
   }
 
-  /// `Memory the app and the core use`
+  /// `Memory the app, the core and the extension core use`
   String get memoryInfoDesc {
     return Intl.message(
-      'Memory the app and the core use',
+      'Memory the app, the core and the extension core use',
       name: 'memoryInfoDesc',
       desc: '',
       args: [],

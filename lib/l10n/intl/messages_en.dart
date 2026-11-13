@@ -858,6 +858,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "extend": MessageLookupByLibrary.simpleMessage("Extend"),
     "extendMode": MessageLookupByLibrary.simpleMessage("Extend mode"),
     "extendScript": MessageLookupByLibrary.simpleMessage("Extend script"),
+    "extensionCore": MessageLookupByLibrary.simpleMessage("Extension core"),
     "externalController": MessageLookupByLibrary.simpleMessage(
       "External controller",
     ),
@@ -1282,7 +1283,7 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "memoryInfo": MessageLookupByLibrary.simpleMessage("Memory info"),
     "memoryInfoDesc": MessageLookupByLibrary.simpleMessage(
-      "Memory the app and the core use",
+      "Memory the app, the core and the extension core use",
     ),
     "memoryReleased": MessageLookupByLibrary.simpleMessage("Memory released"),
     "memoryReleasedSize": m54,

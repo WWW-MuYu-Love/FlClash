@@ -133,6 +133,40 @@ void main() {
     await tester.pumpWidget(const SizedBox.shrink());
   });
 
+  testWidgets('a running extension Core adds a third split to the total', (
+    tester,
+  ) async {
+    Future<MemorySnapshot> readMemory() async => const MemorySnapshot(
+      app: 300 * 1024 * 1024,
+      coreTotal: 100 * 1024 * 1024,
+      extensionTotal: 50 * 1024 * 1024,
+    );
+
+    await tester.pumpWidget(
+      TestApp(
+        wrapInProviderScope: true,
+        child: SizedBox(
+          width: 380,
+          child: MemoryInfo(memoryReader: readMemory),
+        ),
+        homeBuilder: (child) => HostScaffold(body: Center(child: child)),
+      ),
+    );
+    await tester.pump();
+
+    String shown(int bytes) => '${bytes.traffic.value} ${bytes.traffic.unit}';
+    expect(
+      find.text(shown(450 * 1024 * 1024), findRichText: true),
+      findsOneWidget,
+    );
+    expect(find.text(shown(300 * 1024 * 1024)), findsOneWidget);
+    expect(find.text(shown(100 * 1024 * 1024)), findsOneWidget);
+    expect(find.text(shown(50 * 1024 * 1024)), findsOneWidget);
+    expect(tester.takeException(), isNull);
+
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
+
   testWidgets('a poll that barely moves the split leaves the bar still', (
     tester,
   ) async {
@@ -508,6 +542,30 @@ void main() {
       );
       expect(snapshot.core, isNull);
       expect(snapshot.coreTotal, 0);
+      expect(snapshot.total, 10000);
+    });
+
+    test('adds the extension Core on top of the app and Core', () {
+      final snapshot = MemorySnapshot.resolve(
+        rss: 10000,
+        core: core,
+        coreInProcess: true,
+        extensionRss: 5000,
+      );
+      expect(snapshot.app, 10000 - 1800);
+      expect(snapshot.coreTotal, 1800);
+      expect(snapshot.extensionTotal, 5000);
+      expect(snapshot.total, 15000);
+    });
+
+    test('a stopped extension leaves only the app and Core', () {
+      final snapshot = MemorySnapshot.resolve(
+        rss: 10000,
+        core: core,
+        coreInProcess: true,
+        extensionRss: 0,
+      );
+      expect(snapshot.extensionTotal, 0);
       expect(snapshot.total, 10000);
     });
 

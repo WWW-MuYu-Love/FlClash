@@ -897,6 +897,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "extend": MessageLookupByLibrary.simpleMessage("Расширение"),
     "extendMode": MessageLookupByLibrary.simpleMessage("Режим расширения"),
     "extendScript": MessageLookupByLibrary.simpleMessage("Скрипт расширения"),
+    "extensionCore": MessageLookupByLibrary.simpleMessage("Ядро расширения"),
     "externalController": MessageLookupByLibrary.simpleMessage(
       "Внешний контроллер",
     ),
@@ -1345,7 +1346,7 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "memoryInfo": MessageLookupByLibrary.simpleMessage("Память"),
     "memoryInfoDesc": MessageLookupByLibrary.simpleMessage(
-      "Память приложения и ядра",
+      "Память, используемая приложением, ядром и ядром расширения",
     ),
     "memoryReleased": MessageLookupByLibrary.simpleMessage(
       "Память освобождена",

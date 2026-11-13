@@ -321,6 +321,71 @@ void main() {
     });
   });
 
+  group('ExternalControllerClient.fetchMemory', () {
+    late HttpServer server;
+    late ExternalControllerClient client;
+
+    setUp(() async {
+      server = await _serve((request) async {
+        // The real /memory endpoint streams one object per second and
+        // its first sample is always zero.
+        request.response.bufferOutput = false;
+        request.response.headers.contentType = ContentType.json;
+        request.response.write('{"inuse":0,"oslimit":0}\n');
+        await request.response.flush();
+        request.response.write('{"inuse":123456,"oslimit":0}\n');
+        await request.response.flush();
+        // Keep the stream open: fetchMemory must return after the
+        // second line instead of waiting for the stream to end.
+        await Future<void>.delayed(const Duration(seconds: 5));
+        await request.response.close();
+      });
+      client = ExternalControllerClient(
+        baseUri: Uri.parse('http://127.0.0.1:${server.port}'),
+      );
+    });
+
+    tearDown(() async {
+      client.close();
+      await server.close(force: true);
+    });
+
+    test(
+      'reads the first non-zero inuse without waiting for the stream',
+      () async {
+        final memory = await client.fetchMemory().timeout(
+          const Duration(seconds: 2),
+        );
+
+        expect(memory, 123456);
+      },
+    );
+
+    test('returns null when the controller answers 401', () async {
+      await server.close(force: true);
+      server = await _serve((request) async {
+        request.response.statusCode = HttpStatus.unauthorized;
+        await request.response.close();
+      });
+      client = ExternalControllerClient(
+        baseUri: Uri.parse('http://127.0.0.1:${server.port}'),
+      );
+
+      expect(await client.fetchMemory(), isNull);
+    });
+
+    test('returns null when nothing listens', () async {
+      final port = server.port;
+      await server.close(force: true);
+      final dead = ExternalControllerClient(
+        baseUri: Uri.parse('http://127.0.0.1:$port'),
+      );
+      addTearDown(dead.close);
+
+      expect(await dead.fetchMemory(), isNull);
+    });
+  });
+
   group('ExternalControllerClient.selectProxy', () {
     late HttpServer server;
     late ExternalControllerClient client;

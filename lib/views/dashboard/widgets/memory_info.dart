@@ -24,6 +24,7 @@ class MemorySnapshot {
     this.coreTotal = 0,
     this.core,
     this.coreInProcess = false,
+    this.extensionTotal = 0,
   });
 
   final int app;
@@ -31,7 +32,11 @@ class MemorySnapshot {
   final CoreMemoryStats? core;
   final bool coreInProcess;
 
-  int get total => app + coreTotal;
+  /// The extension core's resident memory. It runs in its own process,
+  /// so it adds on top of the app process; zero when the tunnel is down.
+  final int extensionTotal;
+
+  int get total => app + coreTotal + extensionTotal;
 
   int get coreOther => max(0, coreTotal - (core?.runtimeTotal ?? 0));
 
@@ -41,9 +46,14 @@ class MemorySnapshot {
     required int rss,
     required CoreMemoryStats? core,
     required bool coreInProcess,
+    int extensionRss = 0,
   }) {
     if (core == null) {
-      return MemorySnapshot(app: rss, coreInProcess: coreInProcess);
+      return MemorySnapshot(
+        app: rss,
+        coreInProcess: coreInProcess,
+        extensionTotal: extensionRss,
+      );
     }
     if (coreInProcess) {
       final runtime = core.runtimeTotal;
@@ -52,9 +62,15 @@ class MemorySnapshot {
         coreTotal: runtime,
         core: core,
         coreInProcess: true,
+        extensionTotal: extensionRss,
       );
     }
-    return MemorySnapshot(app: rss, coreTotal: core.rss, core: core);
+    return MemorySnapshot(
+      app: rss,
+      coreTotal: core.rss,
+      core: core,
+      extensionTotal: extensionRss,
+    );
   }
 }
 
@@ -75,17 +91,29 @@ Future<MemorySnapshot?> _readMemory(WidgetRef ref, MemoryReader? reader) async {
 Future<MemorySnapshot> _readSnapshot(WidgetRef ref) async {
   final rss = ProcessInfo.currentRss;
   final coreConnected = ref.read(coreStatusProvider) == CoreStatus.connected;
-  final core = coreConnected ? await _readCoreMemory(ref) : null;
+  final reading = coreConnected ? await _readCoreMemory(ref) : null;
+  // A 9090-fallback core reading already is the extension's memory, so
+  // it belongs in the extension split, not the core split.
+  final isExtension = reading?.isExtension == true;
+  final core = isExtension ? null : reading?.stats;
+  final extensionRss = system.isIOS
+      ? (isExtension ? reading?.stats.rss : await _readExtensionMemory(ref))
+      : null;
   return MemorySnapshot.resolve(
     rss: rss,
     core: core,
     coreInProcess: system.isAndroid,
+    extensionRss: extensionRss ?? 0,
   );
 }
 
-Future<CoreMemoryStats?> _readCoreMemory(WidgetRef ref) async {
+/// The core reading; [isExtension] when the 9090 fallback substituted it.
+typedef CoreMemoryReading = ({CoreMemoryStats stats, bool isExtension});
+
+Future<CoreMemoryReading?> _readCoreMemory(WidgetRef ref) async {
   try {
-    return await ref.read(coreHandlerProvider).getMemoryStats();
+    final stats = await ref.read(coreHandlerProvider).getMemoryStats();
+    return (stats: stats, isExtension: false);
   } on CoreMethodException catch (error) {
     if (error.code != 'empty_response' ||
         ref.read(runningVpnOptionsProvider)?.enable != true) {
@@ -95,11 +123,33 @@ Future<CoreMemoryStats?> _readCoreMemory(WidgetRef ref) async {
         .read(externalControllerClientProvider)
         .fetchMemory();
     if (inuse != null) {
-      return CoreMemoryStats(rss: inuse);
+      return (stats: CoreMemoryStats(rss: inuse), isExtension: true);
     }
     // Last resort: the App core answers with its own memory, not the
     // extension core's.
-    return ref.read(coreHandlerProvider).getMemoryStats(route: CoreRoute.app);
+    final stats = await ref
+        .read(coreHandlerProvider)
+        .getMemoryStats(route: CoreRoute.app);
+    return (stats: stats, isExtension: false);
+  }
+}
+
+// Same XPC → 9090 chain as the core reading, without the App-core
+// fallback: that memory is already the core reading.
+Future<int?> _readExtensionMemory(WidgetRef ref) async {
+  if (ref.read(runningVpnOptionsProvider)?.enable != true) {
+    return null;
+  }
+  try {
+    final stats = await ref
+        .read(coreHandlerProvider)
+        .getMemoryStats(route: CoreRoute.networkExtension);
+    return stats.rss;
+  } on CoreMethodException catch (error) {
+    if (error.code != 'empty_response') {
+      return null;
+    }
+    return ref.read(externalControllerClientProvider).fetchMemory();
   }
 }
 
@@ -236,6 +286,12 @@ class _MemorySummary extends StatelessWidget {
         bytes: memory.coreTotal,
         color: DashboardColors.of(context).series2,
       ),
+      if (memory.extensionTotal > 0)
+        (
+          label: appLocalizations.extensionCore,
+          bytes: memory.extensionTotal,
+          color: DashboardColors.of(context).series3,
+        ),
     ];
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -461,6 +517,18 @@ class _MemoryDetailSheetState extends ConsumerState<MemoryDetailSheet>
             contentKey: ValueKey(_snapshot.core != null),
             items: _coreItems(appLocalizations, _snapshot),
           ),
+          if (_snapshot.extensionTotal > 0)
+            _MemorySection(
+              title: appLocalizations.extensionCore,
+              bytes: _snapshot.extensionTotal,
+              items: [
+                _MemoryRow(
+                  label: appLocalizations.memoryAppResident,
+                  bytes: _snapshot.extensionTotal,
+                  total: _snapshot.extensionTotal,
+                ),
+              ],
+            ),
         ],
       ),
     );
@@ -561,6 +629,11 @@ class _MemoryOverview extends StatelessWidget {
                 bytes: snapshot.coreTotal,
                 color: DashboardColors.of(context).series2,
               ),
+              if (snapshot.extensionTotal > 0)
+                (
+                  bytes: snapshot.extensionTotal,
+                  color: DashboardColors.of(context).series3,
+                ),
             ],
           ),
           const SizedBox(height: 8),
