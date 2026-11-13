@@ -475,17 +475,15 @@ void main() {
     });
 
     group('the Core section', () {
-      test('decrypts HTTPS only with the CA this device trusts', () {
+      test('decrypts HTTPS whenever MITM is on', () {
         expect(defaultMitm.coreJson(const MitmRules())['decrypt-tls'], isFalse);
 
-        final trusted = const Mitm(
-          trustedFingerprint: 'AB:CD',
-        ).coreJson(const MitmRules());
+        final enabled = const Mitm(enable: true).coreJson(const MitmRules());
 
-        expect(trusted['decrypt-tls'], isTrue);
-        expect(trusted, isNot(contains('ca-fingerprint')));
-        expect(trusted, isNot(contains('trusted-fingerprint')));
-        expect(trusted, isNot(contains('decrypt-untrusted')));
+        expect(enabled['decrypt-tls'], isTrue);
+        expect(enabled, isNot(contains('ca-fingerprint')));
+        expect(enabled, isNot(contains('trusted-fingerprint')));
+        expect(enabled, isNot(contains('decrypt-untrusted')));
       });
 
       test('sends only the capture limit the Core reads', () {
@@ -512,6 +510,7 @@ void main() {
 
       test('decrypts with any CA for the LAN', () {
         final json = const Mitm(
+          enable: true,
           decryptUntrusted: true,
           trustedFingerprint: 'AB:CD',
         ).coreJson(const MitmRules());

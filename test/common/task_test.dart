@@ -793,7 +793,7 @@ void main() {
       expect(mitm['enable'], isTrue);
       expect(mitm['hostname'], ['a.com']);
       expect(mitm['url-rewrite'], isEmpty);
-      expect(mitm['decrypt-tls'], isFalse);
+      expect(mitm['decrypt-tls'], isTrue);
       expect(mitm, isNot(contains('trusted-fingerprint')));
     });
 

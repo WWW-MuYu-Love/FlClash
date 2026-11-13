@@ -378,6 +378,7 @@ void main() {
       tester,
       certificate: _certificate,
       store: _FakeStore(MitmTrust.ready),
+      mitm: const Mitm(enable: true),
     );
 
     expect(saved().trustedFingerprint, _certificate.fingerprint);

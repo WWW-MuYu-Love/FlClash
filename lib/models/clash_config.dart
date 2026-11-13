@@ -2296,7 +2296,13 @@ extension MitmExt on Mitm {
     return {
       ...json,
       ...rules.toJson(),
-      'decrypt-tls': decryptUntrusted || trustedFingerprint != null,
+      // Decrypt whenever MITM is on. Gating this on the recorded trust
+      // fingerprint left MITM silently dead on iOS: the trust check never
+      // records the fingerprint there, so the engine never decrypted even
+      // with the CA installed and trusted and hosts added. The trust state
+      // is still shown on the MITM page; an untrusted CA surfaces as
+      // certificate errors instead of silent nothing.
+      'decrypt-tls': enable,
       'limits': {
         ..._mitmLimits(isAndroid: system.isAndroid),
         'capture-entries': ?captureEntries,
