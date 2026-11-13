@@ -853,6 +853,10 @@ void main() {
           request.response.write(
             '{"core-epoch":3,"route-version":7,"held":[true,false]}',
           );
+        } else if (path == '/probe/outbound-ip') {
+          request.response.write(
+            '{"url":"https://api.ip.sb/ip","body":"203.0.113.7","delay":120,"chains":["DIRECT"],"core-epoch":3,"route-version":7,"hits":[]}',
+          );
         } else if (path == '/mitm/hosts') {
           request.response.write('{"hosts":["example.com"]}');
         } else if (path == '/mitm/exchanges') {
@@ -898,6 +902,19 @@ void main() {
       expect(check?.coreEpoch, 3);
       expect(check?.routeVersion, 7);
       expect(check?.held, [true, false]);
+    });
+
+    test('reads the outbound IP lookup', () async {
+      final result = await client.fetchOutboundIp(
+        const OutboundIpParams(
+          proxyName: '',
+          urls: ['https://api.ip.sb/ip'],
+          timeout: 6000,
+        ),
+      );
+      expect(result?.body, '203.0.113.7');
+      expect(result?.chains, ['DIRECT']);
+      expect(result?.coreEpoch, 3);
     });
 
     test('reads the MITM captures', () async {

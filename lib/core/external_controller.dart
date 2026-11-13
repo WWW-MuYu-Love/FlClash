@@ -386,6 +386,44 @@ class ExternalControllerClient {
     }
   }
 
+  // POST /probe/outbound-ip returns the outbound IP lookup from the core
+  // behind 9090, or null when it cannot be reached or answers nothing.
+  Future<OutboundIpResult?> fetchOutboundIp(OutboundIpParams params) async {
+    final httpTimeout = coreGuardFor(params.timeout);
+    try {
+      final request = await _http
+          .postUrl(
+            baseUri.replace(
+              pathSegments: [...baseUri.pathSegments, 'probe', 'outbound-ip'],
+            ),
+          )
+          .timeout(_fetchTimeout);
+      if (secret.isNotEmpty) {
+        request.headers.set(HttpHeaders.authorizationHeader, 'Bearer $secret');
+      }
+      request.headers.contentType = ContentType.json;
+      request.write(jsonEncode(params.toJson()));
+      final response = await request.close().timeout(httpTimeout);
+      _noteStatus(response);
+      if (response.statusCode != HttpStatus.ok) {
+        await response.drain<void>();
+        return null;
+      }
+      final body = await response
+          .transform(utf8.decoder)
+          .join()
+          .timeout(_fetchTimeout);
+      final json = jsonDecode(body);
+      if (json is! Map<String, Object?>) {
+        return null;
+      }
+      return OutboundIpResult.fromJson(json);
+    } catch (_) {
+      unauthorized = false;
+      return null;
+    }
+  }
+
   // GET /mitm/hosts returns the hosts with recorded decrypted exchanges.
   Future<MitmDecryptedHosts?> fetchMitmDecryptedHosts() async {
     try {

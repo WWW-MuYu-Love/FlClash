@@ -53,4 +53,24 @@ func TestProbeRoutes(t *testing.T) {
 	if rec := post(handleCheckRoutesRoute, "/route/check", `{bad`); rec.Code != http.StatusBadRequest {
 		t.Errorf("routes bad body status = %d, want 400", rec.Code)
 	}
+
+	// No sources: the lookup fails fast without touching the network.
+	outbound := post(
+		handleOutboundIpRoute,
+		"/probe/outbound-ip",
+		`{"proxy-name":"","urls":[],"timeout":1000}`,
+	)
+	if outbound.Code != http.StatusOK {
+		t.Fatalf("outbound status = %d, want 200", outbound.Code)
+	}
+	var result map[string]any
+	if err := json.Unmarshal(outbound.Body.Bytes(), &result); err != nil {
+		t.Fatalf("outbound body: %v", err)
+	}
+	if _, ok := result["error"]; !ok {
+		t.Errorf("outbound = %v, want an error", result)
+	}
+	if rec := post(handleOutboundIpRoute, "/probe/outbound-ip", `{bad`); rec.Code != http.StatusBadRequest {
+		t.Errorf("outbound bad body status = %d, want 400", rec.Code)
+	}
 }

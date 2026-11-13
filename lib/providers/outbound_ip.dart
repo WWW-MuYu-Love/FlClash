@@ -1,6 +1,6 @@
+import 'package:fl_clash/common/constant.dart';
 import 'package:fl_clash/common/service_probe.dart';
 import 'package:fl_clash/core/method.dart';
-import 'package:fl_clash/core/xpc_backoff.dart';
 import 'package:fl_clash/models/models.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
@@ -15,8 +15,6 @@ part 'generated/outbound_ip.g.dart';
 @Riverpod(keepAlive: true)
 class OutboundIpProbe extends _$OutboundIpProbe
     with RoutedProbe<String, IpInfo> {
-  final _outboundIpBackoff = XpcEmptyBackoff();
-
   @override
   RoutedProbeState<String, IpInfo> build() => buildProbe();
 
@@ -28,32 +26,23 @@ class OutboundIpProbe extends _$OutboundIpProbe
     final proxyName = target == routedOutbound && !route.proxied
         ? directOutbound
         : target;
-    OutboundIpResult result;
-    if (_outboundIpBackoff.isBackedOff) {
-      result = await lookupOutboundIp(
-        ref.read(coreHandlerProvider),
-        proxyName,
-        route: CoreRoute.app,
-      );
-    } else {
-      try {
-        result = await lookupOutboundIp(
-          ref.read(coreHandlerProvider),
-          proxyName,
-        );
-        _outboundIpBackoff.noteSuccess();
-      } on CoreMethodException catch (error) {
-        if (error.code != 'empty_response') {
-          rethrow;
-        }
-        _outboundIpBackoff.noteEmptyResponse();
-        result = await lookupOutboundIp(
+    // 9090 first: the routing core answers the lookup. The app core only
+    // matters when the tunnel is down, so it is the fallback, not a retry.
+    final result =
+        await ref
+            .read(externalControllerClientProvider)
+            .fetchOutboundIp(
+              OutboundIpParams(
+                proxyName: proxyName,
+                urls: ipInfoSources.keys.toList(),
+                timeout: outboundIpTimeoutDuration.inMilliseconds,
+              ),
+            ) ??
+        await lookupOutboundIp(
           ref.read(coreHandlerProvider),
           proxyName,
           route: CoreRoute.app,
         );
-      }
-    }
     final value = parseOutboundIp(result);
     final exit = result.chains.firstOrNull;
     return {
