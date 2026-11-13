@@ -7,6 +7,18 @@ class CommonAction extends _$CommonAction {
   CancelToken? _updateCancelToken;
   final _externalTrafficSampler = ExternalTrafficSampler();
 
+  // Skip XPC traffic for a minute after an empty response; 9090 covers it.
+  static const _xpcTrafficBackoff = Duration(minutes: 1);
+
+  @visibleForTesting
+  DateTime Function() clock = DateTime.now;
+
+  DateTime? _xpcTrafficBackoffUntil;
+
+  bool get _xpcTrafficBackedOff =>
+      _xpcTrafficBackoffUntil != null &&
+      clock().isBefore(_xpcTrafficBackoffUntil!);
+
   @override
   void build() {}
 
@@ -57,10 +69,19 @@ class CommonAction extends _$CommonAction {
       final onlyStatisticsProxy = ref.read(
         appSettingProvider.select((state) => state.onlyStatisticsProxy),
       );
-      final [traffic, totalTraffic] = await Future.wait([
-        _readTraffic(() => _core.getTraffic(onlyStatisticsProxy)),
-        _readTraffic(() => _core.getTotalTraffic(onlyStatisticsProxy)),
-      ]);
+      final xpcBackedOff = _xpcTrafficBackedOff;
+      final [traffic, totalTraffic] = xpcBackedOff
+          ? const <Traffic?>[null, null]
+          : await Future.wait([
+              _readTraffic(
+                () => _core.getTraffic(onlyStatisticsProxy),
+                trackXpcBackoff: true,
+              ),
+              _readTraffic(
+                () => _core.getTotalTraffic(onlyStatisticsProxy),
+                trackXpcBackoff: true,
+              ),
+            ]);
       if (traffic != null || totalTraffic != null) {
         if (traffic != null) {
           ref.read(trafficsProvider.notifier).addTraffic(traffic);
@@ -121,10 +142,22 @@ class CommonAction extends _$CommonAction {
     );
   }
 
-  Future<Traffic?> _readTraffic(Future<Traffic> Function() request) async {
+  Future<Traffic?> _readTraffic(
+    Future<Traffic> Function() request, {
+    bool trackXpcBackoff = false,
+  }) async {
     try {
-      return await request();
+      final result = await request();
+      if (trackXpcBackoff) {
+        _xpcTrafficBackoffUntil = null;
+      }
+      return result;
     } catch (error) {
+      if (trackXpcBackoff &&
+          error is CoreMethodException &&
+          error.code == 'empty_response') {
+        _xpcTrafficBackoffUntil = clock().add(_xpcTrafficBackoff);
+      }
       commonPrint.log(
         'updateTraffic error: $error',
         logLevel: coreFailureLogLevel(error),

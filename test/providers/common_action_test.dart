@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:fl_clash/core/controller.dart';
 import 'package:fl_clash/core/external_controller.dart';
 import 'package:fl_clash/core/interface.dart';
+import 'package:fl_clash/core/method.dart';
 import 'package:fl_clash/enum/enum.dart';
 import 'package:fl_clash/models/models.dart';
 import 'package:fl_clash/providers/action.dart';
@@ -227,6 +228,118 @@ void main() {
         const Traffic(up: 5000, down: 9000),
       );
       expect(client.fetchConnectionsCalls, 1);
+    });
+  });
+
+  group('CommonAction.updateTraffic XPC backoff', () {
+    const snapshot = ExternalControllerSnapshot(
+      uploadTotal: 5000,
+      downloadTotal: 9000,
+      connections: [],
+    );
+
+    const emptyResponse = CoreMethodException(
+      code: 'empty_response',
+      message: 'empty network extension response',
+    );
+
+    (ProviderContainer, _FakeExternalControllerClient, CommonAction)
+    buildBackoffContainer() {
+      final client = _FakeExternalControllerClient(snapshot);
+      final container = ProviderContainer(
+        overrides: [
+          coreHandlerProvider.overrideWithValue(CoreController.scoped(core)),
+          externalControllerClientProvider.overrideWithValue(client),
+        ],
+      );
+      addTearDown(container.dispose);
+      return (container, client, container.read(commonActionProvider.notifier));
+    }
+
+    test(
+      'skips XPC for a minute after an empty response and uses 9090',
+      () async {
+        final (container, client, action) = buildBackoffContainer();
+        var now = DateTime(2026, 11, 14);
+        action.clock = () => now;
+        when(() => core.getTraffic(any())).thenThrow(emptyResponse);
+        when(() => core.getTotalTraffic(any())).thenThrow(emptyResponse);
+
+        await action.updateTraffic();
+        expect(client.fetchConnectionsCalls, 1);
+
+        now = now.add(const Duration(seconds: 10));
+        await action.updateTraffic();
+        expect(client.fetchConnectionsCalls, 2);
+        expect(
+          container.read(totalTrafficProvider),
+          const Traffic(up: 5000, down: 9000),
+        );
+        verify(() => core.getTraffic(any())).called(1);
+        verify(() => core.getTotalTraffic(any())).called(1);
+      },
+    );
+
+    test('retries XPC after the backoff window expires', () async {
+      final (_, client, action) = buildBackoffContainer();
+      var now = DateTime(2026, 11, 14);
+      action.clock = () => now;
+      when(() => core.getTraffic(any())).thenThrow(emptyResponse);
+      when(() => core.getTotalTraffic(any())).thenThrow(emptyResponse);
+
+      await action.updateTraffic();
+      expect(client.fetchConnectionsCalls, 1);
+
+      now = now.add(const Duration(seconds: 61));
+      await action.updateTraffic();
+      expect(client.fetchConnectionsCalls, 2);
+      verify(() => core.getTraffic(any())).called(2);
+      verify(() => core.getTotalTraffic(any())).called(2);
+    });
+
+    test('an XPC success clears the backoff at once', () async {
+      final (_, client, action) = buildBackoffContainer();
+      var now = DateTime(2026, 11, 14);
+      action.clock = () => now;
+      when(() => core.getTraffic(any())).thenThrow(emptyResponse);
+      when(() => core.getTotalTraffic(any())).thenThrow(emptyResponse);
+
+      await action.updateTraffic();
+      expect(client.fetchConnectionsCalls, 1);
+
+      now = now.add(const Duration(seconds: 61));
+      when(
+        () => core.getTraffic(any()),
+      ).thenAnswer((_) async => const Traffic(up: 10, down: 20));
+      when(
+        () => core.getTotalTraffic(any()),
+      ).thenAnswer((_) async => const Traffic(up: 100, down: 200));
+      await action.updateTraffic();
+      expect(client.fetchConnectionsCalls, 1);
+
+      await action.updateTraffic();
+      expect(client.fetchConnectionsCalls, 1);
+      verify(() => core.getTraffic(any())).called(3);
+      verify(() => core.getTotalTraffic(any())).called(3);
+    });
+
+    test('other errors do not start the backoff', () async {
+      final (_, _, action) = buildBackoffContainer();
+      var now = DateTime(2026, 11, 14);
+      action.clock = () => now;
+      const transportError = CoreMethodException(
+        code: 'transport_error',
+        message: 'transport error',
+      );
+      when(() => core.getTraffic(any())).thenThrow(transportError);
+      when(() => core.getTotalTraffic(any())).thenThrow(transportError);
+
+      await action.updateTraffic();
+
+      now = now.add(const Duration(seconds: 10));
+      await action.updateTraffic();
+      verify(() => core.getTraffic(any())).called(2);
+      verify(() => core.getTotalTraffic(any())).called(2);
     });
   });
 
