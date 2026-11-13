@@ -4,12 +4,9 @@ import (
 	"bytes"
 	"context"
 	"encoding/base64"
-	"encoding/json"
 	"io"
 	"net/http"
 	"net/url"
-	"os"
-	"path/filepath"
 	"regexp"
 	"sort"
 	"strconv"
@@ -23,11 +20,6 @@ import (
 
 // maxRecordedBody caps how much of a body the store keeps per side.
 const maxRecordedBody = 1 << 20 // 1 MiB
-
-// capturesDirName is the home-relative directory for persisted captures,
-// shared with the app so the history does not count against the
-// extension's memory limit.
-const capturesDirName = "captures"
 
 // Action is one rewrite or observation applied to an exchange (MitmAction).
 type Action struct {
@@ -96,18 +88,8 @@ type Body struct {
 	Encoding  string `json:"encoding"`
 }
 
-// storedExchange is the on-disk form of one completed exchange: the
-// Exchange meta plus its unexported truncation flags. Bodies live in
-// sibling <id>.request / <id>.response files.
-type storedExchange struct {
-	Exchange
-	RequestTruncated  bool `json:"request-truncated"`
-	ResponseTruncated bool `json:"response-truncated"`
-}
-
-// ExchangeStore keeps decrypted exchanges, bounded by a capture limit. It is
-// safe for concurrent use. With dir set, completed exchanges are persisted
-// there and only summaries stay in memory; without one it keeps everything.
+// ExchangeStore keeps decrypted exchanges in memory, bounded by a capture
+// limit. It is safe for concurrent use.
 type ExchangeStore struct {
 	mu      sync.RWMutex
 	seq     atomic.Int64
@@ -117,160 +99,20 @@ type ExchangeStore struct {
 	byID    map[int]*Exchange
 	order   []int
 	closed  map[string]bool
-	dir     string
 }
 
 // NewExchangeStore creates a store bounded to limit entries (0 disables the
 // bound only when capture is off; a non-positive limit keeps the default).
 func NewExchangeStore(limit int) *ExchangeStore {
-	return NewExchangeStoreWithDir(limit, "")
-}
-
-func NewExchangeStoreWithDir(limit int, dir string) *ExchangeStore {
 	if limit <= 0 {
 		limit = defaultCaptureEntries
 	}
-	s := &ExchangeStore{
+	return &ExchangeStore{
 		limit:  limit,
 		since:  time.Now(),
 		byID:   map[int]*Exchange{},
 		closed: map[string]bool{},
 	}
-	s.SetDir(dir)
-	return s
-}
-
-// SetDir points the store at dir, loading the summaries already there.
-// A second call with the same dir, or an empty dir, is a no-op.
-func (s *ExchangeStore) SetDir(dir string) {
-	if dir == "" {
-		return
-	}
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	if s.dir == dir {
-		return
-	}
-	s.dir = dir
-	_ = os.MkdirAll(dir, 0o700)
-	s.loadLocked()
-}
-
-func (s *ExchangeStore) metaPath(id int) string {
-	return filepath.Join(s.dir, strconv.Itoa(id)+".json")
-}
-
-func (s *ExchangeStore) bodyPath(id int, response bool) string {
-	suffix := ".request"
-	if response {
-		suffix = ".response"
-	}
-	return filepath.Join(s.dir, strconv.Itoa(id)+suffix)
-}
-
-func writeFileAtomic(path string, data []byte, perm os.FileMode) error {
-	tmp := path + ".tmp"
-	if err := os.WriteFile(tmp, data, perm); err != nil {
-		return err
-	}
-	return os.Rename(tmp, path)
-}
-
-func (s *ExchangeStore) persistLocked(ex *Exchange) {
-	if s.dir == "" {
-		return
-	}
-	meta, err := json.Marshal(storedExchange{
-		Exchange:          *ex,
-		RequestTruncated:  ex.requestTruncated,
-		ResponseTruncated: ex.responseTruncated,
-	})
-	if err != nil {
-		return
-	}
-	_ = writeFileAtomic(s.metaPath(ex.ID), meta, 0o600)
-	if len(ex.requestBody) > 0 {
-		_ = writeFileAtomic(s.bodyPath(ex.ID, false), ex.requestBody, 0o600)
-	}
-	if len(ex.responseBody) > 0 {
-		_ = writeFileAtomic(s.bodyPath(ex.ID, true), ex.responseBody, 0o600)
-	}
-}
-
-func (s *ExchangeStore) loadLocked() {
-	entries, err := os.ReadDir(s.dir)
-	if err != nil {
-		return
-	}
-	var ids []int
-	for _, entry := range entries {
-		if entry.IsDir() || filepath.Ext(entry.Name()) != ".json" {
-			continue
-		}
-		id, err := strconv.Atoi(strings.TrimSuffix(entry.Name(), ".json"))
-		if err != nil {
-			continue
-		}
-		ids = append(ids, id)
-	}
-	sort.Ints(ids)
-	if s.limit > 0 && len(ids) > s.limit {
-		for _, id := range ids[:len(ids)-s.limit] {
-			s.removeFilesLocked(id)
-		}
-		ids = ids[len(ids)-s.limit:]
-	}
-	for _, id := range ids {
-		data, err := os.ReadFile(s.metaPath(id))
-		if err != nil {
-			continue
-		}
-		var stored storedExchange
-		if err := json.Unmarshal(data, &stored); err != nil {
-			continue
-		}
-		ex := stored.Exchange
-		ex.requestTruncated = stored.RequestTruncated
-		ex.responseTruncated = stored.ResponseTruncated
-		if _, ok := s.byID[id]; ok {
-			continue
-		}
-		s.byID[id] = &ex
-		s.order = append(s.order, id)
-		if int64(id) > s.seq.Load() {
-			s.seq.Store(int64(id))
-		}
-	}
-	sort.Ints(s.order)
-}
-
-func (s *ExchangeStore) removeFilesLocked(id int) {
-	if s.dir == "" {
-		return
-	}
-	_ = os.Remove(s.metaPath(id))
-	_ = os.Remove(s.bodyPath(id, false))
-	_ = os.Remove(s.bodyPath(id, true))
-}
-
-// complete persists a finished exchange and drops its bodies from memory.
-// It is a no-op for a pending exchange, or a store with no dir.
-func (s *ExchangeStore) complete(ex *Exchange) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	s.completeLocked(ex)
-}
-
-func (s *ExchangeStore) completeLocked(ex *Exchange) {
-	if ex.Pending || s.dir == "" {
-		return
-	}
-	if s.byID[ex.ID] != ex {
-		return
-	}
-	s.persistLocked(ex)
-	ex.requestBody = nil
-	ex.responseBody = nil
 }
 
 // SetLimit changes the capture bound. Entries beyond it are dropped oldest
@@ -331,7 +173,6 @@ func (s *ExchangeStore) Intercept(ctx context.Context, e *Engine, req *http.Requ
 		ex.Duration = time.Since(start).Milliseconds()
 		ex.Error = err.Error()
 		s.mu.Unlock()
-		s.complete(ex)
 		return resp, err
 	}
 	s.mu.Lock()
@@ -358,7 +199,6 @@ func (s *ExchangeStore) finishResponse(ex *Exchange, start time.Time, capture *c
 	ex.ResponseSize = int(capture.total)
 	ex.Pending = false
 	ex.Duration = time.Since(start).Milliseconds()
-	s.completeLocked(ex)
 }
 
 func (s *ExchangeStore) add(ex *Exchange) {
@@ -378,7 +218,6 @@ func (s *ExchangeStore) evictLocked() {
 			conn = ex.Connection
 		}
 		delete(s.byID, oldest)
-		s.removeFilesLocked(oldest)
 		if conn != "" {
 			s.dropClosedLocked(conn)
 		}
@@ -400,7 +239,7 @@ func (s *ExchangeStore) Len() int {
 	return len(s.byID)
 }
 
-// DropBodies discards recorded bodies held in memory; completed exchanges re-read theirs from disk.
+// DropBodies discards recorded bodies held in memory.
 func (s *ExchangeStore) DropBodies() {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -437,25 +276,11 @@ func (s *ExchangeStore) List(connectionID string, capturing bool) *ExchangeList 
 
 func (s *ExchangeStore) Get(id int) *Exchange {
 	s.mu.RLock()
-	ex := s.byID[id]
-	if ex != nil {
-		cp := ex.clone()
-		s.mu.RUnlock()
-		return cp
+	defer s.mu.RUnlock()
+	if ex := s.byID[id]; ex != nil {
+		return ex.clone()
 	}
-	dir := s.dir
-	s.mu.RUnlock()
-	if dir == "" {
-		return nil
-	}
-	stored, err := s.loadStored(id)
-	if err != nil {
-		return nil
-	}
-	loaded := stored.Exchange
-	loaded.requestTruncated = stored.RequestTruncated
-	loaded.responseTruncated = stored.ResponseTruncated
-	return &loaded
+	return nil
 }
 
 // clone deep-copies the exchange so a caller may marshal it after the store's lock is released.
@@ -539,70 +364,19 @@ func normalizeHost(host string) string {
 
 func (s *ExchangeStore) Body(id int, response bool) *Body {
 	s.mu.RLock()
+	defer s.mu.RUnlock()
 	ex := s.byID[id]
-	var data []byte
-	var truncated, pending bool
-	if ex != nil {
-		if response {
-			data, truncated = ex.responseBody, ex.responseTruncated
-		} else {
-			data, truncated = ex.requestBody, ex.requestTruncated
-		}
-		data = append([]byte(nil), data...)
-		pending = ex.Pending
-	}
-	dir := s.dir
-	s.mu.RUnlock()
 	if ex == nil {
 		return nil
 	}
-	if data == nil && dir != "" && !pending {
-		data, truncated = s.readBodyFile(id, response, truncated)
-	}
-	return &Body{Data: base64.StdEncoding.EncodeToString(data), Truncated: truncated}
-}
-
-func (s *ExchangeStore) readBodyFile(id int, response bool, truncated bool) ([]byte, bool) {
-	s.mu.RLock()
-	dir := s.dir
-	s.mu.RUnlock()
-	if dir == "" {
-		return nil, truncated
-	}
-	suffix := ".request"
+	var data []byte
+	var truncated bool
 	if response {
-		suffix = ".response"
+		data, truncated = ex.responseBody, ex.responseTruncated
+	} else {
+		data, truncated = ex.requestBody, ex.requestTruncated
 	}
-	data, err := os.ReadFile(filepath.Join(dir, strconv.Itoa(id)+suffix))
-	if err != nil {
-		return nil, truncated
-	}
-	if stored, err := s.loadStored(id); err == nil {
-		if response {
-			truncated = stored.ResponseTruncated
-		} else {
-			truncated = stored.RequestTruncated
-		}
-	}
-	return data, truncated
-}
-
-func (s *ExchangeStore) loadStored(id int) (storedExchange, error) {
-	var stored storedExchange
-	s.mu.RLock()
-	dir := s.dir
-	s.mu.RUnlock()
-	if dir == "" {
-		return stored, os.ErrNotExist
-	}
-	data, err := os.ReadFile(filepath.Join(dir, strconv.Itoa(id)+".json"))
-	if err != nil {
-		return stored, err
-	}
-	if err := json.Unmarshal(data, &stored); err != nil {
-		return stored, err
-	}
-	return stored, nil
+	return &Body{Data: base64.StdEncoding.EncodeToString(append([]byte(nil), data...)), Truncated: truncated}
 }
 
 // MarkClosed records that a MITM connection has ended, but only when the store
@@ -625,22 +399,6 @@ func (s *ExchangeStore) Clear() {
 	s.order = nil
 	s.closed = map[string]bool{}
 	s.since = time.Now()
-	if s.dir == "" {
-		return
-	}
-	entries, err := os.ReadDir(s.dir)
-	if err != nil {
-		return
-	}
-	for _, entry := range entries {
-		if entry.IsDir() {
-			continue
-		}
-		switch filepath.Ext(entry.Name()) {
-		case ".json", ".request", ".response":
-			_ = os.Remove(filepath.Join(s.dir, entry.Name()))
-		}
-	}
 }
 
 // connectionIDKey carries the MITM connection id through the interceptor

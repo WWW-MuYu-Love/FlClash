@@ -10,8 +10,6 @@
 //
 // The CA lives under <home>/mitm/ as ca.crt/ca.key and is reused across
 // restarts, so a device that already trusts it keeps trusting it.
-// Completed captures live under <home>/mitm/captures/ instead of in the
-// extension's memory; only in-flight exchanges and summaries are kept.
 package mitm
 
 import (
@@ -174,7 +172,6 @@ func (e *Engine) Init() error {
 		return fmt.Errorf("mitm home: %w", err)
 	}
 	e.homeDir = homeDir
-	e.exchange.SetDir(filepath.Join(homeDir, capturesDirName))
 	if err := e.loadOrGenerateCA(); err != nil {
 		return err
 	}

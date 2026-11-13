@@ -34,8 +34,7 @@ func (f *captureInvoker) Invoke(req *http.Request) (*http.Response, error) {
 // forwarded whole, with their ContentLength untouched, while only a 1 MiB
 // prefix is recorded.
 func TestInterceptStreamsLargeBodies(t *testing.T) {
-	dir := t.TempDir()
-	s := NewExchangeStoreWithDir(10, dir)
+	s := NewExchangeStore(10)
 	engine := &Engine{}
 
 	const bodySize = 2 << 20

@@ -78,8 +78,9 @@ abstract class CoreHandlerInterface {
     CoreMethod method,
     R Function(Object data) decode, {
     Object? arguments,
+    CoreRoute? route,
   }) async {
-    final data = await _call(method, arguments: arguments);
+    final data = await _call(method, arguments: arguments, route: route);
     return data == null ? null : decode(data);
   }
 
@@ -428,33 +429,47 @@ abstract class CoreHandlerInterface {
     );
   }
 
-  Future<MitmDecryptedHosts> getMitmDecryptedHosts() {
-    return _query(CoreMethod.mitmHosts, _model(MitmDecryptedHosts.fromJson));
+  Future<MitmDecryptedHosts> getMitmDecryptedHosts({CoreRoute? route}) {
+    return _query(
+      CoreMethod.mitmHosts,
+      _model(MitmDecryptedHosts.fromJson),
+      route: route,
+    );
   }
 
-  Future<MitmExchangeList> getMitmExchangesByHost(String host) {
+  Future<MitmExchangeList> getMitmExchangesByHost(
+    String host, {
+    CoreRoute? route,
+  }) {
     return _query(
       CoreMethod.mitmExchangesByHost,
       _model(MitmExchangeList.fromJson),
       arguments: {'host': host},
+      route: route,
     );
   }
 
   /// Null once the Core no longer keeps the request.
-  Future<MitmExchange?> getMitmExchange(int id) {
+  Future<MitmExchange?> getMitmExchange(int id, {CoreRoute? route}) {
     return _find(
       CoreMethod.mitmExchange,
       _model(MitmExchange.fromJson),
       arguments: {'id': id},
+      route: route,
     );
   }
 
   /// Null once the Core no longer keeps the request.
-  Future<MitmBody?> getMitmBody(int id, {required bool response}) {
+  Future<MitmBody?> getMitmBody(
+    int id, {
+    required bool response,
+    CoreRoute? route,
+  }) {
     return _find(
       CoreMethod.mitmBody,
       _model(MitmBody.fromJson),
       arguments: {'id': id, 'response': response},
+      route: route,
     );
   }
 

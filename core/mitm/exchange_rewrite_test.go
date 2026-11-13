@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
-	"os"
 	"reflect"
 	"sync"
 	"testing"
@@ -154,9 +153,8 @@ func TestHeaderRewriteActionsRespectPhaseAndPattern(t *testing.T) {
 }
 
 func TestInterceptRecordsRewrittenURL(t *testing.T) {
-	dir := t.TempDir()
 	engine := &Engine{
-		exchange: NewExchangeStoreWithDir(10, dir),
+		exchange: NewExchangeStore(10),
 		config:   Config{URLRewrite: []string{"https://example.com/old https://example.com/new"}},
 	}
 	engine.SetCapture(true)
@@ -207,8 +205,7 @@ func TestClosedEntriesPrunedOnEvictAndClear(t *testing.T) {
 }
 
 func TestSetPressureGrades(t *testing.T) {
-	dir := t.TempDir()
-	engine := &Engine{exchange: NewExchangeStoreWithDir(10, dir)}
+	engine := &Engine{exchange: NewExchangeStore(10)}
 	engine.SetCapture(true)
 	runIntercept(t, engine, "https://example.com/a", "req", "resp")
 
@@ -234,13 +231,6 @@ func TestSetPressureGrades(t *testing.T) {
 	engine.SetPressure(3)
 	if list := engine.Exchanges(""); len(list.Exchanges) != 0 {
 		t.Fatalf("Exchanges() = %d after level 3, want 0", len(list.Exchanges))
-	}
-	entries, err := os.ReadDir(dir)
-	if err != nil {
-		t.Fatalf("ReadDir: %v", err)
-	}
-	if len(entries) != 0 {
-		t.Fatalf("capture dir holds %d entries after level 3, want none", len(entries))
 	}
 
 	runIntercept(t, engine, "https://example.com/c", "req3", "resp3")

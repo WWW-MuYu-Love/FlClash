@@ -322,13 +322,6 @@ class AppPath {
     return join(await homeDirPath, mitmDirectoryName, mitmModulesDirectoryName);
   }
 
-  /// Captures the core persists under `<home>/mitm/captures/`. On iOS the
-  /// home directory is the shared App Group container, so the app reads
-  /// the extension core's captures from here without asking it.
-  Future<String> get mitmCapturesDirPath async {
-    return join(await homeDirPath, mitmDirectoryName, 'captures');
-  }
-
   Future<String> get mitmResourcesDirPath async {
     return join(
       await homeDirPath,
