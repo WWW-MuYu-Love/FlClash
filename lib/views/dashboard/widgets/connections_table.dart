@@ -162,10 +162,12 @@ mixin ConnectionsPolling<T extends ConsumerStatefulWidget>
       final snapshot = await ref
           .read(externalControllerClientProvider)
           .fetchConnections();
-      if (snapshot == null) {
-        rethrow;
+      if (snapshot != null) {
+        return snapshot.connections;
       }
-      return snapshot.connections;
+      // Last resort: the App core answers with its own list. It owns no
+      // connections while the tunnel is up, so this is usually empty.
+      return _core.getConnections(route: CoreRoute.app);
     }
   }
 
@@ -180,10 +182,12 @@ mixin ConnectionsPolling<T extends ConsumerStatefulWidget>
       final snapshot = await ref
           .read(externalControllerClientProvider)
           .fetchConnections();
-      if (snapshot == null) {
-        rethrow;
+      if (snapshot != null) {
+        return snapshot.connections.length;
       }
-      return snapshot.connections.length;
+      // Last resort: the App core answers with its own count, usually
+      // zero while the tunnel is up.
+      return _core.getConnectionCount(route: CoreRoute.app);
     }
   }
 }

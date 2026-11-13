@@ -320,15 +320,20 @@ abstract class CoreHandlerInterface {
 
   Future<void> resetTraffic() => _commandUnobserved(CoreMethod.trafficReset);
 
-  Future<List<TrackerInfo>> getConnections() {
+  Future<List<TrackerInfo>> getConnections({CoreRoute? route}) {
     return _query(
       CoreMethod.connectionList,
       (data) => data is List<TrackerInfo> ? data : trackerInfosOf(data),
+      route: route,
     );
   }
 
-  Future<int> getConnectionCount() {
-    return _query(CoreMethod.connectionCount, (data) => (data as num).toInt());
+  Future<int> getConnectionCount({CoreRoute? route}) {
+    return _query(
+      CoreMethod.connectionCount,
+      (data) => (data as num).toInt(),
+      route: route,
+    );
   }
 
   Future<void> closeConnection(String id) {

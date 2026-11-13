@@ -408,10 +408,12 @@ class _LiveFeedState extends ConsumerState<_LiveFeed>
         final snapshot = await ref
             .read(externalControllerClientProvider)
             .fetchConnections();
-        if (snapshot == null) {
-          rethrow;
+        if (snapshot != null) {
+          return snapshot.connections;
         }
-        return snapshot.connections;
+        // Last resort: the App core answers with its own list, usually
+        // empty while the tunnel is up.
+        return await _core.getConnections(route: CoreRoute.app);
       }
     } catch (error) {
       commonPrint.log(
