@@ -75,9 +75,12 @@ func handleMitmBody(params struct {
 	return mitm.Default().Body(params.ID, params.Response)
 }
 
-// handleRunMitmScript has no JS engine yet; module scripts are a later stage.
+// handleRunMitmScript runs a named cron/event/generic module script.
 func handleRunMitmScript(params struct {
 	Name string `json:"name"`
 }) (mitm.ScriptOutput, error) {
-	return mitm.ScriptOutput{}, errors.New("script execution is not supported yet: the JS engine is not integrated")
+	if params.Name == "" {
+		return mitm.ScriptOutput{}, errors.New("missing script name")
+	}
+	return mitm.Default().RunScript(params.Name), nil
 }
