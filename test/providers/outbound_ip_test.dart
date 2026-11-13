@@ -1,6 +1,5 @@
 import 'package:fl_clash/common/service_probe.dart';
 import 'package:fl_clash/core/controller.dart';
-import 'package:fl_clash/core/external_controller.dart';
 import 'package:fl_clash/core/interface.dart';
 import 'package:fl_clash/core/method.dart';
 import 'package:fl_clash/models/models.dart';
@@ -13,9 +12,6 @@ import 'package:mocktail/mocktail.dart';
 import 'package:riverpod/riverpod.dart';
 
 class _MockCore extends Mock implements CoreHandlerInterface {}
-
-class _MockExternalControllerClient extends Mock
-    implements ExternalControllerClient {}
 
 const _answer = OutboundIpResult(
   url: 'https://www.cloudflare.com/cdn-cgi/trace',
@@ -33,10 +29,6 @@ void main() {
   setUp(() => core = _MockCore());
 
   ProviderContainer build({bool proxied = true}) {
-    final client = _MockExternalControllerClient();
-    when(
-      () => client.fetchOutboundIp(any()),
-    ).thenAnswer((_) => Future<OutboundIpResult?>.value());
     final container = ProviderContainer(
       overrides: [
         routeTrackerProvider.overrideWithBuild(
@@ -50,7 +42,6 @@ void main() {
           ),
         ),
         coreHandlerProvider.overrideWithValue(CoreController.scoped(core)),
-        externalControllerClientProvider.overrideWithValue(client),
       ],
     );
     addTearDown(container.dispose);
@@ -148,7 +139,7 @@ void main() {
     ]);
   });
 
-  test('falls back to the app core when 9090 answers nothing', () async {
+  test('asks the app core directly, never 9090', () async {
     when(
       () => core.outboundIp(any(), route: CoreRoute.app),
     ).thenAnswer((_) async => _answer);

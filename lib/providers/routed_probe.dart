@@ -114,17 +114,11 @@ mixin RoutedProbe<K, V>
 
   @protected
   Future<RouteCheck> checkRoutes(List<List<RouteHit>> routes) async {
-    final params = CheckRoutesParams(routes: routes);
-    final via9090 = await ref
-        .read(externalControllerClientProvider)
-        .fetchRouteCheck(params);
-    if (via9090 != null) {
-      return via9090;
-    }
-    // 9090 is gone: the App core answers the check.
+    // The App core answers the check: the extension core's own dials fail
+    // while the tunnel is up even though traffic flows, so 9090 is skipped.
     return ref
         .read(coreHandlerProvider)
-        .checkRoutes(params, route: CoreRoute.app);
+        .checkRoutes(CheckRoutesParams(routes: routes), route: CoreRoute.app);
   }
 
   @protected

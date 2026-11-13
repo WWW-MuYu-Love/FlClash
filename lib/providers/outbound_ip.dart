@@ -1,4 +1,3 @@
-import 'package:fl_clash/common/constant.dart';
 import 'package:fl_clash/common/service_probe.dart';
 import 'package:fl_clash/core/method.dart';
 import 'package:fl_clash/models/models.dart';
@@ -26,23 +25,13 @@ class OutboundIpProbe extends _$OutboundIpProbe
     final proxyName = target == routedOutbound && !route.proxied
         ? directOutbound
         : target;
-    // 9090 first: the routing core answers the lookup. The app core only
-    // matters when the tunnel is down, so it is the fallback, not a retry.
-    final result =
-        await ref
-            .read(externalControllerClientProvider)
-            .fetchOutboundIp(
-              OutboundIpParams(
-                proxyName: proxyName,
-                urls: ipInfoSources.keys.toList(),
-                timeout: outboundIpTimeoutDuration.inMilliseconds,
-              ),
-            ) ??
-        await lookupOutboundIp(
-          ref.read(coreHandlerProvider),
-          proxyName,
-          route: CoreRoute.app,
-        );
+    // The App core answers the lookup: the extension core's own dials fail
+    // while the tunnel is up even though traffic flows, so 9090 is skipped.
+    final result = await lookupOutboundIp(
+      ref.read(coreHandlerProvider),
+      proxyName,
+      route: CoreRoute.app,
+    );
     final value = parseOutboundIp(result);
     final exit = result.chains.firstOrNull;
     return {
