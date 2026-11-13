@@ -396,7 +396,23 @@ class _LiveFeedState extends ConsumerState<_LiveFeed>
       if (ref.read(coreStatusProvider) != CoreStatus.connected) {
         return const [];
       }
-      return await _core.getConnections();
+      try {
+        return await _core.getConnections();
+      } on CoreMethodException catch (error) {
+        // The extension core owns the connections when the VPN is on: ask
+        // it over 9090 when the routed call did not reach it.
+        if (error.code != 'empty_response' ||
+            ref.read(runningVpnOptionsProvider)?.enable != true) {
+          rethrow;
+        }
+        final snapshot = await ref
+            .read(externalControllerClientProvider)
+            .fetchConnections();
+        if (snapshot == null) {
+          rethrow;
+        }
+        return snapshot.connections;
+      }
     } catch (error) {
       commonPrint.log(
         'updateConnections error: $error',
