@@ -222,11 +222,12 @@ final class PacketTunnelSharedStateStore {
     return json
   }
 
-  /// The core's home directory: the group container when the extension can reach it, otherwise its own container.
+  /// The core's home directory: the FlClash folder inside the group
+  /// container when the extension can reach it, otherwise its own container.
   func homeDirectory() -> URL? {
     let directory: URL?
     if let group = appGroupDirectory() {
-      directory = group
+      directory = group.appendingPathComponent("FlClash", isDirectory: true)
     } else {
       directory = FileManager.default.urls(
         for: .applicationSupportDirectory,

@@ -381,6 +381,7 @@ class MitmModulesAction extends _$MitmModulesAction {
       await appPath.mitmResourcesDirPath,
       (module) => module.resources.values,
     );
+    await appPath.syncSharedIOSFiles();
   }
 
   /// Remote modules follow the resources' two settings. What a restore leaves

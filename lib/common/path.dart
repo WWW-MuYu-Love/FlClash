@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:convert';
 import 'dart:io';
 
 import 'package:fl_clash/common/common.dart';
@@ -11,113 +10,76 @@ import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path_provider_foundation/path_provider_foundation.dart';
 
-/// iOS: the NECore extension can only read the shared App Group container,
-/// so the data directory moves there, copying any files the app already
-/// wrote under its own support directory first. A stamp in the group
-/// directory records the source and its newest mtime; on a later run,
-/// source files newer than the stamp are copied over the target again.
+/// Copies the MITM CA and map-local resources into the FlClash folder
+/// inside the iOS App Group container for the extension core.
 @visibleForTesting
-Future<Directory> migrateIOSDataDirectory({
-  required Directory supportDirectory,
+Future<void> syncIOSSharedFiles({
+  required Directory homeDir,
   required String appGroupPath,
 }) async {
   if (appGroupPath.isEmpty) {
-    return supportDirectory;
+    return;
   }
-  final appGroupDirectory = Directory(appGroupPath);
-  await appGroupDirectory.create(recursive: true);
-  if (!await supportDirectory.exists() ||
-      equals(supportDirectory.path, appGroupDirectory.path)) {
-    return appGroupDirectory;
-  }
-  final stamp = await _readMigrationStamp(appGroupDirectory);
-  final sourceMaxMtime = await _newestMtime(supportDirectory);
-  final sourceChanged =
-      stamp != null &&
-      equals(stamp.source, supportDirectory.path) &&
-      sourceMaxMtime > stamp.sourceMaxMtime;
-  await for (final entity in supportDirectory.list(recursive: true)) {
-    final targetPath = join(
-      appGroupDirectory.path,
-      relative(entity.path, from: supportDirectory.path),
-    );
-    if (entity is Directory) {
-      await Directory(targetPath).create(recursive: true);
-    } else if (entity is File) {
-      final target = File(targetPath);
-      var copy = !await target.exists();
-      if (!copy && sourceChanged) {
-        final mtime = await entity.lastModified();
-        copy = mtime.millisecondsSinceEpoch > stamp.sourceMaxMtime;
-      }
-      if (copy) {
-        await target.parent.create(recursive: true);
-        await entity.copy(targetPath);
-      }
-    }
-  }
-  await _writeMigrationStamp(
-    appGroupDirectory,
-    source: supportDirectory.path,
-    sourceMaxMtime: sourceMaxMtime,
+  final sharedDir = Directory(join(appGroupPath, sharedFlClashDirectoryName));
+  final privateMitmDir = Directory(join(homeDir.path, mitmDirectoryName));
+  final sharedMitmDir = Directory(join(sharedDir.path, mitmDirectoryName));
+  await _syncFile(
+    File(join(privateMitmDir.path, mitmCaCertFileName)),
+    File(join(sharedMitmDir.path, mitmCaCertFileName)),
   );
-  return appGroupDirectory;
+  await _syncFile(
+    File(join(privateMitmDir.path, mitmCaKeyFileName)),
+    File(join(sharedMitmDir.path, mitmCaKeyFileName)),
+  );
+  await _syncDirectory(
+    Directory(join(privateMitmDir.path, mitmResourcesDirectoryName)),
+    Directory(join(sharedMitmDir.path, mitmResourcesDirectoryName)),
+  );
 }
 
-const _migrationStampFileName = '.ios-migration.json';
-
-Future<({String source, int sourceMaxMtime})?> _readMigrationStamp(
-  Directory appGroupDirectory,
-) async {
-  try {
-    final file = File(join(appGroupDirectory.path, _migrationStampFileName));
-    if (!await file.exists()) {
-      return null;
+Future<void> _syncFile(File source, File target) async {
+  if (!await source.exists()) {
+    if (await target.exists()) {
+      await target.delete();
     }
-    final json = jsonDecode(await file.readAsString()) as Map<String, Object?>;
-    final source = json['source'] as String?;
-    final sourceMaxMtime = json['sourceMaxMtime'] as int?;
-    if (source == null || sourceMaxMtime == null) {
-      return null;
-    }
-    return (source: source, sourceMaxMtime: sourceMaxMtime);
-  } catch (_) {
-    return null;
+    return;
+  }
+  var copy = !await target.exists();
+  if (!copy) {
+    final sourceStat = await source.stat();
+    final targetStat = await target.stat();
+    copy =
+        sourceStat.size != targetStat.size ||
+        sourceStat.modified.isAfter(targetStat.modified);
+  }
+  if (copy) {
+    await target.parent.create(recursive: true);
+    await source.copy(target.path);
   }
 }
 
-Future<void> _writeMigrationStamp(
-  Directory appGroupDirectory, {
-  required String source,
-  required int sourceMaxMtime,
-}) async {
-  try {
-    final file = File(join(appGroupDirectory.path, _migrationStampFileName));
-    await file.writeAsString(
-      jsonEncode({
-        'source': source,
-        'sourceMaxMtime': sourceMaxMtime,
-        'migratedAt': DateTime.now().millisecondsSinceEpoch,
-      }),
-    );
-  } catch (_) {}
-}
-
-Future<int> _newestMtime(Directory directory) async {
-  var newest = 0;
-  await for (final entity in directory.list(recursive: true)) {
-    if (entity is File) {
-      try {
-        final mtime = (await entity.lastModified()).millisecondsSinceEpoch;
-        if (mtime > newest) {
-          newest = mtime;
-        }
-      } catch (_) {
-        continue;
-      }
+Future<void> _syncDirectory(Directory source, Directory target) async {
+  if (!await source.exists()) {
+    if (await target.exists()) {
+      await target.delete(recursive: true);
+    }
+    return;
+  }
+  await target.create(recursive: true);
+  final sourceNames = <String>{};
+  await for (final entity in source.list()) {
+    if (entity is! File) {
+      continue;
+    }
+    final name = basename(entity.path);
+    sourceNames.add(name);
+    await _syncFile(entity, File(join(target.path, name)));
+  }
+  await for (final entity in target.list()) {
+    if (entity is File && !sourceNames.contains(basename(entity.path))) {
+      await entity.delete();
     }
   }
-  return newest;
 }
 
 /// App Groups listed in the install's own provisioning profile, read
@@ -202,32 +164,40 @@ class AppPath {
   }
 
   void _bind() {
-    _dataDir = ResolveOnce(() async {
-      final support = await supportDirectory();
-      if (!system.isIOS) return support;
-      try {
-        final packageInfo = await PackageInfo.fromPlatform();
-        final appGroupPath = await resolveIOSAppGroupPath(
-          packageName: packageInfo.packageName,
-          profileAppGroups: await profileAppGroups(),
-          getContainerPath: (identifier) => PathProviderFoundation()
-              .getContainerPath(appGroupIdentifier: identifier),
-        );
-        return await migrateIOSDataDirectory(
-          supportDirectory: support,
-          appGroupPath: appGroupPath,
-        );
-      } catch (error) {
-        commonPrint.log(
-          'failed to resolve iOS app group, using support directory: $error',
-          logLevel: LogLevel.error,
-        );
-        return support;
-      }
-    });
+    _dataDir = ResolveOnce(supportDirectory);
     _downloadDir = ResolveOnce(downloadDirectory);
     _tempDir = ResolveOnce(temporaryDirectory);
     cacheDirectory().then(cacheDir.complete);
+  }
+
+  /// Copies the MITM files the extension needs into the FlClash folder
+  /// inside the iOS App Group container. Best-effort: never throws.
+  Future<void> syncSharedIOSFiles() async {
+    if (!system.isIOS) {
+      return;
+    }
+    try {
+      final appGroupPath = await _resolveIOSAppGroupPath();
+      await syncIOSSharedFiles(
+        homeDir: await _dataDir.value,
+        appGroupPath: appGroupPath,
+      );
+    } catch (error) {
+      commonPrint.log(
+        'failed to sync shared iOS files: $error',
+        logLevel: LogLevel.warning,
+      );
+    }
+  }
+
+  Future<String> _resolveIOSAppGroupPath() async {
+    final packageInfo = await PackageInfo.fromPlatform();
+    return resolveIOSAppGroupPath(
+      packageName: packageInfo.packageName,
+      profileAppGroups: await profileAppGroups(),
+      getContainerPath: (identifier) => PathProviderFoundation()
+          .getContainerPath(appGroupIdentifier: identifier),
+    );
   }
 
   factory AppPath() {

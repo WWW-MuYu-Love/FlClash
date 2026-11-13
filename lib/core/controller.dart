@@ -160,12 +160,10 @@ extension type CoreController._(CoreHandlerInterface _interface)
     required SetupParams params,
     Future<void> Function()? preloadInvoke,
   }) async {
-    if (preloadInvoke == null) {
-      return _interface.setupConfig(params);
-    }
     // The tunnel reads the shared state when it starts, so the new config must be applied before the preload starts it.
     await _interface.setupConfig(params);
-    await preloadInvoke();
+    await appPath.syncSharedIOSFiles();
+    await preloadInvoke?.call();
   }
 
   Future<List<Group>> getProxiesGroups({

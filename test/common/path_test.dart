@@ -159,88 +159,70 @@ void main() {
     await expectLater(appPath.ensureProviderDirs(9), completes);
   });
 
-  test('migrates missing iOS app-group data without overwriting it', () async {
-    final source = Directory(join(root.path, 'legacy'))..createSync();
-    final target = Directory(join(root.path, 'app-group'))..createSync();
-    File(join(source.path, 'config.yaml')).writeAsStringSync('legacy');
-    final sourceProfiles = Directory(join(source.path, 'profiles'))
-      ..createSync();
-    File(join(sourceProfiles.path, '1.yaml')).writeAsStringSync('profile');
-    File(join(target.path, 'config.yaml')).writeAsStringSync('current');
+  test('syncs the MITM CA and resources into the FlClash folder', () async {
+    final home = Directory(join(root.path, 'sync-home'))..createSync();
+    final group = Directory(join(root.path, 'sync-group'))..createSync();
+    final mitmDir = Directory(join(home.path, mitmDirectoryName))..createSync();
+    File(join(mitmDir.path, mitmCaCertFileName)).writeAsStringSync('cert');
+    File(join(mitmDir.path, mitmCaKeyFileName)).writeAsStringSync('key');
+    final resourcesDir = Directory(
+      join(mitmDir.path, mitmResourcesDirectoryName),
+    )..createSync();
+    File(join(resourcesDir.path, 'local.txt')).writeAsStringSync('resource');
+    File(join(home.path, 'config.yaml')).writeAsStringSync('config');
 
-    final resolved = await migrateIOSDataDirectory(
-      supportDirectory: source,
-      appGroupPath: target.path,
-    );
+    await syncIOSSharedFiles(homeDir: home, appGroupPath: group.path);
 
-    expect(resolved.path, target.path);
-    expect(
-      File(join(target.path, 'config.yaml')).readAsStringSync(),
-      'current',
+    final sharedMitmDir = Directory(
+      join(group.path, sharedFlClashDirectoryName, mitmDirectoryName),
     );
     expect(
-      File(join(target.path, 'profiles', '1.yaml')).readAsStringSync(),
-      'profile',
+      File(join(sharedMitmDir.path, mitmCaCertFileName)).readAsStringSync(),
+      'cert',
+    );
+    expect(
+      File(join(sharedMitmDir.path, mitmCaKeyFileName)).readAsStringSync(),
+      'key',
+    );
+    expect(
+      File(
+        join(sharedMitmDir.path, mitmResourcesDirectoryName, 'local.txt'),
+      ).readAsStringSync(),
+      'resource',
+    );
+    expect(
+      File(
+        join(group.path, sharedFlClashDirectoryName, 'config.yaml'),
+      ).existsSync(),
+      isFalse,
     );
   });
 
-  test('uses application support when no iOS app-group is available', () async {
-    final source = Directory(join(root.path, 'support'))..createSync();
+  test('removes shared files whose private source is gone', () async {
+    final home = Directory(join(root.path, 'prune-home'))..createSync();
+    final group = Directory(join(root.path, 'prune-group'))..createSync();
+    final sharedResourcesDir = Directory(
+      join(
+        group.path,
+        sharedFlClashDirectoryName,
+        mitmDirectoryName,
+        mitmResourcesDirectoryName,
+      ),
+    )..createSync(recursive: true);
+    File(join(sharedResourcesDir.path, 'stale.txt')).writeAsStringSync('stale');
 
-    final resolved = await migrateIOSDataDirectory(
-      supportDirectory: source,
-      appGroupPath: '',
-    );
+    await syncIOSSharedFiles(homeDir: home, appGroupPath: group.path);
 
-    expect(resolved.path, source.path);
+    expect(sharedResourcesDir.existsSync(), isFalse);
   });
 
-  test('re-migrates source files newer than the migration stamp', () async {
-    final source = Directory(join(root.path, 'stamp-source'))..createSync();
-    final target = Directory(join(root.path, 'stamp-target'))..createSync();
-    final changed = File(join(source.path, 'config.yaml'))
-      ..writeAsStringSync('v1');
-    final kept = File(join(source.path, 'keep.yaml'))
-      ..writeAsStringSync('source');
-    kept.setLastModifiedSync(DateTime.now().subtract(const Duration(hours: 1)));
+  test('does nothing when no iOS app-group is available', () async {
+    final home = Directory(join(root.path, 'nogroup-home'))..createSync();
 
-    await migrateIOSDataDirectory(
-      supportDirectory: source,
-      appGroupPath: target.path,
+    await expectLater(
+      syncIOSSharedFiles(homeDir: home, appGroupPath: ''),
+      completes,
     );
-    expect(File(join(target.path, '.ios-migration.json')).existsSync(), isTrue);
-
-    File(join(target.path, 'keep.yaml')).writeAsStringSync('target');
-    changed
-      ..writeAsStringSync('v2')
-      ..setLastModifiedSync(DateTime.now().add(const Duration(seconds: 10)));
-
-    await migrateIOSDataDirectory(
-      supportDirectory: source,
-      appGroupPath: target.path,
-    );
-
-    expect(File(join(target.path, 'config.yaml')).readAsStringSync(), 'v2');
-    expect(File(join(target.path, 'keep.yaml')).readAsStringSync(), 'target');
-  });
-
-  test('keeps target files when the source is unchanged', () async {
-    final source = Directory(join(root.path, 'stable-source'))..createSync();
-    final target = Directory(join(root.path, 'stable-target'))..createSync();
-    File(join(source.path, 'config.yaml')).writeAsStringSync('v1');
-
-    await migrateIOSDataDirectory(
-      supportDirectory: source,
-      appGroupPath: target.path,
-    );
-    File(join(target.path, 'config.yaml')).writeAsStringSync('target');
-
-    await migrateIOSDataDirectory(
-      supportDirectory: source,
-      appGroupPath: target.path,
-    );
-
-    expect(File(join(target.path, 'config.yaml')).readAsStringSync(), 'target');
   });
 
   test('resolves the app group derived from the bundle id', () async {

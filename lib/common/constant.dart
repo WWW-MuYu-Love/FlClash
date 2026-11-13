@@ -121,6 +121,12 @@ const rulesProviderDirectoryName = 'rules';
 const mitmDirectoryName = 'mitm';
 const mitmModulesDirectoryName = 'modules';
 const mitmResourcesDirectoryName = 'resources';
+const mitmCaCertFileName = 'ca.crt';
+const mitmCaKeyFileName = 'ca.key';
+
+/// Folder inside the iOS App Group container holding the files shared with
+/// the Network Extension: the tunnel profile and the MITM files.
+const sharedFlClashDirectoryName = 'FlClash';
 
 const localhost = '127.0.0.1';
 const clashConfigKey = 'clash_config';
