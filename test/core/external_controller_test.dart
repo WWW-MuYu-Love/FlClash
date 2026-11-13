@@ -853,6 +853,20 @@ void main() {
           request.response.write(
             '{"core-epoch":3,"route-version":7,"held":[true,false]}',
           );
+        } else if (path == '/mitm/hosts') {
+          request.response.write('{"hosts":["example.com"]}');
+        } else if (path == '/mitm/exchanges') {
+          request.response.write(
+            '{"capturing":true,"closed":false,"exchanges":[{"id":7,"start":"2026-11-14T04:50:00.000Z","pending":false,"method":"GET","url":"https://example.com/"}]}',
+          );
+        } else if (path == '/mitm/exchange') {
+          request.response.write(
+            '{"id":7,"start":"2026-11-14T04:50:00.000Z","pending":false,"method":"GET","url":"https://example.com/"}',
+          );
+        } else if (path == '/mitm/body') {
+          request.response.write(
+            '{"data":"hello","truncated":false,"encoding":""}',
+          );
         } else {
           request.response.statusCode = HttpStatus.notFound;
         }
@@ -884,6 +898,20 @@ void main() {
       expect(check?.coreEpoch, 3);
       expect(check?.routeVersion, 7);
       expect(check?.held, [true, false]);
+    });
+
+    test('reads the MITM captures', () async {
+      final hosts = await client.fetchMitmDecryptedHosts();
+      expect(hosts?.hosts, ['example.com']);
+      final list = await client.fetchMitmExchangesByHost('example.com');
+      expect(list?.capturing, true);
+      expect(list?.exchanges, hasLength(1));
+      expect(list?.exchanges.first.id, 7);
+      final exchange = await client.fetchMitmExchange(7);
+      expect(exchange?.method, 'GET');
+      expect(exchange?.url, 'https://example.com/');
+      final body = await client.fetchMitmBody(7, response: false);
+      expect(body?.data, 'hello');
     });
 
     test('returns null when the controller answers 401', () async {

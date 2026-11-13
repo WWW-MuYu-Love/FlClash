@@ -1,4 +1,5 @@
 import 'package:fl_clash/core/controller.dart';
+import 'package:fl_clash/core/external_controller.dart';
 import 'package:fl_clash/core/interface.dart';
 import 'package:fl_clash/core/method.dart';
 import 'package:fl_clash/models/models.dart';
@@ -11,6 +12,9 @@ import 'package:mocktail/mocktail.dart';
 
 class _MockCoreHandlerInterface extends Mock implements CoreHandlerInterface {}
 
+class _MockExternalControllerClient extends Mock
+    implements ExternalControllerClient {}
+
 const _runningVpnOptions = VpnOptions(
   enable: true,
   port: 7890,
@@ -21,11 +25,6 @@ const _runningVpnOptions = VpnOptions(
   systemProxy: false,
   bypassDomain: [],
   stack: 'gvisor',
-);
-
-const _emptyResponse = CoreMethodException(
-  code: 'empty_response',
-  message: 'empty response',
 );
 
 final _start = DateTime.utc(2026, 10, 29);
@@ -56,12 +55,17 @@ void main() {
     ];
     var calls = 0;
     final core = _MockCoreHandlerInterface();
+    final client = _MockExternalControllerClient();
     when(
-      () => core.getMitmExchangesByHost('a.test'),
+      () => client.fetchMitmExchangesByHost('a.test'),
+    ).thenAnswer((_) async => null);
+    when(
+      () => core.getMitmExchangesByHost('a.test', route: CoreRoute.app),
     ).thenAnswer((_) async => answers[(calls++).clamp(0, answers.length - 1)]);
     final container = ProviderContainer(
       overrides: [
         coreHandlerProvider.overrideWithValue(CoreController.scoped(core)),
+        externalControllerClientProvider.overrideWithValue(client),
       ],
     );
     addTearDown(container.dispose);
@@ -76,9 +80,18 @@ void main() {
   });
 
   ProviderContainer routedContainer({required _MockCoreHandlerInterface core}) {
+    final client = _MockExternalControllerClient();
+    when(
+      () => client.fetchMitmExchangesByHost('a.test'),
+    ).thenAnswer((_) async => null);
+    when(() => client.fetchMitmExchange(any())).thenAnswer((_) async => null);
+    when(
+      () => client.fetchMitmBody(any(), response: any(named: 'response')),
+    ).thenAnswer((_) async => null);
     final scope = ProviderContainer(
       overrides: [
         coreHandlerProvider.overrideWithValue(CoreController.scoped(core)),
+        externalControllerClientProvider.overrideWithValue(client),
       ],
     );
     addTearDown(scope.dispose);
@@ -86,9 +99,8 @@ void main() {
     return scope;
   }
 
-  test('falls back to the app core when the routed call misses', () async {
+  test('falls back to the app core when 9090 answers nothing', () async {
     final core = _MockCoreHandlerInterface();
-    when(() => core.getMitmExchangesByHost('a.test')).thenThrow(_emptyResponse);
     final appList = _list(closed: true, pending: false);
     when(
       () => core.getMitmExchangesByHost('a.test', route: CoreRoute.app),
@@ -104,18 +116,21 @@ void main() {
   });
 
   test(
-    'raw body falls back to the app core when the routed call misses',
+    'raw body falls back to the app core when 9090 answers nothing',
     () async {
       final core = _MockCoreHandlerInterface();
-      when(() => core.getMitmBody(1, response: true)).thenThrow(_emptyResponse);
+      final client = _MockExternalControllerClient();
+      when(
+        () => client.fetchMitmBody(1, response: true),
+      ).thenAnswer((_) async => null);
       const appBody = MitmBody(data: 'd29ybGQ=');
       when(
         () => core.getMitmBody(1, response: true, route: CoreRoute.app),
       ).thenAnswer((_) async => appBody);
 
       final body = await readRoutedMitmBody(
+        client: client,
         coreHandler: CoreController.scoped(core),
-        tunnelRunning: true,
         id: 1,
         response: true,
       );
