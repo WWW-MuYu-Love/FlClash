@@ -637,8 +637,10 @@ final class TunnelCoordinator {
         tunnelRequest == nil,
         let state = status.tunnelState
       {
-        publishedTunnelState = state
-        notifyExternalState(state)
+        // A refresh must not report a stop the first time it observes the
+        // tunnel: the manager read at launch can still be stale while the
+        // tunnel runs, and notifying it would switch the tunnel off.
+        publishExternalState(state)
       }
     } catch {
       log("refresh status failed: \(error.localizedDescription)")
