@@ -1097,5 +1097,19 @@
   "coreTransportFailed": "コアへの接続に失敗しました",
   "spillOutsideDirectory": "コアがデータディレクトリの外にファイルを書き込みました：{path}",
   "scriptDidNotReturnConfig": "スクリプトが設定オブジェクトを返しませんでした",
-  "geoUpdateFailed": "Geo データベースの更新に失敗しました：{detail}"
+  "geoUpdateFailed": "Geo データベースの更新に失敗しました：{detail}",
+  "coreStartFailed": "コアを開始できませんでした",
+  "coreStopFailed": "コアを停止できませんでした",
+  "coreUnexpectedDisconnect": "コアへの接続が予期せず切断されました",
+  "coreDidNotAnswer": "コアが {method} に応答しませんでした",
+  "coreNoResponse": "コアが応答しませんでした",
+  "coreSessionMismatch": "セッションが一致しません",
+  "coreLifecycleClosed": "コアは閉じています",
+  "coreLifecycleError": "コアのライフサイクルエラー",
+  "corePeerPidMismatch": "ピアプロセスが一致しません",
+  "coreProcessCleanupFailed": "プロセスのクリーンアップに失敗しました",
+  "coreProcessExitUnconfirmed": "プロセスの終了が確認できませんでした",
+  "coreUnavailable": "コアに接続していません",
+  "coreEmptyResult": "コアから結果が返されませんでした",
+  "coreSpillOutsideDirectory": "コアがディレクトリの外にファイルを書き込みました"
 }

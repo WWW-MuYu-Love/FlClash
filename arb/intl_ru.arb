@@ -1097,5 +1097,19 @@
   "coreTransportFailed": "Не удалось подключиться к ядру",
   "spillOutsideDirectory": "Ядро записало файл вне каталога данных: {path}",
   "scriptDidNotReturnConfig": "Скрипт не вернул объект конфигурации",
-  "geoUpdateFailed": "Не удалось обновить базу Geo: {detail}"
+  "geoUpdateFailed": "Не удалось обновить базу Geo: {detail}",
+  "coreStartFailed": "Не удалось запустить ядро",
+  "coreStopFailed": "Не удалось остановить ядро",
+  "coreUnexpectedDisconnect": "Ядро неожиданно отключилось",
+  "coreDidNotAnswer": "Ядро не ответило {method}",
+  "coreNoResponse": "Ядро не ответило",
+  "coreSessionMismatch": "Несовпадение сеанса",
+  "coreLifecycleClosed": "Ядро закрыто",
+  "coreLifecycleError": "Ошибка жизненного цикла ядра",
+  "corePeerPidMismatch": "Несовпадение однорангового процесса",
+  "coreProcessCleanupFailed": "Не удалось очистить процесс",
+  "coreProcessExitUnconfirmed": "Выход процесса не подтверждён",
+  "coreUnavailable": "Ядро не подключено",
+  "coreEmptyResult": "Ядро ничего не ответило",
+  "coreSpillOutsideDirectory": "Ядро записало файл вне своего каталога"
 }

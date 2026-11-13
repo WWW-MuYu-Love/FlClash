@@ -4,6 +4,7 @@ import 'package:fl_clash/common/constant.dart';
 import 'package:fl_clash/common/exception.dart';
 import 'package:fl_clash/common/network_error.dart';
 import 'package:fl_clash/core/desktop/launch_policy.dart';
+import 'package:fl_clash/core/desktop/model.dart';
 import 'package:fl_clash/core/method.dart';
 import 'package:fl_clash/l10n/l10n.dart';
 import 'package:flutter/widgets.dart';
@@ -135,12 +136,12 @@ String userFacingErrorMessage(Object error, AppLocalizations appLocalizations) {
         CoreMethodException(code: 'core_unavailable', message: final message) =>
           switch (_segment(message, 'Core is not connected for ', '')) {
             final method? => appLocalizations.coreNotConnected(method),
-            _ => message,
+            _ => appLocalizations.coreUnavailable,
           },
         CoreMethodException(code: 'empty_result', message: final message) =>
           switch (_segment(message, 'Core answered ', ' with nothing')) {
             final method? => appLocalizations.coreAnsweredNothing(method),
-            _ => message,
+            _ => appLocalizations.coreEmptyResult,
           },
         CoreMethodException(
           code: 'transport_disconnected',
@@ -161,8 +162,47 @@ String userFacingErrorMessage(Object error, AppLocalizations appLocalizations) {
             '',
           )) {
             final path? => appLocalizations.spillOutsideDirectory(path),
-            _ => message,
+            _ => appLocalizations.coreSpillOutsideDirectory,
           },
+        CoreMethodException(code: 'start_failed') =>
+          appLocalizations.coreStartFailed,
+        CoreMethodException(code: 'stop_failed') =>
+          appLocalizations.coreStopFailed,
+        CoreMethodException(code: 'transport_failed') =>
+          appLocalizations.coreTransportFailed,
+        CoreMethodException(code: 'unexpected_disconnect') =>
+          appLocalizations.coreUnexpectedDisconnect,
+        CoreMethodException(code: 'no_response', message: final message) =>
+          switch (_segment(message, 'Core did not answer ', '')) {
+            final method? => appLocalizations.coreDidNotAnswer(method),
+            _ => appLocalizations.coreNoResponse,
+          },
+        CoreMethodException(code: 'session_mismatch') =>
+          appLocalizations.coreSessionMismatch,
+        CoreMethodException(code: 'lifecycle_closed') =>
+          appLocalizations.coreLifecycleClosed,
+        CoreMethodException(code: 'lifecycle_error') =>
+          appLocalizations.coreLifecycleError,
+        CoreMethodException(code: 'peer_pid_mismatch') =>
+          appLocalizations.corePeerPidMismatch,
+        CoreMethodException(code: 'process_cleanup_failed') =>
+          appLocalizations.coreProcessCleanupFailed,
+        CoreMethodException(code: 'process_exit_unconfirmed') =>
+          appLocalizations.coreProcessExitUnconfirmed,
+        DesktopCoreFailure(:final code) => switch (code) {
+          'start_failed' => appLocalizations.coreStartFailed,
+          'stop_failed' => appLocalizations.coreStopFailed,
+          'transport_failed' => appLocalizations.coreTransportFailed,
+          'unexpected_disconnect' => appLocalizations.coreUnexpectedDisconnect,
+          'session_mismatch' => appLocalizations.coreSessionMismatch,
+          'lifecycle_closed' => appLocalizations.coreLifecycleClosed,
+          'lifecycle_error' => appLocalizations.coreLifecycleError,
+          'peer_pid_mismatch' => appLocalizations.corePeerPidMismatch,
+          'process_cleanup_failed' => appLocalizations.coreProcessCleanupFailed,
+          'process_exit_unconfirmed' =>
+            appLocalizations.coreProcessExitUnconfirmed,
+          _ => error.toString(),
+        },
         TimeoutException(:final message) => switch (message) {
           final text?
               when text.startsWith('Core method ') &&

@@ -1097,5 +1097,19 @@
   "coreTransportFailed": "Core transport failed",
   "spillOutsideDirectory": "Core wrote a file outside its spill directory: {path}",
   "scriptDidNotReturnConfig": "script did not return a configuration object",
-  "geoUpdateFailed": "Geo database update failed: {detail}"
+  "geoUpdateFailed": "Geo database update failed: {detail}",
+  "coreStartFailed": "Core failed to start",
+  "coreStopFailed": "Core failed to stop",
+  "coreUnexpectedDisconnect": "Core disconnected unexpectedly",
+  "coreDidNotAnswer": "Core did not answer {method}",
+  "coreNoResponse": "Core did not respond",
+  "coreSessionMismatch": "Session mismatch",
+  "coreLifecycleClosed": "Core is closed",
+  "coreLifecycleError": "Core lifecycle error",
+  "corePeerPidMismatch": "Peer process mismatch",
+  "coreProcessCleanupFailed": "Process cleanup failed",
+  "coreProcessExitUnconfirmed": "Core process exit unconfirmed",
+  "coreUnavailable": "Core is not connected",
+  "coreEmptyResult": "Core answered with nothing",
+  "coreSpillOutsideDirectory": "Core wrote a file outside its spill directory"
 }

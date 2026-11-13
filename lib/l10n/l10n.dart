@@ -9276,6 +9276,146 @@ class AppLocalizations {
       args: [detail],
     );
   }
+
+  /// `Core failed to start`
+  String get coreStartFailed {
+    return Intl.message(
+      'Core failed to start',
+      name: 'coreStartFailed',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Core failed to stop`
+  String get coreStopFailed {
+    return Intl.message(
+      'Core failed to stop',
+      name: 'coreStopFailed',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Core disconnected unexpectedly`
+  String get coreUnexpectedDisconnect {
+    return Intl.message(
+      'Core disconnected unexpectedly',
+      name: 'coreUnexpectedDisconnect',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Core did not answer {method}`
+  String coreDidNotAnswer(Object method) {
+    return Intl.message(
+      'Core did not answer $method',
+      name: 'coreDidNotAnswer',
+      desc: '',
+      args: [method],
+    );
+  }
+
+  /// `Core did not respond`
+  String get coreNoResponse {
+    return Intl.message(
+      'Core did not respond',
+      name: 'coreNoResponse',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Session mismatch`
+  String get coreSessionMismatch {
+    return Intl.message(
+      'Session mismatch',
+      name: 'coreSessionMismatch',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Core is closed`
+  String get coreLifecycleClosed {
+    return Intl.message(
+      'Core is closed',
+      name: 'coreLifecycleClosed',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Core lifecycle error`
+  String get coreLifecycleError {
+    return Intl.message(
+      'Core lifecycle error',
+      name: 'coreLifecycleError',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Peer process mismatch`
+  String get corePeerPidMismatch {
+    return Intl.message(
+      'Peer process mismatch',
+      name: 'corePeerPidMismatch',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Process cleanup failed`
+  String get coreProcessCleanupFailed {
+    return Intl.message(
+      'Process cleanup failed',
+      name: 'coreProcessCleanupFailed',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Core process exit unconfirmed`
+  String get coreProcessExitUnconfirmed {
+    return Intl.message(
+      'Core process exit unconfirmed',
+      name: 'coreProcessExitUnconfirmed',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Core is not connected`
+  String get coreUnavailable {
+    return Intl.message(
+      'Core is not connected',
+      name: 'coreUnavailable',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Core answered with nothing`
+  String get coreEmptyResult {
+    return Intl.message(
+      'Core answered with nothing',
+      name: 'coreEmptyResult',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Core wrote a file outside its spill directory`
+  String get coreSpillOutsideDirectory {
+    return Intl.message(
+      'Core wrote a file outside its spill directory',
+      name: 'coreSpillOutsideDirectory',
+      desc: '',
+      args: [],
+    );
+  }
 }
 
 class AppLocalizationDelegate extends LocalizationsDelegate<AppLocalizations> {

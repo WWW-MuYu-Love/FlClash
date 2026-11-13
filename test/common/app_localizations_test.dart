@@ -241,7 +241,27 @@ void main() {
           ),
           appLocalizations,
         ),
-        'unexpected shape',
+        appLocalizations.coreUnavailable,
+      );
+      expect(
+        userFacingErrorMessage(
+          const CoreMethodException(
+            code: 'empty_result',
+            message: 'unexpected shape',
+          ),
+          appLocalizations,
+        ),
+        appLocalizations.coreEmptyResult,
+      );
+      expect(
+        userFacingErrorMessage(
+          const CoreMethodException(
+            code: 'spill_error',
+            message: 'unexpected shape',
+          ),
+          appLocalizations,
+        ),
+        appLocalizations.coreSpillOutsideDirectory,
       );
     });
 
@@ -362,7 +382,7 @@ void main() {
       );
     });
 
-    test('leaves other start failures on the raw description', () {
+    test('other start failures name the failure', () {
       smartAppControlStateReader = () => SmartAppControlState.on;
       const timedOut = DesktopCoreFailure(
         code: 'start_failed',
@@ -376,7 +396,107 @@ void main() {
 
       expect(
         userFacingErrorMessage(timedOut, appLocalizations),
-        timedOut.toString(),
+        appLocalizations.coreStartFailed,
+      );
+    });
+
+    test('desktop lifecycle failures name the failure', () {
+      final cases =
+          <(String, DesktopCorePhase, String Function(AppLocalizations))>{
+            ('stop_failed', DesktopCorePhase.stopping, (l) => l.coreStopFailed),
+            (
+              'transport_failed',
+              DesktopCorePhase.running,
+              (l) => l.coreTransportFailed,
+            ),
+            (
+              'unexpected_disconnect',
+              DesktopCorePhase.running,
+              (l) => l.coreUnexpectedDisconnect,
+            ),
+            (
+              'session_mismatch',
+              DesktopCorePhase.starting,
+              (l) => l.coreSessionMismatch,
+            ),
+            (
+              'lifecycle_closed',
+              DesktopCorePhase.closed,
+              (l) => l.coreLifecycleClosed,
+            ),
+            (
+              'lifecycle_error',
+              DesktopCorePhase.starting,
+              (l) => l.coreLifecycleError,
+            ),
+            (
+              'peer_pid_mismatch',
+              DesktopCorePhase.starting,
+              (l) => l.corePeerPidMismatch,
+            ),
+            (
+              'process_cleanup_failed',
+              DesktopCorePhase.stopping,
+              (l) => l.coreProcessCleanupFailed,
+            ),
+            (
+              'process_exit_unconfirmed',
+              DesktopCorePhase.stopping,
+              (l) => l.coreProcessExitUnconfirmed,
+            ),
+          };
+      for (final (code, phase, expected) in cases) {
+        expect(
+          userFacingErrorMessage(
+            DesktopCoreFailure(code: code, phase: phase, revision: 1),
+            appLocalizations,
+          ),
+          expected(appLocalizations),
+        );
+      }
+    });
+
+    test('Core method failures name the failure', () {
+      final cases = <(String, String, String Function(AppLocalizations))>{
+        ('start_failed', '', (l) => l.coreStartFailed),
+        ('stop_failed', '', (l) => l.coreStopFailed),
+        ('transport_failed', '', (l) => l.coreTransportFailed),
+        ('unexpected_disconnect', '', (l) => l.coreUnexpectedDisconnect),
+        ('session_mismatch', '', (l) => l.coreSessionMismatch),
+        ('lifecycle_closed', '', (l) => l.coreLifecycleClosed),
+        ('lifecycle_error', '', (l) => l.coreLifecycleError),
+        ('peer_pid_mismatch', '', (l) => l.corePeerPidMismatch),
+        ('process_cleanup_failed', '', (l) => l.coreProcessCleanupFailed),
+        ('process_exit_unconfirmed', '', (l) => l.coreProcessExitUnconfirmed),
+      };
+      for (final (code, message, expected) in cases) {
+        expect(
+          userFacingErrorMessage(
+            CoreMethodException(code: code, message: message),
+            appLocalizations,
+          ),
+          expected(appLocalizations),
+        );
+      }
+      expect(
+        userFacingErrorMessage(
+          const CoreMethodException(
+            code: 'no_response',
+            message: 'Core did not answer core.setup',
+          ),
+          appLocalizations,
+        ),
+        appLocalizations.coreDidNotAnswer('core.setup'),
+      );
+      expect(
+        userFacingErrorMessage(
+          const CoreMethodException(
+            code: 'no_response',
+            message: 'unexpected shape',
+          ),
+          appLocalizations,
+        ),
+        appLocalizations.coreNoResponse,
       );
     });
   });

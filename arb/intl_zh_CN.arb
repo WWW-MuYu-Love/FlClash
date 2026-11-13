@@ -1097,5 +1097,19 @@
   "coreTransportFailed": "核心连接失败",
   "spillOutsideDirectory": "核心写入了数据目录之外的文件：{path}",
   "scriptDidNotReturnConfig": "脚本没有返回配置对象",
-  "geoUpdateFailed": "地理数据库更新失败：{detail}"
+  "geoUpdateFailed": "地理数据库更新失败：{detail}",
+  "coreStartFailed": "核心启动失败",
+  "coreStopFailed": "核心停止失败",
+  "coreUnexpectedDisconnect": "核心连接意外断开",
+  "coreDidNotAnswer": "核心没有响应 {method}",
+  "coreNoResponse": "核心没有响应",
+  "coreSessionMismatch": "会话不匹配",
+  "coreLifecycleClosed": "核心已关闭",
+  "coreLifecycleError": "核心生命周期异常",
+  "corePeerPidMismatch": "对端进程不匹配",
+  "coreProcessCleanupFailed": "进程清理失败",
+  "coreProcessExitUnconfirmed": "进程退出未确认",
+  "coreUnavailable": "核心未连接",
+  "coreEmptyResult": "核心没有返回结果",
+  "coreSpillOutsideDirectory": "核心写入了数据目录之外的文件"
 }

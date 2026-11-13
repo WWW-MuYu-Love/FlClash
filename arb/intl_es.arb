@@ -1097,5 +1097,19 @@
   "coreTransportFailed": "Error al conectar con el núcleo",
   "spillOutsideDirectory": "El núcleo escribió un archivo fuera del directorio de datos: {path}",
   "scriptDidNotReturnConfig": "El script no devolvió un objeto de configuración",
-  "geoUpdateFailed": "Error al actualizar la base de datos Geo: {detail}"
+  "geoUpdateFailed": "Error al actualizar la base de datos Geo: {detail}",
+  "coreStartFailed": "No se pudo iniciar el núcleo",
+  "coreStopFailed": "No se pudo detener el núcleo",
+  "coreUnexpectedDisconnect": "El núcleo se desconectó inesperadamente",
+  "coreDidNotAnswer": "El núcleo no respondió {method}",
+  "coreNoResponse": "El núcleo no respondió",
+  "coreSessionMismatch": "Sesión no coincidente",
+  "coreLifecycleClosed": "El núcleo está cerrado",
+  "coreLifecycleError": "Error en el ciclo de vida del núcleo",
+  "corePeerPidMismatch": "El proceso del mismo nivel no coincide",
+  "coreProcessCleanupFailed": "No se pudo limpiar el proceso",
+  "coreProcessExitUnconfirmed": "No se confirmó la salida del proceso",
+  "coreUnavailable": "El núcleo no está conectado",
+  "coreEmptyResult": "El núcleo no devolvió ningún resultado",
+  "coreSpillOutsideDirectory": "El núcleo escribió un archivo fuera de su directorio"
 }
