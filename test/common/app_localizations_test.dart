@@ -498,6 +498,29 @@ void main() {
         ),
         appLocalizations.coreNoResponse,
       );
+      expect(
+        userFacingErrorMessage(
+          const CoreMethodException(
+            code: 'extension_config_failed',
+            message:
+                'App core applied the config, but the extension core did not receive it: empty_response: empty network extension response',
+          ),
+          appLocalizations,
+        ),
+        appLocalizations.extensionConfigFailed(
+          'empty_response: empty network extension response',
+        ),
+      );
+      expect(
+        userFacingErrorMessage(
+          const CoreMethodException(
+            code: 'extension_config_failed',
+            message: 'unexpected shape',
+          ),
+          appLocalizations,
+        ),
+        appLocalizations.extensionConfigNotReceived,
+      );
     });
   });
 

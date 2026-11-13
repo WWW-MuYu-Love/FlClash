@@ -189,6 +189,18 @@ String userFacingErrorMessage(Object error, AppLocalizations appLocalizations) {
           appLocalizations.coreProcessCleanupFailed,
         CoreMethodException(code: 'process_exit_unconfirmed') =>
           appLocalizations.coreProcessExitUnconfirmed,
+        CoreMethodException(
+          code: 'extension_config_failed',
+          message: final message,
+        ) =>
+          switch (_segment(
+            message,
+            'App core applied the config, but the extension core did not receive it: ',
+            '',
+          )) {
+            final reason? => appLocalizations.extensionConfigFailed(reason),
+            _ => appLocalizations.extensionConfigNotReceived,
+          },
         DesktopCoreFailure(:final code) => switch (code) {
           'start_failed' => appLocalizations.coreStartFailed,
           'stop_failed' => appLocalizations.coreStopFailed,

@@ -1118,5 +1118,7 @@
   "tunnelStartNotStarted": "터널에 연결되지 않았습니다",
   "tunnelStartNotStartedDetail": "터널에 연결되지 않았습니다: {detail}",
   "tunnelStartFailed": "터널을 시작하지 못했습니다",
-  "tunnelStartFailedDetail": "터널을 시작하지 못했습니다: {detail}"
+  "tunnelStartFailedDetail": "터널을 시작하지 못했습니다: {detail}",
+  "extensionConfigFailed": "앱 코어가 설정을 적용했지만 확장 코어가 받지 못했습니다: {reason}",
+  "extensionConfigNotReceived": "앱 코어가 설정을 적용했지만 확장 코어가 받지 못했습니다"
 }

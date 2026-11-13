@@ -1118,5 +1118,7 @@
   "tunnelStartNotStarted": "隧道未能连接",
   "tunnelStartNotStartedDetail": "隧道未能连接：{detail}",
   "tunnelStartFailed": "隧道启动失败",
-  "tunnelStartFailedDetail": "隧道启动失败：{detail}"
+  "tunnelStartFailedDetail": "隧道启动失败：{detail}",
+  "extensionConfigFailed": "App 核心已应用配置，但扩展核心未收到：{reason}",
+  "extensionConfigNotReceived": "App 核心已应用配置，但扩展核心未收到"
 }

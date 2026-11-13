@@ -1118,5 +1118,7 @@
   "tunnelStartNotStarted": "Le tunnel ne s'est pas connecté",
   "tunnelStartNotStartedDetail": "Le tunnel ne s'est pas connecté : {detail}",
   "tunnelStartFailed": "Le tunnel n'a pas pu démarrer",
-  "tunnelStartFailedDetail": "Le tunnel n'a pas pu démarrer : {detail}"
+  "tunnelStartFailedDetail": "Le tunnel n'a pas pu démarrer : {detail}",
+  "extensionConfigFailed": "Le cœur de l'app a appliqué la configuration, mais le cœur de l'extension ne l'a pas reçue : {reason}",
+  "extensionConfigNotReceived": "Le cœur de l'app a appliqué la configuration, mais le cœur de l'extension ne l'a pas reçue"
 }

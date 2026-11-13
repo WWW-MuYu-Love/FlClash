@@ -1118,5 +1118,7 @@
   "tunnelStartNotStarted": "Туннель не подключился",
   "tunnelStartNotStartedDetail": "Туннель не подключился: {detail}",
   "tunnelStartFailed": "Не удалось запустить туннель",
-  "tunnelStartFailedDetail": "Не удалось запустить туннель: {detail}"
+  "tunnelStartFailedDetail": "Не удалось запустить туннель: {detail}",
+  "extensionConfigFailed": "Ядро приложения применило конфигурацию, но ядро расширения её не получило: {reason}",
+  "extensionConfigNotReceived": "Ядро приложения применило конфигурацию, но ядро расширения её не получило"
 }

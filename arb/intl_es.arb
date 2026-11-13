@@ -1118,5 +1118,7 @@
   "tunnelStartNotStarted": "El túnel no se conectó",
   "tunnelStartNotStartedDetail": "El túnel no se conectó: {detail}",
   "tunnelStartFailed": "No se pudo iniciar el túnel",
-  "tunnelStartFailedDetail": "No se pudo iniciar el túnel: {detail}"
+  "tunnelStartFailedDetail": "No se pudo iniciar el túnel: {detail}",
+  "extensionConfigFailed": "El núcleo de la app aplicó la configuración, pero el núcleo de la extensión no la recibió: {reason}",
+  "extensionConfigNotReceived": "El núcleo de la app aplicó la configuración, pero el núcleo de la extensión no la recibió"
 }

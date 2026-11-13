@@ -9486,6 +9486,26 @@ class AppLocalizations {
       args: [detail],
     );
   }
+
+  /// `App core applied the config, but the extension core did not receive it: {reason}`
+  String extensionConfigFailed(Object reason) {
+    return Intl.message(
+      'App core applied the config, but the extension core did not receive it: $reason',
+      name: 'extensionConfigFailed',
+      desc: '',
+      args: [reason],
+    );
+  }
+
+  /// `App core applied the config, but the extension core did not receive it`
+  String get extensionConfigNotReceived {
+    return Intl.message(
+      'App core applied the config, but the extension core did not receive it',
+      name: 'extensionConfigNotReceived',
+      desc: '',
+      args: [],
+    );
+  }
 }
 
 class AppLocalizationDelegate extends LocalizationsDelegate<AppLocalizations> {

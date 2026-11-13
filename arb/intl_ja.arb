@@ -1118,5 +1118,7 @@
   "tunnelStartNotStarted": "トンネルに接続できませんでした",
   "tunnelStartNotStartedDetail": "トンネルに接続できませんでした：{detail}",
   "tunnelStartFailed": "トンネルを開始できませんでした",
-  "tunnelStartFailedDetail": "トンネルを開始できませんでした：{detail}"
+  "tunnelStartFailedDetail": "トンネルを開始できませんでした：{detail}",
+  "extensionConfigFailed": "アプリコアは設定を適用しましたが、拡張コアが受け取れませんでした：{reason}",
+  "extensionConfigNotReceived": "アプリコアは設定を適用しましたが、拡張コアが受け取れませんでした"
 }

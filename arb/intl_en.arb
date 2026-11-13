@@ -1118,5 +1118,7 @@
   "tunnelStartNotStarted": "The tunnel did not connect",
   "tunnelStartNotStartedDetail": "The tunnel did not connect: {detail}",
   "tunnelStartFailed": "The tunnel failed to start",
-  "tunnelStartFailedDetail": "The tunnel failed to start: {detail}"
+  "tunnelStartFailedDetail": "The tunnel failed to start: {detail}",
+  "extensionConfigFailed": "App core applied the config, but the extension core did not receive it: {reason}",
+  "extensionConfigNotReceived": "App core applied the config, but the extension core did not receive it"
 }

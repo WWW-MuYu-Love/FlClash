@@ -94,7 +94,13 @@ final class TunnelWait {
   }
 }
 
-struct ProviderMessageError: Error {
+struct ProviderMessageError: LocalizedError {
   let code: String
   let message: String
+
+  // LocalizedError so localizedDescription carries the real code and
+  // message instead of the generic "operation could not be completed".
+  var errorDescription: String? {
+    "\(code): \(message)"
+  }
 }
