@@ -670,10 +670,13 @@ final class TunnelCoordinator {
       return
     }
     reportTunnelState(stableState)
-    if notifyExternal {
-      publishExternalState(stableState)
-    } else if publishedTunnelState == nil {
+    if publishedTunnelState == nil {
+      // First observation: record it, but do not report it outward. The
+      // status read at launch can still be stale while the tunnel runs,
+      // and reporting a stop here would switch a running tunnel off.
       publishedTunnelState = stableState
+    } else if notifyExternal {
+      publishExternalState(stableState)
     }
   }
 
