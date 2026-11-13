@@ -7,6 +7,8 @@ import 'package:fl_clash/common/common.dart';
 import 'package:fl_clash/common/mitm_body.dart';
 import 'package:fl_clash/common/mitm_module.dart';
 import 'package:fl_clash/common/mitm_trust.dart';
+import 'package:fl_clash/core/external_controller.dart';
+import 'package:fl_clash/core/interface.dart';
 import 'package:fl_clash/core/method.dart';
 import 'package:fl_clash/enum/enum.dart';
 import 'package:fl_clash/models/models.dart';
@@ -38,16 +40,15 @@ String normalizeMitmHost(String host) {
 }
 
 /// A MITM read goes to the extension core first, then 9090, then the app core.
-Future<T> _readRoutedMitm<T>(
-  Ref ref, {
+Future<T> _readRoutedMitm<T>({
+  required bool tunnelRunning,
   required Future<T> Function({CoreRoute? route}) readCore,
   required Future<T?> Function() readExternal,
 }) async {
   try {
     return await readCore();
   } on CoreMethodException catch (error) {
-    if (error.code != 'empty_response' ||
-        ref.read(runningVpnOptionsProvider)?.enable != true) {
+    if (error.code != 'empty_response' || !tunnelRunning) {
       rethrow;
     }
     final external = await readExternal();
@@ -58,6 +59,20 @@ Future<T> _readRoutedMitm<T>(
   }
 }
 
+/// Raw body reads for exporters: the decoded body provider drops the raw bytes.
+Future<MitmBody?> readRoutedMitmBody({
+  required CoreHandlerInterface coreHandler,
+  required ExternalControllerClient externalClient,
+  required bool tunnelRunning,
+  required int id,
+  required bool response,
+}) => _readRoutedMitm(
+  tunnelRunning: tunnelRunning,
+  readCore: ({route}) =>
+      coreHandler.getMitmBody(id, response: response, route: route),
+  readExternal: () => externalClient.fetchMitmBody(id, response: response),
+);
+
 @riverpod
 Future<Set<String>> mitmDecryptedHosts(Ref ref) async {
   // No core, no decrypted hosts: never call into the core while it is down.
@@ -65,7 +80,7 @@ Future<Set<String>> mitmDecryptedHosts(Ref ref) async {
     return const {};
   }
   final hosts = await _readRoutedMitm(
-    ref,
+    tunnelRunning: ref.read(runningVpnOptionsProvider)?.enable == true,
     readCore: ({route}) =>
         ref.read(coreHandlerProvider).getMitmDecryptedHosts(route: route),
     readExternal: () =>
@@ -214,7 +229,7 @@ class MitmTrustState extends _$MitmTrustState {
 Future<MitmExchangeList> mitmExchanges(Ref ref, String host) async {
   final running = ref.watch(isStartProvider);
   final list = await _readRoutedMitm(
-    ref,
+    tunnelRunning: ref.read(runningVpnOptionsProvider)?.enable == true,
     readCore: ({route}) => ref
         .read(coreHandlerProvider)
         .getMitmExchangesByHost(host, route: route),
@@ -235,7 +250,7 @@ Future<MitmExchangeList> mitmExchanges(Ref ref, String host) async {
 Future<MitmExchange?> mitmExchange(Ref ref, int id) async {
   final running = !system.isIOS || ref.read(isStartProvider);
   final exchange = await _readRoutedMitm(
-    ref,
+    tunnelRunning: ref.read(runningVpnOptionsProvider)?.enable == true,
     readCore: ({route}) =>
         ref.read(coreHandlerProvider).getMitmExchange(id, route: route),
     readExternal: () =>
@@ -255,14 +270,12 @@ Future<MitmBodyContent?> mitmBody(
   required bool response,
   required String contentType,
 }) async {
-  final MitmBody? body = await _readRoutedMitm(
-    ref,
-    readCore: ({route}) => ref
-        .read(coreHandlerProvider)
-        .getMitmBody(id, response: response, route: route),
-    readExternal: () => ref
-        .read(externalControllerClientProvider)
-        .fetchMitmBody(id, response: response),
+  final MitmBody? body = await readRoutedMitmBody(
+    coreHandler: ref.read(coreHandlerProvider),
+    externalClient: ref.read(externalControllerClientProvider),
+    tunnelRunning: ref.read(runningVpnOptionsProvider)?.enable == true,
+    id: id,
+    response: response,
   );
   if (body == null) {
     return null;

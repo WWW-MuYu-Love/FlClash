@@ -7,6 +7,7 @@ import 'package:fl_clash/common/mitm_export.dart';
 import 'package:fl_clash/common/mitm_module.dart';
 import 'package:fl_clash/features/mitm/module_editor.dart';
 import 'package:fl_clash/models/models.dart';
+import 'package:fl_clash/providers/app.dart';
 import 'package:fl_clash/providers/core.dart';
 import 'package:fl_clash/providers/database.dart';
 import 'package:fl_clash/providers/mitm.dart';
@@ -176,9 +177,13 @@ Future<MitmBody?> _body(WidgetRef ref, MitmExchange exchange, bool response) {
   if (size == 0 || exchange.pending) {
     return Future.value();
   }
-  return ref
-      .read(coreHandlerProvider)
-      .getMitmBody(exchange.id, response: response);
+  return readRoutedMitmBody(
+    coreHandler: ref.read(coreHandlerProvider),
+    externalClient: ref.read(externalControllerClientProvider),
+    tunnelRunning: ref.read(runningVpnOptionsProvider)?.enable == true,
+    id: exchange.id,
+    response: response,
+  );
 }
 
 Future<void> _copyCurl(WidgetRef ref, MitmExchange exchange) async {

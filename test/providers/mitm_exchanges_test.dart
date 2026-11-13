@@ -13,13 +13,18 @@ import 'package:mocktail/mocktail.dart';
 class _MockCoreHandlerInterface extends Mock implements CoreHandlerInterface {}
 
 class _FakeExternalControllerClient extends ExternalControllerClient {
-  _FakeExternalControllerClient(this.list)
+  _FakeExternalControllerClient(this.list, {this.body})
     : super(baseUri: Uri.parse('http://127.0.0.1:9090'));
 
   final MitmExchangeList? list;
+  final MitmBody? body;
 
   @override
   Future<MitmExchangeList?> fetchMitmExchangesByHost(String host) async => list;
+
+  @override
+  Future<MitmBody?> fetchMitmBody(int id, {required bool response}) async =>
+      body;
 }
 
 const _runningVpnOptions = VpnOptions(
@@ -89,12 +94,16 @@ void main() {
   ProviderContainer routedContainer({
     required _MockCoreHandlerInterface core,
     MitmExchangeList? controllerList,
+    MitmBody? controllerBody,
   }) {
     final scope = ProviderContainer(
       overrides: [
         coreHandlerProvider.overrideWithValue(CoreController.scoped(core)),
         externalControllerClientProvider.overrideWithValue(
-          _FakeExternalControllerClient(controllerList),
+          _FakeExternalControllerClient(
+            controllerList,
+            body: controllerBody,
+          ),
         ),
       ],
     );
@@ -132,6 +141,54 @@ void main() {
     expect(list, appList);
     verify(
       () => core.getMitmExchangesByHost('a.test', route: CoreRoute.app),
+    ).called(1);
+  });
+
+  test('raw body falls back to 9090 when the routed call misses', () async {
+    final core = _MockCoreHandlerInterface();
+    when(
+      () => core.getMitmBody(1, response: true),
+    ).thenThrow(_emptyResponse);
+    const live = MitmBody(data: 'aGVsbG8=');
+    final scope = routedContainer(core: core, controllerBody: live);
+
+    final body = await readRoutedMitmBody(
+      coreHandler: CoreController.scoped(core),
+      externalClient: scope.read(externalControllerClientProvider),
+      tunnelRunning: true,
+      id: 1,
+      response: true,
+    );
+
+    expect(body, live);
+    verify(() => core.getMitmBody(1, response: true)).called(1);
+    verifyNever(
+      () => core.getMitmBody(1, response: true, route: CoreRoute.app),
+    );
+  });
+
+  test('raw body falls back to the app core when 9090 is gone too', () async {
+    final core = _MockCoreHandlerInterface();
+    when(
+      () => core.getMitmBody(1, response: true),
+    ).thenThrow(_emptyResponse);
+    const appBody = MitmBody(data: 'd29ybGQ=');
+    when(
+      () => core.getMitmBody(1, response: true, route: CoreRoute.app),
+    ).thenAnswer((_) async => appBody);
+    final scope = routedContainer(core: core);
+
+    final body = await readRoutedMitmBody(
+      coreHandler: CoreController.scoped(core),
+      externalClient: scope.read(externalControllerClientProvider),
+      tunnelRunning: true,
+      id: 1,
+      response: true,
+    );
+
+    expect(body, appBody);
+    verify(
+      () => core.getMitmBody(1, response: true, route: CoreRoute.app),
     ).called(1);
   });
 }

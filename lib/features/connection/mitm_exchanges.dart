@@ -2,7 +2,6 @@ import 'package:fl_clash/common/common.dart';
 import 'package:fl_clash/common/mitm_body.dart';
 import 'package:fl_clash/l10n/l10n.dart';
 import 'package:fl_clash/models/models.dart';
-import 'package:fl_clash/providers/core.dart';
 import 'package:fl_clash/providers/mitm.dart';
 import 'package:fl_clash/widgets/widgets.dart';
 import 'package:flutter/widgets.dart';
@@ -137,7 +136,7 @@ class _MitmExchangeItem extends ConsumerWidget {
         status: exchange.status,
         responseSize: exchange.responseSize,
         modules: watchLocalMitmModules(ref),
-        load: () => ref.read(coreHandlerProvider).getMitmExchange(exchange.id),
+        load: () => ref.read(mitmExchangeProvider(exchange.id).future),
       ),
       child: ListItem(
         title: Text(
