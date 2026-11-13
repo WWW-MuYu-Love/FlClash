@@ -370,12 +370,13 @@ abstract class CoreHandlerInterface {
     );
   }
 
-  Future<RouteCheck> checkRoutes(CheckRoutesParams params) {
+  Future<RouteCheck> checkRoutes(CheckRoutesParams params, {CoreRoute? route}) {
     return _query(
       CoreMethod.routeCheck,
       _model(RouteCheck.fromJson),
       arguments: params.toJson(),
       timeout: coreGuardFor(probeTimeoutDuration.inMilliseconds),
+      route: route,
     );
   }
 

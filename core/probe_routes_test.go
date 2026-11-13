@@ -38,4 +38,19 @@ func TestProbeRoutes(t *testing.T) {
 	if rec := post(handleServiceCheckRoute, "/probe/services", `{bad`); rec.Code != http.StatusBadRequest {
 		t.Errorf("services bad body status = %d, want 400", rec.Code)
 	}
+
+	routes := post(handleCheckRoutesRoute, "/route/check", `{"routes":[]}`)
+	if routes.Code != http.StatusOK {
+		t.Fatalf("routes status = %d, want 200", routes.Code)
+	}
+	var check map[string]any
+	if err := json.Unmarshal(routes.Body.Bytes(), &check); err != nil {
+		t.Fatalf("routes body: %v", err)
+	}
+	if _, ok := check["held"]; !ok {
+		t.Errorf("routes = %v, want a held list", check)
+	}
+	if rec := post(handleCheckRoutesRoute, "/route/check", `{bad`); rec.Code != http.StatusBadRequest {
+		t.Errorf("routes bad body status = %d, want 400", rec.Code)
+	}
 }

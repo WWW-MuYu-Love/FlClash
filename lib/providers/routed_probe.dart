@@ -113,9 +113,19 @@ mixin RoutedProbe<K, V>
   Duration get throttleDuration => probeThrottleDuration;
 
   @protected
-  Future<RouteCheck> checkRoutes(List<List<RouteHit>> routes) => ref
-      .read(coreHandlerProvider)
-      .checkRoutes(CheckRoutesParams(routes: routes));
+  Future<RouteCheck> checkRoutes(List<List<RouteHit>> routes) async {
+    final params = CheckRoutesParams(routes: routes);
+    final via9090 = await ref
+        .read(externalControllerClientProvider)
+        .fetchRouteCheck(params);
+    if (via9090 != null) {
+      return via9090;
+    }
+    // 9090 is gone: the App core answers the check.
+    return ref
+        .read(coreHandlerProvider)
+        .checkRoutes(params, route: CoreRoute.app);
+  }
 
   @protected
   RoutedProbeState<K, V> buildProbe() {

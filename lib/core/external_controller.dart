@@ -350,6 +350,42 @@ class ExternalControllerClient {
     }
   }
 
+  Future<RouteCheck?> fetchRouteCheck(CheckRoutesParams params) async {
+    final httpTimeout = coreGuardFor(probeTimeoutDuration.inMilliseconds);
+    try {
+      final request = await _http
+          .postUrl(
+            baseUri.replace(
+              pathSegments: [...baseUri.pathSegments, 'route', 'check'],
+            ),
+          )
+          .timeout(_fetchTimeout);
+      if (secret.isNotEmpty) {
+        request.headers.set(HttpHeaders.authorizationHeader, 'Bearer $secret');
+      }
+      request.headers.contentType = ContentType.json;
+      request.write(jsonEncode(params.toJson()));
+      final response = await request.close().timeout(httpTimeout);
+      _noteStatus(response);
+      if (response.statusCode != HttpStatus.ok) {
+        await response.drain<void>();
+        return null;
+      }
+      final body = await response
+          .transform(utf8.decoder)
+          .join()
+          .timeout(_fetchTimeout);
+      final json = jsonDecode(body);
+      if (json is! Map<String, Object?>) {
+        return null;
+      }
+      return RouteCheck.fromJson(json);
+    } catch (_) {
+      unauthorized = false;
+      return null;
+    }
+  }
+
   // DELETE /connections closes every connection on the core behind 9090;
   // DELETE /connections/{id} closes one. The extension core answers 204
   // even for an unknown id, so a false return means the request itself

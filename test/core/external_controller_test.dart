@@ -849,6 +849,10 @@ void main() {
           request.response.write(
             '[{"name":"google","status":"ok","delay":66,"checked-at":1794513170800,"core-epoch":0,"route-version":0}]',
           );
+        } else if (path == '/route/check') {
+          request.response.write(
+            '{"core-epoch":3,"route-version":7,"held":[true,false]}',
+          );
         } else {
           request.response.statusCode = HttpStatus.notFound;
         }
@@ -871,6 +875,15 @@ void main() {
       expect(items, hasLength(1));
       expect(items?.first.name, 'google');
       expect(items?.first.status, 'ok');
+    });
+
+    test('reads the route check', () async {
+      final check = await client.fetchRouteCheck(
+        const CheckRoutesParams(routes: []),
+      );
+      expect(check?.coreEpoch, 3);
+      expect(check?.routeVersion, 7);
+      expect(check?.held, [true, false]);
     });
 
     test('returns null when the controller answers 401', () async {

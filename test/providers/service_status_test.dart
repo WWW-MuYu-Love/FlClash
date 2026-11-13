@@ -19,13 +19,15 @@ import 'package:mocktail/mocktail.dart';
 
 class _MockCore extends Mock implements CoreHandlerInterface {}
 
-// The 9090 client is faked: the mixin only calls fetchServiceCheck on it.
+// The 9090 client is faked: the mixin only calls fetchServiceCheck and
+// fetchRouteCheck on it.
 class _FakeExternalControllerClient extends ExternalControllerClient {
   _FakeExternalControllerClient(this.items)
     : super(baseUri: Uri.parse('http://127.0.0.1:9090'));
 
   final List<ServiceCheckItem>? items;
   int fetchServiceCheckCalls = 0;
+  int fetchRouteCheckCalls = 0;
 
   @override
   Future<List<ServiceCheckItem>?> fetchServiceCheck(
@@ -33,6 +35,12 @@ class _FakeExternalControllerClient extends ExternalControllerClient {
   ) async {
     fetchServiceCheckCalls++;
     return items;
+  }
+
+  @override
+  Future<RouteCheck?> fetchRouteCheck(CheckRoutesParams params) async {
+    fetchRouteCheckCalls++;
+    return null;
   }
 }
 
