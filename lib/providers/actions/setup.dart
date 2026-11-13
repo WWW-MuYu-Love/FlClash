@@ -688,7 +688,11 @@ class SetupAction extends _$SetupAction {
         final base? => await _core.buildProfile(base),
         null => res.yaml,
       };
-    } catch (e) {
+    } catch (e, s) {
+      commonPrint.log(
+        'getProfileWithId ===> ${compactError(e)}, $s',
+        logLevel: LogLevel.error,
+      );
       dialogs.showBanner(
         userFacingErrorMessage(e, currentAppLocalizations),
         level: BannerLevel.error,

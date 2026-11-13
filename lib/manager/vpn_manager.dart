@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:fl_clash/common/common.dart';
+import 'package:fl_clash/enum/enum.dart';
 import 'package:fl_clash/models/models.dart';
 import 'package:fl_clash/plugins/tile.dart';
 import 'package:fl_clash/providers/action.dart';
@@ -105,7 +106,11 @@ class _VpnContainerState extends ConsumerState<VpnManager> with TileListener {
       handled = await ref
           .read(setupActionProvider.notifier)
           .setTunnelEnabled(next.enable);
-    } catch (error) {
+    } catch (error, s) {
+      commonPrint.log(
+        'toggleTunnelOnly ===> ${compactError(error)}, $s',
+        logLevel: LogLevel.error,
+      );
       if (next.enable) {
         // The tunnel never started: put the switch back where it was.
         ref
