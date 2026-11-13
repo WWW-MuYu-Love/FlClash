@@ -93,9 +93,7 @@ abstract class Metadata with _$Metadata {
     @Default('') String sourceIP,
     @JsonKey(fromJson: _portStringFromJson) @Default('') String sourcePort,
     @Default('') String destinationIP,
-    @JsonKey(fromJson: _portStringFromJson)
-    @Default('')
-    String destinationPort,
+    @JsonKey(fromJson: _portStringFromJson) @Default('') String destinationPort,
     @Default('') String host,
     @JsonKey(fromJson: _dnsModeFromJson) DnsMode? dnsMode,
     @Default('') String process,
@@ -338,6 +336,7 @@ abstract class DnsQuery with _$DnsQuery {
     @Default('') String rcode,
     @Default('') String error,
     @Default(0) int delay,
+    @Default(1) int count,
     required DateTime time,
   }) = _DnsQuery;
 

@@ -517,4 +517,73 @@ void main() {
       expect(container.read(coreStatusProvider), CoreStatus.disconnected);
     });
   });
+
+  group('DnsQueries', () {
+    DnsQuery query(
+      String domain, {
+      String type = 'A',
+      String upstream = 'udp://1.1.1.1:53',
+      bool cached = true,
+      List<String> answers = const ['47.113.151.50'],
+      int delay = 0,
+      DateTime? time,
+    }) {
+      return DnsQuery(
+        domain: domain,
+        type: type,
+        upstream: upstream,
+        cached: cached,
+        answers: answers,
+        delay: delay,
+        time: time ?? DateTime.utc(2026, 11, 14, 7, 2, 4),
+      );
+    }
+
+    test('identical consecutive queries collapse into one row', () {
+      final notifier = container.read(dnsQueriesProvider.notifier);
+      notifier.addQuery(query('k9iayrbe.9527jc.com'));
+      notifier.addQuery(
+        query(
+          'k9iayrbe.9527jc.com',
+          delay: 0,
+          time: DateTime.utc(2026, 11, 14, 7, 2, 5),
+        ),
+      );
+
+      final list = container.read(dnsQueriesProvider).list;
+      expect(list, hasLength(1));
+      expect(list.single.count, 2);
+    });
+
+    test('three identical queries count to three', () {
+      final notifier = container.read(dnsQueriesProvider.notifier);
+      for (var i = 0; i < 3; i++) {
+        notifier.addQuery(query('k9iayrbe.9527jc.com'));
+      }
+
+      final list = container.read(dnsQueriesProvider).list;
+      expect(list, hasLength(1));
+      expect(list.single.count, 3);
+    });
+
+    test('a different query between two identical ones stops the collapse', () {
+      final notifier = container.read(dnsQueriesProvider.notifier);
+      notifier.addQuery(query('k9iayrbe.9527jc.com'));
+      notifier.addQuery(query('api.ip.sb', type: 'AAAA', cached: false));
+      notifier.addQuery(query('k9iayrbe.9527jc.com'));
+
+      final list = container.read(dnsQueriesProvider).list;
+      expect(list, hasLength(3));
+      expect(list.map((entry) => entry.count), [1, 1, 1]);
+    });
+
+    test('a query with different answers does not collapse', () {
+      final notifier = container.read(dnsQueriesProvider.notifier);
+      notifier.addQuery(query('k9iayrbe.9527jc.com'));
+      notifier.addQuery(query('k9iayrbe.9527jc.com', answers: ['1.12.47.53']));
+
+      final list = container.read(dnsQueriesProvider).list;
+      expect(list, hasLength(2));
+    });
+  });
 }

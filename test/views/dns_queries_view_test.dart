@@ -164,6 +164,36 @@ void main() {
     await teardownView(tester);
   });
 
+  testWidgets('identical consecutive queries show one row with a count', (
+    tester,
+  ) async {
+    seedDnsQueries([
+      _dnsQuery('k9iayrbe.9527jc.com', upstream: 'udp://1.1.1.1:53'),
+      _dnsQuery('k9iayrbe.9527jc.com', upstream: 'udp://1.1.1.1:53'),
+    ]);
+
+    await pumpDnsQueries(tester, size: _listSize);
+
+    expect(find.text('k9iayrbe.9527jc.com'), findsOneWidget);
+    expect(find.text('×2'), findsOneWidget);
+
+    await teardownView(tester);
+  });
+
+  testWidgets('the count badge shows in the table too', (tester) async {
+    seedDnsQueries([
+      _dnsQuery('k9iayrbe.9527jc.com', upstream: 'udp://1.1.1.1:53'),
+      _dnsQuery('k9iayrbe.9527jc.com', upstream: 'udp://1.1.1.1:53'),
+    ]);
+
+    await pumpDnsQueries(tester, size: _tableSize);
+
+    expect(find.text('k9iayrbe.9527jc.com'), findsOneWidget);
+    expect(find.text('×2'), findsOneWidget);
+
+    await teardownView(tester);
+  });
+
   testWidgets('a wide page lays the queries out under a column header', (
     tester,
   ) async {

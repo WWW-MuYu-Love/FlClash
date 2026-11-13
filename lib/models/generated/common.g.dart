@@ -151,6 +151,7 @@ _DnsQuery _$DnsQueryFromJson(Map<String, dynamic> json) => _DnsQuery(
   rcode: json['rcode'] as String? ?? '',
   error: json['error'] as String? ?? '',
   delay: (json['delay'] as num?)?.toInt() ?? 0,
+  count: (json['count'] as num?)?.toInt() ?? 1,
   time: DateTime.parse(json['time'] as String),
 );
 
@@ -164,6 +165,7 @@ Map<String, dynamic> _$DnsQueryToJson(_DnsQuery instance) => <String, dynamic>{
   'rcode': instance.rcode,
   'error': instance.error,
   'delay': instance.delay,
+  'count': instance.count,
   'time': instance.time.toIso8601String(),
 };
 

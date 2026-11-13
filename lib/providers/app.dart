@@ -118,8 +118,26 @@ class DnsQueries extends _$DnsQueries with AutoDisposeNotifierMixin {
     if (!ref.mounted) {
       return;
     }
+    final last = state.length > 0 ? state[state.length - 1] : null;
+    if (last != null && _sameDnsQuery(last, value)) {
+      this.value = state.replace({
+        state.length - 1: last.copyWith(count: last.count + 1),
+      });
+      return;
+    }
     this.value = state.append(value);
   }
+}
+
+/// Two lookups are the same row when only their timing differs: the
+/// simultaneous dials to one node land as identical consecutive rows.
+bool _sameDnsQuery(DnsQuery a, DnsQuery b) {
+  return a.domain == b.domain &&
+      a.type == b.type &&
+      a.upstream == b.upstream &&
+      a.cached == b.cached &&
+      a.answers.length == b.answers.length &&
+      a.answers.indexed.every((entry) => entry.$2 == b.answers[entry.$1]);
 }
 
 @Riverpod(keepAlive: true)

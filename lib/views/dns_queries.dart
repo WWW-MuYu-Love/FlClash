@@ -257,7 +257,15 @@ List<RecordColumn<DnsQuery>> _dnsQueryColumns(
     ),
     RecordColumn(
       TableColumn('domain', appLocalizations.domain, flex: 1.3),
-      cell: (_, query) => RecordCellText(query.domain),
+      cell: (_, query) => query.count > 1
+          ? Row(
+              spacing: 6,
+              children: [
+                Flexible(child: RecordCellText(query.domain)),
+                RecordLabel(label: '×${query.count}'),
+              ],
+            )
+          : RecordCellText(query.domain),
       sortKey: (query) => query.domain.toLowerCase(),
     ),
     RecordColumn(
@@ -386,6 +394,7 @@ class DnsQueryItem extends StatelessWidget {
         children: [
           RecordTimestamp(dnsQuery.time.showFull),
           _DnsKeyword(RecordFilter(RecordFacetKind.type, dnsQuery.type)),
+          if (dnsQuery.count > 1) RecordLabel(label: '×${dnsQuery.count}'),
         ],
       ),
       body: Column(

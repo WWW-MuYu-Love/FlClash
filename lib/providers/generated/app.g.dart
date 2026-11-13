@@ -329,7 +329,7 @@ final class DnsQueriesProvider
   }
 }
 
-String _$dnsQueriesHash() => r'b6073d067db4fd19cc5724c5b79ecff2b0909796';
+String _$dnsQueriesHash() => r'77600e31accfa293c38db09ac6c16a74bcfa5b20';
 
 abstract class _$DnsQueries extends $Notifier<FixedList<DnsQuery>> {
   FixedList<DnsQuery> build();
