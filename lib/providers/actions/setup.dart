@@ -374,8 +374,7 @@ class SetupAction extends _$SetupAction {
   @visibleForTesting
   Future<void> updateConfig() async {
     await globalState.safeRun(() async {
-      var patchConfig = ref.read(patchClashConfigProvider);
-      patchConfig = _ensureIOSController(patchConfig);
+      final patchConfig = ref.read(patchClashConfigProvider);
       final shouldContinueSetup = await requestAdmin(patchConfig.tun.enable);
       if (!shouldContinueSetup) {
         await _restartCoreAfterAuthorization();
@@ -389,25 +388,6 @@ class SetupAction extends _$SetupAction {
         ),
       );
     });
-  }
-
-  PatchClashConfig _ensureIOSController(PatchClashConfig patchConfig) {
-    if (!system.isIOS) {
-      return patchConfig;
-    }
-    final ensured = patchConfig
-        .copyWith(externalController: ExternalControllerStatus.open)
-        .ensureControllerSecret();
-    if (ensured != patchConfig) {
-      ref.read(patchClashConfigProvider.notifier).update((_) => ensured);
-    }
-    return ensured;
-  }
-
-  /// iOS only: make sure the controller secret exists before a caller
-  /// builds something from it, e.g. the Zashboard card building its URL.
-  void ensureIOSController() {
-    _ensureIOSController(ref.read(patchClashConfigProvider));
   }
 
   Future<void> _syncSharedState() async {
@@ -724,12 +704,6 @@ class SetupAction extends _$SetupAction {
         externalController: ExternalControllerStatus.close,
       );
     }
-    if (system.isIOS) {
-      // The extension core is the only routing core on iOS, so the controller stays open here even when the settings switch is off.
-      patchConfig = patchConfig
-          .copyWith(externalController: ExternalControllerStatus.open)
-          .ensureControllerSecret();
-    }
     final authorized =
         ref.read(authorizedTunEnableProvider) ==
         TunAuthorizationState.authorized;
@@ -820,8 +794,7 @@ class SetupAction extends _$SetupAction {
       ref.read(profilesProvider.notifier).put(nextProfile);
     }
     commonPrint.log('setup ===> ${profile?.realLabel}');
-    var patchConfig = ref.read(patchClashConfigProvider);
-    patchConfig = _ensureIOSController(patchConfig);
+    final patchConfig = ref.read(patchClashConfigProvider);
     final shouldContinueSetup = await requestAdmin(patchConfig.tun.enable);
     if (!shouldContinueSetup) {
       return _SetupTaskResult.handoffToCoreRestart;
