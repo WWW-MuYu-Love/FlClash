@@ -74,7 +74,7 @@ final class NECoreEventQueue {
     if overflowCount > 0 {
       droppedEventCount += overflowCount
       logger.warning(
-        "prune overflow=\(overflowCount, privacy: .public), dropped total=\(droppedEventCount, privacy: .public)"
+        "prune overflow=\(overflowCount, privacy: .public), dropped total=\(self.droppedEventCount, privacy: .public)"
       )
       saveDroppedCount(in: directory)
     }
