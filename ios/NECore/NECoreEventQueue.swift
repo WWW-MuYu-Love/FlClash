@@ -145,7 +145,7 @@ final class NECoreEventQueue {
   }
 
   private func eventQueueDirectory() -> URL? {
-    sharedStateStore.appGroupDirectory()?.appendingPathComponent(
+    sharedStateStore.homeDirectory()?.appendingPathComponent(
       eventQueueDirectoryName,
       isDirectory: true
     )

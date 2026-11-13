@@ -25,6 +25,7 @@ final class SharedStateStore {
     return version
   }
 
+  private let sharedFlClashDirectoryName = "FlClash"
   private let eventQueueDirectoryName = "core-events"
 
   let appGroupIdentifier = NEHelper.appGroupIdentifier
@@ -152,6 +153,9 @@ final class SharedStateStore {
 
   func eventQueueDirectory() -> URL? {
     appGroupDirectory()?.appendingPathComponent(
+      sharedFlClashDirectoryName,
+      isDirectory: true
+    ).appendingPathComponent(
       eventQueueDirectoryName,
       isDirectory: true
     )
