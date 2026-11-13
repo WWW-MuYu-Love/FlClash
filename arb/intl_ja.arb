@@ -1085,5 +1085,17 @@
   "fakeipFilterDesc": "これらのドメインには Fake-IP ではなく実際の IP を返します。whitelist モードでは、これらだけが Fake-IP を使います。",
   "fallbackFilterGeositeDesc": "これらの GeoSite カテゴリのドメインは、直接 Fallback で解決します。",
   "fallbackFilterIpcidrDesc": "Nameserver がこれらの範囲の IP を返したときは、Fallback の結果を使います。",
-  "fallbackFilterDomainDesc": "これらのドメインは、直接 Fallback で解決します。"
+  "fallbackFilterDomainDesc": "これらのドメインは、直接 Fallback で解決します。",
+  "serviceDidNotStart": "サービスを開始できませんでした",
+  "serviceDidNotStop": "サービスを停止できませんでした",
+  "coreNotConnected": "コアに接続できません：{method}",
+  "coreMethodTimedOut": "{method} の呼び出しがタイムアウトしました",
+  "coreAnsweredNothing": "コアから {method} の結果が返されませんでした",
+  "coreRpcClientClosed": "コアへの接続が閉じられました",
+  "coreSendFailed": "{method} をコアに送信できませんでした",
+  "coreTransportDisconnected": "コアへの接続が切断されました",
+  "coreTransportFailed": "コアへの接続に失敗しました",
+  "spillOutsideDirectory": "コアがデータディレクトリの外にファイルを書き込みました：{path}",
+  "scriptDidNotReturnConfig": "スクリプトが設定オブジェクトを返しませんでした",
+  "geoUpdateFailed": "Geo データベースの更新に失敗しました：{detail}"
 }

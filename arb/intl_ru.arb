@@ -1085,5 +1085,17 @@
   "fakeipFilterDesc": "Эти домены получают реальные IP вместо Fake-IP. В режиме whitelist Fake-IP получают только они.",
   "fallbackFilterGeositeDesc": "Домены из этих категорий GeoSite сразу разрешаются через Fallback.",
   "fallbackFilterIpcidrDesc": "Если Nameserver возвращает IP из этих диапазонов, используется ответ Fallback.",
-  "fallbackFilterDomainDesc": "Эти домены сразу разрешаются через Fallback."
+  "fallbackFilterDomainDesc": "Эти домены сразу разрешаются через Fallback.",
+  "serviceDidNotStart": "Не удалось запустить службу",
+  "serviceDidNotStop": "Не удалось остановить службу",
+  "coreNotConnected": "Нет подключения к ядру: {method}",
+  "coreMethodTimedOut": "Вызов {method} превысил время ожидания",
+  "coreAnsweredNothing": "Ядро не вернуло результат {method}",
+  "coreRpcClientClosed": "Подключение к ядру закрыто",
+  "coreSendFailed": "Не удалось отправить {method} в ядро",
+  "coreTransportDisconnected": "Подключение к ядру разорвано",
+  "coreTransportFailed": "Не удалось подключиться к ядру",
+  "spillOutsideDirectory": "Ядро записало файл вне каталога данных: {path}",
+  "scriptDidNotReturnConfig": "Скрипт не вернул объект конфигурации",
+  "geoUpdateFailed": "Не удалось обновить базу Geo: {detail}"
 }

@@ -1085,5 +1085,17 @@
   "fakeipFilterDesc": "Ces domaines reçoivent leur vraie IP au lieu d’une Fake-IP. En mode whitelist, eux seuls reçoivent une Fake-IP.",
   "fallbackFilterGeositeDesc": "Les domaines de ces catégories GeoSite sont résolus directement par Fallback.",
   "fallbackFilterIpcidrDesc": "Si Nameserver renvoie une IP de ces plages, la réponse de Fallback est utilisée.",
-  "fallbackFilterDomainDesc": "Ces domaines sont résolus directement par Fallback."
+  "fallbackFilterDomainDesc": "Ces domaines sont résolus directement par Fallback.",
+  "serviceDidNotStart": "Le service n'a pas démarré",
+  "serviceDidNotStop": "Le service ne s'est pas arrêté",
+  "coreNotConnected": "Cœur non connecté : {method}",
+  "coreMethodTimedOut": "L'appel {method} a expiré",
+  "coreAnsweredNothing": "Le cœur n'a rien renvoyé pour {method}",
+  "coreRpcClientClosed": "La connexion au cœur est fermée",
+  "coreSendFailed": "Impossible d'envoyer {method} au cœur",
+  "coreTransportDisconnected": "La connexion au cœur est interrompue",
+  "coreTransportFailed": "La connexion au cœur a échoué",
+  "spillOutsideDirectory": "Le cœur a écrit un fichier hors du répertoire de données : {path}",
+  "scriptDidNotReturnConfig": "Le script n'a pas renvoyé d'objet de configuration",
+  "geoUpdateFailed": "Échec de la mise à jour de la base Geo : {detail}"
 }

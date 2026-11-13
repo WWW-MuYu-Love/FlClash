@@ -1085,5 +1085,17 @@
   "fakeipFilterDesc": "이 도메인에는 Fake-IP 대신 실제 IP를 반환합니다. whitelist 모드에서는 이 도메인만 Fake-IP를 사용합니다.",
   "fallbackFilterGeositeDesc": "이 GeoSite 분류의 도메인은 바로 Fallback으로 확인합니다.",
   "fallbackFilterIpcidrDesc": "Nameserver가 이 범위의 IP를 반환하면 Fallback 결과를 사용합니다.",
-  "fallbackFilterDomainDesc": "이 도메인은 바로 Fallback으로 확인합니다."
+  "fallbackFilterDomainDesc": "이 도메인은 바로 Fallback으로 확인합니다.",
+  "serviceDidNotStart": "서비스를 시작하지 못했습니다",
+  "serviceDidNotStop": "서비스를 중지하지 못했습니다",
+  "coreNotConnected": "코어에 연결되지 않음: {method}",
+  "coreMethodTimedOut": "{method} 호출 시간 초과",
+  "coreAnsweredNothing": "코어가 {method}의 결과를 반환하지 않았습니다",
+  "coreRpcClientClosed": "코어 연결이 닫혔습니다",
+  "coreSendFailed": "{method}을(를) 코어로 보내지 못했습니다",
+  "coreTransportDisconnected": "코어 연결이 끊어졌습니다",
+  "coreTransportFailed": "코어 연결에 실패했습니다",
+  "spillOutsideDirectory": "코어가 데이터 디렉터리 밖에 파일을 썼습니다: {path}",
+  "scriptDidNotReturnConfig": "스크립트가 구성 개체를 반환하지 않았습니다",
+  "geoUpdateFailed": "Geo 데이터베이스 업데이트 실패: {detail}"
 }

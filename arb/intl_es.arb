@@ -1085,5 +1085,17 @@
   "fakeipFilterDesc": "Estos dominios reciben su IP real en lugar de una Fake-IP. En modo whitelist, solo ellos reciben Fake-IP.",
   "fallbackFilterGeositeDesc": "Los dominios de estas categorías GeoSite se resuelven directamente con Fallback.",
   "fallbackFilterIpcidrDesc": "Si Nameserver devuelve una IP de estos rangos, se usa la respuesta de Fallback.",
-  "fallbackFilterDomainDesc": "Estos dominios se resuelven directamente con Fallback."
+  "fallbackFilterDomainDesc": "Estos dominios se resuelven directamente con Fallback.",
+  "serviceDidNotStart": "No se pudo iniciar el servicio",
+  "serviceDidNotStop": "No se pudo detener el servicio",
+  "coreNotConnected": "Núcleo no conectado: {method}",
+  "coreMethodTimedOut": "La llamada a {method} agotó el tiempo",
+  "coreAnsweredNothing": "El núcleo no devolvió ningún resultado para {method}",
+  "coreRpcClientClosed": "La conexión con el núcleo está cerrada",
+  "coreSendFailed": "No se pudo enviar {method} al núcleo",
+  "coreTransportDisconnected": "La conexión con el núcleo se interrumpió",
+  "coreTransportFailed": "Error al conectar con el núcleo",
+  "spillOutsideDirectory": "El núcleo escribió un archivo fuera del directorio de datos: {path}",
+  "scriptDidNotReturnConfig": "El script no devolvió un objeto de configuración",
+  "geoUpdateFailed": "Error al actualizar la base de datos Geo: {detail}"
 }

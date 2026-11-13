@@ -77,7 +77,10 @@ class GeoResourceAction extends _$GeoResourceAction {
         ? null
         : _manualUpdates.remove(geoResource);
     if (announceSuccess != null && error != null && error.isNotEmpty) {
-      dialogs.showBanner(error, level: BannerLevel.error);
+      dialogs.showBanner(
+        currentAppLocalizations.geoUpdateFailed(error),
+        level: BannerLevel.error,
+      );
     } else if (announceSuccess == true) {
       final l10n = currentAppLocalizations;
       final message = skipped

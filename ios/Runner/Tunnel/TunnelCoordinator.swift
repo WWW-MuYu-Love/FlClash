@@ -328,10 +328,10 @@ final class TunnelCoordinator {
         if let options {
           lastStartOptionsSummary =
             options[TunnelStartOptions.profileKey] != nil
-            ? "start options sent (with profile)"
-            : "start options sent (no profile)"
+            ? "已发送启动选项（含配置文件）"
+            : "已发送启动选项（无配置文件）"
         } else {
-          lastStartOptionsSummary = "no start options"
+          lastStartOptionsSummary = "无启动选项"
         }
         try manager.connection.startVPNTunnel(options: options)
         log("start requested")
@@ -687,7 +687,7 @@ final class TunnelCoordinator {
         $0 == "已停止" ? nil : "，阶段：\($0)"
       } ?? ""
       onTunnelFailure(
-        "tunnel did not connect: \(summary ?? "start options unknown") #24\(stage)"
+        "隧道未能连接：\(summary ?? "启动选项未知") #24\(stage)"
       )
     } else {
       onTunnelFailure(parts.joined(separator: " / ") + " #24")

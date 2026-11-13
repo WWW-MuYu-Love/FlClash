@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:fl_clash/common/constant.dart';
 import 'package:fl_clash/common/exception.dart';
 import 'package:fl_clash/common/network_error.dart';
@@ -116,15 +118,79 @@ String userFacingErrorMessage(Object error, AppLocalizations appLocalizations) {
           appLocalizations.ageSecretKeyRequiredTip,
         ReleaseNotVerifiedException() => appLocalizations.updateNotVerified,
         SystemDownloadException() => appLocalizations.updateDownloadFailed,
+        MessageException(
+          message: 'script did not return a configuration object',
+        ) =>
+          appLocalizations.scriptDidNotReturnConfig,
         CoreMethodException(code: 'rule_set_empty') =>
           appLocalizations.ruleSetEmptyTip,
         CoreMethodException(code: 'rule_set_mixed') =>
           appLocalizations.ruleSetMixedTip,
         CoreMethodException(code: 'rule_set_invalid') =>
           appLocalizations.ruleSetInvalidTip,
+        CoreMethodException(code: 'service_refused', message: final message) =>
+          message.contains('did not stop')
+              ? appLocalizations.serviceDidNotStop
+              : appLocalizations.serviceDidNotStart,
+        CoreMethodException(code: 'core_unavailable', message: final message) =>
+          switch (_segment(message, 'Core is not connected for ', '')) {
+            final method? => appLocalizations.coreNotConnected(method),
+            _ => message,
+          },
+        CoreMethodException(code: 'empty_result', message: final message) =>
+          switch (_segment(message, 'Core answered ', ' with nothing')) {
+            final method? => appLocalizations.coreAnsweredNothing(method),
+            _ => message,
+          },
+        CoreMethodException(
+          code: 'transport_disconnected',
+          message: final message,
+        ) =>
+          message.contains('closed')
+              ? appLocalizations.coreRpcClientClosed
+              : appLocalizations.coreTransportDisconnected,
+        CoreMethodException(code: 'transport_error', message: final message) =>
+          switch (_segment(message, 'Unable to send ', ' to Core')) {
+            final method? => appLocalizations.coreSendFailed(method),
+            _ => appLocalizations.coreTransportFailed,
+          },
+        CoreMethodException(code: 'spill_error', message: final message) =>
+          switch (_segment(
+            message,
+            'Core wrote a file outside its spill directory: ',
+            '',
+          )) {
+            final path? => appLocalizations.spillOutsideDirectory(path),
+            _ => message,
+          },
+        TimeoutException(:final message) => switch (message) {
+          final text?
+              when text.startsWith('Core method ') &&
+                  text.endsWith(' timed out') =>
+            appLocalizations.coreMethodTimedOut(
+              text.substring(
+                'Core method '.length,
+                text.length - ' timed out'.length,
+              ),
+            ),
+          _ => error.toString(),
+        },
         CoreMethodException(:final message) => message,
         _ => error.toString(),
       };
+}
+
+/// The variable segment of a Dart-constructed core error message, or null
+/// when the message does not match the shape its throw site builds.
+String? _segment(String message, String prefix, String suffix) {
+  if (!message.startsWith(prefix) || !message.endsWith(suffix)) {
+    return null;
+  }
+  final inner = message.substring(
+    prefix.length,
+    message.length - suffix.length,
+  );
+  return inner.isEmpty ? null : inner;
 }
 
 String delayFailureText(int delay, AppLocalizations appLocalizations) {

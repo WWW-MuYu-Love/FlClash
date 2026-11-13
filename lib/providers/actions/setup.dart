@@ -757,7 +757,10 @@ class SetupAction extends _$SetupAction {
         null => res.yaml,
       };
     } catch (e) {
-      dialogs.showBanner(e.toString(), level: BannerLevel.error);
+      dialogs.showBanner(
+        userFacingErrorMessage(e, currentAppLocalizations),
+        level: BannerLevel.error,
+      );
     }
     return '';
   }

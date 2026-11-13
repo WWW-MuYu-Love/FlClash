@@ -1085,5 +1085,17 @@
   "fakeipFilterDesc": "These domains get real IPs instead of Fake-IPs. In whitelist mode, only they get Fake-IPs.",
   "fallbackFilterGeositeDesc": "Domains in these GeoSite categories are resolved by Fallback directly.",
   "fallbackFilterIpcidrDesc": "When Nameserver returns an IP in these ranges, the Fallback answer is used.",
-  "fallbackFilterDomainDesc": "These domains are resolved by Fallback directly."
+  "fallbackFilterDomainDesc": "These domains are resolved by Fallback directly.",
+  "serviceDidNotStart": "The service did not start",
+  "serviceDidNotStop": "The service did not stop",
+  "coreNotConnected": "Core is not connected for {method}",
+  "coreMethodTimedOut": "Core method {method} timed out",
+  "coreAnsweredNothing": "Core answered {method} with nothing",
+  "coreRpcClientClosed": "Core RPC client is closed",
+  "coreSendFailed": "Unable to send {method} to Core",
+  "coreTransportDisconnected": "Core transport disconnected",
+  "coreTransportFailed": "Core transport failed",
+  "spillOutsideDirectory": "Core wrote a file outside its spill directory: {path}",
+  "scriptDidNotReturnConfig": "script did not return a configuration object",
+  "geoUpdateFailed": "Geo database update failed: {detail}"
 }

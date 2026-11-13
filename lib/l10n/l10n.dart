@@ -7718,8 +7718,7 @@ class AppLocalizations {
   String customImportDroppedSubRules(num count, Object label) {
     return Intl.plural(
       count,
-      one:
-          '1 SUB-RULE rule was dropped, since custom profiles do not support sub-rules',
+      one: '1 SUB-RULE rule was dropped, since custom profiles do not support sub-rules',
       other:
           '$label SUB-RULE rules were dropped, since custom profiles do not support sub-rules',
       name: 'customImportDroppedSubRules',
@@ -9155,6 +9154,126 @@ class AppLocalizations {
       name: 'fallbackFilterDomainDesc',
       desc: '',
       args: [],
+    );
+  }
+
+  /// `The service did not start`
+  String get serviceDidNotStart {
+    return Intl.message(
+      'The service did not start',
+      name: 'serviceDidNotStart',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `The service did not stop`
+  String get serviceDidNotStop {
+    return Intl.message(
+      'The service did not stop',
+      name: 'serviceDidNotStop',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Core is not connected for {method}`
+  String coreNotConnected(Object method) {
+    return Intl.message(
+      'Core is not connected for $method',
+      name: 'coreNotConnected',
+      desc: '',
+      args: [method],
+    );
+  }
+
+  /// `Core method {method} timed out`
+  String coreMethodTimedOut(Object method) {
+    return Intl.message(
+      'Core method $method timed out',
+      name: 'coreMethodTimedOut',
+      desc: '',
+      args: [method],
+    );
+  }
+
+  /// `Core answered {method} with nothing`
+  String coreAnsweredNothing(Object method) {
+    return Intl.message(
+      'Core answered $method with nothing',
+      name: 'coreAnsweredNothing',
+      desc: '',
+      args: [method],
+    );
+  }
+
+  /// `Core RPC client is closed`
+  String get coreRpcClientClosed {
+    return Intl.message(
+      'Core RPC client is closed',
+      name: 'coreRpcClientClosed',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Unable to send {method} to Core`
+  String coreSendFailed(Object method) {
+    return Intl.message(
+      'Unable to send $method to Core',
+      name: 'coreSendFailed',
+      desc: '',
+      args: [method],
+    );
+  }
+
+  /// `Core transport disconnected`
+  String get coreTransportDisconnected {
+    return Intl.message(
+      'Core transport disconnected',
+      name: 'coreTransportDisconnected',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Core transport failed`
+  String get coreTransportFailed {
+    return Intl.message(
+      'Core transport failed',
+      name: 'coreTransportFailed',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Core wrote a file outside its spill directory: {path}`
+  String spillOutsideDirectory(Object path) {
+    return Intl.message(
+      'Core wrote a file outside its spill directory: $path',
+      name: 'spillOutsideDirectory',
+      desc: '',
+      args: [path],
+    );
+  }
+
+  /// `script did not return a configuration object`
+  String get scriptDidNotReturnConfig {
+    return Intl.message(
+      'script did not return a configuration object',
+      name: 'scriptDidNotReturnConfig',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Geo database update failed: {detail}`
+  String geoUpdateFailed(Object detail) {
+    return Intl.message(
+      'Geo database update failed: $detail',
+      name: 'geoUpdateFailed',
+      desc: '',
+      args: [detail],
     );
   }
 }

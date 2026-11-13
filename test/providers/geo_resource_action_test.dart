@@ -250,10 +250,15 @@ void main() {
     action.handleCoreUpdate('MMDB', false, false, 'download failed');
     await tester.pump();
 
-    expect(find.text('download failed'), findsOneWidget);
+    expect(
+      find.text(currentAppLocalizations.geoUpdateFailed('download failed')),
+      findsOneWidget,
+    );
     final banner = find
         .ancestor(
-          of: find.text('download failed'),
+          of: find.text(
+            currentAppLocalizations.geoUpdateFailed('download failed'),
+          ),
           matching: find.byType(Surface),
         )
         .first;
@@ -285,7 +290,10 @@ void main() {
       find.text(currentAppLocalizations.geoUpdated(GeoResource.MMDB.name)),
       findsNothing,
     );
-    expect(find.text('download failed'), findsOneWidget);
+    expect(
+      find.text(currentAppLocalizations.geoUpdateFailed('download failed')),
+      findsOneWidget,
+    );
 
     await tester.pumpWidget(const SizedBox.shrink());
   });

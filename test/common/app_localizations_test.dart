@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:dio/dio.dart';
 import 'package:fl_clash/common/app_localizations.dart';
+import 'package:fl_clash/common/exception.dart';
 import 'package:fl_clash/common/network_error.dart';
 import 'package:fl_clash/common/webdav.dart';
 import 'package:fl_clash/core/desktop/helper_client.dart';
@@ -185,6 +186,146 @@ void main() {
       ),
       'proxy 0: unsupported type',
     );
+  });
+
+  group('Dart-constructed Core errors name their cause', () {
+    test('service start and stop failures differ', () {
+      expect(
+        userFacingErrorMessage(
+          const CoreMethodException(
+            code: 'service_refused',
+            message: 'The iOS service did not start',
+          ),
+          appLocalizations,
+        ),
+        appLocalizations.serviceDidNotStart,
+      );
+      expect(
+        userFacingErrorMessage(
+          const CoreMethodException(
+            code: 'service_refused',
+            message: 'The mobile service did not stop',
+          ),
+          appLocalizations,
+        ),
+        appLocalizations.serviceDidNotStop,
+      );
+    });
+
+    test('Core availability and empty answers name the method', () {
+      expect(
+        userFacingErrorMessage(
+          const CoreMethodException(
+            code: 'core_unavailable',
+            message: 'Core is not connected for core.setup',
+          ),
+          appLocalizations,
+        ),
+        appLocalizations.coreNotConnected('core.setup'),
+      );
+      expect(
+        userFacingErrorMessage(
+          const CoreMethodException(
+            code: 'empty_result',
+            message: 'Core answered core.setup with nothing',
+          ),
+          appLocalizations,
+        ),
+        appLocalizations.coreAnsweredNothing('core.setup'),
+      );
+      expect(
+        userFacingErrorMessage(
+          const CoreMethodException(
+            code: 'core_unavailable',
+            message: 'unexpected shape',
+          ),
+          appLocalizations,
+        ),
+        'unexpected shape',
+      );
+    });
+
+    test('transport failures name their cause', () {
+      expect(
+        userFacingErrorMessage(
+          const CoreMethodException(
+            code: 'transport_disconnected',
+            message: 'Core RPC client is closed',
+          ),
+          appLocalizations,
+        ),
+        appLocalizations.coreRpcClientClosed,
+      );
+      expect(
+        userFacingErrorMessage(
+          const CoreMethodException(
+            code: 'transport_disconnected',
+            message: 'Core transport disconnected',
+          ),
+          appLocalizations,
+        ),
+        appLocalizations.coreTransportDisconnected,
+      );
+      expect(
+        userFacingErrorMessage(
+          const CoreMethodException(
+            code: 'transport_error',
+            message: 'Unable to send core.setup to Core',
+          ),
+          appLocalizations,
+        ),
+        appLocalizations.coreSendFailed('core.setup'),
+      );
+      expect(
+        userFacingErrorMessage(
+          const CoreMethodException(
+            code: 'transport_error',
+            message: 'Core transport failed',
+          ),
+          appLocalizations,
+        ),
+        appLocalizations.coreTransportFailed,
+      );
+      expect(
+        userFacingErrorMessage(
+          const CoreMethodException(
+            code: 'spill_error',
+            message: 'Core wrote a file outside its spill directory: /tmp/x',
+          ),
+          appLocalizations,
+        ),
+        appLocalizations.spillOutsideDirectory('/tmp/x'),
+      );
+    });
+
+    test('Core method timeouts name the method', () {
+      expect(
+        userFacingErrorMessage(
+          TimeoutException('Core method core.setup timed out'),
+          appLocalizations,
+        ),
+        appLocalizations.coreMethodTimedOut('core.setup'),
+      );
+      expect(
+        userFacingErrorMessage(
+          TimeoutException('something else'),
+          appLocalizations,
+        ),
+        contains('something else'),
+      );
+    });
+
+    test('script without a configuration object is localized', () {
+      expect(
+        userFacingErrorMessage(
+          const MessageException(
+            'script did not return a configuration object',
+          ),
+          appLocalizations,
+        ),
+        appLocalizations.scriptDidNotReturnConfig,
+      );
+    });
   });
 
   group('policy-blocked Core launch', () {
