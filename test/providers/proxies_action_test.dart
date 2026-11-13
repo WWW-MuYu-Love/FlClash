@@ -377,6 +377,12 @@ void main() {
         when(
           () => externalController.selectProxy(any(), any()),
         ).thenAnswer((_) async => false);
+        when(() => core.changeProxy(any())).thenThrow(
+          const CoreMethodException(code: 'empty_response', message: 'empty'),
+        );
+        when(
+          () => core.changeProxy(any(), route: CoreRoute.app),
+        ).thenAnswer((_) async => const ChangeProxyResult(changed: true));
         final container = runningVpnContainer(
           profile: _selectedProfile('HK-00'),
           externalController: externalController,
@@ -389,6 +395,55 @@ void main() {
         expect(container.read(currentProfileProvider)?.selectedMap, {
           'Proxy': 'HK-00',
         });
+      },
+    );
+
+    test(
+      'applies the selection through 9090 when the Core does not answer',
+      () async {
+        final externalController = MockExternalControllerClient();
+        when(
+          () => externalController.selectProxy(any(), any()),
+        ).thenAnswer((_) async => true);
+        when(() => core.changeProxy(any())).thenThrow(
+          const CoreMethodException(code: 'empty_response', message: 'empty'),
+        );
+        final container = runningVpnContainer(
+          profile: _selectedProfile('HK-00'),
+          externalController: externalController,
+        );
+
+        await actionOf(
+          container,
+        ).changeProxy(groupName: 'Proxy', proxyName: 'HK-01');
+
+        expect(container.read(currentProfileProvider)?.selectedMap, {
+          'Proxy': 'HK-01',
+        });
+        verifyNever(() => core.changeProxy(any(), route: CoreRoute.app));
+      },
+    );
+
+    test(
+      'skips the controller sync once the Core applied the selection',
+      () async {
+        final externalController = MockExternalControllerClient();
+        when(
+          () => externalController.selectProxy(any(), any()),
+        ).thenAnswer((_) async => false);
+        final container = runningVpnContainer(
+          profile: _selectedProfile('HK-00'),
+          externalController: externalController,
+        );
+
+        await actionOf(
+          container,
+        ).changeProxy(groupName: 'Proxy', proxyName: 'HK-01');
+
+        expect(container.read(currentProfileProvider)?.selectedMap, {
+          'Proxy': 'HK-01',
+        });
+        verifyNever(() => externalController.selectProxy(any(), any()));
       },
     );
 

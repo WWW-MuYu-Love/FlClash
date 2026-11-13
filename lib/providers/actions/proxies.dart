@@ -23,6 +23,11 @@ class _DelayTestJob {
   bool cancelled = false;
 }
 
+typedef _ProxyChangeOutcome = ({
+  ChangeProxyResult result,
+  bool appliedToRoutingCore,
+});
+
 @Riverpod(keepAlive: true)
 class ProxiesAction extends _$ProxiesAction {
   CoreController get _core => ref.read(coreHandlerProvider);
@@ -185,10 +190,13 @@ class ProxiesAction extends _$ProxiesAction {
         _currentSelectedName(groupName);
     profilesAction.updateCurrentSelectedMap(groupName, proxyName);
     final ChangeProxyResult result;
+    final bool appliedToRoutingCore;
     try {
-      result = await _changeProxy(
+      final outcome = await _changeProxy(
         ChangeProxyParams(groupName: groupName, proxyName: proxyName),
       );
+      result = outcome.result;
+      appliedToRoutingCore = outcome.appliedToRoutingCore;
       if (result.message.isNotEmpty) {
         throw MessageException(result.message);
       }
@@ -204,19 +212,20 @@ class ProxiesAction extends _$ProxiesAction {
       );
       return;
     }
-    if (!result.changed) {
-      return;
+    var changed = result.changed;
+    if (!appliedToRoutingCore) {
+      if (await _syncSelectionToExternalController(groupName, proxyName)) {
+        changed = true; // The sync applied it to the extension, so reset.
+      } else {
+        profilesAction.updateCurrentSelectedMap(groupName, rollbackName);
+        dialogs.showBanner(
+          currentAppLocalizations.changeProxyFailedTip,
+          level: BannerLevel.error,
+        );
+      }
     }
-    final synced = await _syncSelectionToExternalController(
-      groupName,
-      proxyName,
-    );
-    if (!synced) {
-      profilesAction.updateCurrentSelectedMap(groupName, rollbackName);
-      dialogs.showBanner(
-        currentAppLocalizations.changeProxyFailedTip,
-        level: BannerLevel.error,
-      );
+    if (!changed) {
+      return;
     }
     try {
       if (ref.read(appSettingProvider).closeConnections) {
@@ -481,15 +490,27 @@ class ProxiesAction extends _$ProxiesAction {
     }
   }
 
-  Future<ChangeProxyResult> _changeProxy(ChangeProxyParams params) async {
+  Future<_ProxyChangeOutcome> _changeProxy(ChangeProxyParams params) async {
     try {
-      return await _core.changeProxy(params);
+      final result = await _core.changeProxy(params);
+      return (result: result, appliedToRoutingCore: true);
     } on CoreMethodException catch (error) {
       if (error.code != 'empty_response' ||
           ref.read(runningVpnOptionsProvider)?.enable != true) {
         rethrow;
       }
-      return _core.changeProxy(params, route: CoreRoute.app);
+      // The App core routes nothing while the tunnel runs: try 9090 first.
+      final applied = await ref
+          .read(externalControllerClientProvider)
+          .selectProxy(params.groupName, params.proxyName);
+      if (applied) {
+        return (
+          result: const ChangeProxyResult(changed: true),
+          appliedToRoutingCore: true,
+        );
+      }
+      final result = await _core.changeProxy(params, route: CoreRoute.app);
+      return (result: result, appliedToRoutingCore: false);
     }
   }
 
