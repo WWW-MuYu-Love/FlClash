@@ -77,6 +77,24 @@ class CommonAction extends _$CommonAction {
           ref.read(trafficsProvider.notifier).addTraffic(instant);
         }
         ref.read(totalTrafficProvider.notifier).value = total;
+        return;
+      }
+      // Last resort: the App core answers with its own traffic. It moves
+      // no traffic while the tunnel is up, so this is usually zero.
+      final [appTraffic, appTotalTraffic] = await Future.wait([
+        _readTraffic(
+          () => _core.getTraffic(onlyStatisticsProxy, route: CoreRoute.app),
+        ),
+        _readTraffic(
+          () =>
+              _core.getTotalTraffic(onlyStatisticsProxy, route: CoreRoute.app),
+        ),
+      ]);
+      if (appTraffic != null) {
+        ref.read(trafficsProvider.notifier).addTraffic(appTraffic);
+      }
+      if (appTotalTraffic != null) {
+        ref.read(totalTrafficProvider.notifier).value = appTotalTraffic;
       }
     } finally {
       _isUpdatingTraffic = false;

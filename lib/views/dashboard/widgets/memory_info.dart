@@ -94,10 +94,12 @@ Future<CoreMemoryStats?> _readCoreMemory(WidgetRef ref) async {
     final inuse = await ref
         .read(externalControllerClientProvider)
         .fetchMemory();
-    if (inuse == null) {
-      rethrow;
+    if (inuse != null) {
+      return CoreMemoryStats(rss: inuse);
     }
-    return CoreMemoryStats(rss: inuse);
+    // Last resort: the App core answers with its own memory, not the
+    // extension core's.
+    return ref.read(coreHandlerProvider).getMemoryStats(route: CoreRoute.app);
   }
 }
 

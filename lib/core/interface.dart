@@ -113,8 +113,12 @@ abstract class CoreHandlerInterface {
 
   Future<void> forceGc() => _command(CoreMethod.coreGc);
 
-  Future<CoreMemoryStats> getMemoryStats() {
-    return _query(CoreMethod.coreMemory, _model(CoreMemoryStats.fromJson));
+  Future<CoreMemoryStats> getMemoryStats({CoreRoute? route}) {
+    return _query(
+      CoreMethod.coreMemory,
+      _model(CoreMemoryStats.fromJson),
+      route: route,
+    );
   }
 
   // A crash never answers, so bound the wait instead of holding the caller's timeout.
@@ -302,19 +306,21 @@ abstract class CoreHandlerInterface {
     return _command(CoreMethod.geoUpdate, arguments: {'type': type});
   }
 
-  Future<Traffic> getTraffic(bool onlyProxy) {
+  Future<Traffic> getTraffic(bool onlyProxy, {CoreRoute? route}) {
     return _query(
       CoreMethod.trafficCurrent,
       _model(Traffic.fromJson),
       arguments: {'only-proxy': onlyProxy},
+      route: route,
     );
   }
 
-  Future<Traffic> getTotalTraffic(bool onlyProxy) {
+  Future<Traffic> getTotalTraffic(bool onlyProxy, {CoreRoute? route}) {
     return _query(
       CoreMethod.trafficTotal,
       _model(Traffic.fromJson),
       arguments: {'only-proxy': onlyProxy},
+      route: route,
     );
   }
 
