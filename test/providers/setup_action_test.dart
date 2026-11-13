@@ -1388,37 +1388,35 @@ void main() {
       },
     );
 
-    test(
-      'an extension push failure still applies the config',
-      () async {
-        final profile = Profile.normal(label: 'p', url: 'http://127.0.0.1:9/');
-        final core = _MockCoreHandlerInterface();
-        when(() => core.setupConfig(any())).thenThrow(
-          const CoreMethodException(
-            code: 'extension_config_failed',
-            message: 'App core applied the config, but the extension core '
-                'did not receive it: empty_response',
-          ),
-        );
-        final scoped = ProviderContainer(
-          overrides: [
-            profilesProvider.overrideWith(() => TestProfiles([profile])),
-            currentProfileIdProvider.overrideWithBuild((_, _) => profile.id),
-            setupStateProvider.overrideWith((_, _) => nullProfileSetupState),
-            coreHandlerProvider.overrideWithValue(CoreController.scoped(core)),
-            setupActionProvider.overrideWith(SetupAction.new),
-          ],
-        );
-        addTearDown(scoped.dispose);
+    test('an extension push failure still applies the config', () async {
+      final profile = Profile.normal(label: 'p', url: 'http://127.0.0.1:9/');
+      final core = _MockCoreHandlerInterface();
+      when(() => core.setupConfig(any())).thenThrow(
+        const CoreMethodException(
+          code: 'extension_config_failed',
+          message:
+              'App core applied the config, but the extension core '
+              'did not receive it: empty_response',
+        ),
+      );
+      final scoped = ProviderContainer(
+        overrides: [
+          profilesProvider.overrideWith(() => TestProfiles([profile])),
+          currentProfileIdProvider.overrideWithBuild((_, _) => profile.id),
+          setupStateProvider.overrideWith((_, _) => nullProfileSetupState),
+          coreHandlerProvider.overrideWithValue(CoreController.scoped(core)),
+          setupActionProvider.overrideWith(SetupAction.new),
+        ],
+      );
+      addTearDown(scoped.dispose);
 
-        final succeeded = await scoped
-            .read(setupActionProvider.notifier)
-            .applyProfile(force: true);
+      final succeeded = await scoped
+          .read(setupActionProvider.notifier)
+          .applyProfile(force: true);
 
-        expect(succeeded, isTrue);
-        verify(() => core.setupConfig(any())).called(1);
-      },
-    );
+      expect(succeeded, isTrue);
+      verify(() => core.setupConfig(any())).called(1);
+    });
 
     test(
       'provider directories it cannot create leave the config applied',
