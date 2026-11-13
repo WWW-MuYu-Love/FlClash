@@ -43,15 +43,20 @@ final class PacketTunnelProvider: NEPacketTunnelProvider {
     ) {
       snapshot = forwarded.snapshot
       setupParams = forwarded.setupParams
+    } else if let loaded = sharedStateStore.loadVPNOptionsSnapshot() {
+      // Prefer the shared-state snapshot over the saved provider
+      // configuration: the app syncs shared state on every launch and
+      // before each tunnel start, while the saved configuration is only
+      // refreshed when the VPN options are saved, so it can carry a stale
+      // config (e.g. an older mitm section) across an on-demand restart.
+      snapshot = loaded
+      setupParams = sharedStateStore.loadSetupParams()
     } else if let forwarded = sharedStateStore.loadForwardedConfig(
       from: savedProtocolConfiguration()
     ) {
       sharedStateStore.saveStage("协议配置")
       snapshot = forwarded.snapshot
       setupParams = forwarded.setupParams
-    } else if let loaded = sharedStateStore.loadVPNOptionsSnapshot() {
-      snapshot = loaded
-      setupParams = sharedStateStore.loadSetupParams()
     } else {
       logger.error("startTunnel failed: missing vpn options")
       // A decode failure above already saved the specific reason; only
