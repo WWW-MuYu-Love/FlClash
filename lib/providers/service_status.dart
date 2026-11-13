@@ -28,19 +28,38 @@ class ServiceStatus extends _$ServiceStatus
     RouteState route,
     ServiceTarget target,
   ) async {
+    final params = ServiceCheckParams(
+      proxyName: route.proxied ? '' : directOutbound,
+      names: [target.id],
+      timeout: probeTimeoutDuration.inMilliseconds,
+    );
     try {
-      return await ref
+      final items = await ref
           .read(externalControllerClientProvider)
-          .fetchServiceCheck(
-            ServiceCheckParams(
-              proxyName: route.proxied ? '' : directOutbound,
-              names: [target.id],
-              timeout: probeTimeoutDuration.inMilliseconds,
-            ),
-          );
+          .fetchServiceCheck(params);
+      if (items != null) {
+        return items;
+      }
     } catch (_) {
-      return null;
+      // Fall through to the retry below.
     }
+    // The tunnel may still be starting and 9090 not yet listening: give it
+    // a moment before falling back to the App core, which no longer routes
+    // once the tunnel is up.
+    if (route.proxied) {
+      final retryDelay = ref.read(probe9090RetryDelayProvider);
+      if (retryDelay > Duration.zero) {
+        await Future.delayed(retryDelay);
+      }
+      try {
+        return await ref
+            .read(externalControllerClientProvider)
+            .fetchServiceCheck(params);
+      } catch (_) {
+        return null;
+      }
+    }
+    return null;
   }
 
   @override

@@ -51,6 +51,7 @@ void main() {
         ),
         coreHandlerProvider.overrideWithValue(CoreController.scoped(core)),
         externalControllerClientProvider.overrideWithValue(client),
+        probe9090RetryDelayProvider.overrideWithValue(Duration.zero),
       ],
     );
     addTearDown(container.dispose);

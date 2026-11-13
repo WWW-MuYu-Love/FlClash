@@ -28,8 +28,30 @@ class OutboundIpProbe extends _$OutboundIpProbe
         : target;
     // 9090 first: the routing core answers the lookup. The app core only
     // matters when the tunnel is down, so it is the fallback, not a retry.
-    final result =
-        await ref
+    OutboundIpResult? via9090;
+    try {
+      via9090 = await ref
+          .read(externalControllerClientProvider)
+          .fetchOutboundIp(
+            OutboundIpParams(
+              proxyName: proxyName,
+              urls: ipInfoSources.keys.toList(),
+              timeout: outboundIpTimeoutDuration.inMilliseconds,
+            ),
+          );
+    } catch (_) {
+      // Fall through to the retry below.
+    }
+    if (via9090 == null && route.proxied) {
+      // The tunnel may still be starting and 9090 not yet listening: give
+      // it a moment before falling back to the App core, which no longer
+      // routes once the tunnel is up.
+      final retryDelay = ref.read(probe9090RetryDelayProvider);
+      if (retryDelay > Duration.zero) {
+        await Future.delayed(retryDelay);
+      }
+      try {
+        via9090 = await ref
             .read(externalControllerClientProvider)
             .fetchOutboundIp(
               OutboundIpParams(
@@ -37,7 +59,13 @@ class OutboundIpProbe extends _$OutboundIpProbe
                 urls: ipInfoSources.keys.toList(),
                 timeout: outboundIpTimeoutDuration.inMilliseconds,
               ),
-            ) ??
+            );
+      } catch (_) {
+        via9090 = null;
+      }
+    }
+    final result =
+        via9090 ??
         await lookupOutboundIp(
           ref.read(coreHandlerProvider),
           proxyName,

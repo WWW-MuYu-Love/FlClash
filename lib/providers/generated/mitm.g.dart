@@ -47,7 +47,7 @@ final class MitmDecryptedHostsProvider
 }
 
 String _$mitmDecryptedHostsHash() =>
-    r'6e3729bc7f18c8a770cc7ac053a7c014dcea6de8';
+    r'fa61bd7fa8f3bafd72ab02b1654f4adffdf7d08e';
 
 @ProviderFor(MitmCa)
 final mitmCaProvider = MitmCaProvider._();
@@ -256,7 +256,7 @@ final class MitmExchangesProvider
   }
 }
 
-String _$mitmExchangesHash() => r'c6d6dacf26c35b2efb1544fca16000194ce7f7a6';
+String _$mitmExchangesHash() => r'b112ff38abf57f5ced42d8caf8d4b498bd57ccc6';
 
 /// Fetched again while shown, until the connection has closed and none of its
 /// requests is pending. Keyed by host: the capture store never sees the
@@ -339,7 +339,7 @@ final class MitmExchangeProvider
   }
 }
 
-String _$mitmExchangeHash() => r'6166dc9f37639441f4ecbaac46513f860bd793b4';
+String _$mitmExchangeHash() => r'6dc25981be6b9cededf00d0c610a7f9d1259a024';
 
 final class MitmExchangeFamily extends $Family
     with $FunctionalFamilyOverride<FutureOr<MitmExchange?>, int> {
@@ -420,7 +420,7 @@ final class MitmBodyProvider
   }
 }
 
-String _$mitmBodyHash() => r'a90c643d98355f6c1dcd60adc8226729addb266b';
+String _$mitmBodyHash() => r'e2df9b72eaee12ac37454c9e94fccc01a5fe074c';
 
 final class MitmBodyFamily extends $Family
     with
