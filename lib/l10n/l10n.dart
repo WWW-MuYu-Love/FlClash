@@ -3956,6 +3956,11 @@ class AppLocalizations {
     );
   }
 
+  /// `Disconnect`
+  String get disconnect {
+    return Intl.message('Disconnect', name: 'disconnect', desc: '', args: []);
+  }
+
   /// `Connecting…`
   String get connecting {
     return Intl.message('Connecting…', name: 'connecting', desc: '', args: []);
@@ -5501,10 +5506,10 @@ class AppLocalizations {
     );
   }
 
-  /// `When connected to Wi-Fi with an excluded SSID, the app's running state switches automatically.`
+  /// `When connected to Wi-Fi with an excluded SSID, the app automatically disconnects or switches to direct mode as set for that SSID.`
   String get excludeSsidsDesc {
     return Intl.message(
-      'When connected to Wi-Fi with an excluded SSID, the app\'s running state switches automatically.',
+      'When connected to Wi-Fi with an excluded SSID, the app automatically disconnects or switches to direct mode as set for that SSID.',
       name: 'excludeSsidsDesc',
       desc: '',
       args: [],

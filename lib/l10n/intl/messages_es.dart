@@ -828,6 +828,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "disclaimerWarrantyTitle": MessageLookupByLibrary.simpleMessage(
       "Sin garantía",
     ),
+    "disconnect": MessageLookupByLibrary.simpleMessage("Desconectar"),
     "disconnected": MessageLookupByLibrary.simpleMessage("Desconectado"),
     "discoverNewVersion": MessageLookupByLibrary.simpleMessage(
       "Nueva versión disponible",
@@ -897,7 +898,7 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "excludeSsids": MessageLookupByLibrary.simpleMessage("Excluir SSID"),
     "excludeSsidsDesc": MessageLookupByLibrary.simpleMessage(
-      "Al conectarte a una red Wi-Fi con un SSID excluido, el estado de ejecución de la app cambia automáticamente.",
+      "Al conectarse a una red Wi-Fi con un SSID excluido, la aplicación se desconecta automáticamente o cambia al modo directo según lo configurado para ese SSID.",
     ),
     "excludeUid": MessageLookupByLibrary.simpleMessage(
       "ID de usuario excluidos",

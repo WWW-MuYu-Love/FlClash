@@ -665,6 +665,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "本ソフトウェアは「現状のまま」かつ「提供可能な範囲で」提供され、商品性、特定目的への適合性、非侵害、継続的な可用性、エラーやセキュリティ上の脆弱性がないことの保証を含め、明示または黙示を問わずいかなる保証も伴いません。\n\n開発者は、本ソフトウェアが利用者の要件を満たすこと、また中断やエラーなく動作することを保証しません。",
     ),
     "disclaimerWarrantyTitle": MessageLookupByLibrary.simpleMessage("無保証"),
+    "disconnect": MessageLookupByLibrary.simpleMessage("切断"),
     "disconnected": MessageLookupByLibrary.simpleMessage("切断済み"),
     "discoverNewVersion": MessageLookupByLibrary.simpleMessage(
       "新しいバージョンが見つかりました",
@@ -710,7 +711,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "excludeSrcPort": MessageLookupByLibrary.simpleMessage("除外送信元ポート"),
     "excludeSsids": MessageLookupByLibrary.simpleMessage("除外SSID"),
     "excludeSsidsDesc": MessageLookupByLibrary.simpleMessage(
-      "除外した SSID の Wi-Fi に接続すると、アプリの実行状態が自動的に切り替わります。",
+      "除外した SSID の Wi-Fi に接続すると、その SSID の設定に従って自動的に切断されるか、ダイレクトモードに切り替わります。",
     ),
     "excludeUid": MessageLookupByLibrary.simpleMessage("除外ユーザー ID"),
     "existsTip": m31,

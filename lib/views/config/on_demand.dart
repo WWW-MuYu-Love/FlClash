@@ -13,11 +13,18 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:wifi_ssid/wifi_ssid.dart';
 
 class OnDemandView extends ConsumerStatefulWidget {
-  const OnDemandView({super.key, this.isAndroid, this.isMacOS, this.isWindows});
+  const OnDemandView({
+    super.key,
+    this.isAndroid,
+    this.isMacOS,
+    this.isWindows,
+    this.isIOS,
+  });
 
   final bool? isAndroid;
   final bool? isMacOS;
   final bool? isWindows;
+  final bool? isIOS;
 
   @override
   ConsumerState createState() => _OnDemandViewState();
@@ -28,13 +35,20 @@ class _OnDemandViewState extends ConsumerState<OnDemandView>
   static const _authorizeButtonPadding = 12.0;
   static const _minAuthorizeButtonWidth = 80.0;
 
+  // The one open SSID swipe card; a touch or a swipe anywhere else on the
+  // page closes it (see _SsidSwipeCoordinator).
+  final _swipeCoordinator = _SsidSwipeCoordinator();
+
   bool get _isAndroid => widget.isAndroid ?? system.isAndroid;
 
   bool get _isMacOS => widget.isMacOS ?? system.isMacOS;
 
   bool get _isWindows => widget.isWindows ?? system.isWindows;
 
-  bool get _needsLocationPermission => _isAndroid || _isMacOS || _isWindows;
+  bool get _isIOS => widget.isIOS ?? system.isIOS;
+
+  bool get _needsLocationPermission =>
+      _isAndroid || _isMacOS || _isWindows || _isIOS;
 
   void _handlePermanentlyDeniedLocationPermission() {
     if (_isMacOS) {
@@ -46,7 +60,7 @@ class _OnDemandViewState extends ConsumerState<OnDemandView>
           text: appLocalizations.locationPermissionGuide(appName),
         ),
       );
-    } else if (_isAndroid) {
+    } else if (_isAndroid || _isIOS) {
       app?.openAppSettings();
     } else if (_isWindows) {
       unawaited(_promptLocationSettings());
@@ -138,6 +152,31 @@ class _OnDemandViewState extends ConsumerState<OnDemandView>
       }
       return [...newSSIDS, newSSID];
     });
+    // A newly added SSID defaults to direct; renaming keeps the action.
+    if (ssid == null) {
+      ref.read(directSSIDsProvider.notifier).update((state) {
+        return [...state, newSSID];
+      });
+    } else {
+      ref.read(directSSIDsProvider.notifier).update((state) {
+        if (!state.contains(ssid)) {
+          return state;
+        }
+        return [...state.where((item) => item != ssid), newSSID];
+      });
+    }
+  }
+
+  void _setSsidAction(String ssid, bool direct) {
+    ref.read(directSSIDsProvider.notifier).update((state) {
+      final next = state.toSet();
+      if (direct) {
+        next.add(ssid);
+      } else {
+        next.remove(ssid);
+      }
+      return next.toList();
+    });
   }
 
   void _handleReorder(int oldIndex, newIndex) {
@@ -152,30 +191,52 @@ class _OnDemandViewState extends ConsumerState<OnDemandView>
     required int length,
     required bool isSelected,
     required bool isEditing,
+    required bool isDirect,
   }) {
     final position = ItemPosition.get(index, length);
+    final appLocalizations = context.appLocalizations;
     return ReorderDragStartListener(
       key: ValueKey(ssid),
       index: index,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16),
-        child: ItemPositionProvider(
-          position: position,
-          child: SelectedDecorationListItem(
-            isEditing: isEditing,
-            title: TooltipText(
-              text: Text(ssid, maxLines: 2, overflow: TextOverflow.ellipsis),
+        child: _SsidSwipeCard(
+          coordinator: _swipeCoordinator,
+          onSetAction: (direct) => _setSsidAction(ssid, direct),
+          child: ItemPositionProvider(
+            position: position,
+            child: SelectedDecorationListItem(
+              isEditing: isEditing,
+              // Balances the 48-wide trailing checkbox so the centered
+              // texts sit on the card's true center: the 32-wide spacer
+              // plus the 16 title gap puts the text 64 from the left
+              // edge, matching the 64 the checkbox takes on the right.
+              leading: const SizedBox(width: 32),
+              title: TooltipText(
+                text: Text(
+                  ssid,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.center,
+                ),
+              ),
+              subtitle: Text(
+                isDirect
+                    ? appLocalizations.direct
+                    : appLocalizations.disconnect,
+                textAlign: TextAlign.center,
+              ),
+              isSelected: isSelected,
+              onSelected: () {
+                ref.read(itemsProvider(key).notifier).update((state) {
+                  final newState = Set<String>.from(state)..addOrRemove(ssid);
+                  return newState;
+                });
+              },
+              onPressed: () {
+                _handleAddOrUpdate(ssid);
+              },
             ),
-            isSelected: isSelected,
-            onSelected: () {
-              ref.read(itemsProvider(key).notifier).update((state) {
-                final newState = Set<String>.from(state)..addOrRemove(ssid);
-                return newState;
-              });
-            },
-            onPressed: () {
-              _handleAddOrUpdate(ssid);
-            },
           ),
         ),
       ),
@@ -193,6 +254,11 @@ class _OnDemandViewState extends ConsumerState<OnDemandView>
     final selectedItems = ref.read(itemsProvider(key));
     ref.read(excludeSSIDsProvider.notifier).update((excludeSSIDs) {
       return excludeSSIDs
+          .where((item) => !selectedItems.contains(item))
+          .toList();
+    });
+    ref.read(directSSIDsProvider.notifier).update((directSSIDs) {
+      return directSSIDs
           .where((item) => !selectedItems.contains(item))
           .toList();
     });
@@ -337,6 +403,7 @@ class _OnDemandViewState extends ConsumerState<OnDemandView>
   Widget _buildExcludeSsidsList(
     List<String> excludeSSIDs,
     Set<dynamic> selectedItems,
+    Set<String> directSSIDs,
   ) {
     if (excludeSSIDs.isEmpty) {
       return SliverPadding(
@@ -358,6 +425,7 @@ class _OnDemandViewState extends ConsumerState<OnDemandView>
       index: index,
       isSelected: selectedItems.contains(excludeSSIDs[index]),
       length: excludeSSIDs.length,
+      isDirect: directSSIDs.contains(excludeSSIDs[index]),
     );
     return SliverPadding(
       padding: const EdgeInsets.only(top: 12),
@@ -374,34 +442,313 @@ class _OnDemandViewState extends ConsumerState<OnDemandView>
   @override
   Widget build(BuildContext context) {
     final excludeSSIDs = ref.watch(excludeSSIDsProvider);
+    final directSSIDs = ref.watch(directSSIDsProvider).toSet();
     final selectedItems = ref.watch(itemsProvider(key));
     return Scaffold(
-      body: CustomScrollView(
-        slivers: [
-          SliverPadding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: 16,
-            ).copyWith(top: context.sectionsTopPadding),
-            sliver: SliverToBoxAdapter(child: _buildPrerequisites()),
-          ),
-          SliverPadding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            sliver: SliverToBoxAdapter(child: _buildExcludeSsidsHeader()),
-          ),
-          _buildExcludeSsidsList(excludeSSIDs, selectedItems),
-          SliverPadding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: 16,
-            ).copyWith(bottom: 16 + context.bottomInset),
-            sliver: SliverToBoxAdapter(
-              child: ListFooter(
-                text: context.appLocalizations.excludeSsidsDesc,
+      // A touch anywhere else on the page closes an open swipe card, like
+      // the native swipe actions; a scroll starting does the same.
+      body: Listener(
+        onPointerDown: (event) =>
+            _swipeCoordinator.closeUnlessHit(event.position),
+        child: NotificationListener<ScrollNotification>(
+          onNotification: (notification) {
+            if (notification is ScrollStartNotification) {
+              _swipeCoordinator.closeAll();
+            }
+            return false;
+          },
+          child: CustomScrollView(
+            slivers: [
+              SliverPadding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                ).copyWith(top: context.sectionsTopPadding),
+                sliver: SliverToBoxAdapter(child: _buildPrerequisites()),
               ),
-            ),
+              SliverPadding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                sliver: SliverToBoxAdapter(child: _buildExcludeSsidsHeader()),
+              ),
+              _buildExcludeSsidsList(excludeSSIDs, selectedItems, directSSIDs),
+              SliverPadding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                ).copyWith(bottom: 16 + context.bottomInset),
+                sliver: SliverToBoxAdapter(
+                  child: ListFooter(
+                    text: context.appLocalizations.excludeSsidsDesc,
+                  ),
+                ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
       title: context.appLocalizations.onDemand,
+    );
+  }
+}
+
+/// Tracks the one open SSID swipe card, so a touch or a swipe anywhere
+/// else on the page closes it, like the native swipe actions do.
+class _SsidSwipeCoordinator {
+  _SsidSwipeCardState? _open;
+
+  void noteOpened(_SsidSwipeCardState card) => _open = card;
+
+  void noteClosed(_SsidSwipeCardState card) {
+    if (_open == card) _open = null;
+  }
+
+  void closeAll() => _open?.close();
+
+  /// Closes the open card unless the touch landed on it, so dragging the
+  /// open card itself still works.
+  void closeUnlessHit(Offset globalPosition) {
+    final open = _open;
+    if (open == null) return;
+    final box = open.context.findRenderObject() as RenderBox?;
+    if (box == null || !box.hasSize) {
+      open.close();
+      return;
+    }
+    final rect = box.localToGlobal(Offset.zero) & box.size;
+    if (!rect.contains(globalPosition)) {
+      open.close();
+    }
+  }
+}
+
+/// A card that swipes sideways to reveal action buttons, like the native
+/// swipe actions on LiveContainer's subscription proxy page: the button is
+/// an ellipse with the icon and its label below, and both shrink with the
+/// revealed width until they slide back under the card. Swiping past half
+/// the card runs the action; a shorter swipe leaves the button open to tap.
+class _SsidSwipeCard extends StatefulWidget {
+  const _SsidSwipeCard({
+    required this.coordinator,
+    required this.onSetAction,
+    required this.child,
+  });
+
+  final _SsidSwipeCoordinator coordinator;
+  final ValueChanged<bool> onSetAction;
+  final Widget child;
+
+  @override
+  State<_SsidSwipeCard> createState() => _SsidSwipeCardState();
+}
+
+class _SsidSwipeCardState extends State<_SsidSwipeCard>
+    with SingleTickerProviderStateMixin {
+  // Wide enough for the longest action label ("Disconnect") on one line;
+  // a wrapped label makes the button column taller than the card.
+  static const _revealWidth = 88.0;
+  static const _buttonWidth = 84.0;
+
+  late final AnimationController _controller;
+  Animation<double>? _offsetAnimation;
+  double _offset = 0;
+  bool _isOpen = false;
+  double _width = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller =
+        AnimationController(
+          vsync: this,
+          duration: const Duration(milliseconds: 250),
+        )..addListener(() {
+          setState(() {
+            _offset = _offsetAnimation?.value ?? _offset;
+          });
+        });
+  }
+
+  @override
+  void dispose() {
+    widget.coordinator.noteClosed(this);
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void close() {
+    if (!mounted) return;
+    _animateTo(0);
+  }
+
+  void _animateTo(double target) {
+    _isOpen = target != 0;
+    if (_isOpen) {
+      widget.coordinator.noteOpened(this);
+    } else {
+      widget.coordinator.noteClosed(this);
+    }
+    _offsetAnimation = Tween<double>(
+      begin: _offset,
+      end: target,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic));
+    _controller.forward(from: 0);
+  }
+
+  void _execute(bool direct) {
+    widget.onSetAction(direct);
+    _animateTo(0);
+  }
+
+  void _onDragUpdate(DragUpdateDetails details) {
+    _controller.stop();
+    setState(() {
+      _offset = (_offset + details.delta.dx).clamp(-_width, _width);
+    });
+  }
+
+  void _settle() {
+    // Snap to the nearest resting position without running an action.
+    if (_offset >= _revealWidth / 2) {
+      _animateTo(_revealWidth);
+    } else if (_offset <= -_revealWidth / 2) {
+      _animateTo(-_revealWidth);
+    } else {
+      _animateTo(0);
+    }
+  }
+
+  void _onDragEnd(DragEndDetails details) {
+    if (_width <= 0) {
+      _animateTo(0);
+      return;
+    }
+    final halfWidth = _width * 0.5;
+    if (_offset >= halfWidth) {
+      _execute(false);
+    } else if (_offset <= -halfWidth) {
+      _execute(true);
+    } else {
+      _settle();
+    }
+  }
+
+  // A drag can be cancelled instead of ended when the list's vertical scroll
+  // wins the gesture arena; without this the card is left wherever the drag
+  // stopped, with no snap-back.
+  void _onDragCancel() {
+    _settle();
+  }
+
+  // A swipe button like the native actions on LiveContainer's subscription
+  // proxy page: an ellipse with a white icon, and the action label beneath
+  // it. The whole column scales with the revealed width (see build), so
+  // the ellipse and the label shrink together as the card slides back over
+  // them. Ellipse + gap + label must fit inside the two-line card (~62),
+  // or the label spills below the card.
+  Widget _swipeActionButton({
+    required String label,
+    required Glyph glyph,
+    required Color color,
+    required Color foreground,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: SizedBox(
+        width: _buttonWidth,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 56,
+              height: 36,
+              decoration: ShapeDecoration(color: color, shape: AppShape.full),
+              child: Center(
+                child: GlyphIcon(glyph, size: 20, color: foreground),
+              ),
+            ),
+            const SizedBox(height: 3),
+            Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: AppTextStyle.caption2
+                  .of(context)
+                  .copyWith(color: context.colorScheme.onSurfaceVariant),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// The action button centered in the revealed gap, shrinking with it.
+  Widget _positionedAction({
+    required double centerX,
+    required double progress,
+    required Widget child,
+  }) {
+    return Positioned(
+      left: centerX - _buttonWidth / 2,
+      top: 0,
+      bottom: 0,
+      width: _buttonWidth,
+      child: Opacity(
+        opacity: progress,
+        child: Transform.scale(
+          scale: progress,
+          child: Center(child: child),
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = context.colorScheme;
+    final appLocalizations = context.appLocalizations;
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        _width = constraints.maxWidth;
+        // How much of the button is revealed: 0 while closed, 1 fully open.
+        final progress = (_offset.abs() / _revealWidth).clamp(0.0, 1.0);
+        return Stack(
+          children: [
+            if (progress > 0 && _offset > 0)
+              _positionedAction(
+                centerX: _offset / 2,
+                progress: progress,
+                child: _swipeActionButton(
+                  label: appLocalizations.disconnect,
+                  glyph: AppGlyphs.wifiOff,
+                  color: colorScheme.error,
+                  foreground: colorScheme.onError,
+                  onTap: () => _execute(false),
+                ),
+              ),
+            if (progress > 0 && _offset < 0)
+              _positionedAction(
+                centerX: _width + _offset / 2,
+                progress: progress,
+                child: _swipeActionButton(
+                  label: appLocalizations.direct,
+                  glyph: AppGlyphs.link,
+                  color: colorScheme.primary,
+                  foreground: colorScheme.onPrimary,
+                  onTap: () => _execute(true),
+                ),
+              ),
+            Transform.translate(
+              offset: Offset(_offset, 0),
+              child: GestureDetector(
+                onHorizontalDragUpdate: _onDragUpdate,
+                onHorizontalDragEnd: _onDragEnd,
+                onHorizontalDragCancel: _onDragCancel,
+                onTap: _isOpen ? () => _animateTo(0) : null,
+                child: IgnorePointer(ignoring: _isOpen, child: widget.child),
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 }

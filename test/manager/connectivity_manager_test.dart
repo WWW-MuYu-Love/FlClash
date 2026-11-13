@@ -63,6 +63,27 @@ void main() {
     expect(currentSsid(), 'Home');
   });
 
+  testWidgets('reads the current SSID once on cold start', (tester) async {
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(
+          const MethodChannel('dev.fluttercommunity.plus/connectivity'),
+          (call) async => call.method == 'check' ? <String>['wifi'] : null,
+        );
+    addTearDown(
+      () => TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(
+            const MethodChannel('dev.fluttercommunity.plus/connectivity'),
+            null,
+          ),
+    );
+    // Exclude first, so the cold-start read is the only publish path.
+    await excludeNetworks(['Home']);
+    await pumpManager(tester, readSsid: () async => 'Home');
+    await tester.pumpAndSettle();
+
+    expect(currentSsid(), 'Home');
+  });
+
   testWidgets('clears the SSID when Wi-Fi drops', (tester) async {
     await pumpManager(tester, readSsid: () async => 'Home');
 

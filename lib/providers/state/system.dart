@@ -238,6 +238,11 @@ SharedState sharedState(Ref ref) {
       options: ref.watch(coreOptionsProvider),
     ),
     vpnOptions: ref.watch(vpnOptionsProvider).value,
+    excludeSSIDs: ref.watch(excludeSSIDsProvider),
+    directSSIDs: ref.watch(directSSIDsProvider),
+    controllerSecret: ref.watch(
+      patchClashConfigProvider.select((state) => state.secret),
+    ),
   );
 }
 
@@ -308,5 +313,7 @@ class AccessControlState extends _$AccessControlState
 bool suspend(Ref ref) {
   final currentSSID = ref.watch(currentSSIDProvider);
   final excludeSSIDs = ref.watch(excludeSSIDsProvider);
-  return excludeSSIDs.contains(currentSSID);
+  final directSSIDs = ref.watch(directSSIDsProvider);
+  return excludeSSIDs.contains(currentSSID) &&
+      !directSSIDs.contains(currentSSID);
 }

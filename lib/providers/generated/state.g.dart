@@ -545,7 +545,7 @@ final class SharedStateProvider
   }
 }
 
-String _$sharedStateHash() => r'67329c406b9a65e2a3091320ffb80d6f0eb525bd';
+String _$sharedStateHash() => r'a44131e41ced6f61eba59a9e4424d3e074bb756a';
 
 @ProviderFor(vpnRouteAddress)
 final vpnRouteAddressProvider = VpnRouteAddressProvider._();
@@ -715,7 +715,7 @@ final class SuspendProvider extends $FunctionalProvider<bool, bool, bool>
   }
 }
 
-String _$suspendHash() => r'9ab9210f4f3c70f63d9858d492a9c09b3fb24bf1';
+String _$suspendHash() => r'8f3b4e5f5f41f2a69537fd9b1158e64e9e7648f3';
 
 @ProviderFor(DynamicColor)
 final dynamicColorProvider = DynamicColorProvider._();
@@ -2021,7 +2021,7 @@ final class ProxyStateProvider
   }
 }
 
-String _$proxyStateHash() => r'd2079a9a47a469ed73351b796bba8e79e5694405';
+String _$proxyStateHash() => r'76a71ab5da07dca9aeb351282c5c03ab222d0760';
 
 /// Watching the delay map instead would drop nodes one probe at a time, and
 /// reading it on any other rebuild would drop them whenever something
