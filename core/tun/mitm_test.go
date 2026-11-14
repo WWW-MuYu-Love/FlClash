@@ -76,6 +76,43 @@ func TestSniffSNIFromWrappedRawConnection(t *testing.T) {
 	}
 }
 
+// Regression test: the mixed (HTTP CONNECT) listener hands HandleTCPConn
+// an already-buffered connection, and the 200 is already sent, so the
+// ClientHello follows immediately. The wrapper must sniff the SNI from the
+// buffered bytes and pass the connection through untouched when the host is
+// not a MITM target, or CONNECT traffic breaks.
+func TestHandleTCPConnPassesBufferedConnectThrough(t *testing.T) {
+	mitm.Default().SetConfig(&mitm.Config{
+		Enable:     true,
+		DecryptTLS: true,
+		Hostname:   []string{"example.com"},
+	})
+	t.Cleanup(func() { mitm.Default().SetConfig(nil) })
+
+	inner := &recordingTunnel{}
+	wrapped := WrapTunnel(inner)
+
+	hello := makeTestTLSRecords(makeTestClientHello("other.com"))
+	conn := N.NewBufferedConn(&bufferConn{buf: bytes.NewBuffer(hello)})
+	wrapped.HandleTCPConn(conn, &C.Metadata{DstPort: 443})
+
+	received := inner.received
+	if received == nil {
+		t.Fatal("inner tunnel never received the connection")
+	}
+	bc, ok := received.(*N.BufferedConn)
+	if !ok {
+		t.Fatalf("inner tunnel received %T, want *N.BufferedConn", received)
+	}
+	head := make([]byte, 3)
+	if _, err := io.ReadFull(bc, head); err != nil {
+		t.Fatalf("reading peeked bytes: %v", err)
+	}
+	if head[0] != 0x16 || head[1] != 0x03 || head[2] != 0x01 {
+		t.Fatalf("peeked bytes lost: got %x", head)
+	}
+}
+
 type recordingTunnel struct {
 	received net.Conn
 }
