@@ -293,6 +293,12 @@ class SetupAction extends _$SetupAction {
       if (!_isCurrent(request) ||
           request.running && ref.read(suspendProvider) ||
           ref.read(safeModeProvider)) {
+        final reason = !_isCurrent(request)
+            ? 'stale request'
+            : request.running && ref.read(suspendProvider)
+            ? 'suspended'
+            : 'safe mode';
+        commonPrint.log('[APP] flag skip: $reason', logLevel: LogLevel.warning);
         return;
       }
       await _setListening(request.running);
@@ -304,6 +310,10 @@ class SetupAction extends _$SetupAction {
     try {
       await setCoreRunning(running);
     } catch (error) {
+      commonPrint.log(
+        '[APP] flag set failed: ${compactError(error)}',
+        logLevel: LogLevel.warning,
+      );
       if (_isUnanswered(error)) {
         ref.read(runningVpnOptionsProvider.notifier).value = null;
       }
@@ -312,6 +322,7 @@ class SetupAction extends _$SetupAction {
     ref.read(runningVpnOptionsProvider.notifier).value = running
         ? vpnOptions
         : null;
+    commonPrint.log('[APP] flag set: running=$running');
   }
 
   bool _isUnanswered(Object error) =>
