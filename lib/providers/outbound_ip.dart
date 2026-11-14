@@ -4,6 +4,7 @@ import 'package:fl_clash/core/method.dart';
 import 'package:fl_clash/models/models.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
+import 'app.dart';
 import 'core.dart';
 import 'route_state.dart';
 import 'routed_probe.dart';
@@ -30,15 +31,20 @@ class OutboundIpProbe extends _$OutboundIpProbe
     // matters when the tunnel is down, so it is the fallback, not a retry.
     OutboundIpResult? via9090;
     try {
-      via9090 = await ref
-          .read(externalControllerClientProvider)
-          .fetchOutboundIp(
-            OutboundIpParams(
-              proxyName: proxyName,
-              urls: ipInfoSources.keys.toList(),
-              timeout: outboundIpTimeoutDuration.inMilliseconds,
-            ),
-          );
+      via9090 =
+          externalControllerUp(
+            tunnelUp: ref.read(runningVpnOptionsProvider)?.enable == true,
+          )
+          ? await ref
+                .read(externalControllerClientProvider)
+                .fetchOutboundIp(
+                  OutboundIpParams(
+                    proxyName: proxyName,
+                    urls: ipInfoSources.keys.toList(),
+                    timeout: outboundIpTimeoutDuration.inMilliseconds,
+                  ),
+                )
+          : null;
     } catch (_) {
       // Fall through to the App core fallback below.
     }

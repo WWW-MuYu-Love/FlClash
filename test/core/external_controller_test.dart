@@ -955,4 +955,150 @@ void main() {
       );
     });
   });
+
+  group('ExternalControllerClient connection-refused backoff', () {
+    late HttpServer server;
+    late ExternalControllerClient client;
+    var now = DateTime.utc(2026, 11, 14);
+
+    setUp(() async {
+      now = DateTime.utc(2026, 11, 14);
+      server = await _serve((request) async {
+        request.response.headers.contentType = ContentType.json;
+        request.response.write(jsonEncode(_snapshotJson));
+        await request.response.close();
+      });
+      client = ExternalControllerClient(
+        baseUri: Uri.parse('http://127.0.0.1:${server.port}'),
+        clock: () => now,
+      );
+    });
+
+    tearDown(() async {
+      client.close();
+      await server.close(force: true);
+    });
+
+    Future<int> deadPort() async {
+      final port = server.port;
+      await server.close(force: true);
+      return port;
+    }
+
+    Future<HttpServer> servePort(
+      int port,
+      FutureOr<void> Function(HttpRequest request) handle,
+    ) async {
+      final bound = await HttpServer.bind(InternetAddress.loopbackIPv4, port);
+      bound.listen((request) async {
+        try {
+          await handle(request);
+        } catch (_) {
+          try {
+            request.response.statusCode = HttpStatus.internalServerError;
+            await request.response.close();
+          } catch (_) {}
+        }
+      });
+      return bound;
+    }
+
+    test('backs off 1s, then 2s, then 4s after refused attempts', () async {
+      final port = await deadPort();
+      client = ExternalControllerClient(
+        baseUri: Uri.parse('http://127.0.0.1:$port'),
+        clock: () => now,
+      );
+      addTearDown(client.close);
+
+      expect(await client.fetchConnections(), isNull);
+      expect(client.refusedBackoffActive, isTrue);
+      now = now.add(const Duration(milliseconds: 900));
+      expect(client.refusedBackoffActive, isTrue);
+      now = now.add(const Duration(milliseconds: 200));
+      expect(client.refusedBackoffActive, isFalse);
+
+      expect(await client.fetchConnections(), isNull);
+      expect(client.refusedBackoffActive, isTrue);
+      now = now.add(const Duration(seconds: 2, milliseconds: 100));
+      expect(client.refusedBackoffActive, isFalse);
+
+      expect(await client.fetchConnections(), isNull);
+      expect(client.refusedBackoffActive, isTrue);
+      now = now.add(const Duration(seconds: 4, milliseconds: 100));
+      expect(client.refusedBackoffActive, isFalse);
+    });
+
+    test('skips reads inside the window and resumes after it', () async {
+      var hits = 0;
+      final port = server.port;
+      client = ExternalControllerClient(
+        baseUri: Uri.parse('http://127.0.0.1:$port'),
+        clock: () => now,
+      );
+      await server.close(force: true);
+
+      expect(await client.fetchConnections(), isNull);
+      expect(client.refusedBackoffActive, isTrue);
+
+      server = await servePort(port, (request) async {
+        hits++;
+        request.response.headers.contentType = ContentType.json;
+        request.response.write(jsonEncode(_snapshotJson));
+        await request.response.close();
+      });
+
+      expect(await client.fetchConnections(), isNull);
+      expect(hits, 0);
+      now = now.add(const Duration(seconds: 2));
+      expect(await client.fetchConnections(), isNotNull);
+      expect(hits, 1);
+    });
+
+    test('a successful read clears the backoff streak', () async {
+      final port = server.port;
+      client = ExternalControllerClient(
+        baseUri: Uri.parse('http://127.0.0.1:$port'),
+        clock: () => now,
+      );
+      await server.close(force: true);
+
+      expect(await client.fetchConnections(), isNull);
+      expect(client.refusedBackoffActive, isTrue);
+
+      server = await servePort(port, (request) async {
+        request.response.headers.contentType = ContentType.json;
+        request.response.write(jsonEncode(_snapshotJson));
+        await request.response.close();
+      });
+      now = now.add(const Duration(seconds: 2));
+      expect(await client.fetchConnections(), isNotNull);
+      expect(client.refusedBackoffActive, isFalse);
+
+      await server.close(force: true);
+      // The pooled connection is dead, so the first read after the close
+      // fails on the stale connection instead of refusing; the next read
+      // opens a fresh connection and refuses.
+      expect(await client.fetchConnections(), isNull);
+      expect(await client.fetchConnections(), isNull);
+      expect(client.refusedBackoffActive, isTrue);
+      now = now.add(const Duration(seconds: 1, milliseconds: 100));
+      expect(client.refusedBackoffActive, isFalse);
+    });
+
+    test('a non-refused failure does not back off', () async {
+      await server.close(force: true);
+      server = await _serve((request) async {
+        request.response.statusCode = HttpStatus.internalServerError;
+        await request.response.close();
+      });
+      client = ExternalControllerClient(
+        baseUri: Uri.parse('http://127.0.0.1:${server.port}'),
+        clock: () => now,
+      );
+
+      expect(await client.fetchConnections(), isNull);
+      expect(client.refusedBackoffActive, isFalse);
+    });
+  });
 }

@@ -159,6 +159,7 @@ class _MemoryInfoState extends ConsumerState<MemoryInfo>
     const MemorySnapshot(),
   );
   var _detailOpen = false;
+  var _firstPoll = true;
 
   @override
   Duration get pollInterval => const Duration(seconds: 2);
@@ -174,6 +175,14 @@ class _MemoryInfoState extends ConsumerState<MemoryInfo>
 
   @override
   Future<void> poll(PollGuard isCurrent) async {
+    if (_firstPoll) {
+      _firstPoll = false;
+      // The first round staggers: traffic goes first, the extension
+      // memory read waits a second so it does not hit 9090 with it.
+      if (system.isIOS && ref.read(runningVpnOptionsProvider)?.enable == true) {
+        await Future.delayed(const Duration(seconds: 1));
+      }
+    }
     final memory = await _readMemory(ref, widget.memoryReader);
     if (memory == null || !isCurrent()) {
       return;

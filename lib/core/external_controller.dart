@@ -5,6 +5,7 @@ import 'dart:io';
 import 'package:fl_clash/common/common.dart';
 import 'package:fl_clash/enum/enum.dart';
 import 'package:fl_clash/models/models.dart';
+import 'package:flutter/foundation.dart' show visibleForTesting;
 
 class ExternalControllerSnapshot {
   const ExternalControllerSnapshot({
@@ -117,8 +118,12 @@ class ExternalTrafficSampler {
 }
 
 class ExternalControllerClient {
-  ExternalControllerClient({required this.baseUri, this.secret = ''})
-    : _http = HttpClient() {
+  ExternalControllerClient({
+    required this.baseUri,
+    this.secret = '',
+    DateTime Function()? clock,
+  }) : _http = HttpClient(),
+       _clock = clock ?? DateTime.now {
     // The controller lives on localhost. Dart's HttpClient otherwise routes
     // through the iOS system proxy when it is on, so a request to 9090 is
     // sent to the mixed port and never reaches the controller.
@@ -128,14 +133,59 @@ class ExternalControllerClient {
   final Uri baseUri;
   final String secret;
   final HttpClient _http;
+  final DateTime Function() _clock;
 
   static const _fetchTimeout = Duration(seconds: 2);
+
+  // The controller's listener comes up asynchronously with the extension
+  // core, so the first requests after the tunnel starts hit connection
+  // refused. Each refused attempt holds off the next one for 1s, then 2s,
+  // then 4s; a single answered request clears the streak.
+  static const _refusedBackoffs = [
+    Duration(seconds: 1),
+    Duration(seconds: 2),
+    Duration(seconds: 4),
+  ];
+  int _refusedStreak = 0;
+  DateTime? _refusedUntil;
+
+  /// True while a connection-refused backoff is holding off new attempts.
+  @visibleForTesting
+  bool get refusedBackoffActive =>
+      _refusedUntil != null && _clock().isBefore(_refusedUntil!);
+
+  bool _skipWhileRefused() => refusedBackoffActive;
+
+  void _noteRefused(Object error) {
+    if (!_isConnectionRefused(error)) {
+      return;
+    }
+    final backoff =
+        _refusedBackoffs[_refusedStreak.clamp(0, _refusedBackoffs.length - 1)];
+    _refusedStreak++;
+    _refusedUntil = _clock().add(backoff);
+  }
+
+  void _noteReachable() {
+    _refusedStreak = 0;
+    _refusedUntil = null;
+  }
+
+  static bool _isConnectionRefused(Object error) {
+    final osError = error is SocketException ? error.osError : null;
+    // 61 is ECONNREFUSED on iOS/macOS, 111 on Linux, 10061 on Windows.
+    return osError != null &&
+        (osError.errorCode == 61 ||
+            osError.errorCode == 111 ||
+            osError.errorCode == 10061);
+  }
 
   /// True when the last controller call failed with 401: the tunnel is up, only the secret is stale.
   bool unauthorized = false;
 
   void _noteStatus(HttpClientResponse response) {
     unauthorized = response.statusCode == HttpStatus.unauthorized;
+    _noteReachable();
   }
 
   final Set<String> _failing = {};
@@ -157,6 +207,9 @@ class ExternalControllerClient {
   static const _memoryReadTimeout = Duration(seconds: 4);
 
   Future<ExternalControllerSnapshot?> fetchConnections() async {
+    if (_skipWhileRefused()) {
+      return null;
+    }
     try {
       final request = await _http
           .getUrl(baseUri.replace(path: '/connections'))
@@ -184,6 +237,7 @@ class ExternalControllerClient {
       return snapshot;
     } catch (error) {
       _reportFailure('connections', compactError(error));
+      _noteRefused(error);
       unauthorized = false;
       return null;
     }
@@ -195,6 +249,9 @@ class ExternalControllerClient {
   // and then closes the connection instead of waiting for the stream
   // to end.
   Future<int?> fetchMemory() async {
+    if (_skipWhileRefused()) {
+      return null;
+    }
     try {
       final request = await _http
           .getUrl(baseUri.replace(path: '/memory'))
@@ -232,6 +289,7 @@ class ExternalControllerClient {
       return null;
     } catch (error) {
       _reportFailure('memory', compactError(error));
+      _noteRefused(error);
       unauthorized = false;
       return null;
     }
@@ -248,6 +306,9 @@ class ExternalControllerClient {
     required String testUrl,
     required int timeout,
   }) async {
+    if (_skipWhileRefused()) {
+      return null;
+    }
     final httpTimeout = coreGuardFor(timeout);
     try {
       final request = await _http
@@ -291,6 +352,7 @@ class ExternalControllerClient {
       return delay.toInt();
     } catch (error) {
       _reportFailure('delay', compactError(error));
+      _noteRefused(error);
       unauthorized = false;
       return null;
     }
@@ -321,6 +383,7 @@ class ExternalControllerClient {
       return ok;
     } catch (error) {
       _reportFailure('patch-configs', compactError(error));
+      _noteRefused(error);
       unauthorized = false;
       return false;
     }
@@ -354,6 +417,7 @@ class ExternalControllerClient {
       return ok;
     } catch (error) {
       _reportFailure('select-proxy', compactError(error));
+      _noteRefused(error);
       unauthorized = false;
       return false;
     }
@@ -365,6 +429,9 @@ class ExternalControllerClient {
   Future<List<ServiceCheckItem>?> fetchServiceCheck(
     ServiceCheckParams params,
   ) async {
+    if (_skipWhileRefused()) {
+      return null;
+    }
     final httpTimeout = coreGuardFor(
       params.timeout,
       budgetFactor: serviceSweepBudgetFactor,
@@ -405,12 +472,16 @@ class ExternalControllerClient {
       ];
     } catch (error) {
       _reportFailure('service-check', compactError(error));
+      _noteRefused(error);
       unauthorized = false;
       return null;
     }
   }
 
   Future<RouteCheck?> fetchRouteCheck(CheckRoutesParams params) async {
+    if (_skipWhileRefused()) {
+      return null;
+    }
     final httpTimeout = coreGuardFor(probeTimeoutDuration.inMilliseconds);
     try {
       final request = await _http
@@ -445,6 +516,7 @@ class ExternalControllerClient {
       return RouteCheck.fromJson(json);
     } catch (error) {
       _reportFailure('route-check', compactError(error));
+      _noteRefused(error);
       unauthorized = false;
       return null;
     }
@@ -453,6 +525,9 @@ class ExternalControllerClient {
   // POST /probe/outbound-ip returns the outbound IP lookup from the core
   // behind 9090, or null when it cannot be reached or answers nothing.
   Future<OutboundIpResult?> fetchOutboundIp(OutboundIpParams params) async {
+    if (_skipWhileRefused()) {
+      return null;
+    }
     final httpTimeout = coreGuardFor(params.timeout);
     try {
       final request = await _http
@@ -487,6 +562,7 @@ class ExternalControllerClient {
       return OutboundIpResult.fromJson(json);
     } catch (error) {
       _reportFailure('outbound-ip', compactError(error));
+      _noteRefused(error);
       unauthorized = false;
       return null;
     }
@@ -521,6 +597,7 @@ class ExternalControllerClient {
       return ok;
     } catch (error) {
       _reportFailure('dns-clear', compactError(error));
+      _noteRefused(error);
       unauthorized = false;
       return false;
     }
@@ -528,6 +605,9 @@ class ExternalControllerClient {
 
   // GET /mitm/hosts returns the hosts with recorded decrypted exchanges.
   Future<MitmDecryptedHosts?> fetchMitmDecryptedHosts() async {
+    if (_skipWhileRefused()) {
+      return null;
+    }
     try {
       final request = await _http
           .getUrl(
@@ -569,6 +649,7 @@ class ExternalControllerClient {
       return hosts;
     } catch (error) {
       _reportFailure('mitm-hosts', compactError(error));
+      _noteRefused(error);
       unauthorized = false;
       return null;
     }
@@ -611,6 +692,7 @@ class ExternalControllerClient {
       return exchanges;
     } catch (error) {
       _reportFailure('mitm-exchanges', compactError(error));
+      _noteRefused(error);
       unauthorized = false;
       return null;
     }
@@ -653,6 +735,7 @@ class ExternalControllerClient {
       return exchange;
     } catch (error) {
       _reportFailure('mitm-exchange', compactError(error));
+      _noteRefused(error);
       unauthorized = false;
       return null;
     }
@@ -695,6 +778,7 @@ class ExternalControllerClient {
       return mitmBody;
     } catch (error) {
       _reportFailure('mitm-body', compactError(error));
+      _noteRefused(error);
       unauthorized = false;
       return null;
     }
@@ -734,6 +818,7 @@ class ExternalControllerClient {
       return ok;
     } catch (error) {
       _reportFailure('close-connections', compactError(error));
+      _noteRefused(error);
       unauthorized = false;
       return false;
     }

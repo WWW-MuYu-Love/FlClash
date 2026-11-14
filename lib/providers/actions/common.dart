@@ -91,6 +91,11 @@ class CommonAction extends _$CommonAction {
   }
 
   Future<(Traffic?, Traffic)?> _readExternalTraffic() async {
+    if (!externalControllerUp(
+      tunnelUp: ref.read(runningVpnOptionsProvider)?.enable == true,
+    )) {
+      return null;
+    }
     final snapshot = await ref
         .read(externalControllerClientProvider)
         .fetchConnections();

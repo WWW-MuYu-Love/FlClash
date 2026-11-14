@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:fl_clash/common/common.dart';
 import 'package:fl_clash/core/controller.dart';
+import 'package:fl_clash/core/external_controller.dart';
 import 'package:fl_clash/core/method.dart';
 import 'package:fl_clash/enum/enum.dart';
 import 'package:fl_clash/features/features.dart';
@@ -150,10 +151,17 @@ mixin ConnectionsPolling<T extends ConsumerStatefulWidget>
     }
   }
 
+  Future<ExternalControllerSnapshot?> _readExternalConnections() async {
+    if (!externalControllerUp(
+      tunnelUp: ref.read(runningVpnOptionsProvider)?.enable == true,
+    )) {
+      return null;
+    }
+    return ref.read(externalControllerClientProvider).fetchConnections();
+  }
+
   Future<List<TrackerInfo>> _readConnections() async {
-    final snapshot = await ref
-        .read(externalControllerClientProvider)
-        .fetchConnections();
+    final snapshot = await _readExternalConnections();
     if (snapshot != null) {
       return snapshot.connections;
     }
@@ -163,9 +171,7 @@ mixin ConnectionsPolling<T extends ConsumerStatefulWidget>
   }
 
   Future<int> _readConnectionCount() async {
-    final snapshot = await ref
-        .read(externalControllerClientProvider)
-        .fetchConnections();
+    final snapshot = await _readExternalConnections();
     if (snapshot != null) {
       return snapshot.connections.length;
     }

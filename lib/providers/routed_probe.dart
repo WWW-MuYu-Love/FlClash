@@ -118,9 +118,14 @@ mixin RoutedProbe<K, V>
     final params = CheckRoutesParams(routes: routes);
     RouteCheck? via9090;
     try {
-      via9090 = await ref
-          .read(externalControllerClientProvider)
-          .fetchRouteCheck(params);
+      via9090 =
+          externalControllerUp(
+            tunnelUp: ref.read(runningVpnOptionsProvider)?.enable == true,
+          )
+          ? await ref
+                .read(externalControllerClientProvider)
+                .fetchRouteCheck(params)
+          : null;
     } catch (_) {
       // Fall through to the App core fallback below.
     }

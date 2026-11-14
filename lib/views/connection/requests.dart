@@ -402,9 +402,12 @@ class _LiveFeedState extends ConsumerState<_LiveFeed>
         return const [];
       }
       // 9090 answers the connections first.
-      final snapshot = await ref
-          .read(externalControllerClientProvider)
-          .fetchConnections();
+      final snapshot =
+          externalControllerUp(
+            tunnelUp: ref.read(runningVpnOptionsProvider)?.enable == true,
+          )
+          ? await ref.read(externalControllerClientProvider).fetchConnections()
+          : null;
       if (snapshot != null) {
         return snapshot.connections;
       }

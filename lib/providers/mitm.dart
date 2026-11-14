@@ -72,8 +72,11 @@ Future<Set<String>> mitmDecryptedHosts(Ref ref) async {
     return const {};
   }
   final hosts = await _readRoutedMitm(
-    fetchVia9090: () =>
-        ref.read(externalControllerClientProvider).fetchMitmDecryptedHosts(),
+    fetchVia9090: () => externalControllerUp(
+      tunnelUp: ref.read(runningVpnOptionsProvider)?.enable == true,
+    )
+        ? ref.read(externalControllerClientProvider).fetchMitmDecryptedHosts()
+        : Future.value(null),
     readCore: ({route}) =>
         ref.read(coreHandlerProvider).getMitmDecryptedHosts(route: route),
   );

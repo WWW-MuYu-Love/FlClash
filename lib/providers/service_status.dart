@@ -6,6 +6,7 @@ import 'package:fl_clash/models/models.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
+import 'app.dart';
 import 'config.dart';
 import 'core.dart';
 import 'route_state.dart';
@@ -28,6 +29,11 @@ class ServiceStatus extends _$ServiceStatus
     RouteState route,
     ServiceTarget target,
   ) async {
+    if (!externalControllerUp(
+      tunnelUp: ref.read(runningVpnOptionsProvider)?.enable == true,
+    )) {
+      return null;
+    }
     final params = ServiceCheckParams(
       proxyName: route.proxied ? '' : directOutbound,
       names: [target.id],
