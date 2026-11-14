@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:fl_clash/common/common.dart';
 import 'package:fl_clash/enum/enum.dart';
 import 'package:fl_clash/models/models.dart';
+import 'package:fl_clash/plugins/service.dart';
 import 'package:fl_clash/plugins/tile.dart';
 import 'package:fl_clash/providers/action.dart';
 import 'package:fl_clash/providers/app.dart';
@@ -53,6 +54,26 @@ class _VpnContainerState extends ConsumerState<VpnManager> with TileListener {
         );
       }
     });
+    // The tile channel's syncRunningState never fires on a cold start with
+    // the tunnel already up, because Swift records the first observation
+    // without notifying. The service channel's tunnelState does report it,
+    // so sync the running flag from there instead.
+    ref.listenManual(tunnelStateProvider, (prev, next) {
+      if (next == TunnelState.connected) {
+        _syncFlagIfTunnelUp();
+      }
+    });
+    _syncFlagIfTunnelUp();
+  }
+
+  void _syncFlagIfTunnelUp() {
+    if (ref.read(tunnelStateProvider) != TunnelState.connected) {
+      return;
+    }
+    if (ref.read(runningVpnOptionsProvider) != null) {
+      return;
+    }
+    unawaited(ref.read(setupActionProvider.notifier).setRunning(true));
   }
 
   @override

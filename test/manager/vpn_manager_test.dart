@@ -3,6 +3,7 @@ import 'package:fl_clash/core/method.dart';
 import 'package:fl_clash/enum/enum.dart';
 import 'package:fl_clash/manager/vpn_manager.dart';
 import 'package:fl_clash/models/models.dart';
+import 'package:fl_clash/plugins/service.dart';
 import 'package:fl_clash/plugins/tile.dart';
 import 'package:fl_clash/providers/action.dart';
 import 'package:fl_clash/providers/app.dart';
@@ -51,15 +52,29 @@ class _RestartRecordingSetupAction extends SetupAction {
   }
 }
 
+class _TunnelStateNotifier extends Notifier<TunnelState?> {
+  @override
+  TunnelState? build() => null;
+
+  void set(TunnelState? value) => state = value;
+}
+
 void main() {
   late ProviderContainer container;
   late _RestartRecordingSetupAction setupAction;
+  final tunnelStateOverride =
+      NotifierProvider<_TunnelStateNotifier, TunnelState?>(
+        _TunnelStateNotifier.new,
+      );
 
   setUp(() {
     setupAction = _RestartRecordingSetupAction();
     container = ProviderContainer(
       overrides: [
         setupActionProvider.overrideWith(() => setupAction),
+        tunnelStateProvider.overrideWith(
+          (ref) => ref.watch(tunnelStateOverride),
+        ),
         // Bypassing private addresses computes the routes in Isolate.run, which
         // the fake clock never lets finish.
         networkSettingProvider.overrideWithBuild(
@@ -427,6 +442,53 @@ void main() {
     // runTime left null: isStart false, the pre-existing path.
 
     syncTunnelRunning(tester);
+    await settle(tester);
+
+    expect(setupAction.setRunningCalls, 1);
+    expect(setupAction.lastSetRunning, isTrue);
+    await drainTimers(tester);
+  });
+
+  testWidgets('a connected tunnelState at mount re-syncs an unset flag', (
+    tester,
+  ) async {
+    container.read(tunnelStateOverride.notifier).set(TunnelState.connected);
+    await pumpVpnManager(tester);
+    container.read(initProvider.notifier).state = true;
+    container.read(runTimeProvider.notifier).state = 1;
+    // Flag intentionally left unset: the cold-start miss.
+
+    await settle(tester);
+
+    expect(setupAction.setRunningCalls, 1);
+    expect(setupAction.lastSetRunning, isTrue);
+    await drainTimers(tester);
+  });
+
+  testWidgets('a connected tunnelState with the flag set does not re-sync', (
+    tester,
+  ) async {
+    await pumpVpnManager(tester);
+    container.read(initProvider.notifier).state = true;
+    container.read(runTimeProvider.notifier).state = 1;
+    startService();
+
+    container.read(tunnelStateOverride.notifier).set(TunnelState.connected);
+    await settle(tester);
+
+    expect(setupAction.setRunningCalls, 0);
+    await drainTimers(tester);
+  });
+
+  testWidgets('a tunnelState change to connected re-syncs an unset flag', (
+    tester,
+  ) async {
+    await pumpVpnManager(tester);
+    container.read(initProvider.notifier).state = true;
+    container.read(runTimeProvider.notifier).state = 1;
+    // Flag intentionally left unset.
+
+    container.read(tunnelStateOverride.notifier).set(TunnelState.connected);
     await settle(tester);
 
     expect(setupAction.setRunningCalls, 1);
