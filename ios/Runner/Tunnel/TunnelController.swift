@@ -3,11 +3,29 @@ import NetworkExtension
 import UIKit
 import os
 
+enum ProviderMessagePriority: Int {
+  case high = 0
+  case normal = 1
+  case low = 2
+}
+
 @MainActor
 final class TunnelController {
   private let sharedStateStore: SharedStateStore
   private let managerStore: TunnelManagerStore
   private let coordinator: TunnelCoordinator
+
+  private struct QueuedProviderMessage {
+    let data: Data
+    let priority: ProviderMessagePriority
+    let sequence: UInt64
+    let continuation: CheckedContinuation<String, Error>
+  }
+
+  private var providerMessageQueue: [QueuedProviderMessage] = []
+  private var providerMessageBusy = false
+  private var providerMessageSequence: UInt64 = 0
+  private let maxProviderMessageQueueDepth = 32
 
   private var tunnelStatusObserver: NSObjectProtocol?
   private var appActiveObserver: NSObjectProtocol?
@@ -99,7 +117,69 @@ final class TunnelController {
     try await coordinator.reloadOnDemandRules()
   }
 
-  func sendProviderMessage(_ data: Data) async throws -> String {
+  func sendProviderMessage(
+    _ data: Data,
+    priority: ProviderMessagePriority = .normal
+  ) async throws -> String {
+    try await withCheckedThrowingContinuation { continuation in
+      providerMessageSequence += 1
+      guard providerMessageQueue.count < maxProviderMessageQueueDepth else {
+        continuation.resume(
+          throwing: ProviderMessageError(
+            code: "empty_response",
+            message: "provider message queue is full"
+          )
+        )
+        return
+      }
+      providerMessageQueue.append(
+        QueuedProviderMessage(
+          data: data,
+          priority: priority,
+          sequence: providerMessageSequence,
+          continuation: continuation
+        )
+      )
+      drainProviderMessageQueue()
+    }
+  }
+
+  private func drainProviderMessageQueue() {
+    guard !providerMessageBusy, !providerMessageQueue.isEmpty else {
+      return
+    }
+    providerMessageBusy = true
+    let next = dequeueProviderMessage()
+    Task { @MainActor in
+      do {
+        let value = try await self.performSendProviderMessage(next.data)
+        next.continuation.resume(returning: value)
+      } catch {
+        next.continuation.resume(throwing: error)
+      }
+      self.providerMessageBusy = false
+      self.drainProviderMessageQueue()
+    }
+  }
+
+  private func dequeueProviderMessage() -> QueuedProviderMessage {
+    var best = providerMessageQueue.startIndex
+    for index in providerMessageQueue.indices {
+      let candidate = providerMessageQueue[index]
+      let current = providerMessageQueue[best]
+      if candidate.priority.rawValue < current.priority.rawValue
+        || (candidate.priority == current.priority
+          && candidate.sequence < current.sequence)
+      {
+        best = index
+      }
+    }
+    return providerMessageQueue.remove(at: best)
+  }
+
+  private func performSendProviderMessage(
+    _ data: Data
+  ) async throws -> String {
     let manager: NETunnelProviderManager?
     do {
       manager = try await managerStore.loadManager(createIfNeeded: false)

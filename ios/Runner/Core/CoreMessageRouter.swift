@@ -399,7 +399,23 @@ final class CoreMessageRouter {
         }
       }
     case .networkExtension:
-      return try await tunnelController.sendProviderMessage(data)
+      return try await tunnelController.sendProviderMessage(
+        data,
+        priority: providerMessagePriority(data)
+      )
+    }
+  }
+
+  private func providerMessagePriority(
+    _ data: Data
+  ) -> ProviderMessagePriority {
+    switch methodCallName(data) {
+    case "config.setup", "config.update", "log.start", "log.stop":
+      return .high
+    case "proxy.testDelay":
+      return .low
+    default:
+      return .normal
     }
   }
 
