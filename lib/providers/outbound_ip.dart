@@ -1,7 +1,10 @@
+import 'package:fl_clash/common/constant.dart';
 import 'package:fl_clash/common/service_probe.dart';
+import 'package:fl_clash/core/method.dart';
 import 'package:fl_clash/models/models.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
+import 'app.dart';
 import 'core.dart';
 import 'route_state.dart';
 import 'routed_probe.dart';
@@ -24,10 +27,36 @@ class OutboundIpProbe extends _$OutboundIpProbe
     final proxyName = target == routedOutbound && !route.proxied
         ? directOutbound
         : target;
-    final result = await lookupOutboundIp(
-      ref.read(coreHandlerProvider),
-      proxyName,
-    );
+    // 9090 first: the routing core answers the lookup. The app core only
+    // matters when the tunnel is down, so it is the fallback, not a retry.
+    OutboundIpResult? via9090;
+    try {
+      final client = ref.read(externalControllerClientProvider);
+      via9090 =
+          externalControllerUp(
+            tunnelUp: ref.read(runningVpnOptionsProvider)?.enable == true,
+          )
+          ? await client.fetchSettled(
+              outboundIpTimeoutDuration,
+              () => client.fetchOutboundIp(
+                OutboundIpParams(
+                  proxyName: proxyName,
+                  urls: ipInfoSources.keys.toList(),
+                  timeout: outboundIpTimeoutDuration.inMilliseconds,
+                ),
+              ),
+            )
+          : null;
+    } catch (_) {
+      // Fall through to the App core fallback below.
+    }
+    final result =
+        via9090 ??
+        await lookupOutboundIp(
+          ref.read(coreHandlerProvider),
+          proxyName,
+          route: CoreRoute.app,
+        );
     final value = parseOutboundIp(result);
     final exit = result.chains.firstOrNull;
     return {

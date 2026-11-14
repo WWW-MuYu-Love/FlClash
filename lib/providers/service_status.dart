@@ -1,9 +1,12 @@
+import 'package:fl_clash/common/constant.dart';
 import 'package:fl_clash/common/mixin.dart';
 import 'package:fl_clash/common/service_probe.dart';
+import 'package:fl_clash/core/method.dart';
 import 'package:fl_clash/models/models.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
+import 'app.dart';
 import 'config.dart';
 import 'core.dart';
 import 'route_state.dart';
@@ -22,16 +25,53 @@ class ServiceStatus extends _$ServiceStatus
       value.status == ServiceProbeStatus.timeout ||
       value.status == ServiceProbeStatus.failed;
 
+  Future<List<ServiceCheckItem>?> _serviceCheckOver9090(
+    RouteState route,
+    ServiceTarget target,
+  ) async {
+    if (!externalControllerUp(
+      tunnelUp: ref.read(runningVpnOptionsProvider)?.enable == true,
+    )) {
+      return null;
+    }
+    final params = ServiceCheckParams(
+      proxyName: route.proxied ? '' : directOutbound,
+      names: [target.id],
+      timeout: probeTimeoutDuration.inMilliseconds,
+    );
+    try {
+      final client = ref.read(externalControllerClientProvider);
+      final items = await client.fetchSettled(
+        probeTimeoutDuration,
+        () => client.fetchServiceCheck(params),
+      );
+      if (items != null) {
+        return items;
+      }
+    } catch (_) {
+      // Fall through to the App core fallback in probe.
+    }
+    return null;
+  }
+
   @override
   Future<Map<ServiceTarget, ProbeAnswer<ServiceCheck>>> probe(
     ServiceTarget target,
     RouteState route,
   ) async {
-    final checks = await checkServices(
-      ref.read(coreHandlerProvider),
-      proxyName: route.proxied ? '' : directOutbound,
-      targets: [target],
-    );
+    Map<ServiceTarget, ServiceCheck> checks;
+    final items = await _serviceCheckOver9090(route, target);
+    if (items != null) {
+      checks = serviceChecksOf(items);
+    } else {
+      // 9090 is gone: the App core answers the check.
+      checks = await checkServices(
+        ref.read(coreHandlerProvider),
+        proxyName: route.proxied ? '' : directOutbound,
+        targets: [target],
+        route: CoreRoute.app,
+      );
+    }
     final check = checks[target];
     return {
       if (check != null)
