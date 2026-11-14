@@ -2,7 +2,8 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:fl_clash/common/constant.dart';
+import 'package:fl_clash/common/common.dart';
+import 'package:fl_clash/enum/enum.dart';
 import 'package:fl_clash/models/models.dart';
 
 class ExternalControllerSnapshot {
@@ -132,6 +133,20 @@ class ExternalControllerClient {
     unauthorized = response.statusCode == HttpStatus.unauthorized;
   }
 
+  final Set<String> _failing = {};
+
+  void _reportFailure(String key, String detail) {
+    if (_failing.add(key)) {
+      commonPrint.log('9090 $key failed: $detail', logLevel: LogLevel.warning);
+    }
+  }
+
+  void _reportSuccess(String key) {
+    if (_failing.remove(key)) {
+      commonPrint.log('9090 $key recovered');
+    }
+  }
+
   // /memory ticks once a second and its first sample is zero, so reading
   // a real value takes two ticks.
   static const _memoryReadTimeout = Duration(seconds: 4);
@@ -148,14 +163,22 @@ class ExternalControllerClient {
       _noteStatus(response);
       if (response.statusCode != HttpStatus.ok) {
         await response.drain<void>();
+        _reportFailure('connections', 'HTTP ${response.statusCode}');
         return null;
       }
       final body = await response
           .transform(utf8.decoder)
           .join()
           .timeout(_fetchTimeout);
-      return ExternalControllerSnapshot.fromJson(jsonDecode(body));
-    } catch (_) {
+      final snapshot = ExternalControllerSnapshot.fromJson(jsonDecode(body));
+      if (snapshot == null) {
+        _reportFailure('connections', 'bad response');
+        return null;
+      }
+      _reportSuccess('connections');
+      return snapshot;
+    } catch (error) {
+      _reportFailure('connections', compactError(error));
       unauthorized = false;
       return null;
     }
@@ -178,6 +201,7 @@ class ExternalControllerClient {
       _noteStatus(response);
       if (response.statusCode != HttpStatus.ok) {
         await response.drain<void>();
+        _reportFailure('memory', 'HTTP ${response.statusCode}');
         return null;
       }
       var read = 0;
@@ -191,6 +215,7 @@ class ExternalControllerClient {
         if (json is Map<String, Object?>) {
           final inuse = json['inuse'];
           if (inuse is num && inuse > 0) {
+            _reportSuccess('memory');
             return inuse.toInt();
           }
         }
@@ -198,8 +223,10 @@ class ExternalControllerClient {
           break;
         }
       }
+      _reportFailure('memory', 'no non-zero sample');
       return null;
-    } catch (_) {
+    } catch (error) {
+      _reportFailure('memory', compactError(error));
       unauthorized = false;
       return null;
     }
@@ -238,6 +265,7 @@ class ExternalControllerClient {
       _noteStatus(response);
       if (response.statusCode != HttpStatus.ok) {
         await response.drain<void>();
+        _reportFailure('delay', 'HTTP ${response.statusCode}');
         return null;
       }
       final body = await response
@@ -246,11 +274,18 @@ class ExternalControllerClient {
           .timeout(_fetchTimeout);
       final json = jsonDecode(body);
       if (json is! Map<String, Object?>) {
+        _reportFailure('delay', 'bad response');
         return null;
       }
       final delay = json['delay'];
-      return delay is num ? delay.toInt() : null;
-    } catch (_) {
+      if (delay is! num) {
+        _reportFailure('delay', 'no delay');
+        return null;
+      }
+      _reportSuccess('delay');
+      return delay.toInt();
+    } catch (error) {
+      _reportFailure('delay', compactError(error));
       unauthorized = false;
       return null;
     }
@@ -330,6 +365,7 @@ class ExternalControllerClient {
       _noteStatus(response);
       if (response.statusCode != HttpStatus.ok) {
         await response.drain<void>();
+        _reportFailure('service-check', 'HTTP ${response.statusCode}');
         return null;
       }
       final body = await response
@@ -338,13 +374,16 @@ class ExternalControllerClient {
           .timeout(_fetchTimeout);
       final json = jsonDecode(body);
       if (json is! List) {
+        _reportFailure('service-check', 'bad response');
         return null;
       }
+      _reportSuccess('service-check');
       return [
         for (final item in json)
           if (item is Map<String, Object?>) ServiceCheckItem.fromJson(item),
       ];
-    } catch (_) {
+    } catch (error) {
+      _reportFailure('service-check', compactError(error));
       unauthorized = false;
       return null;
     }
@@ -369,6 +408,7 @@ class ExternalControllerClient {
       _noteStatus(response);
       if (response.statusCode != HttpStatus.ok) {
         await response.drain<void>();
+        _reportFailure('route-check', 'HTTP ${response.statusCode}');
         return null;
       }
       final body = await response
@@ -377,10 +417,13 @@ class ExternalControllerClient {
           .timeout(_fetchTimeout);
       final json = jsonDecode(body);
       if (json is! Map<String, Object?>) {
+        _reportFailure('route-check', 'bad response');
         return null;
       }
+      _reportSuccess('route-check');
       return RouteCheck.fromJson(json);
-    } catch (_) {
+    } catch (error) {
+      _reportFailure('route-check', compactError(error));
       unauthorized = false;
       return null;
     }
@@ -407,6 +450,7 @@ class ExternalControllerClient {
       _noteStatus(response);
       if (response.statusCode != HttpStatus.ok) {
         await response.drain<void>();
+        _reportFailure('outbound-ip', 'HTTP ${response.statusCode}');
         return null;
       }
       final body = await response
@@ -415,10 +459,13 @@ class ExternalControllerClient {
           .timeout(_fetchTimeout);
       final json = jsonDecode(body);
       if (json is! Map<String, Object?>) {
+        _reportFailure('outbound-ip', 'bad response');
         return null;
       }
+      _reportSuccess('outbound-ip');
       return OutboundIpResult.fromJson(json);
-    } catch (_) {
+    } catch (error) {
+      _reportFailure('outbound-ip', compactError(error));
       unauthorized = false;
       return null;
     }
