@@ -1,8 +1,6 @@
 import 'package:fl_clash/common/service_probe.dart';
 import 'package:fl_clash/core/controller.dart';
-import 'package:fl_clash/core/external_controller.dart';
 import 'package:fl_clash/core/interface.dart';
-import 'package:fl_clash/core/method.dart';
 import 'package:fl_clash/models/models.dart';
 import 'package:fl_clash/providers/core.dart';
 import 'package:fl_clash/providers/outbound_ip.dart';
@@ -13,9 +11,6 @@ import 'package:mocktail/mocktail.dart';
 import 'package:riverpod/riverpod.dart';
 
 class _MockCore extends Mock implements CoreHandlerInterface {}
-
-class _MockExternalControllerClient extends Mock
-    implements ExternalControllerClient {}
 
 const _answer = OutboundIpResult(
   url: 'https://www.cloudflare.com/cdn-cgi/trace',
@@ -33,10 +28,6 @@ void main() {
   setUp(() => core = _MockCore());
 
   ProviderContainer build({bool proxied = true}) {
-    final client = _MockExternalControllerClient();
-    when(
-      () => client.fetchOutboundIp(any()),
-    ).thenAnswer((_) => Future<OutboundIpResult?>.value());
     final container = ProviderContainer(
       overrides: [
         routeTrackerProvider.overrideWithBuild(
@@ -50,7 +41,6 @@ void main() {
           ),
         ),
         coreHandlerProvider.overrideWithValue(CoreController.scoped(core)),
-        externalControllerClientProvider.overrideWithValue(client),
       ],
     );
     addTearDown(container.dispose);
@@ -60,18 +50,14 @@ void main() {
 
   Future<OutboundIpParams> asked() async {
     await pumpEventQueue();
-    return verify(
-          () => core.outboundIp(captureAny(), route: CoreRoute.app),
-        ).captured.single
+    return verify(() => core.outboundIp(captureAny())).captured.single
         as OutboundIpParams;
   }
 
   test(
     'asks the Core for the address the current route exits through',
     () async {
-      when(
-        () => core.outboundIp(any(), route: CoreRoute.app),
-      ).thenAnswer((_) async => _answer);
+      when(() => core.outboundIp(any())).thenAnswer((_) async => _answer);
       final container = build();
 
       container.read(outboundIpProbeProvider.notifier).watch(routedOutbound);
@@ -88,9 +74,7 @@ void main() {
   );
 
   test('pins the direct outbound while the proxy is off', () async {
-    when(
-      () => core.outboundIp(any(), route: CoreRoute.app),
-    ).thenAnswer((_) async => _answer);
+    when(() => core.outboundIp(any())).thenAnswer((_) async => _answer);
     final container = build(proxied: false);
 
     container.read(outboundIpProbeProvider.notifier).watch(routedOutbound);
@@ -99,9 +83,7 @@ void main() {
   });
 
   test('looks a node up through itself', () async {
-    when(
-      () => core.outboundIp(any(), route: CoreRoute.app),
-    ).thenAnswer((_) async => _answer);
+    when(() => core.outboundIp(any())).thenAnswer((_) async => _answer);
     final container = build();
 
     container.read(outboundIpProbeProvider.notifier).watch('HK-01');
@@ -114,7 +96,7 @@ void main() {
   });
 
   test('the routed answer fills in the node it left through', () async {
-    when(() => core.outboundIp(any(), route: CoreRoute.app)).thenAnswer(
+    when(() => core.outboundIp(any())).thenAnswer(
       (_) async => const OutboundIpResult(
         url: 'https://www.cloudflare.com/cdn-cgi/trace',
         body: 'ip=2.2.2.2\nloc=US\n',
@@ -139,7 +121,7 @@ void main() {
     probe.watch('HK-01');
     await pumpEventQueue();
 
-    verify(() => core.outboundIp(any(), route: CoreRoute.app)).called(1);
+    verify(() => core.outboundIp(any())).called(1);
     final entry = container.read(outboundIpProbeProvider).entryOf('HK-01');
     expect(entry.phase, ProbePhase.fresh);
     expect(entry.value?.ip, '2.2.2.2');
@@ -148,25 +130,8 @@ void main() {
     ]);
   });
 
-  test('falls back to the app core when 9090 answers nothing', () async {
-    when(
-      () => core.outboundIp(any(), route: CoreRoute.app),
-    ).thenAnswer((_) async => _answer);
-    final container = build();
-
-    container.read(outboundIpProbeProvider.notifier).watch(routedOutbound);
-    await pumpEventQueue();
-
-    verify(() => core.outboundIp(any(), route: CoreRoute.app)).called(1);
-    final entry = container
-        .read(outboundIpProbeProvider)
-        .entryOf(routedOutbound);
-    expect(entry.phase, ProbePhase.fresh);
-    expect(entry.value?.ip, '2.2.2.2');
-  });
-
   test('a Core error is a failure until it is refreshed', () async {
-    when(() => core.outboundIp(any(), route: CoreRoute.app)).thenAnswer(
+    when(() => core.outboundIp(any())).thenAnswer(
       (_) async => const OutboundIpResult(
         error: 'timeout',
         coreEpoch: 1,
@@ -183,11 +148,11 @@ void main() {
       container.read(outboundIpProbeProvider).entryOf(routedOutbound).phase,
       ProbePhase.failed,
     );
-    verify(() => core.outboundIp(any(), route: CoreRoute.app)).called(1);
+    verify(() => core.outboundIp(any())).called(1);
 
     probe.refresh([routedOutbound]);
     await pumpEventQueue();
 
-    verify(() => core.outboundIp(any(), route: CoreRoute.app)).called(1);
+    verify(() => core.outboundIp(any())).called(1);
   });
 }
