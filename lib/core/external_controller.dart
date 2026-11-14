@@ -559,6 +559,13 @@ class ExternalControllerClient {
         return null;
       }
       _reportSuccess('mitm-hosts');
+      // A successful read with no hosts is the invisible case: the capture
+      // info stays hidden with no failure line. Log it once per streak.
+      if (hosts.hosts.isEmpty) {
+        _reportFailure('mitm-hosts-empty', 'no decrypted hosts');
+      } else {
+        _reportSuccess('mitm-hosts-empty');
+      }
       return hosts;
     } catch (error) {
       _reportFailure('mitm-hosts', compactError(error));

@@ -230,12 +230,18 @@ class SetupAction extends _$SetupAction {
     if (request.initialize) {
       var applied = false;
       try {
-        applied = await applyProfile(
-          force: !request.resume,
-          preloadInvoke: () => _startCoreRunning(request),
-        );
+        // The core starts first and the tunnel follows: starting them
+        // together races the config push against the tunnel coming up.
+        applied = await applyProfile(force: !request.resume);
       } catch (_) {
         applied = false;
+      }
+      if (applied) {
+        try {
+          await _startCoreRunning(request);
+        } catch (_) {
+          applied = false;
+        }
       }
       if (!applied && _isCurrent(request)) {
         await globalState.safeRun(() => setRunning(false));

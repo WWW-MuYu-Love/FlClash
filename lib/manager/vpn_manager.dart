@@ -23,6 +23,8 @@ class VpnManager extends ConsumerStatefulWidget {
 }
 
 class _VpnContainerState extends ConsumerState<VpnManager> with TileListener {
+  bool _flagSyncPending = false;
+
   @override
   void initState() {
     super.initState();
@@ -67,13 +69,25 @@ class _VpnContainerState extends ConsumerState<VpnManager> with TileListener {
   }
 
   void _syncFlagIfTunnelUp() {
-    if (ref.read(tunnelStateProvider) != TunnelState.connected) {
+    if (_flagSyncPending) {
       return;
     }
     if (ref.read(runningVpnOptionsProvider) != null) {
       return;
     }
-    unawaited(ref.read(setupActionProvider.notifier).setRunning(true));
+    if (ref.read(tunnelStateProvider) != TunnelState.connected) {
+      return;
+    }
+    _flagSyncPending = true;
+    unawaited(
+      ref.read(setupActionProvider.notifier).setRunning(true).whenComplete(() {
+        // Only allow a retry when the flag is still unset, meaning the
+        // sync did not land. A set flag blocks later calls by itself.
+        if (ref.read(runningVpnOptionsProvider) == null) {
+          _flagSyncPending = false;
+        }
+      }),
+    );
   }
 
   @override

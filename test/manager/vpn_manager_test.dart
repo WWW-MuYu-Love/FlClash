@@ -37,6 +37,14 @@ class _RestartRecordingSetupAction extends SetupAction {
   Future<bool> setRunning(bool running, {bool initialize = false}) async {
     setRunningCalls++;
     lastSetRunning = running;
+    // Mirror the real method: starting the core records the running flag.
+    final container = globalState.container;
+    if (running) {
+      final vpnOptions = await container.read(vpnOptionsProvider.future);
+      container.read(runningVpnOptionsProvider.notifier).value = vpnOptions;
+    } else {
+      container.read(runningVpnOptionsProvider.notifier).value = null;
+    }
     return true;
   }
 
