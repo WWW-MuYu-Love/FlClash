@@ -500,7 +500,6 @@
   "disconnected": "Desconectado",
   "disconnect": "Desconectar",
   "connecting": "Conectando…",
-  "disconnecting": "Desconectando…",
   "restartCoreTip": "¿Seguro que quieres reiniciar el núcleo?",
   "forceRestartCoreTip": "¿Seguro que quieres forzar el reinicio del núcleo?",
   "dnsHijacking": "Secuestro de DNS",

@@ -500,7 +500,6 @@
   "disconnected": "Disconnected",
   "disconnect": "Disconnect",
   "connecting": "Connecting…",
-  "disconnecting": "Disconnecting…",
   "restartCoreTip": "Are you sure you want to restart the core?",
   "forceRestartCoreTip": "Are you sure you want to force restart the core?",
   "dnsHijacking": "DNS hijacking",

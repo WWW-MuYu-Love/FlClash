@@ -181,7 +181,7 @@ func applyConfig(params *SetupParams) error {
 	}
 	patchSelectGroup(params.SelectedMap)
 	bumpRouteEpoch()
-	restartListeners(cfg)
+	updateListeners(cfg)
 	reconcileGeoUpdater()
 	scheduleLoadMemoryRelease()
 	if err != nil {

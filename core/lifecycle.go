@@ -50,7 +50,7 @@ func handleStartListener() {
 	configMu.Lock()
 	defer configMu.Unlock()
 	setRunning(true)
-	restartListeners(currentConfig)
+	updateListeners(currentConfig)
 	resolver.ResetConnection()
 	// A probe already out left before the TUN routes and over the DNS
 	// connections just dropped, so its answer must not stand for this route.
@@ -63,15 +63,6 @@ func handleStopListener() {
 	setRunning(false)
 	listener.StopListener()
 	resolver.ResetConnection()
-}
-
-// restartListeners stops every listener first so the recreations below
-// build them with the tunnel this file passes them. ReCreateMixed keeps
-// the first listener built for an address, and a PATCH can build the mixed
-// listener with the bare tunnel while the listeners are down.
-func restartListeners(cfg *config.Config) {
-	listener.StopListener()
-	updateListeners(cfg)
 }
 
 func updateListeners(cfg *config.Config) {

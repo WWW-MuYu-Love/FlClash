@@ -859,7 +859,6 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "disconnect": MessageLookupByLibrary.simpleMessage("Отключить"),
     "disconnected": MessageLookupByLibrary.simpleMessage("Отключено"),
-    "disconnecting": MessageLookupByLibrary.simpleMessage("Отключение…"),
     "discoverNewVersion": MessageLookupByLibrary.simpleMessage(
       "Доступна новая версия",
     ),

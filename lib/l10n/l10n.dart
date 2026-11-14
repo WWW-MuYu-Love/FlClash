@@ -3976,16 +3976,6 @@ class AppLocalizations {
     return Intl.message('Connecting…', name: 'connecting', desc: '', args: []);
   }
 
-  /// `Disconnecting…`
-  String get disconnecting {
-    return Intl.message(
-      'Disconnecting…',
-      name: 'disconnecting',
-      desc: '',
-      args: [],
-    );
-  }
-
   /// `Are you sure you want to restart the core?`
   String get restartCoreTip {
     return Intl.message(
@@ -7728,8 +7718,7 @@ class AppLocalizations {
   String customImportDroppedSubRules(num count, Object label) {
     return Intl.plural(
       count,
-      one:
-          '1 SUB-RULE rule was dropped, since custom profiles do not support sub-rules',
+      one: '1 SUB-RULE rule was dropped, since custom profiles do not support sub-rules',
       other:
           '$label SUB-RULE rules were dropped, since custom profiles do not support sub-rules',
       name: 'customImportDroppedSubRules',

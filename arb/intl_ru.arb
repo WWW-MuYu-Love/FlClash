@@ -500,7 +500,6 @@
   "disconnected": "Отключено",
   "disconnect": "Отключить",
   "connecting": "Подключение…",
-  "disconnecting": "Отключение…",
   "restartCoreTip": "Вы уверены, что хотите перезапустить ядро?",
   "forceRestartCoreTip": "Вы уверены, что хотите принудительно перезапустить ядро?",
   "dnsHijacking": "Перехват DNS",

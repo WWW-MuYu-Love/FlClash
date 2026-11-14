@@ -213,7 +213,6 @@ String _vpnSubtitle(
   return switch (state) {
     TunnelState.connected => appLocalizations.connected,
     TunnelState.pending => appLocalizations.connecting,
-    TunnelState.disconnecting => appLocalizations.disconnecting,
     TunnelState.disconnected =>
       tunnelError == null
           ? appLocalizations.disconnected

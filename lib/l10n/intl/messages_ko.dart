@@ -695,7 +695,6 @@ class MessageLookup extends MessageLookupByLibrary {
     "disclaimerWarrantyTitle": MessageLookupByLibrary.simpleMessage("보증 부인"),
     "disconnect": MessageLookupByLibrary.simpleMessage("연결 해제"),
     "disconnected": MessageLookupByLibrary.simpleMessage("연결 끊김"),
-    "disconnecting": MessageLookupByLibrary.simpleMessage("연결 해제 중…"),
     "discoverNewVersion": MessageLookupByLibrary.simpleMessage("새 버전 발견"),
     "dnsCacheCleared": MessageLookupByLibrary.simpleMessage("DNS 캐시를 지웠습니다"),
     "dnsHijackDesc": MessageLookupByLibrary.simpleMessage(
