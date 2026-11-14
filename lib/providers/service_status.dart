@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:fl_clash/common/constant.dart';
 import 'package:fl_clash/common/mixin.dart';
 import 'package:fl_clash/common/service_probe.dart';
@@ -54,41 +52,17 @@ class ServiceStatus extends _$ServiceStatus
     return null;
   }
 
-  Future<Map<ServiceTarget, ServiceCheck>?> _serviceCheckViaXpc(
-    ServiceTarget target,
-    RouteState route,
-  ) async {
-    if (ref.read(runningVpnOptionsProvider)?.enable != true) {
-      return null;
-    }
-    try {
-      final checks = await checkServices(
-        ref.read(coreHandlerProvider),
-        proxyName: route.proxied ? '' : directOutbound,
-        targets: [target],
-      ).timeout(serviceCheckXpcAttemptDuration);
-      return checks.containsKey(target) ? checks : null;
-    } catch (_) {
-      return null;
-    }
-  }
-
   @override
   Future<Map<ServiceTarget, ProbeAnswer<ServiceCheck>>> probe(
     ServiceTarget target,
     RouteState route,
   ) async {
     Map<ServiceTarget, ServiceCheck> checks;
-    final viaXpc = await _serviceCheckViaXpc(target, route);
-    final items = viaXpc == null
-        ? await _serviceCheckOver9090(route, target)
-        : null;
-    if (viaXpc != null) {
-      checks = viaXpc;
-    } else if (items != null) {
+    final items = await _serviceCheckOver9090(route, target);
+    if (items != null) {
       checks = serviceChecksOf(items);
     } else {
-      // Neither XPC nor 9090 answered: the App core answers the check.
+      // 9090 is gone: the App core answers the check.
       checks = await checkServices(
         ref.read(coreHandlerProvider),
         proxyName: route.proxied ? '' : directOutbound,

@@ -412,11 +412,6 @@ final class CoreMessageRouter {
     switch methodCallName(data) {
     case "config.setup", "config.update", "log.start", "log.stop":
       return .high
-    // Periodic, retryable probes: they must not jump configuration or log
-    // migration, but the status card is user-visible, so they must not
-    // starve behind bulk delay tests either.
-    case "probe.services", "probe.outboundIp":
-      return .normal
     case "proxy.testDelay":
       return .low
     default:

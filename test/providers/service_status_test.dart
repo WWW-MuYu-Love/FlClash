@@ -392,36 +392,7 @@ void main() {
     },
   );
 
-  test('uses the XPC answer directly and never asks 9090', () async {
-    final (scope, client) = runningContainer(
-      controllerItems: [_item('youtube')],
-    );
-    when(() => core.serviceCheck(any())).thenAnswer(
-      (_) async => [
-        const ServiceCheckItem(
-          name: 'youtube',
-          status: 'available',
-          delay: 12,
-          chains: ['XPC-01'],
-          checkedAt: 1700000000000,
-          coreEpoch: 1,
-          routeVersion: 1,
-        ),
-      ],
-    );
-
-    notifierOf(scope).watch(ServiceTarget.youtube);
-    await pumpEventQueue();
-
-    verify(() => core.serviceCheck(any())).called(1);
-    expect(client.fetchServiceCheckCalls, 0);
-    verifyNever(() => core.serviceCheck(any(), route: CoreRoute.app));
-    final state = stateOf(scope);
-    expect(state.entryOf(ServiceTarget.youtube).phase, ProbePhase.fresh);
-    expect(state.valueOf(ServiceTarget.youtube)?.node, 'XPC-01');
-  });
-
-  test('falls back to 9090 when XPC answers nothing', () async {
+  test('asks 9090 first and never calls the Core when it answers', () async {
     final (scope, client) = runningContainer(
       controllerItems: [_item('youtube')],
     );
@@ -432,51 +403,16 @@ void main() {
     notifierOf(scope).watch(ServiceTarget.youtube);
     await pumpEventQueue();
 
-    verify(() => core.serviceCheck(any())).called(1);
     expect(client.fetchServiceCheckCalls, 1);
-    verifyNever(() => core.serviceCheck(any(), route: CoreRoute.app));
-    final state = stateOf(scope);
-    expect(state.entryOf(ServiceTarget.youtube).phase, ProbePhase.fresh);
-    expect(state.valueOf(ServiceTarget.youtube)?.node, 'HK-01');
-  });
-
-  testWidgets('falls back to 9090 when the XPC attempt times out', (
-    tester,
-  ) async {
-    final (scope, client) = runningContainer(
-      controllerItems: [_item('youtube')],
-    );
-    when(
-      () => core.serviceCheck(any()),
-    ).thenAnswer((_) => Completer<List<ServiceCheckItem>>().future);
-
-    notifierOf(scope).watch(ServiceTarget.youtube);
-    await tester.pump();
-    await tester.pump(serviceCheckXpcAttemptDuration);
-    await tester.pump();
-
-    expect(client.fetchServiceCheckCalls, 1);
-    verifyNever(() => core.serviceCheck(any(), route: CoreRoute.app));
-    final state = stateOf(scope);
-    expect(state.entryOf(ServiceTarget.youtube).phase, ProbePhase.fresh);
-    expect(state.valueOf(ServiceTarget.youtube)?.node, 'HK-01');
-  });
-
-  test('does not try XPC when the tunnel is down', () async {
-    final scope = container();
-
-    notifierOf(scope).watch(ServiceTarget.youtube);
-    await pumpEventQueue();
-
     verifyNever(() => core.serviceCheck(any()));
-    verify(() => core.serviceCheck(any(), route: CoreRoute.app)).called(1);
+    verifyNever(() => core.serviceCheck(any(), route: CoreRoute.app));
+    final state = stateOf(scope);
+    expect(state.entryOf(ServiceTarget.youtube).phase, ProbePhase.fresh);
+    expect(state.valueOf(ServiceTarget.youtube)?.node, 'HK-01');
   });
 
   test('falls back to the app core when 9090 is gone too', () async {
     final (scope, client) = runningContainer(controllerItems: null);
-    when(() => core.serviceCheck(any())).thenThrow(
-      const CoreMethodException(code: 'empty_response', message: 'empty'),
-    );
     when(() => core.serviceCheck(any(), route: CoreRoute.app)).thenAnswer((
       invocation,
     ) async {
@@ -488,10 +424,9 @@ void main() {
     notifierOf(scope).watch(ServiceTarget.youtube);
     await pumpEventQueue();
 
-    // XPC answers nothing and 9090 answers nothing, so the probe falls
-    // back to the App core.
-    verify(() => core.serviceCheck(any())).called(1);
+    // 9090 answers nothing, so the probe falls back to the App core.
     expect(client.fetchServiceCheckCalls, 1);
+    verifyNever(() => core.serviceCheck(any()));
     verify(() => core.serviceCheck(any(), route: CoreRoute.app)).called(1);
     final state = stateOf(scope);
     expect(state.entryOf(ServiceTarget.youtube).phase, ProbePhase.fresh);

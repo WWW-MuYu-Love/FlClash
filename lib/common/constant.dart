@@ -66,12 +66,6 @@ const delayTimedOutValue = -1;
 
 const probeTimeoutDuration = Duration(seconds: 10);
 
-/// How long a status probe waits on the extension core over XPC before
-/// falling back to 9090: half the probe budget. XPC is a local channel, so
-/// a healthy answer arrives in milliseconds; the Core keeps its full dial
-/// budget, only the wait is cut short.
-const serviceCheckXpcAttemptDuration = Duration(seconds: 5);
-
 /// Outlasts the Core's one-second pick poll (`routePollInterval` in
 /// core/route.go), so groups re-picking on neighbouring polls cost one route
 /// check.
@@ -89,11 +83,6 @@ const downloadTimeoutDuration = Duration(seconds: 20);
 
 /// A healthy source answers within a second; past this the outbound is down.
 const outboundIpTimeoutDuration = Duration(seconds: 6);
-
-/// How long an outbound-IP lookup waits on the extension core over XPC
-/// before falling back to 9090: half the lookup budget, same rule as the
-/// service-check attempt above.
-const outboundIpXpcAttemptDuration = Duration(seconds: 3);
 
 /// The Core may spend a method's own timeout twice, once queueing for a probe
 /// slot and once on the request, before the transport is considered
