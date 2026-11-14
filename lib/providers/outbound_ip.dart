@@ -32,21 +32,25 @@ class OutboundIpProbe extends _$OutboundIpProbe
     OutboundIpResult? via9090;
     try {
       final client = ref.read(externalControllerClientProvider);
-      via9090 =
-          externalControllerUp(
-            tunnelUp: ref.read(runningVpnOptionsProvider)?.enable == true,
-          )
-          ? await client.fetchSettled(
-              outboundIpTimeoutDuration,
-              () => client.fetchOutboundIp(
-                OutboundIpParams(
-                  proxyName: proxyName,
-                  urls: ipInfoSources.keys.toList(),
-                  timeout: outboundIpTimeoutDuration.inMilliseconds,
-                ),
+      if (externalControllerUp(
+        tunnelUp: ref.read(runningVpnOptionsProvider)?.enable == true,
+      )) {
+        for (var attempt = 0; attempt < outboundIpLookupAttempts; attempt++) {
+          via9090 = await client.fetchSettled(
+            outboundIpTimeoutDuration,
+            () => client.fetchOutboundIp(
+              OutboundIpParams(
+                proxyName: proxyName,
+                urls: ipInfoSources.keys.toList(),
+                timeout: outboundIpTimeoutDuration.inMilliseconds,
               ),
-            )
-          : null;
+            ),
+          );
+          if (via9090 == null || parseOutboundIp(via9090) != null) {
+            break;
+          }
+        }
+      }
     } catch (_) {
       // Fall through to the App core fallback below.
     }
