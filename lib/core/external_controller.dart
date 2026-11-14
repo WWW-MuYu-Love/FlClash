@@ -118,7 +118,12 @@ class ExternalTrafficSampler {
 
 class ExternalControllerClient {
   ExternalControllerClient({required this.baseUri, this.secret = ''})
-    : _http = HttpClient();
+    : _http = HttpClient() {
+    // The controller lives on localhost. Dart's HttpClient otherwise routes
+    // through the iOS system proxy when it is on, so a request to 9090 is
+    // sent to the mixed port and never reaches the controller.
+    _http.findProxy = (_) => 'DIRECT';
+  }
 
   final Uri baseUri;
   final String secret;
