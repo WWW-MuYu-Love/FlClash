@@ -205,6 +205,43 @@ class ExternalControllerClient {
     }
   }
 
+  static const _listenerReadyPoll = Duration(milliseconds: 100);
+
+  /// Retries [attempt] only while the listener has never answered; once answered, a failure is final.
+  Future<T?> fetchSettled<T>(
+    Duration timeout,
+    Future<T?> Function() attempt,
+  ) async {
+    final deadline = _clock().add(timeout);
+    while (true) {
+      final now = _clock();
+      if (!now.isBefore(deadline)) {
+        return null;
+      }
+      if (_reachableSince == null && refusedBackoffActive) {
+        await _sleepUntil(now.add(_listenerReadyPoll), deadline);
+        continue;
+      }
+      final value = await attempt();
+      if (value != null) {
+        return value;
+      }
+      if (refusedBackoffActive && _reachableSince == null) {
+        continue;
+      }
+      return null;
+    }
+  }
+
+  Future<void> _sleepUntil(DateTime until, DateTime deadline) async {
+    final end = until.isBefore(deadline) ? until : deadline;
+    final wait = end.difference(_clock());
+    if (wait <= Duration.zero) {
+      return;
+    }
+    await Future.delayed(wait);
+  }
+
   // /memory ticks once a second and its first sample is zero, so reading
   // a real value takes two ticks.
   static const _memoryReadTimeout = Duration(seconds: 4);

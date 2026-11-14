@@ -1118,4 +1118,77 @@ void main() {
       expect(client.refusedBackoffActive, isTrue);
     });
   });
+
+  group('ExternalControllerClient.fetchSettled', () {
+    Future<HttpServer> serveSnapshot(int port) async {
+      final bound = await HttpServer.bind(InternetAddress.loopbackIPv4, port);
+      bound.listen((request) async {
+        request.response.headers.contentType = ContentType.json;
+        request.response.write(jsonEncode(_snapshotJson));
+        await request.response.close();
+      });
+      return bound;
+    }
+
+    test('answers at once when the listener is already up', () async {
+      final server = await _serve((request) async {
+        request.response.headers.contentType = ContentType.json;
+        request.response.write(jsonEncode(_snapshotJson));
+        await request.response.close();
+      });
+      addTearDown(() => server.close(force: true));
+      final client = ExternalControllerClient(
+        baseUri: Uri.parse('http://127.0.0.1:${server.port}'),
+      );
+      addTearDown(client.close);
+
+      final snapshot = await client.fetchSettled(
+        const Duration(seconds: 5),
+        client.fetchConnections,
+      );
+
+      expect(snapshot, isNotNull);
+      expect(snapshot!.uploadTotal, 2000);
+    });
+
+    test('gives up when the listener never comes up', () async {
+      final probe = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
+      final port = probe.port;
+      await probe.close();
+      final client = ExternalControllerClient(
+        baseUri: Uri.parse('http://127.0.0.1:$port'),
+      );
+      addTearDown(client.close);
+
+      final snapshot = await client.fetchSettled(
+        const Duration(milliseconds: 300),
+        client.fetchConnections,
+      );
+
+      expect(snapshot, isNull);
+    });
+
+    test('waits past refused attempts until the listener comes up', () async {
+      final probe = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
+      final port = probe.port;
+      await probe.close();
+      final client = ExternalControllerClient(
+        baseUri: Uri.parse('http://127.0.0.1:$port'),
+      );
+      addTearDown(client.close);
+
+      final pending = client.fetchSettled(
+        const Duration(seconds: 5),
+        client.fetchConnections,
+      );
+      await Future.delayed(const Duration(milliseconds: 200));
+      final server = await serveSnapshot(port);
+      addTearDown(() => server.close(force: true));
+
+      final snapshot = await pending;
+
+      expect(snapshot, isNotNull);
+      expect(snapshot!.uploadTotal, 2000);
+    });
+  });
 }
