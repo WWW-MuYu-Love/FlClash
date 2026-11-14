@@ -102,7 +102,6 @@ void main() {
           ),
         ),
         coreHandlerProvider.overrideWithValue(CoreController.scoped(core)),
-        probe9090RetryDelayProvider.overrideWithValue(Duration.zero),
       ],
     );
     addTearDown(scope.dispose);
@@ -131,7 +130,6 @@ void main() {
         ),
         coreHandlerProvider.overrideWithValue(CoreController.scoped(core)),
         externalControllerClientProvider.overrideWithValue(client),
-        probe9090RetryDelayProvider.overrideWithValue(Duration.zero),
       ],
     );
     addTearDown(scope.dispose);
@@ -426,8 +424,8 @@ void main() {
     notifierOf(scope).watch(ServiceTarget.youtube);
     await pumpEventQueue();
 
-    // 9090 answers nothing, so the probe retries it once before falling back.
-    expect(client.fetchServiceCheckCalls, 2);
+    // 9090 answers nothing, so the probe falls back to the App core.
+    expect(client.fetchServiceCheckCalls, 1);
     verifyNever(() => core.serviceCheck(any()));
     verify(() => core.serviceCheck(any(), route: CoreRoute.app)).called(1);
     final state = stateOf(scope);

@@ -11,15 +11,6 @@ import 'app.dart';
 import 'core.dart';
 import 'route_state.dart';
 
-part 'generated/routed_probe.g.dart';
-
-/// How long a probe waits before retrying 9090 when the first attempt finds
-/// it not yet listening. The tunnel may still be starting; the App core is
-/// not a substitute while it is up, so the probe gives 9090 a second chance
-/// instead of falling back immediately.
-@riverpod
-Duration probe9090RetryDelay(Ref ref) => const Duration(seconds: 5);
-
 enum ProbePhase { empty, probing, fresh, failed }
 
 @immutable
@@ -130,23 +121,7 @@ mixin RoutedProbe<K, V>
           .read(externalControllerClientProvider)
           .fetchRouteCheck(params);
     } catch (_) {
-      // Fall through to the retry below.
-    }
-    if (via9090 == null && _route.proxied) {
-      // The tunnel may still be starting and 9090 not yet listening: give
-      // it a moment before falling back to the App core, which no longer
-      // routes once the tunnel is up.
-      final retryDelay = ref.read(probe9090RetryDelayProvider);
-      if (retryDelay > Duration.zero) {
-        await Future.delayed(retryDelay);
-      }
-      try {
-        via9090 = await ref
-            .read(externalControllerClientProvider)
-            .fetchRouteCheck(params);
-      } catch (_) {
-        via9090 = null;
-      }
+      // Fall through to the App core fallback below.
     }
     if (via9090 != null) {
       return via9090;

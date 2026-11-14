@@ -40,29 +40,7 @@ class OutboundIpProbe extends _$OutboundIpProbe
             ),
           );
     } catch (_) {
-      // Fall through to the retry below.
-    }
-    if (via9090 == null && route.proxied) {
-      // The tunnel may still be starting and 9090 not yet listening: give
-      // it a moment before falling back to the App core, which no longer
-      // routes once the tunnel is up.
-      final retryDelay = ref.read(probe9090RetryDelayProvider);
-      if (retryDelay > Duration.zero) {
-        await Future.delayed(retryDelay);
-      }
-      try {
-        via9090 = await ref
-            .read(externalControllerClientProvider)
-            .fetchOutboundIp(
-              OutboundIpParams(
-                proxyName: proxyName,
-                urls: ipInfoSources.keys.toList(),
-                timeout: outboundIpTimeoutDuration.inMilliseconds,
-              ),
-            );
-      } catch (_) {
-        via9090 = null;
-      }
+      // Fall through to the App core fallback below.
     }
     final result =
         via9090 ??

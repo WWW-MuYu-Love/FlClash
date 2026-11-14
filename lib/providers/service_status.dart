@@ -41,23 +41,7 @@ class ServiceStatus extends _$ServiceStatus
         return items;
       }
     } catch (_) {
-      // Fall through to the retry below.
-    }
-    // The tunnel may still be starting and 9090 not yet listening: give it
-    // a moment before falling back to the App core, which no longer routes
-    // once the tunnel is up.
-    if (route.proxied) {
-      final retryDelay = ref.read(probe9090RetryDelayProvider);
-      if (retryDelay > Duration.zero) {
-        await Future.delayed(retryDelay);
-      }
-      try {
-        return await ref
-            .read(externalControllerClientProvider)
-            .fetchServiceCheck(params);
-      } catch (_) {
-        return null;
-      }
+      // Fall through to the App core fallback in probe.
     }
     return null;
   }
