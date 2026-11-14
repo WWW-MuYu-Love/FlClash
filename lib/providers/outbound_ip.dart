@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:fl_clash/common/constant.dart';
 import 'package:fl_clash/common/service_probe.dart';
 import 'package:fl_clash/core/method.dart';
@@ -19,6 +21,21 @@ class OutboundIpProbe extends _$OutboundIpProbe
   @override
   RoutedProbeState<String, IpInfo> build() => buildProbe();
 
+  Future<OutboundIpResult?> _outboundIpViaXpc(String proxyName) async {
+    if (ref.read(runningVpnOptionsProvider)?.enable != true) {
+      return null;
+    }
+    try {
+      final result = await lookupOutboundIp(
+        ref.read(coreHandlerProvider),
+        proxyName,
+      ).timeout(outboundIpXpcAttemptDuration);
+      return parseOutboundIp(result) == null ? null : result;
+    } catch (_) {
+      return null;
+    }
+  }
+
   @override
   Future<Map<String, ProbeAnswer<IpInfo>>> probe(
     String target,
@@ -27,28 +44,30 @@ class OutboundIpProbe extends _$OutboundIpProbe
     final proxyName = target == routedOutbound && !route.proxied
         ? directOutbound
         : target;
-    // 9090 first: the routing core answers the lookup. The app core only
-    // matters when the tunnel is down, so it is the fallback, not a retry.
+    final viaXpc = await _outboundIpViaXpc(proxyName);
     OutboundIpResult? via9090;
-    try {
-      via9090 =
-          externalControllerUp(
-            tunnelUp: ref.read(runningVpnOptionsProvider)?.enable == true,
-          )
-          ? await ref
-                .read(externalControllerClientProvider)
-                .fetchOutboundIp(
-                  OutboundIpParams(
-                    proxyName: proxyName,
-                    urls: ipInfoSources.keys.toList(),
-                    timeout: outboundIpTimeoutDuration.inMilliseconds,
-                  ),
-                )
-          : null;
-    } catch (_) {
-      // Fall through to the App core fallback below.
+    if (viaXpc == null) {
+      try {
+        via9090 =
+            externalControllerUp(
+              tunnelUp: ref.read(runningVpnOptionsProvider)?.enable == true,
+            )
+            ? await ref
+                  .read(externalControllerClientProvider)
+                  .fetchOutboundIp(
+                    OutboundIpParams(
+                      proxyName: proxyName,
+                      urls: ipInfoSources.keys.toList(),
+                      timeout: outboundIpTimeoutDuration.inMilliseconds,
+                    ),
+                  )
+            : null;
+      } catch (_) {
+        // Fall through to the App core fallback below.
+      }
     }
     final result =
+        viaXpc ??
         via9090 ??
         await lookupOutboundIp(
           ref.read(coreHandlerProvider),
