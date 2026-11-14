@@ -490,6 +490,41 @@ void main() {
     await drainTimers(tester);
   });
 
+  testWidgets('a disconnected re-read never clears the flag', (
+    tester,
+  ) async {
+    await pumpVpnManager(tester);
+    container.read(initProvider.notifier).state = true;
+    container.read(runTimeProvider.notifier).state = 1;
+    startService();
+
+    container.read(tunnelStateOverride.notifier).set(TunnelState.disconnected);
+    await tester.pump(const Duration(seconds: 5));
+    await settle(tester);
+
+    expect(setupAction.setRunningCalls, 0);
+    expect(container.read(runningVpnOptionsProvider), isNotNull);
+    await drainTimers(tester);
+  });
+
+  testWidgets('a late connected tunnelState after init re-syncs once', (
+    tester,
+  ) async {
+    await pumpVpnManager(tester);
+    container.read(initProvider.notifier).state = true;
+    container.read(runTimeProvider.notifier).state = 1;
+    container.read(tunnelStateOverride.notifier).set(TunnelState.disconnected);
+    await settle(tester);
+    expect(setupAction.setRunningCalls, 0);
+
+    container.read(tunnelStateOverride.notifier).set(TunnelState.connected);
+    await settle(tester);
+
+    expect(setupAction.setRunningCalls, 1);
+    expect(setupAction.lastSetRunning, isTrue);
+    await drainTimers(tester);
+  });
+
   testWidgets('a connected tunnelState with the flag set does not re-sync', (
     tester,
   ) async {

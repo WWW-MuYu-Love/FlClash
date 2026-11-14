@@ -24,6 +24,8 @@ class VpnManager extends ConsumerStatefulWidget {
 
 class _VpnContainerState extends ConsumerState<VpnManager> with TileListener {
   bool _flagSyncPending = false;
+  Timer? _statusRefreshTimer;
+  int _statusRefreshAttempts = 0;
 
   @override
   void initState() {
@@ -73,6 +75,47 @@ class _VpnContainerState extends ConsumerState<VpnManager> with TileListener {
         _syncFlagIfTunnelUp();
       }
     });
+    _scheduleDelayedStatusRefresh();
+  }
+
+  /// The launch-time manager read can be stale while the tunnel runs.
+  /// Re-read it after it settles; the fresh state only ever sets the flag.
+  void _scheduleDelayedStatusRefresh() {
+    if (!system.isIOS) {
+      return;
+    }
+    _statusRefreshTimer?.cancel();
+    _statusRefreshTimer = Timer(
+      const Duration(seconds: 2),
+      _onDelayedStatusRefresh,
+    );
+  }
+
+  void _onDelayedStatusRefresh() {
+    _statusRefreshTimer = null;
+    if (ref.read(runningVpnOptionsProvider) != null) {
+      return;
+    }
+    if (ref.read(tunnelStateProvider) == TunnelState.connected) {
+      return;
+    }
+    if (_statusRefreshAttempts >= 2) {
+      return;
+    }
+    _statusRefreshAttempts++;
+    unawaited(_refreshTunnelState());
+    _scheduleDelayedStatusRefresh();
+  }
+
+  Future<void> _refreshTunnelState() async {
+    try {
+      await Service().refreshTunnelState();
+    } catch (error) {
+      commonPrint.log(
+        'tunnel state refresh failed: ${compactError(error)}',
+        logLevel: LogLevel.warning,
+      );
+    }
   }
 
   void _syncFlagIfTunnelUp() {
@@ -99,6 +142,7 @@ class _VpnContainerState extends ConsumerState<VpnManager> with TileListener {
 
   @override
   void dispose() {
+    _statusRefreshTimer?.cancel();
     tile?.removeListener(this);
     super.dispose();
   }

@@ -221,6 +221,9 @@ final class ServiceChannel {
       tunnelController.publishConnectionState()
       coreEventRelay.drainEventQueue()
       result("")
+    case "refreshTunnelState":
+      tunnelController.refreshTunnelState()
+      result(true)
     case "syncState":
       syncState(call, result: result)
     case "shutdown":

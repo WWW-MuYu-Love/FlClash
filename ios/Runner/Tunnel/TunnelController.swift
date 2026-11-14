@@ -105,6 +105,10 @@ final class TunnelController {
     coordinator.requestStatusRefresh(notifyExternal: false)
   }
 
+  func refreshTunnelState() {
+    coordinator.requestStatusRefresh(notifyExternal: false)
+  }
+
   func stop() {
     coordinator.submitTunnelRequest(target: .stopped)
   }

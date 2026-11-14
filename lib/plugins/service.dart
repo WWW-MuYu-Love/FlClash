@@ -191,6 +191,15 @@ class Service {
         true;
   }
 
+  /// Asks the runner to re-read the tunnel state once. The fresh state
+  /// arrives through the tunnelState channel; a failure only skips this
+  /// re-read.
+  Future<void> refreshTunnelState() async {
+    await methodChannel
+        .invokeMethod<void>('refreshTunnelState')
+        .timeout(const Duration(seconds: 10));
+  }
+
   Future<DateTime?> getRunTime() async {
     int? ms;
     try {
