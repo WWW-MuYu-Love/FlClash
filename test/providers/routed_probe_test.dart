@@ -393,6 +393,22 @@ void main() {
     expect(probe.calls, ['a', 'a']);
   });
 
+  test('a refresh asked while its probe is out runs when it lands', () async {
+    final container = build();
+    final probe = container.read(_probeProvider.notifier);
+    probe.watch('a');
+    await pumpEventQueue();
+    expect(probe.calls, ['a']);
+
+    probe.refresh(['a']);
+    await pumpEventQueue();
+    expect(probe.calls, ['a']);
+
+    probe.answer({'a': _ok('a.example:443')});
+    await pumpEventQueue();
+    expect(probe.calls, ['a', 'a']);
+  });
+
   test('an answer the route moved under shows once its check holds', () async {
     final container = build();
     final probe = container.read(_probeProvider.notifier);

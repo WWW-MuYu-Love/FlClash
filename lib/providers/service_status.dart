@@ -40,9 +40,11 @@ class ServiceStatus extends _$ServiceStatus
       timeout: probeTimeoutDuration.inMilliseconds,
     );
     try {
-      final items = await ref
-          .read(externalControllerClientProvider)
-          .fetchServiceCheck(params);
+      final client = ref.read(externalControllerClientProvider);
+      final items = await client.fetchSettled(
+        probeTimeoutDuration,
+        () => client.fetchServiceCheck(params),
+      );
       if (items != null) {
         return items;
       }

@@ -31,19 +31,21 @@ class OutboundIpProbe extends _$OutboundIpProbe
     // matters when the tunnel is down, so it is the fallback, not a retry.
     OutboundIpResult? via9090;
     try {
+      final client = ref.read(externalControllerClientProvider);
       via9090 =
           externalControllerUp(
             tunnelUp: ref.read(runningVpnOptionsProvider)?.enable == true,
           )
-          ? await ref
-                .read(externalControllerClientProvider)
-                .fetchOutboundIp(
-                  OutboundIpParams(
-                    proxyName: proxyName,
-                    urls: ipInfoSources.keys.toList(),
-                    timeout: outboundIpTimeoutDuration.inMilliseconds,
-                  ),
-                )
+          ? await client.fetchSettled(
+              outboundIpTimeoutDuration,
+              () => client.fetchOutboundIp(
+                OutboundIpParams(
+                  proxyName: proxyName,
+                  urls: ipInfoSources.keys.toList(),
+                  timeout: outboundIpTimeoutDuration.inMilliseconds,
+                ),
+              ),
+            )
           : null;
     } catch (_) {
       // Fall through to the App core fallback below.
