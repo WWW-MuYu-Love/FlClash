@@ -25,11 +25,18 @@ func applyMitmConfig(cfg *config.Config) {
 	buf, err := os.ReadFile(runningConfigPath())
 	if err != nil {
 		mitm.Default().SetConfig(nil)
+		log.Warnln("[MITM] no mitm section in config: cannot read config file: %v", err)
 		return
 	}
 	var section mitmSection
-	if err := yaml.Unmarshal(buf, &section); err != nil || section.Mitm == nil {
+	if err := yaml.Unmarshal(buf, &section); err != nil {
 		mitm.Default().SetConfig(nil)
+		log.Warnln("[MITM] no mitm section in config: cannot parse config file: %v", err)
+		return
+	}
+	if section.Mitm == nil {
+		mitm.Default().SetConfig(nil)
+		log.Warnln("[MITM] no mitm section in config")
 		return
 	}
 	mitm.Default().SetConfig(section.Mitm)
