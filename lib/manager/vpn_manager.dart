@@ -65,6 +65,14 @@ class _VpnContainerState extends ConsumerState<VpnManager> with TileListener {
         _syncFlagIfTunnelUp();
       }
     });
+    // A tunnel already connected before init finished fires the listener
+    // above while setRunning still no-ops, and never fires again. Re-run
+    // the sync once init completes.
+    ref.listenManual(initProvider, (prev, next) {
+      if (next == true) {
+        _syncFlagIfTunnelUp();
+      }
+    });
   }
 
   void _syncFlagIfTunnelUp() {

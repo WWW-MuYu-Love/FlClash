@@ -473,6 +473,23 @@ void main() {
     await drainTimers(tester);
   });
 
+  testWidgets('init flipping true re-syncs an unset flag', (tester) async {
+    container.read(tunnelStateOverride.notifier).set(TunnelState.connected);
+    await pumpVpnManager(tester);
+    container.read(runTimeProvider.notifier).state = 1;
+    // Flag intentionally left unset. The tunnel was already connected at
+    // mount, when setRunning still no-ops.
+    await settle(tester);
+    expect(setupAction.setRunningCalls, 0);
+
+    container.read(initProvider.notifier).state = true;
+    await settle(tester);
+
+    expect(setupAction.setRunningCalls, 1);
+    expect(setupAction.lastSetRunning, isTrue);
+    await drainTimers(tester);
+  });
+
   testWidgets('a connected tunnelState with the flag set does not re-sync', (
     tester,
   ) async {

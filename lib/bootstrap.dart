@@ -12,6 +12,7 @@ import 'package:fl_clash/database/database.dart';
 import 'package:fl_clash/enum/enum.dart';
 import 'package:fl_clash/l10n/l10n.dart';
 import 'package:fl_clash/models/models.dart';
+import 'package:fl_clash/plugins/service.dart';
 import 'package:fl_clash/providers/providers.dart';
 import 'package:fl_clash/state.dart';
 import 'package:fl_clash/views/disclaimer.dart';
@@ -172,10 +173,27 @@ class Bootstrap {
       await _container.read(setupActionProvider.notifier).initStatus();
     }
     _container.read(initProvider.notifier).value = true;
+    _reconcileRunningFlag();
     unawaited(_container.read(resourcesActionProvider.notifier).autoUpdate());
     unawaited(_container.read(mitmModulesActionProvider.notifier).autoUpdate());
     await bootGuard.markRunning();
     unawaited(_container.read(locationPermissionsProvider.notifier).refresh());
+  }
+
+  /// A tunnel already up at cold start can leave the running flag unset
+  /// when initStatus read a stale tunnel state, and no later event
+  /// corrects it. Re-check once init is done. This only ever sets the
+  /// flag; a disconnected read never clears it.
+  void _reconcileRunningFlag() {
+    if (_container.read(tunnelStateProvider) != TunnelState.connected) {
+      return;
+    }
+    if (_container.read(runningVpnOptionsProvider) != null) {
+      return;
+    }
+    unawaited(
+      _container.read(setupActionProvider.notifier).setRunning(true),
+    );
   }
 
   Future<void> _showCrashRecoveryTip() async {
