@@ -3,6 +3,7 @@ import 'dart:math';
 
 import 'package:fl_clash/common/common.dart';
 import 'package:fl_clash/core/method.dart';
+import 'package:fl_clash/enum/enum.dart';
 import 'package:fl_clash/models/models.dart';
 import 'package:flutter/foundation.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -243,6 +244,14 @@ mixin RoutedProbe<K, V>
   void _launch() {
     _scheduled = false;
     if (!ref.mounted || !_route.live || !ref.read(appVisibleProvider)) {
+      if (_due.values.any((due) => due.forced)) {
+        final reason = !ref.mounted
+            ? 'not mounted'
+            : !_route.live
+            ? 'route not live'
+            : 'app hidden';
+        commonPrint.log('probe skip: $reason', logLevel: LogLevel.warning);
+      }
       return;
     }
     final route = _route;

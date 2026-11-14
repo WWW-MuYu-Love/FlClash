@@ -305,9 +305,17 @@ class ExternalControllerClient {
       final response = await request.close().timeout(_fetchTimeout);
       _noteStatus(response);
       await response.drain<void>();
-      return response.statusCode == HttpStatus.noContent ||
+      final ok =
+          response.statusCode == HttpStatus.noContent ||
           response.statusCode == HttpStatus.ok;
-    } catch (_) {
+      if (ok) {
+        _reportSuccess('patch-configs');
+      } else {
+        _reportFailure('patch-configs', 'HTTP ${response.statusCode}');
+      }
+      return ok;
+    } catch (error) {
+      _reportFailure('patch-configs', compactError(error));
       unauthorized = false;
       return false;
     }
@@ -330,9 +338,17 @@ class ExternalControllerClient {
       final response = await request.close().timeout(_fetchTimeout);
       _noteStatus(response);
       await response.drain<void>();
-      return response.statusCode == HttpStatus.noContent ||
+      final ok =
+          response.statusCode == HttpStatus.noContent ||
           response.statusCode == HttpStatus.ok;
-    } catch (_) {
+      if (ok) {
+        _reportSuccess('select-proxy');
+      } else {
+        _reportFailure('select-proxy', 'HTTP ${response.statusCode}');
+      }
+      return ok;
+    } catch (error) {
+      _reportFailure('select-proxy', compactError(error));
       unauthorized = false;
       return false;
     }
@@ -489,9 +505,17 @@ class ExternalControllerClient {
       final response = await request.close().timeout(_fetchTimeout);
       _noteStatus(response);
       await response.drain<void>();
-      return response.statusCode == HttpStatus.noContent ||
+      final ok =
+          response.statusCode == HttpStatus.noContent ||
           response.statusCode == HttpStatus.ok;
-    } catch (_) {
+      if (ok) {
+        _reportSuccess('dns-clear');
+      } else {
+        _reportFailure('dns-clear', 'HTTP ${response.statusCode}');
+      }
+      return ok;
+    } catch (error) {
+      _reportFailure('dns-clear', compactError(error));
       unauthorized = false;
       return false;
     }
@@ -514,6 +538,7 @@ class ExternalControllerClient {
       _noteStatus(response);
       if (response.statusCode != HttpStatus.ok) {
         await response.drain<void>();
+        _reportFailure('mitm-hosts', 'HTTP ${response.statusCode}');
         return null;
       }
       final body = await response
@@ -521,10 +546,17 @@ class ExternalControllerClient {
           .join()
           .timeout(_fetchTimeout);
       final json = jsonDecode(body);
-      return json is Map<String, Object?>
+      final hosts = json is Map<String, Object?>
           ? MitmDecryptedHosts.fromJson(json)
           : null;
-    } catch (_) {
+      if (hosts == null) {
+        _reportFailure('mitm-hosts', 'bad response');
+        return null;
+      }
+      _reportSuccess('mitm-hosts');
+      return hosts;
+    } catch (error) {
+      _reportFailure('mitm-hosts', compactError(error));
       unauthorized = false;
       return null;
     }
@@ -548,6 +580,7 @@ class ExternalControllerClient {
       _noteStatus(response);
       if (response.statusCode != HttpStatus.ok) {
         await response.drain<void>();
+        _reportFailure('mitm-exchanges', 'HTTP ${response.statusCode}');
         return null;
       }
       final body = await response
@@ -555,10 +588,17 @@ class ExternalControllerClient {
           .join()
           .timeout(_fetchTimeout);
       final json = jsonDecode(body);
-      return json is Map<String, Object?>
+      final exchanges = json is Map<String, Object?>
           ? MitmExchangeList.fromJson(json)
           : null;
-    } catch (_) {
+      if (exchanges == null) {
+        _reportFailure('mitm-exchanges', 'bad response');
+        return null;
+      }
+      _reportSuccess('mitm-exchanges');
+      return exchanges;
+    } catch (error) {
+      _reportFailure('mitm-exchanges', compactError(error));
       unauthorized = false;
       return null;
     }
@@ -582,6 +622,7 @@ class ExternalControllerClient {
       _noteStatus(response);
       if (response.statusCode != HttpStatus.ok) {
         await response.drain<void>();
+        _reportFailure('mitm-exchange', 'HTTP ${response.statusCode}');
         return null;
       }
       final body = await response
@@ -589,8 +630,17 @@ class ExternalControllerClient {
           .join()
           .timeout(_fetchTimeout);
       final json = jsonDecode(body);
-      return json is Map<String, Object?> ? MitmExchange.fromJson(json) : null;
-    } catch (_) {
+      final exchange = json is Map<String, Object?>
+          ? MitmExchange.fromJson(json)
+          : null;
+      if (exchange == null) {
+        _reportFailure('mitm-exchange', 'bad response');
+        return null;
+      }
+      _reportSuccess('mitm-exchange');
+      return exchange;
+    } catch (error) {
+      _reportFailure('mitm-exchange', compactError(error));
       unauthorized = false;
       return null;
     }
@@ -614,6 +664,7 @@ class ExternalControllerClient {
       _noteStatus(httpResponse);
       if (httpResponse.statusCode != HttpStatus.ok) {
         await httpResponse.drain<void>();
+        _reportFailure('mitm-body', 'HTTP ${httpResponse.statusCode}');
         return null;
       }
       final body = await httpResponse
@@ -621,8 +672,17 @@ class ExternalControllerClient {
           .join()
           .timeout(_fetchTimeout);
       final json = jsonDecode(body);
-      return json is Map<String, Object?> ? MitmBody.fromJson(json) : null;
-    } catch (_) {
+      final mitmBody = json is Map<String, Object?>
+          ? MitmBody.fromJson(json)
+          : null;
+      if (mitmBody == null) {
+        _reportFailure('mitm-body', 'bad response');
+        return null;
+      }
+      _reportSuccess('mitm-body');
+      return mitmBody;
+    } catch (error) {
+      _reportFailure('mitm-body', compactError(error));
       unauthorized = false;
       return null;
     }
@@ -651,9 +711,17 @@ class ExternalControllerClient {
       final response = await request.close().timeout(_fetchTimeout);
       _noteStatus(response);
       await response.drain<void>();
-      return response.statusCode == HttpStatus.noContent ||
+      final ok =
+          response.statusCode == HttpStatus.noContent ||
           response.statusCode == HttpStatus.ok;
-    } catch (_) {
+      if (ok) {
+        _reportSuccess('close-connections');
+      } else {
+        _reportFailure('close-connections', 'HTTP ${response.statusCode}');
+      }
+      return ok;
+    } catch (error) {
+      _reportFailure('close-connections', compactError(error));
       unauthorized = false;
       return false;
     }

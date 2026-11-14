@@ -217,6 +217,9 @@ class SetupAction extends _$SetupAction {
     );
     _latestRunRequest = request;
     _setLocalRunning(running);
+    commonPrint.log(
+      'run running=$running initialize=$initialize resume=$resume',
+    );
     if (request.initialize) {
       globalState.needInitStatus = false;
     }
@@ -366,6 +369,7 @@ class SetupAction extends _$SetupAction {
       if (!ref.read(isStartProvider)) {
         return true;
       }
+      commonPrint.log('tunnel enabled=$enable');
       // Stop the listeners the switch just left, then start them on the side
       // it now selects: the tunnel, or the App core itself with VPN off.
       await setCoreRunning(false);
