@@ -374,6 +374,10 @@ class _LiveFeedState extends ConsumerState<_LiveFeed>
     if (!isCurrent()) {
       return;
     }
+    // The MITM marker rides on the hosts with recorded exchanges, so it is
+    // refreshed with the connections it marks; the manual refresh alone
+    // leaves new captures unlabelled until the next restart.
+    ref.invalidate(mitmDecryptedHostsProvider);
     _showConnections(trackerInfos);
   }
 
