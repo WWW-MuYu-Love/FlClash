@@ -566,6 +566,7 @@ func (e *Engine) Close() {
 // intercept runs on every decrypted request. It records the exchange and
 // applies the configured rewrites.
 func (e *Engine) intercept(ctx context.Context, req *http.Request, invoker mitmproxy.HTTPDelegatedInvoker) (*http.Response, error) {
+	log.Infoln("[MITM] intercept url=%s", req.URL.String())
 	e.recordDecryptedHost(req.URL.String())
 	e.mu.RLock()
 	capture := e.capture

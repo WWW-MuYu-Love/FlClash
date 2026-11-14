@@ -69,7 +69,13 @@ func (m mitmTunnel) HandleTCPConn(conn net.Conn, metadata *C.Metadata) {
 	// it before sniffing and pass the wrapped connection downstream.
 	bc := N.NewBufferedConn(conn)
 	host := sniffSNI(bc)
-	if host == "" || !mitm.Default().ShouldIntercept(host) {
+	intercept := host != "" && mitm.Default().ShouldIntercept(host)
+	displayHost := host
+	if displayHost == "" {
+		displayHost = "<empty>"
+	}
+	log.Infoln("[MITM] divert type=%s dstport=%d host=%s intercept=%v", metadata.Type, metadata.DstPort, displayHost, intercept)
+	if !intercept {
 		m.Tunnel.HandleTCPConn(bc, metadata)
 		return
 	}
@@ -78,6 +84,7 @@ func (m mitmTunnel) HandleTCPConn(conn net.Conn, metadata *C.Metadata) {
 		if errors.Is(err, mitm.ErrHandlerUnavailable) {
 			// The handler never started, so the connection is untouched:
 			// route it direct, as if MITM were off.
+			log.Infoln("[MITM] serve unavailable host=%s", hostport)
 			m.Tunnel.HandleTCPConn(bc, metadata)
 			return
 		}
