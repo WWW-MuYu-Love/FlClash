@@ -102,9 +102,6 @@ void main() {
           ),
         ),
         coreHandlerProvider.overrideWithValue(CoreController.scoped(core)),
-        externalControllerClientProvider.overrideWithValue(
-          _FakeExternalControllerClient(null),
-        ),
       ],
     );
     addTearDown(scope.dispose);
@@ -254,7 +251,7 @@ void main() {
   });
 
   test(
-    'a refresh asked while its check is in flight runs when it lands',
+    'will not queue a second check for a target already in flight',
     () async {
       final scope = container();
       final gate = Completer<List<ServiceCheckItem>>();
@@ -272,9 +269,7 @@ void main() {
       gate.complete([_item('youtube')]);
       await pumpEventQueue();
 
-      // The second watch starts nothing; the refresh runs once the
-      // in-flight check lands.
-      verify(() => core.serviceCheck(any(), route: CoreRoute.app)).called(2);
+      verify(() => core.serviceCheck(any(), route: CoreRoute.app)).called(1);
     },
   );
 

@@ -215,8 +215,7 @@ mixin RoutedProbe<K, V>
 
   /// A refresh is the user asking, so it runs for targets nobody watches
   /// too, and waits neither for the route to settle nor for the throttle;
-  /// the answer lands in the cache and stays until the route moves. A
-  /// refresh asked while its probe is still out runs when that probe lands.
+  /// the answer lands in the cache and stays until the route moves.
   void refresh(Iterable<K> targets) {
     for (final target in targets) {
       _mark(target, keepValue: true, forced: true);
@@ -226,7 +225,7 @@ mixin RoutedProbe<K, V>
   ProbeEntry<V> _entryOf(K target) => state.entryOf(target);
 
   void _mark(K target, {bool keepValue = false, bool forced = false}) {
-    if (_inFlight.containsKey(target) && !forced) {
+    if (_inFlight.containsKey(target)) {
       return;
     }
     final previous = _due[target];
@@ -266,13 +265,7 @@ mixin RoutedProbe<K, V>
     final waiting = <K, _Due>{};
     for (final MapEntry(key: target, value: due) in _due.entries) {
       final wanted = due.forced || _watchers.containsKey(target);
-      if (!wanted) {
-        continue;
-      }
-      if (_inFlight.containsKey(target) && !due.supersede) {
-        if (due.forced) {
-          waiting[target] = due;
-        }
+      if (!wanted || (_inFlight.containsKey(target) && !due.supersede)) {
         continue;
       }
       final throttled =
