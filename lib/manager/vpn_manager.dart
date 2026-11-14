@@ -65,7 +65,6 @@ class _VpnContainerState extends ConsumerState<VpnManager> with TileListener {
         _syncFlagIfTunnelUp();
       }
     });
-    _syncFlagIfTunnelUp();
   }
 
   void _syncFlagIfTunnelUp() {
@@ -105,10 +104,7 @@ class _VpnContainerState extends ConsumerState<VpnManager> with TileListener {
       ref
           .read(vpnSettingProvider.notifier)
           .update((state) => state.copyWith(enable: true));
-      // A cold start or background return can leave the tunnel up while the
-      // running flag is still unset; re-sync the core in that case.
-      if (!ref.read(isStartProvider) ||
-          ref.read(runningVpnOptionsProvider) == null) {
+      if (!ref.read(isStartProvider)) {
         unawaited(ref.read(setupActionProvider.notifier).setRunning(true));
       }
       return;

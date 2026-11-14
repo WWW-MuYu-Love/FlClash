@@ -410,20 +410,21 @@ void main() {
     );
   }
 
-  testWidgets('a running tunnel with an unset flag re-syncs the core', (
+  testWidgets('a tile running report with an unset flag does not re-sync', (
     tester,
   ) async {
     await pumpVpnManager(tester);
     container.read(initProvider.notifier).state = true;
     container.read(runTimeProvider.notifier).state = 1;
-    // Flag intentionally left unset: the cold-start / background-return miss.
+    // Flag intentionally left unset: the cold-start miss. The tile channel
+    // never reports the first observation, so it must not be the sync
+    // trigger; the tunnelState channel and the init reconcile own that.
 
     syncTunnelRunning(tester);
     await settle(tester);
 
     expect(container.read(vpnSettingProvider).enable, isTrue);
-    expect(setupAction.setRunningCalls, 1);
-    expect(setupAction.lastSetRunning, isTrue);
+    expect(setupAction.setRunningCalls, 0);
     await drainTimers(tester);
   });
 
@@ -457,19 +458,18 @@ void main() {
     await drainTimers(tester);
   });
 
-  testWidgets('a connected tunnelState at mount re-syncs an unset flag', (
+  testWidgets('a connected tunnelState at mount does not sync before init', (
     tester,
   ) async {
     container.read(tunnelStateOverride.notifier).set(TunnelState.connected);
     await pumpVpnManager(tester);
-    container.read(initProvider.notifier).state = true;
     container.read(runTimeProvider.notifier).state = 1;
-    // Flag intentionally left unset: the cold-start miss.
+    // Flag intentionally left unset. Init has not completed, so the mount
+    // must not start the core: setRunning is a no-op before init.
 
     await settle(tester);
 
-    expect(setupAction.setRunningCalls, 1);
-    expect(setupAction.lastSetRunning, isTrue);
+    expect(setupAction.setRunningCalls, 0);
     await drainTimers(tester);
   });
 
