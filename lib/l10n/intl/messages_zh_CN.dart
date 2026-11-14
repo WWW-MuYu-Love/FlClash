@@ -641,6 +641,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "disclaimerWarrantyTitle": MessageLookupByLibrary.simpleMessage("无担保声明"),
     "disconnect": MessageLookupByLibrary.simpleMessage("断开"),
     "disconnected": MessageLookupByLibrary.simpleMessage("已断开"),
+    "disconnecting": MessageLookupByLibrary.simpleMessage("断开中…"),
     "discoverNewVersion": MessageLookupByLibrary.simpleMessage("发现新版本"),
     "dnsCacheCleared": MessageLookupByLibrary.simpleMessage("DNS缓存已清除"),
     "dnsHijackDesc": MessageLookupByLibrary.simpleMessage(

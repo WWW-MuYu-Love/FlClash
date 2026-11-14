@@ -500,6 +500,7 @@
   "disconnected": "切断済み",
   "disconnect": "切断",
   "connecting": "接続中…",
+  "disconnecting": "切断中…",
   "restartCoreTip": "コアを再起動してもよろしいですか？",
   "forceRestartCoreTip": "コアを強制再起動してもよろしいですか？",
   "dnsHijacking": "DNSハイジャック",

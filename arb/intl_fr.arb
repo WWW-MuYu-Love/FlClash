@@ -500,6 +500,7 @@
   "disconnected": "Déconnecté",
   "disconnect": "Déconnecter",
   "connecting": "Connexion…",
+  "disconnecting": "Déconnexion…",
   "restartCoreTip": "Voulez-vous vraiment redémarrer le cœur ?",
   "forceRestartCoreTip": "Voulez-vous vraiment forcer le redémarrage du cœur ?",
   "dnsHijacking": "Détournement DNS",

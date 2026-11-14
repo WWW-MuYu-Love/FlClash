@@ -36,7 +36,7 @@ abstract mixin class ServiceListener {
   void onServiceStopped() {}
 }
 
-enum TunnelState { pending, connected, disconnected }
+enum TunnelState { pending, connected, disconnecting, disconnected }
 
 /// Reads a tunnel start failure report from the service channel. The
 /// Runner sends a map with the diagnosis code and the detail; a bare

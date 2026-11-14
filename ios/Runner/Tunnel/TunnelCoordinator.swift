@@ -108,7 +108,9 @@ final class TunnelCoordinator {
 
   func publishConnectionState() {
     let state: String
-    if tunnelRequest != nil {
+    if tunnelRequest?.target == .stopped || observedTunnelStatus == .disconnecting {
+      state = "disconnecting"
+    } else if tunnelRequest != nil {
       state = "pending"
     } else {
       switch observedTunnelStatus {

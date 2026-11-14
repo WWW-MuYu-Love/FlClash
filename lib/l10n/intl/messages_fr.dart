@@ -882,6 +882,7 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "disconnect": MessageLookupByLibrary.simpleMessage("Déconnecter"),
     "disconnected": MessageLookupByLibrary.simpleMessage("Déconnecté"),
+    "disconnecting": MessageLookupByLibrary.simpleMessage("Déconnexion…"),
     "discoverNewVersion": MessageLookupByLibrary.simpleMessage(
       "Nouvelle version disponible",
     ),

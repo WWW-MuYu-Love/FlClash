@@ -500,6 +500,7 @@
   "disconnected": "已断开",
   "disconnect": "断开",
   "connecting": "连接中…",
+  "disconnecting": "断开中…",
   "restartCoreTip": "您确定要重启核心吗？",
   "forceRestartCoreTip": "您确定要强制重启核心吗？",
   "dnsHijacking": "DNS劫持",
