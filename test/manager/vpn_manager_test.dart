@@ -3,6 +3,7 @@ import 'package:fl_clash/core/method.dart';
 import 'package:fl_clash/enum/enum.dart';
 import 'package:fl_clash/manager/vpn_manager.dart';
 import 'package:fl_clash/models/models.dart';
+import 'package:fl_clash/plugins/tile.dart';
 import 'package:fl_clash/providers/action.dart';
 import 'package:fl_clash/providers/app.dart';
 import 'package:fl_clash/providers/config.dart';
@@ -19,6 +20,8 @@ class _RestartRecordingSetupAction extends SetupAction {
   int restarts = 0;
   int tunnelToggles = 0;
   bool? lastTunnelEnabled;
+  int setRunningCalls = 0;
+  bool? lastSetRunning;
   // False mirrors the real method off iOS; set true to simulate the iOS
   // fast path.
   bool tunnelToggleHandled = false;
@@ -27,6 +30,13 @@ class _RestartRecordingSetupAction extends SetupAction {
   @override
   Future<void> restartVpn() async {
     restarts++;
+  }
+
+  @override
+  Future<bool> setRunning(bool running, {bool initialize = false}) async {
+    setRunningCalls++;
+    lastSetRunning = running;
+    return true;
   }
 
   @override
@@ -368,6 +378,59 @@ void main() {
     await settle(tester);
 
     expect(tip(), findsOneWidget);
+    await drainTimers(tester);
+  });
+
+  void syncTunnelRunning(WidgetTester tester) {
+    (tester.state(find.byType(VpnManager)) as TileListener).onSyncRunningState(
+      true,
+    );
+  }
+
+  testWidgets('a running tunnel with an unset flag re-syncs the core', (
+    tester,
+  ) async {
+    await pumpVpnManager(tester);
+    container.read(initProvider.notifier).state = true;
+    container.read(runTimeProvider.notifier).state = 1;
+    // Flag intentionally left unset: the cold-start / background-return miss.
+
+    syncTunnelRunning(tester);
+    await settle(tester);
+
+    expect(container.read(vpnSettingProvider).enable, isTrue);
+    expect(setupAction.setRunningCalls, 1);
+    expect(setupAction.lastSetRunning, isTrue);
+    await drainTimers(tester);
+  });
+
+  testWidgets('a running tunnel with the flag set does not re-sync the core', (
+    tester,
+  ) async {
+    await pumpVpnManager(tester);
+    container.read(initProvider.notifier).state = true;
+    container.read(runTimeProvider.notifier).state = 1;
+    startService();
+
+    syncTunnelRunning(tester);
+    await settle(tester);
+
+    expect(setupAction.setRunningCalls, 0);
+    await drainTimers(tester);
+  });
+
+  testWidgets('a running tunnel with the core stopped still starts it', (
+    tester,
+  ) async {
+    await pumpVpnManager(tester);
+    container.read(initProvider.notifier).state = true;
+    // runTime left null: isStart false, the pre-existing path.
+
+    syncTunnelRunning(tester);
+    await settle(tester);
+
+    expect(setupAction.setRunningCalls, 1);
+    expect(setupAction.lastSetRunning, isTrue);
     await drainTimers(tester);
   });
 }
