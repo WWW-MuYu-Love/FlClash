@@ -84,27 +84,11 @@ class SetupAction extends _$SetupAction {
   @override
   void build() {
     ref.onDispose(_stopRuntimeTicker);
-    ref.listen(appVisibleProvider, (previous, next) {
-      _syncRuntimeTicker();
-      if (previous == false && next == true) {
-        _reapplyConfigOnForeground();
-      }
-    });
+    ref.listen(appVisibleProvider, (_, _) => _syncRuntimeTicker());
     ref.listen(
       appSettingProvider.select((state) => state.showTrayTitle),
       (_, _) => _syncRuntimeTicker(),
     );
-  }
-
-  // A config apply restores the dashboard probes after the App returns from
-  // the background; without one the App core stays unconfigured and the
-  // probes fall back to a core that cannot answer. Silent so the
-  // best-effort extension push shows no banner.
-  void _reapplyConfigOnForeground() {
-    if (!system.isIOS || !_isRunning) {
-      return;
-    }
-    globalState.safeRun(() => applyProfile(force: true, silence: true));
   }
 
   bool get _isTrafficShown =>
@@ -981,12 +965,10 @@ class SetupAction extends _$SetupAction {
                 'extension did not receive the config: ${error.message}',
                 logLevel: LogLevel.warning,
               );
-              if (!silence) {
-                dialogs.showBanner(
-                  userFacingErrorMessage(error, currentAppLocalizations),
-                  level: BannerLevel.error,
-                );
-              }
+              dialogs.showBanner(
+                userFacingErrorMessage(error, currentAppLocalizations),
+                level: BannerLevel.error,
+              );
             } else if (error.code != 'config_rejected') {
               rethrow;
             } else {
