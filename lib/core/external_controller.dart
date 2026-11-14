@@ -5,7 +5,6 @@ import 'dart:io';
 import 'package:fl_clash/common/common.dart';
 import 'package:fl_clash/enum/enum.dart';
 import 'package:fl_clash/models/models.dart';
-import 'package:flutter/foundation.dart' show visibleForTesting;
 
 class ExternalControllerSnapshot {
   const ExternalControllerSnapshot({
@@ -148,11 +147,13 @@ class ExternalControllerClient {
   ];
   int _refusedStreak = 0;
   DateTime? _refusedUntil;
+  DateTime? _reachableSince;
 
   /// True while a connection-refused backoff is holding off new attempts.
-  @visibleForTesting
   bool get refusedBackoffActive =>
       _refusedUntil != null && _clock().isBefore(_refusedUntil!);
+
+  DateTime? get controllerReachableSince => _reachableSince;
 
   bool _skipWhileRefused() => refusedBackoffActive;
 
@@ -160,6 +161,7 @@ class ExternalControllerClient {
     if (!_isConnectionRefused(error)) {
       return;
     }
+    _reachableSince = null;
     final backoff =
         _refusedBackoffs[_refusedStreak.clamp(0, _refusedBackoffs.length - 1)];
     _refusedStreak++;
@@ -167,6 +169,7 @@ class ExternalControllerClient {
   }
 
   void _noteReachable() {
+    _reachableSince ??= _clock();
     _refusedStreak = 0;
     _refusedUntil = null;
   }

@@ -1100,5 +1100,22 @@ void main() {
       expect(await client.fetchConnections(), isNull);
       expect(client.refusedBackoffActive, isFalse);
     });
+
+    test('records the first answer and clears it on refused', () async {
+      expect(client.controllerReachableSince, isNull);
+
+      expect(await client.fetchConnections(), isNotNull);
+      expect(client.controllerReachableSince, now);
+
+      now = now.add(const Duration(seconds: 30));
+      expect(await client.fetchConnections(), isNotNull);
+      expect(client.controllerReachableSince, DateTime.utc(2026, 11, 14));
+
+      await server.close(force: true);
+      expect(await client.fetchConnections(), isNull);
+      expect(await client.fetchConnections(), isNull);
+      expect(client.controllerReachableSince, isNull);
+      expect(client.refusedBackoffActive, isTrue);
+    });
   });
 }
