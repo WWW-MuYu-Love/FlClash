@@ -28,11 +28,6 @@ typedef _ProxyChangeOutcome = ({
   bool appliedToRoutingCore,
 });
 
-typedef _SettledDelay = ({int? delay, bool empty});
-
-const _delaySettle = Duration(seconds: 1);
-const _delayReadyPoll = Duration(milliseconds: 100);
-
 @Riverpod(keepAlive: true)
 class ProxiesAction extends _$ProxiesAction {
   CoreController get _core => ref.read(coreHandlerProvider);
@@ -50,22 +45,6 @@ class ProxiesAction extends _$ProxiesAction {
   Timer? _delayFlushTimer;
 
   final Map<String, String> _pendingSelectedRollback = {};
-
-  final _delayTestBackoff = XpcEmptyBackoff();
-
-  @visibleForTesting
-  DateTime Function() get delayBackoffClock => _delayTestBackoff.clock;
-  @visibleForTesting
-  set delayBackoffClock(DateTime Function() value) =>
-      _delayTestBackoff.clock = value;
-
-  Future<void> Function(Duration duration) _delaySleeper = Future.delayed;
-
-  @visibleForTesting
-  Future<void> Function(Duration duration) get delaySleeper => _delaySleeper;
-  @visibleForTesting
-  set delaySleeper(Future<void> Function(Duration duration) value) =>
-      _delaySleeper = value;
 
   @override
   void build() {
@@ -553,87 +532,13 @@ class ProxiesAction extends _$ProxiesAction {
       timeout: job.timeout.inMilliseconds,
     );
     if (ref.read(runningVpnOptionsProvider)?.enable == true) {
-      // 9090 answers the delay first; the App core measures the same
-      // proxy when 9090 is gone or backed off.
-      if (!_delayTestBackoff.isBackedOff) {
-        final attempt = await _fetchDelaySettled(job, target);
-        final delayMs = attempt.delay;
-        if (delayMs != null) {
-          _delayTestBackoff.noteSuccess();
-          return Delay(
-            name: target.proxyName,
-            url: target.testUrl,
-            value: delayMs,
-          );
-        }
-        // Only a settled listener's empty answer backs 9090 off for 30s.
-        if (attempt.empty) {
-          _delayTestBackoff.noteEmptyResponse();
-        }
-      }
+      // The delay test is pinned to the App core, like the status and
+      // service probes: it measures the same proxy the App core routes.
       return _core.testDelay(params, route: CoreRoute.app);
     }
     // The tunnel is down, so the App core is the routing core; the
     // unrouted call reaches it in-process, with no XPC involved.
     return _core.testDelay(params);
-  }
-
-  // The listener answers a while after it starts accepting, so the first
-  // answer starts a 1s settle shared by concurrent tests.
-  Future<_SettledDelay> _fetchDelaySettled(
-    _DelayTestJob job,
-    _DelayTestTarget target,
-  ) async {
-    final client = ref.read(externalControllerClientProvider);
-    final deadline = _delayTestBackoff.clock().add(job.timeout);
-    while (true) {
-      final now = _delayTestBackoff.clock();
-      if (!now.isBefore(deadline)) {
-        return (delay: null, empty: false);
-      }
-      final since = client.controllerReachableSince;
-      if (since != null) {
-        final settleEnd = since.add(_delaySettle);
-        if (!now.isBefore(settleEnd)) {
-          final delay = await client.fetchDelay(
-            proxyName: target.proxyName,
-            testUrl: target.testUrl,
-            timeout: job.timeout.inMilliseconds,
-          );
-          final refused = client.refusedBackoffActive;
-          return (delay: delay, empty: delay == null && !refused);
-        }
-        await _sleepUntil(settleEnd, deadline);
-        continue;
-      }
-      if (client.refusedBackoffActive) {
-        await _sleepUntil(now.add(_delayReadyPoll), deadline);
-        continue;
-      }
-      final delay = await client.fetchDelay(
-        proxyName: target.proxyName,
-        testUrl: target.testUrl,
-        timeout: job.timeout.inMilliseconds,
-      );
-      if (delay != null) {
-        return (delay: delay, empty: false);
-      }
-      final signaled =
-          client.refusedBackoffActive ||
-          client.controllerReachableSince != null;
-      if (!signaled) {
-        return (delay: null, empty: false);
-      }
-    }
-  }
-
-  Future<void> _sleepUntil(DateTime until, DateTime deadline) async {
-    final end = until.isBefore(deadline) ? until : deadline;
-    final wait = end.difference(_delayTestBackoff.clock());
-    if (wait <= Duration.zero) {
-      return;
-    }
-    await _delaySleeper(wait);
   }
 
   Future<void> _runDelayTest(_DelayTestJob job, _DelayTestTarget target) async {

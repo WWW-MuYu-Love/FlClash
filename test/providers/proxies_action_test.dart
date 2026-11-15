@@ -945,305 +945,26 @@ void main() {
       expect(container.read(pendingDelayTestsProvider), isEmpty);
     });
 
-    test('measures the delay through 9090 when the tunnel is up', () async {
-      final externalController = MockExternalControllerClient();
-      when(
-        () => externalController.fetchDelay(
-          proxyName: any(named: 'proxyName'),
-          testUrl: any(named: 'testUrl'),
-          timeout: any(named: 'timeout'),
-        ),
-      ).thenAnswer((_) async => 42);
-      when(() => externalController.refusedBackoffActive).thenReturn(false);
-      when(
-        () => externalController.controllerReachableSince,
-      ).thenReturn(DateTime.utc(2026, 1, 1));
-      final container = _delayContainer(
-        () => runningVpnContainer(externalController: externalController),
-      );
-
-      await actionOf(container).delayTest(const [_proxy]);
-
-      expect(container.read(delayDataSourceProvider)[_testUrl]?['HK-01'], 42);
-      verify(
-        () => externalController.fetchDelay(
-          proxyName: 'HK-01',
-          testUrl: _testUrl,
-          timeout: any(named: 'timeout'),
-        ),
-      ).called(1);
-      verifyNever(() => core.testDelay(any()));
-      verifyNever(() => core.testDelay(any(), route: CoreRoute.app));
-    });
-
-    test('falls back to the app core when 9090 answers nothing', () async {
-      final externalController = MockExternalControllerClient();
-      when(
-        () => externalController.fetchDelay(
-          proxyName: any(named: 'proxyName'),
-          testUrl: any(named: 'testUrl'),
-          timeout: any(named: 'timeout'),
-        ),
-      ).thenAnswer((_) async => null);
-      when(() => externalController.refusedBackoffActive).thenReturn(false);
-      when(
-        () => externalController.controllerReachableSince,
-      ).thenReturn(DateTime.utc(2026, 1, 1));
-      when(() => core.testDelay(any(), route: CoreRoute.app)).thenAnswer(
-        (invocation) async => Delay(
-          name:
-              (invocation.positionalArguments[0] as TestDelayParams).proxyName,
-          url: _testUrl,
-          value: 10,
-        ),
-      );
-      final container = _delayContainer(
-        () => runningVpnContainer(externalController: externalController),
-      );
-
-      await actionOf(container).delayTest(const [_proxy]);
-
-      expect(container.read(delayDataSourceProvider)[_testUrl]?['HK-01'], 10);
-      verify(
-        () => externalController.fetchDelay(
-          proxyName: 'HK-01',
-          testUrl: _testUrl,
-          timeout: any(named: 'timeout'),
-        ),
-      ).called(1);
-      verify(() => core.testDelay(any(), route: CoreRoute.app)).called(1);
-      verifyNever(() => core.testDelay(any()));
-    });
-
-    test('skips 9090 for 30 seconds after it answers nothing', () async {
-      final externalController = MockExternalControllerClient();
-      var now = DateTime(2026, 11, 14);
-      when(
-        () => externalController.fetchDelay(
-          proxyName: any(named: 'proxyName'),
-          testUrl: any(named: 'testUrl'),
-          timeout: any(named: 'timeout'),
-        ),
-      ).thenAnswer((_) async => null);
-      when(() => externalController.refusedBackoffActive).thenReturn(false);
-      when(
-        () => externalController.controllerReachableSince,
-      ).thenAnswer((_) => now.subtract(const Duration(seconds: 2)));
-      when(() => core.testDelay(any(), route: CoreRoute.app)).thenAnswer(
-        (invocation) async => Delay(
-          name:
-              (invocation.positionalArguments[0] as TestDelayParams).proxyName,
-          url: _testUrl,
-          value: 10,
-        ),
-      );
-      final container = _delayContainer(
-        () => runningVpnContainer(externalController: externalController),
-      );
-      final action = actionOf(container);
-      action.delayBackoffClock = () => now;
-
-      await action.delayTest(const [_proxy]);
-      await action.delayTest(const [_proxy]);
-
-      // 9090 is tried once; the second run skips it while backed off.
-      verify(
-        () => externalController.fetchDelay(
-          proxyName: 'HK-01',
-          testUrl: _testUrl,
-          timeout: any(named: 'timeout'),
-        ),
-      ).called(1);
-      verify(() => core.testDelay(any(), route: CoreRoute.app)).called(2);
-      verifyNever(() => core.testDelay(any()));
-
-      // After the backoff window, 9090 is tried again. The earlier
-      // verify consumed the first fetchDelay call, so only the new
-      // one is counted here.
-      now = now.add(const Duration(seconds: 31));
-      await action.delayTest(const [_proxy]);
-      verify(
-        () => externalController.fetchDelay(
-          proxyName: 'HK-01',
-          testUrl: _testUrl,
-          timeout: any(named: 'timeout'),
-        ),
-      ).called(1);
-    });
-
-    test('waits one second after the controller first answers', () async {
-      final externalController = MockExternalControllerClient();
-      final start = DateTime(2026, 11, 14);
-      var now = start;
-      when(
-        () => externalController.fetchDelay(
-          proxyName: any(named: 'proxyName'),
-          testUrl: any(named: 'testUrl'),
-          timeout: any(named: 'timeout'),
-        ),
-      ).thenAnswer((_) async => 42);
-      when(() => externalController.refusedBackoffActive).thenReturn(false);
-      when(
-        () => externalController.controllerReachableSince,
-      ).thenAnswer((_) => start);
-      final container = _delayContainer(
-        () => runningVpnContainer(externalController: externalController),
-      );
-      final action = actionOf(container);
-      action.delayBackoffClock = () => now;
-      action.delaySleeper = (duration) async {
-        now = now.add(duration);
-      };
-
-      await action.delayTest(const [_proxy]);
-
-      expect(container.read(delayDataSourceProvider)[_testUrl]?['HK-01'], 42);
-      expect(now, start.add(const Duration(seconds: 1)));
-      verify(
-        () => externalController.fetchDelay(
-          proxyName: 'HK-01',
-          testUrl: _testUrl,
-          timeout: any(named: 'timeout'),
-        ),
-      ).called(1);
-      verifyNever(() => core.testDelay(any(), route: CoreRoute.app));
-      verifyNever(() => core.testDelay(any()));
-    });
-
-    test('shares the one-second settle across concurrent tests', () async {
-      final externalController = MockExternalControllerClient();
-      final start = DateTime(2026, 11, 14);
-      var now = start;
-      final settleEnd = start.add(const Duration(seconds: 1));
-      when(
-        () => externalController.fetchDelay(
-          proxyName: any(named: 'proxyName'),
-          testUrl: any(named: 'testUrl'),
-          timeout: any(named: 'timeout'),
-        ),
-      ).thenAnswer((_) async => 42);
-      when(() => externalController.refusedBackoffActive).thenReturn(false);
-      when(
-        () => externalController.controllerReachableSince,
-      ).thenAnswer((_) => start);
-      final container = _delayContainer(
-        () => runningVpnContainer(externalController: externalController),
-      );
-      final action = actionOf(container);
-      action.delayBackoffClock = () => now;
-      action.delaySleeper = (duration) async {
-        final next = now.add(duration);
-        now = next.isAfter(settleEnd) ? settleEnd : next;
-      };
-
-      await action.delayTest(const [_proxy, Proxy(name: 'HK-02', type: 'ss')]);
-
-      final delays = container.read(delayDataSourceProvider)[_testUrl];
-      expect(delays?['HK-01'], 42);
-      expect(delays?['HK-02'], 42);
-      expect(now, settleEnd);
-      verify(
-        () => externalController.fetchDelay(
-          proxyName: any(named: 'proxyName'),
-          testUrl: any(named: 'testUrl'),
-          timeout: any(named: 'timeout'),
-        ),
-      ).called(2);
-      verifyNever(() => core.testDelay(any(), route: CoreRoute.app));
-    });
-
     test(
-      'waits out the listener startup window instead of falling back',
+      'measures the delay through the app core when the tunnel is up',
       () async {
         final externalController = MockExternalControllerClient();
-        final start = DateTime(2026, 11, 14);
-        final upAt = start.add(const Duration(seconds: 3));
-        final settleEnd = upAt.add(const Duration(seconds: 1));
-        var now = start;
-        when(
-          () => externalController.fetchDelay(
-            proxyName: any(named: 'proxyName'),
-            testUrl: any(named: 'testUrl'),
-            timeout: any(named: 'timeout'),
-          ),
-        ).thenAnswer((_) async => 42);
-        when(
-          () => externalController.refusedBackoffActive,
-        ).thenAnswer((_) => now.isBefore(upAt));
-        when(
-          () => externalController.controllerReachableSince,
-        ).thenAnswer((_) => now.isBefore(upAt) ? null : upAt);
-        final container = _delayContainer(
-          () => runningVpnContainer(externalController: externalController),
-        );
-        final action = actionOf(container);
-        action.delayBackoffClock = () => now;
-        action.delaySleeper = (duration) async {
-          final next = now.add(duration);
-          now = next.isAfter(settleEnd) ? settleEnd : next;
-        };
-
-        await action.delayTest(const [_proxy]);
-
-        expect(container.read(delayDataSourceProvider)[_testUrl]?['HK-01'], 42);
-        expect(now, settleEnd);
-        verify(
-          () => externalController.fetchDelay(
-            proxyName: 'HK-01',
-            testUrl: _testUrl,
-            timeout: any(named: 'timeout'),
-          ),
-        ).called(1);
-        verifyNever(() => core.testDelay(any(), route: CoreRoute.app));
-        verifyNever(() => core.testDelay(any()));
-      },
-    );
-
-    test(
-      'falls back without backing off when the wait budget runs out',
-      () async {
-        final externalController = MockExternalControllerClient();
-        final start = DateTime(2026, 11, 14);
-        var now = start;
-        var up = false;
-        DateTime? upAt;
-        when(
-          () => externalController.fetchDelay(
-            proxyName: any(named: 'proxyName'),
-            testUrl: any(named: 'testUrl'),
-            timeout: any(named: 'timeout'),
-          ),
-        ).thenAnswer((_) async => 42);
-        when(
-          () => externalController.refusedBackoffActive,
-        ).thenAnswer((_) => !up);
-        when(
-          () => externalController.controllerReachableSince,
-        ).thenAnswer((_) => upAt);
         when(() => core.testDelay(any(), route: CoreRoute.app)).thenAnswer(
           (invocation) async => Delay(
             name: (invocation.positionalArguments[0] as TestDelayParams)
                 .proxyName,
             url: _testUrl,
-            value: 10,
+            value: 42,
           ),
         );
         final container = _delayContainer(
           () => runningVpnContainer(externalController: externalController),
         );
-        container
-            .read(appSettingProvider.notifier)
-            .update((state) => state.copyWith(delayTestTimeout: 2000));
-        final action = actionOf(container);
-        action.delayBackoffClock = () => now;
-        action.delaySleeper = (duration) async {
-          now = now.add(duration);
-        };
 
-        await action.delayTest(const [_proxy]);
+        await actionOf(container).delayTest(const [_proxy]);
 
-        expect(container.read(delayDataSourceProvider)[_testUrl]?['HK-01'], 10);
-        expect(now, start.add(const Duration(seconds: 2)));
+        expect(container.read(delayDataSourceProvider)[_testUrl]?['HK-01'], 42);
+        verify(() => core.testDelay(any(), route: CoreRoute.app)).called(1);
         verifyNever(
           () => externalController.fetchDelay(
             proxyName: any(named: 'proxyName'),
@@ -1251,20 +972,7 @@ void main() {
             timeout: any(named: 'timeout'),
           ),
         );
-        verify(() => core.testDelay(any(), route: CoreRoute.app)).called(1);
-
-        up = true;
-        upAt = now;
-        await action.delayTest(const [_proxy]);
-
-        expect(container.read(delayDataSourceProvider)[_testUrl]?['HK-01'], 42);
-        verify(
-          () => externalController.fetchDelay(
-            proxyName: 'HK-01',
-            testUrl: _testUrl,
-            timeout: any(named: 'timeout'),
-          ),
-        ).called(1);
+        verifyNever(() => core.testDelay(any()));
       },
     );
   });
