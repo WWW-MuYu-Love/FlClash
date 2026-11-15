@@ -38,6 +38,7 @@ type tunOptions struct {
 	DisableICMPForwarding  bool   `json:"disableIcmpForwarding"`
 	EndpointIndependentNAT bool   `json:"endpointIndependentNat"`
 	CongestionController   string `json:"congestionController"`
+	UDPTimeout             uint32 `json:"udpTimeout"`
 }
 
 // coreTunOptions is what core.StartTun's tun layer parses. Its keys match
@@ -50,6 +51,7 @@ type coreTunOptions struct {
 	SendMsgX               bool   `json:"sendMsgX"`
 	DisableICMPForwarding  bool   `json:"disableIcmpForwarding"`
 	EndpointIndependentNAT bool   `json:"endpointIndependentNat"`
+	UDPTimeout             uint32 `json:"udp-timeout"`
 	LoopbackAddress        string `json:"loopback-address"`
 }
 
@@ -137,6 +139,7 @@ func startTUN(callback unsafe.Pointer, fd C.int, optionsChar *C.char) bool {
 		SendMsgX:               options.SendMsgX,
 		DisableICMPForwarding:  options.DisableICMPForwarding,
 		EndpointIndependentNAT: options.EndpointIndependentNAT,
+		UDPTimeout:             options.UDPTimeout,
 		LoopbackAddress:        "10.7.0.1",
 	})
 	if err != nil {

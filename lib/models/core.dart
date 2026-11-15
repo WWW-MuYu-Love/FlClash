@@ -238,6 +238,11 @@ abstract class VpnOptions with _$VpnOptions {
     @Default([]) List<String> routeAddress,
     @Default(0) int mtu,
     @Default('') String congestionController,
+    @Default(false) bool disableIcmpForwarding,
+    @Default(false) bool endpointIndependentNat,
+    @Default(true) bool recvMsgX,
+    @Default(false) bool sendMsgX,
+    @Default(defaultTunUdpTimeout) int udpTimeout,
   }) = _VpnOptions;
 
   factory VpnOptions.fromJson(Map<String, Object?> json) =>

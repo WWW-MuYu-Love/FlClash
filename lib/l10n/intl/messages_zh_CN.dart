@@ -672,6 +672,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "emptyTip": m31,
     "en": MessageLookupByLibrary.simpleMessage("英语"),
     "enabled": MessageLookupByLibrary.simpleMessage("已开启"),
+    "endpointIndependentNat": MessageLookupByLibrary.simpleMessage("端点无关 NAT"),
     "enforceRoutes": MessageLookupByLibrary.simpleMessage("强制路由"),
     "entries": MessageLookupByLibrary.simpleMessage("个条目"),
     "error": MessageLookupByLibrary.simpleMessage("错误"),
@@ -1348,6 +1349,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "recentRequests": MessageLookupByLibrary.simpleMessage("最近请求"),
     "recommendedIcons": MessageLookupByLibrary.simpleMessage("推荐"),
     "recordType": MessageLookupByLibrary.simpleMessage("记录类型"),
+    "recvMsgX": MessageLookupByLibrary.simpleMessage("批量接收"),
     "redirPort": MessageLookupByLibrary.simpleMessage("Redir端口"),
     "redo": MessageLookupByLibrary.simpleMessage("重做"),
     "regenerateCertificate": MessageLookupByLibrary.simpleMessage("重新生成证书"),
@@ -1564,6 +1566,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "sendFromPhoneTip": MessageLookupByLibrary.simpleMessage(
       "用手机相机扫描二维码，在打开的页面里粘贴链接。两台设备需要连在同一个网络。",
     ),
+    "sendMsgX": MessageLookupByLibrary.simpleMessage("批量发送"),
     "server": MessageLookupByLibrary.simpleMessage("服务器"),
     "serviceAbnormalCount": m97,
     "serviceAllAvailable": MessageLookupByLibrary.simpleMessage("全部可用"),

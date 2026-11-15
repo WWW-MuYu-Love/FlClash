@@ -26,6 +26,11 @@ data class VpnOptions(
     val routeAddress: List<String>,
     val mtu: Int = 0,
     val congestionController: String? = null,
+    val disableIcmpForwarding: Boolean = false,
+    val endpointIndependentNat: Boolean = false,
+    val recvMsgX: Boolean = true,
+    val sendMsgX: Boolean = false,
+    val udpTimeout: Int = 300,
 )
 
 private const val DEFAULT_TUN_MTU = 9000
@@ -44,6 +49,11 @@ val VpnOptions.tunOptions: String
         mapOf(
             "mtu" to tunMtu,
             "congestion-controller" to congestionController.orEmpty(),
+            "disableIcmpForwarding" to disableIcmpForwarding,
+            "endpointIndependentNat" to endpointIndependentNat,
+            "recvMsgX" to recvMsgX,
+            "sendMsgX" to sendMsgX,
+            "udp-timeout" to udpTimeout,
         ),
     )
 

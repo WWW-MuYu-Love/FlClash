@@ -312,6 +312,11 @@ Future<VpnOptions> vpnOptions(Ref ref) async {
     routeAddress: await routeAddress,
     mtu: tun.mtu,
     congestionController: tun.congestionController,
+    disableIcmpForwarding: tun.disableIcmpForwarding,
+    endpointIndependentNat: tun.endpointIndependentNat,
+    recvMsgX: tun.recvMsgX,
+    sendMsgX: tun.sendMsgX,
+    udpTimeout: tun.udpTimeout,
   );
 }
 

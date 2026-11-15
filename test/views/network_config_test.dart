@@ -107,6 +107,27 @@ final _toggleCases = <_ToggleCase>[
     (c) => c.read(networkSettingProvider).bypassPrivateRoute,
     initial: true,
   ),
+  _ToggleCase(
+    'disable icmp forwarding',
+    const DisableIcmpForwardingItem(),
+    (c) => c.read(patchClashConfigProvider).tun.disableIcmpForwarding,
+  ),
+  _ToggleCase(
+    'endpoint independent nat',
+    const EndpointIndependentNatItem(),
+    (c) => c.read(patchClashConfigProvider).tun.endpointIndependentNat,
+  ),
+  _ToggleCase(
+    'recv msgx',
+    const RecvMsgXItem(),
+    (c) => c.read(patchClashConfigProvider).tun.recvMsgX,
+    initial: true,
+  ),
+  _ToggleCase(
+    'send msgx',
+    const SendMsgXItem(),
+    (c) => c.read(patchClashConfigProvider).tun.sendMsgX,
+  ),
 ];
 
 void main() {
@@ -288,10 +309,14 @@ void main() {
     test('Android sets the routes its VPN service starts with', () {
       final types = items().map((item) => item.runtimeType);
       expect(types, contains(TunStackItem));
+      expect(types, contains(DisableIcmpForwardingItem));
+      expect(types, contains(EndpointIndependentNatItem));
+      expect(types, contains(RecvMsgXItem));
+      expect(types, contains(SendMsgXItem));
       expect(types, contains(BypassPrivateRouteItem));
       expect(types, contains(RouteAddressItem));
-      expect(items(), hasLength(6));
-      expect(items(isMipsStack: false), hasLength(5));
+      expect(items(), hasLength(11));
+      expect(items(isMipsStack: false), hasLength(10));
     });
 
     Widget desktopSection({bool isWindows = false}) =>
@@ -372,6 +397,30 @@ void main() {
       await tester.tap(find.text(l.reset));
       await tester.pumpAndSettle();
       expect(container.read(patchClashConfigProvider).tun.mtu, 9000);
+    });
+
+    testWidgets('the UDP timeout shows the core default and resets to it', (
+      tester,
+    ) async {
+      await pumpItem(tester, items()[7]);
+      final l = currentAppLocalizations;
+      expect(find.text(l.secondsCount(defaultTunUdpTimeout)), findsOneWidget);
+
+      await tester.tap(find.text(l.udpTimeout));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextField), '60');
+      await tester.tap(find.text(l.submit));
+      await tester.pumpAndSettle();
+      expect(container.read(patchClashConfigProvider).tun.udpTimeout, 60);
+
+      await tester.tap(find.text(l.udpTimeout));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(l.reset));
+      await tester.pumpAndSettle();
+      expect(
+        container.read(patchClashConfigProvider).tun.udpTimeout,
+        defaultTunUdpTimeout,
+      );
     });
 
     test('keep-alive rows stay off Android and the mark is Linux only', () {

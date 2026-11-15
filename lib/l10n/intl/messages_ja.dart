@@ -734,6 +734,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "emptyTip": m31,
     "en": MessageLookupByLibrary.simpleMessage("英語"),
     "enabled": MessageLookupByLibrary.simpleMessage("有効"),
+    "endpointIndependentNat": MessageLookupByLibrary.simpleMessage(
+      "エンドポイント非依存 NAT",
+    ),
     "enforceRoutes": MessageLookupByLibrary.simpleMessage("ルートを強制"),
     "entries": MessageLookupByLibrary.simpleMessage(" 件"),
     "error": MessageLookupByLibrary.simpleMessage("エラー"),
@@ -1490,6 +1493,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "recentRequests": MessageLookupByLibrary.simpleMessage("最近のリクエスト"),
     "recommendedIcons": MessageLookupByLibrary.simpleMessage("おすすめ"),
     "recordType": MessageLookupByLibrary.simpleMessage("レコードタイプ"),
+    "recvMsgX": MessageLookupByLibrary.simpleMessage("バッチ受信"),
     "redirPort": MessageLookupByLibrary.simpleMessage("Redirポート"),
     "redo": MessageLookupByLibrary.simpleMessage("やり直す"),
     "regenerateCertificate": MessageLookupByLibrary.simpleMessage("証明書を再生成"),
@@ -1734,6 +1738,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "sendFromPhoneTip": MessageLookupByLibrary.simpleMessage(
       "スマートフォンのカメラでコードをスキャンし、開いたページにリンクを貼り付けてください。両方のデバイスを同じネットワークに接続する必要があります。",
     ),
+    "sendMsgX": MessageLookupByLibrary.simpleMessage("バッチ送信"),
     "server": MessageLookupByLibrary.simpleMessage("サーバー"),
     "serviceAbnormalCount": m97,
     "serviceAllAvailable": MessageLookupByLibrary.simpleMessage("すべて利用可能"),

@@ -615,6 +615,27 @@ void main() {
     expect(vpn.excludeDeviceCommunication, isFalse);
   });
 
+  test('TUN engine options pass through to the VPN options', () async {
+    container
+        .read(patchClashConfigProvider.notifier)
+        .update(
+          (state) => state.copyWith.tun(
+            disableIcmpForwarding: true,
+            endpointIndependentNat: true,
+            recvMsgX: false,
+            sendMsgX: true,
+            udpTimeout: 60,
+          ),
+        );
+
+    final vpn = await container.read(vpnOptionsProvider.future);
+    expect(vpn.disableIcmpForwarding, isTrue);
+    expect(vpn.endpointIndependentNat, isTrue);
+    expect(vpn.recvMsgX, isFalse);
+    expect(vpn.sendMsgX, isTrue);
+    expect(vpn.udpTimeout, 60);
+  });
+
   test(
     'an excluded SSID set to direct keeps the tunnel up instead of suspending',
     () {

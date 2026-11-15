@@ -1155,6 +1155,11 @@ abstract class Tun with _$Tun {
     @JsonKey(name: 'route-exclude-address')
     @Default([])
     List<String> routeExcludeAddress,
+    @Default(false) bool disableIcmpForwarding,
+    @Default(false) bool endpointIndependentNat,
+    @Default(true) bool recvMsgX,
+    @Default(false) bool sendMsgX,
+    @Default(defaultTunUdpTimeout) int udpTimeout,
   }) = _Tun;
 
   factory Tun.fromJson(Map<String, Object?> json) => _$TunFromJson(json);

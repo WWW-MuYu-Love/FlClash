@@ -439,6 +439,37 @@ void main() {
     });
   });
 
+  group('Tun JSON round-trip', () {
+    test('default values', () {
+      const tun = Tun();
+      expect(tun.enable, false);
+      expect(tun.stack, TunStack.mips);
+      expect(tun.mtu, defaultTunMtu);
+      expect(tun.congestionController, defaultCongestionController);
+      expect(tun.disableIcmpForwarding, false);
+      expect(tun.endpointIndependentNat, false);
+      expect(tun.recvMsgX, true);
+      expect(tun.sendMsgX, false);
+      expect(tun.udpTimeout, defaultTunUdpTimeout);
+    });
+
+    test('round-trip with custom values', () {
+      const tun = Tun(
+        disableIcmpForwarding: true,
+        endpointIndependentNat: true,
+        recvMsgX: false,
+        sendMsgX: true,
+        udpTimeout: 60,
+      );
+      final restored = roundTrip(() => tun.toJson(), Tun.fromJson);
+      expect(restored.disableIcmpForwarding, true);
+      expect(restored.endpointIndependentNat, true);
+      expect(restored.recvMsgX, false);
+      expect(restored.sendMsgX, true);
+      expect(restored.udpTimeout, 60);
+    });
+  });
+
   group('NetworkProps JSON round-trip', () {
     test('default values', () {
       const props = NetworkProps();

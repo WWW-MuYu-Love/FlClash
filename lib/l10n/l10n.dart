@@ -6814,6 +6814,26 @@ class AppLocalizations {
     );
   }
 
+  /// `Endpoint-independent NAT`
+  String get endpointIndependentNat {
+    return Intl.message(
+      'Endpoint-independent NAT',
+      name: 'endpointIndependentNat',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Batch receive`
+  String get recvMsgX {
+    return Intl.message('Batch receive', name: 'recvMsgX', desc: '', args: []);
+  }
+
+  /// `Batch send`
+  String get sendMsgX {
+    return Intl.message('Batch send', name: 'sendMsgX', desc: '', args: []);
+  }
+
   /// `With ICMP forwarding disabled, TUN answers ping itself, so ping no longer shows the real latency.`
   String get disableIcmpForwardingDesc {
     return Intl.message(

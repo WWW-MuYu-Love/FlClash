@@ -927,6 +927,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "emptyTip": m31,
     "en": MessageLookupByLibrary.simpleMessage("Anglais"),
     "enabled": MessageLookupByLibrary.simpleMessage("Activé"),
+    "endpointIndependentNat": MessageLookupByLibrary.simpleMessage(
+      "NAT indépendant du point de terminaison",
+    ),
     "enforceRoutes": MessageLookupByLibrary.simpleMessage("Forcer les routes"),
     "entries": MessageLookupByLibrary.simpleMessage(" entrées"),
     "error": MessageLookupByLibrary.simpleMessage("Erreur"),
@@ -1873,6 +1876,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "recentRequests": MessageLookupByLibrary.simpleMessage("Requêtes récentes"),
     "recommendedIcons": MessageLookupByLibrary.simpleMessage("Suggestions"),
     "recordType": MessageLookupByLibrary.simpleMessage("Type d’enregistrement"),
+    "recvMsgX": MessageLookupByLibrary.simpleMessage("Réception par lots"),
     "redirPort": MessageLookupByLibrary.simpleMessage("Port Redir"),
     "redo": MessageLookupByLibrary.simpleMessage("Rétablir"),
     "regenerateCertificate": MessageLookupByLibrary.simpleMessage(
@@ -2175,6 +2179,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "sendFromPhoneTip": MessageLookupByLibrary.simpleMessage(
       "Scannez le code avec l\'appareil photo du téléphone, puis collez le lien dans la page qui s\'ouvre. Les deux appareils doivent être sur le même réseau.",
     ),
+    "sendMsgX": MessageLookupByLibrary.simpleMessage("Envoi par lots"),
     "server": MessageLookupByLibrary.simpleMessage("Serveur"),
     "serviceAbnormalCount": m97,
     "serviceAllAvailable": MessageLookupByLibrary.simpleMessage(

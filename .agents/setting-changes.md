@@ -125,6 +125,11 @@ asks for nothing. The tap runs `SetupAction.restartVpn`: a stop, then a start, a
 | `routeAddress`         | `Tun.routeAddress` and `bypassPrivateRoute`                   | with the VPN                           |
 | `mtu`                  | `Tun`                                                         | with the VPN                           |
 | `congestionController` | `Tun`                                                         | with the VPN                           |
+| `disableIcmpForwarding` | `Tun`                                                        | with the VPN                           |
+| `endpointIndependentNat` | `Tun`                                                       | with the VPN                           |
+| `recvMsgX`             | `Tun`                                                         | with the VPN                           |
+| `sendMsgX`             | `Tun`                                                         | with the VPN                           |
+| `udpTimeout`           | `Tun`                                                         | with the VPN                           |
 
 The service never reads the access list's sort and filter fields. `effective` resets them, along with every field
 the table does not mark as read, so changing them does not ask for a restart.

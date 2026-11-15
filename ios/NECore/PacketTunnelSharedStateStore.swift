@@ -387,6 +387,7 @@ struct PacketTunnelVPNOptions: Decodable {
   let disableIcmpForwarding: Bool
   let endpointIndependentNat: Bool
   let congestionController: String
+  let udpTimeout: Int
   let recvMsgX: Bool
   let sendMsgX: Bool
   let includeAllNetworks: Bool
@@ -408,6 +409,7 @@ struct PacketTunnelVPNOptions: Decodable {
     case disableIcmpForwarding
     case endpointIndependentNat
     case congestionController
+    case udpTimeout
     case recvMsgX
     case sendMsgX
     case includeAllNetworks
@@ -458,6 +460,10 @@ struct PacketTunnelVPNOptions: Decodable {
       String.self,
       forKey: .congestionController
     ) ?? ""
+    udpTimeout = try container.decodeIfPresent(
+      Int.self,
+      forKey: .udpTimeout
+    ) ?? 300
     recvMsgX = try container.decodeIfPresent(Bool.self, forKey: .recvMsgX) ?? true
     sendMsgX = try container.decodeIfPresent(Bool.self, forKey: .sendMsgX) ?? false
     includeAllNetworks = try container.decodeIfPresent(

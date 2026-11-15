@@ -169,4 +169,23 @@ class TunOptionsTest {
 
         assertEquals("", json["congestion-controller"].asString)
     }
+
+    @Test
+    fun `hands the core the TUN engine options`() {
+        val options = optionsWithRoutes(emptyList()).copy(
+            disableIcmpForwarding = true,
+            endpointIndependentNat = true,
+            recvMsgX = false,
+            sendMsgX = true,
+            udpTimeout = 60,
+        )
+
+        val json = JsonParser.parseString(options.tunOptions).asJsonObject
+
+        assertEquals(true, json["disableIcmpForwarding"].asBoolean)
+        assertEquals(true, json["endpointIndependentNat"].asBoolean)
+        assertEquals(false, json["recvMsgX"].asBoolean)
+        assertEquals(true, json["sendMsgX"].asBoolean)
+        assertEquals(60, json["udp-timeout"].asInt)
+    }
 }

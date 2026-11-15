@@ -25,6 +25,7 @@ type startOptions struct {
 	SendMsgX               bool   `json:"sendMsgX"`
 	DisableICMPForwarding  bool   `json:"disableIcmpForwarding"`
 	EndpointIndependentNAT bool   `json:"endpointIndependentNat"`
+	UDPTimeout             uint32 `json:"udp-timeout"`
 	LoopbackAddress        string `json:"loopback-address"`
 }
 
@@ -103,6 +104,7 @@ func Start(fd int, stack, address, dns, rawOptions string) *sing_tun.Listener {
 		MTU:                    settings.MTU,
 		DisableICMPForwarding:  settings.DisableICMPForwarding,
 		EndpointIndependentNat: settings.EndpointIndependentNAT,
+		UDPTimeout:             int64(settings.UDPTimeout),
 		LoopbackAddress:        loopbackAddress(settings.LoopbackAddress),
 		CongestionController:   settings.CongestionController,
 		FileDescriptor:         dupFd,

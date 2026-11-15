@@ -904,6 +904,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "emptyTip": m31,
     "en": MessageLookupByLibrary.simpleMessage("Английский"),
     "enabled": MessageLookupByLibrary.simpleMessage("Включено"),
+    "endpointIndependentNat": MessageLookupByLibrary.simpleMessage(
+      "NAT, независимый от конечной точки",
+    ),
     "enforceRoutes": MessageLookupByLibrary.simpleMessage(
       "Принудительные маршруты",
     ),
@@ -1818,6 +1821,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "recentRequests": MessageLookupByLibrary.simpleMessage("Последние запросы"),
     "recommendedIcons": MessageLookupByLibrary.simpleMessage("Рекомендуемые"),
     "recordType": MessageLookupByLibrary.simpleMessage("Тип записи"),
+    "recvMsgX": MessageLookupByLibrary.simpleMessage("Пакетный приём"),
     "redirPort": MessageLookupByLibrary.simpleMessage("Порт Redir"),
     "redo": MessageLookupByLibrary.simpleMessage("Повторить"),
     "regenerateCertificate": MessageLookupByLibrary.simpleMessage(
@@ -2116,6 +2120,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "sendFromPhoneTip": MessageLookupByLibrary.simpleMessage(
       "Отсканируйте код камерой телефона и вставьте ссылку на открывшейся странице. Оба устройства должны быть в одной сети.",
     ),
+    "sendMsgX": MessageLookupByLibrary.simpleMessage("Пакетная отправка"),
     "server": MessageLookupByLibrary.simpleMessage("Сервер"),
     "serviceAbnormalCount": m97,
     "serviceAllAvailable": MessageLookupByLibrary.simpleMessage("Все доступны"),

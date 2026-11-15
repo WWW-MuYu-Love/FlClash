@@ -291,6 +291,11 @@ _Tun _$TunFromJson(Map<String, dynamic> json) => _Tun(
           ?.map((e) => e as String)
           .toList() ??
       const [],
+  disableIcmpForwarding: json['disableIcmpForwarding'] as bool? ?? false,
+  endpointIndependentNat: json['endpointIndependentNat'] as bool? ?? false,
+  recvMsgX: json['recvMsgX'] as bool? ?? true,
+  sendMsgX: json['sendMsgX'] as bool? ?? false,
+  udpTimeout: (json['udpTimeout'] as num?)?.toInt() ?? defaultTunUdpTimeout,
 );
 
 Map<String, dynamic> _$TunToJson(_Tun instance) => <String, dynamic>{
@@ -301,6 +306,11 @@ Map<String, dynamic> _$TunToJson(_Tun instance) => <String, dynamic>{
   'mtu': instance.mtu,
   'congestion-controller': instance.congestionController,
   'route-exclude-address': instance.routeExcludeAddress,
+  'disableIcmpForwarding': instance.disableIcmpForwarding,
+  'endpointIndependentNat': instance.endpointIndependentNat,
+  'recvMsgX': instance.recvMsgX,
+  'sendMsgX': instance.sendMsgX,
+  'udpTimeout': instance.udpTimeout,
 };
 
 const _$TunStackEnumMap = {

@@ -355,6 +355,11 @@ _VpnOptions _$VpnOptionsFromJson(Map<String, dynamic> json) => _VpnOptions(
       const [],
   mtu: (json['mtu'] as num?)?.toInt() ?? 0,
   congestionController: json['congestionController'] as String? ?? '',
+  disableIcmpForwarding: json['disableIcmpForwarding'] as bool? ?? false,
+  endpointIndependentNat: json['endpointIndependentNat'] as bool? ?? false,
+  recvMsgX: json['recvMsgX'] as bool? ?? true,
+  sendMsgX: json['sendMsgX'] as bool? ?? false,
+  udpTimeout: (json['udpTimeout'] as num?)?.toInt() ?? defaultTunUdpTimeout,
 );
 
 Map<String, dynamic> _$VpnOptionsToJson(_VpnOptions instance) =>
@@ -377,6 +382,11 @@ Map<String, dynamic> _$VpnOptionsToJson(_VpnOptions instance) =>
       'routeAddress': instance.routeAddress,
       'mtu': instance.mtu,
       'congestionController': instance.congestionController,
+      'disableIcmpForwarding': instance.disableIcmpForwarding,
+      'endpointIndependentNat': instance.endpointIndependentNat,
+      'recvMsgX': instance.recvMsgX,
+      'sendMsgX': instance.sendMsgX,
+      'udpTimeout': instance.udpTimeout,
     };
 
 _InitParams _$InitParamsFromJson(Map<String, dynamic> json) => _InitParams(

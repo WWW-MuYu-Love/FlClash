@@ -261,6 +261,70 @@ class TunStackItem extends ConsumerWidget {
   }
 }
 
+class DisableIcmpForwardingItem extends ConsumerWidget {
+  const DisableIcmpForwardingItem({super.key});
+
+  @override
+  Widget build(BuildContext context, ref) {
+    return ConfigToggleItem(
+      title: (l) => l.disableIcmpForwarding,
+      selector: patchClashConfigProvider.select(
+        (state) => state.tun.disableIcmpForwarding,
+      ),
+      onChanged: _tunWriter(
+        (state, value) => state.copyWith.tun(disableIcmpForwarding: value),
+      ),
+    );
+  }
+}
+
+class EndpointIndependentNatItem extends ConsumerWidget {
+  const EndpointIndependentNatItem({super.key});
+
+  @override
+  Widget build(BuildContext context, ref) {
+    return ConfigToggleItem(
+      title: (l) => l.endpointIndependentNat,
+      selector: patchClashConfigProvider.select(
+        (state) => state.tun.endpointIndependentNat,
+      ),
+      onChanged: _tunWriter(
+        (state, value) => state.copyWith.tun(endpointIndependentNat: value),
+      ),
+    );
+  }
+}
+
+class RecvMsgXItem extends ConsumerWidget {
+  const RecvMsgXItem({super.key});
+
+  @override
+  Widget build(BuildContext context, ref) {
+    return ConfigToggleItem(
+      title: (l) => l.recvMsgX,
+      selector: patchClashConfigProvider.select((state) => state.tun.recvMsgX),
+      onChanged: _tunWriter(
+        (state, value) => state.copyWith.tun(recvMsgX: value),
+      ),
+    );
+  }
+}
+
+class SendMsgXItem extends ConsumerWidget {
+  const SendMsgXItem({super.key});
+
+  @override
+  Widget build(BuildContext context, ref) {
+    return ConfigToggleItem(
+      title: (l) => l.sendMsgX,
+      selector: patchClashConfigProvider.select((state) => state.tun.sendMsgX),
+      onChanged: _tunWriter(
+        (state, value) => state.copyWith.tun(sendMsgX: value),
+      ),
+    );
+  }
+}
+
 class InterfaceNameModeItem extends ConsumerWidget {
   const InterfaceNameModeItem({super.key});
 
@@ -422,7 +486,7 @@ class _NumberItem extends ConsumerWidget {
   }
 }
 
-// Android's VPN service starts from these rows; the desktop TUN takes the
+// The mobile VPN services start from these rows; the desktop TUN takes the
 // same keys as overrides, so a profile's own values apply unless picked.
 List<Widget> tunItems({required bool isMipsStack}) {
   return [
@@ -446,6 +510,16 @@ List<Widget> tunItems({required bool isMipsStack}) {
           (state, value) => state.copyWith.tun(congestionController: value),
         ),
       ),
+    const DisableIcmpForwardingItem(),
+    const EndpointIndependentNatItem(),
+    const RecvMsgXItem(),
+    const SendMsgXItem(),
+    _NumberItem(
+      title: (l) => l.udpTimeout,
+      isSeconds: true,
+      select: (state) => state.tun.udpTimeout,
+      update: (state, value) => state.copyWith.tun(udpTimeout: value),
+    ),
     const BypassPrivateRouteItem(),
     const RouteAddressItem(),
     ConfigListEditItem(

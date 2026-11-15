@@ -726,6 +726,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "emptyTip": m31,
     "en": MessageLookupByLibrary.simpleMessage("영어"),
     "enabled": MessageLookupByLibrary.simpleMessage("사용"),
+    "endpointIndependentNat": MessageLookupByLibrary.simpleMessage(
+      "엔드포인트 독립 NAT",
+    ),
     "enforceRoutes": MessageLookupByLibrary.simpleMessage("라우트 강제"),
     "entries": MessageLookupByLibrary.simpleMessage("개 항목"),
     "error": MessageLookupByLibrary.simpleMessage("오류"),
@@ -1466,6 +1469,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "recentRequests": MessageLookupByLibrary.simpleMessage("최근 요청"),
     "recommendedIcons": MessageLookupByLibrary.simpleMessage("추천"),
     "recordType": MessageLookupByLibrary.simpleMessage("레코드 유형"),
+    "recvMsgX": MessageLookupByLibrary.simpleMessage("일괄 수신"),
     "redirPort": MessageLookupByLibrary.simpleMessage("Redir 포트"),
     "redo": MessageLookupByLibrary.simpleMessage("다시 실행"),
     "regenerateCertificate": MessageLookupByLibrary.simpleMessage("인증서 다시 생성"),
@@ -1702,6 +1706,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "sendFromPhoneTip": MessageLookupByLibrary.simpleMessage(
       "휴대폰 카메라로 코드를 스캔한 뒤 열린 페이지에 링크를 붙여 넣으세요. 두 기기가 같은 네트워크에 연결되어 있어야 합니다.",
     ),
+    "sendMsgX": MessageLookupByLibrary.simpleMessage("일괄 송신"),
     "server": MessageLookupByLibrary.simpleMessage("서버"),
     "serviceAbnormalCount": m97,
     "serviceAllAvailable": MessageLookupByLibrary.simpleMessage("모두 사용 가능"),

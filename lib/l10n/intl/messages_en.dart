@@ -873,6 +873,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "emptyTip": m31,
     "en": MessageLookupByLibrary.simpleMessage("English"),
     "enabled": MessageLookupByLibrary.simpleMessage("Enabled"),
+    "endpointIndependentNat": MessageLookupByLibrary.simpleMessage(
+      "Endpoint-independent NAT",
+    ),
     "enforceRoutes": MessageLookupByLibrary.simpleMessage("Enforce Routes"),
     "entries": MessageLookupByLibrary.simpleMessage(" entries"),
     "error": MessageLookupByLibrary.simpleMessage("Error"),
@@ -1739,6 +1742,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "recentRequests": MessageLookupByLibrary.simpleMessage("Recent requests"),
     "recommendedIcons": MessageLookupByLibrary.simpleMessage("Suggested"),
     "recordType": MessageLookupByLibrary.simpleMessage("Record type"),
+    "recvMsgX": MessageLookupByLibrary.simpleMessage("Batch receive"),
     "redirPort": MessageLookupByLibrary.simpleMessage("Redir port"),
     "redo": MessageLookupByLibrary.simpleMessage("Redo"),
     "regenerateCertificate": MessageLookupByLibrary.simpleMessage(
@@ -2019,6 +2023,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "sendFromPhoneTip": MessageLookupByLibrary.simpleMessage(
       "Scan the code with your phone\'s camera and paste the link on the page that opens. Both devices need to be on the same network.",
     ),
+    "sendMsgX": MessageLookupByLibrary.simpleMessage("Batch send"),
     "server": MessageLookupByLibrary.simpleMessage("Server"),
     "serviceAbnormalCount": m97,
     "serviceAllAvailable": MessageLookupByLibrary.simpleMessage(

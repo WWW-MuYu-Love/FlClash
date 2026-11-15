@@ -101,6 +101,11 @@ void main() {
         options.copyWith(routeAddress: const ['10.0.0.0/8']),
         options.copyWith(mtu: 1500),
         options.copyWith(congestionController: 'bbr'),
+        options.copyWith(disableIcmpForwarding: true),
+        options.copyWith(endpointIndependentNat: true),
+        options.copyWith(recvMsgX: false),
+        options.copyWith(sendMsgX: true),
+        options.copyWith(udpTimeout: 60),
         options.copyWith(
           accessControlProps: options.accessControlProps.copyWith(
             acceptList: const ['c.app'],
