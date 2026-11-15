@@ -71,6 +71,9 @@ DOMAIN, example.com
 ^https://example\.com/i mock-response-body data-type=json data="{}" status-code=200
 ^https://example\.com/j mock-response-body data-type=json data-path=https://cdn.example.com/j.json
 response if ${url} ~= /x/ then response.header.del("X")
+response if ${url} ~= /^https:\/\/example\.com\/k(?:\?.*)?$/i then response.body.mock_file("css", "https://cdn.example.com/k.css", 200) | response.header.add("Cache-Control", "no-store")
+response if ${url} ~= /^https:\/\/example\.com\/l$/ then response.body.mock_file("json", "https://cdn.example.com/l.json", 404)
+response if ${url} ~= /^https:\/\/example\.com\/m$/i then response.body.mock_file("woff2", "https://cdn.example.com/m.woff2", 200)
 
 [MitM]
 hostname = *.example.com
@@ -206,7 +209,12 @@ hostname = %APPEND% {{{Host}}}
     final content = parseMitmModule(
       _loon,
       values: const {'Region': 'JP'},
-      resources: const {'https://cdn.example.com/j.json': 'def.json'},
+      resources: const {
+        'https://cdn.example.com/j.json': 'def.json',
+        'https://cdn.example.com/k.css': 'k.css',
+        'https://cdn.example.com/l.json': 'l.json',
+        'https://cdn.example.com/m.woff2': 'm.woff2',
+      },
     );
 
     test('reads its arguments', () {
@@ -236,6 +244,9 @@ hostname = %APPEND% {{{Host}}}
       expect(content.mapLocal, [
         r'^https://example\.com/i data-type="text" data="{}" status-code="200" header="Content-Type:application/json"',
         r'^https://example\.com/j data-type="file" data="def.json" header="Content-Type:application/json"',
+        r'(?i)^https:\/\/example\.com\/k(?:\?.*)?$ data-type="file" data="k.css" status-code="200" header="Content-Type:text/css|Cache-Control:no-store"',
+        r'^https:\/\/example\.com\/l$ data-type="file" data="l.json" status-code="404" header="Content-Type:application/json"',
+        r'(?i)^https:\/\/example\.com\/m$ data-type="file" data="m.woff2" status-code="200"',
       ]);
       expect(content.hostname, ['*.example.com']);
     });
