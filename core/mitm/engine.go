@@ -84,6 +84,14 @@ type Engine struct {
 	closed            bool
 	pressureLevel     int
 	lastPressureClear time.Time
+	store             *persistentStore
+	httpClient        *http.Client
+	httpClientPort    int
+	notify            func(ScriptNotification)
+	cronMu            sync.Mutex
+	cronStop          chan struct{}
+	cronWake          chan struct{}
+	cronRunning       bool
 }
 
 // ErrHandlerUnavailable means Serve never started, so the connection is untouched.
@@ -420,6 +428,7 @@ func (e *Engine) SetConfig(cfg *Config) {
 	if e.exchange != nil {
 		e.exchange.SetLimit(e.config.CaptureEntries)
 	}
+	e.wakeCron()
 }
 
 // SetCapture enables or disables exchange capture.
@@ -569,6 +578,7 @@ func (e *Engine) Close() {
 	e.mu.Lock()
 	defer e.mu.Unlock()
 	e.closed = true
+	e.StopCron()
 	if e.handler != nil {
 		e.handler.retire()
 		e.handler = nil
@@ -588,6 +598,7 @@ func (e *Engine) intercept(ctx context.Context, req *http.Request, invoker mitmp
 		return e.exchange.Intercept(ctx, e, req, invoker)
 	}
 	requestRewriteActions(e, req)
+	e.runRequestScripts(req)
 	mapped, _ := mapLocalResponse(e, req, rawURL)
 	var resp *http.Response
 	var err error
@@ -601,5 +612,6 @@ func (e *Engine) intercept(ctx context.Context, req *http.Request, invoker mitmp
 	}
 	responseBodyRewrite(e, resp, rawURL)
 	responseRewriteActions(e, resp, rawURL)
+	e.runResponseScripts(req, resp, rawURL)
 	return resp, nil
 }

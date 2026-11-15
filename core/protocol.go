@@ -101,6 +101,9 @@ const (
 	RouteChangedMessage   MessageType = "routeChanged"
 	DialerLoopMessage     MessageType = "dialerLoop"
 	RequestTrafficMessage MessageType = "requestTraffic"
+	// Sent when a module script calls $notification.post. The extension
+	// consumes it as a local notification; it never reaches the app.
+	ScriptNotificationMessage MessageType = "scriptNotification"
 )
 
 type Message struct {

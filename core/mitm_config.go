@@ -10,6 +10,17 @@ import (
 	"go.yaml.in/yaml/v3"
 )
 
+// notifyScriptNotification delivers a $notification.post as a core event;
+// the tunnel extension consumes it as a local notification, and it never
+// reaches the app.
+func notifyScriptNotification(n mitm.ScriptNotification) {
+	sendMessage(ScriptNotificationMessage, map[string]any{
+		"title":    n.Title,
+		"subtitle": n.Subtitle,
+		"body":     n.Body,
+	})
+}
+
 // mitmSection is the shape of the `mitm` key in the running config file.
 type mitmSection struct {
 	Mitm *mitm.Config `yaml:"mitm"`

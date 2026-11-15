@@ -6,10 +6,13 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 
 	"github.com/dop251/goja"
+	"github.com/metacubex/mihomo/constant"
 )
 
 // ScriptOutput is the mitm.runScript answer (MitmScriptOutput).
@@ -19,8 +22,33 @@ type ScriptOutput struct {
 	Error  string   `json:"error"`
 }
 
+type ScriptNotification struct {
+	Title    string `json:"title"`
+	Subtitle string `json:"subtitle"`
+	Body     string `json:"body"`
+}
+
+type scriptEnv struct {
+	store     *persistentStore
+	namespace string
+	http      *http.Client
+	notify    func(ScriptNotification)
+}
+
 // scriptTimeout bounds one script run.
 const scriptTimeout = 10 * time.Second
+
+func scriptTimeoutFor(params map[string]string) time.Duration {
+	if raw := params["timeout"]; raw != "" {
+		if seconds, err := strconv.ParseFloat(strings.TrimSpace(raw), 64); err == nil && seconds > 0 {
+			if seconds > 120 {
+				seconds = 120
+			}
+			return time.Duration(seconds * float64(time.Second))
+		}
+	}
+	return scriptTimeout
+}
 
 var (
 	// errScriptDone and errScriptTimeout travel as Interrupt values so the
@@ -51,6 +79,57 @@ type ScriptResponse struct {
 	Body    []byte
 }
 
+func (e *Engine) persistentStore() *persistentStore {
+	e.mu.Lock()
+	defer e.mu.Unlock()
+	if e.store != nil {
+		return e.store
+	}
+	e.store = newPersistentStore(e.storePath())
+	return e.store
+}
+
+func (e *Engine) storePath() string {
+	if e.homeDir != "" {
+		return filepath.Join(e.homeDir, persistentStoreName)
+	}
+	if base := constant.Path.HomeDir(); base != "" {
+		return filepath.Join(base, dirName, persistentStoreName)
+	}
+	return ""
+}
+
+func (e *Engine) scriptHTTPClient() *http.Client {
+	e.mu.Lock()
+	defer e.mu.Unlock()
+	if e.httpClient != nil && e.httpClientPort == e.mixedPort {
+		return e.httpClient
+	}
+	e.httpClient = newScriptHTTPClient(e.mixedPort)
+	e.httpClientPort = e.mixedPort
+	return e.httpClient
+}
+
+func (e *Engine) scriptEnv(namespace string) *scriptEnv {
+	e.mu.RLock()
+	notify := e.notify
+	e.mu.RUnlock()
+	return &scriptEnv{
+		store:     e.persistentStore(),
+		namespace: namespace,
+		http:      e.scriptHTTPClient(),
+		notify:    notify,
+	}
+}
+
+// SetNotifyHandler sets where $notification.post delivers; a nil handler
+// drops the notification.
+func (e *Engine) SetNotifyHandler(fn func(ScriptNotification)) {
+	e.mu.Lock()
+	defer e.mu.Unlock()
+	e.notify = fn
+}
+
 // RunScript executes the named cron/event/generic module script.
 func (e *Engine) RunScript(name string) ScriptOutput {
 	if name == "" {
@@ -75,7 +154,7 @@ func (e *Engine) RunScript(name string) ScriptOutput {
 		if err != nil {
 			return ScriptOutput{Error: err.Error()}
 		}
-		return runScriptSource(string(source), nil, parsed.params)
+		return runScriptSource(string(source), nil, parsed.params, e.scriptEnv(name))
 	}
 	return ScriptOutput{Error: fmt.Sprintf("no script named %q", name)}
 }
@@ -137,13 +216,59 @@ func unquoteScriptValue(s string) string {
 	return s
 }
 
-func runScriptSource(source string, ctx *ScriptContext, params map[string]string) (out ScriptOutput) {
+func runScriptSource(source string, ctx *ScriptContext, params map[string]string, env *scriptEnv) (out ScriptOutput) {
 	rt := goja.New()
 	rt.Set("console", map[string]any{
 		"log":   func(args ...goja.Value) { out.Logs = append(out.Logs, formatJSArgs(args)) },
 		"warn":  func(args ...goja.Value) { out.Logs = append(out.Logs, formatJSArgs(args)) },
 		"error": func(args ...goja.Value) { out.Logs = append(out.Logs, formatJSArgs(args)) },
 	})
+	if env != nil {
+		if env.store != nil {
+			namespace := env.namespace
+			rt.Set("$persistentStore", map[string]any{
+				"read": func(key goja.Value) any {
+					if value, ok := env.store.read(namespace, key.String()); ok {
+						return value
+					}
+					return goja.Null()
+				},
+				"write": func(value, key goja.Value) bool {
+					return env.store.write(namespace, key.String(), value.String())
+				},
+			})
+			rt.Set("$prefs", map[string]any{
+				"valueForKey": func(key goja.Value) any {
+					if value, ok := env.store.read(namespace, key.String()); ok {
+						return value
+					}
+					return goja.Null()
+				},
+				"setValueForKey": func(value, key goja.Value) bool {
+					return env.store.write(namespace, key.String(), value.String())
+				},
+				"removeValueForKey": func(key goja.Value) bool {
+					return env.store.remove(namespace, key.String())
+				},
+			})
+		}
+		if env.http != nil {
+			setHTTPClient(rt, env.http, &out)
+		}
+		if env.notify != nil {
+			notify := env.notify
+			rt.Set("$notification", map[string]any{
+				"post": func(title, subtitle, body goja.Value) {
+					notify(ScriptNotification{
+						Title:    stringOrEmpty(title),
+						Subtitle: stringOrEmpty(subtitle),
+						Body:     stringOrEmpty(body),
+					})
+				},
+			})
+		}
+	}
+	rt.Set("$network", networkInfo())
 	var doneResult string
 	var done bool
 	rt.Set("$done", func(v goja.Value) {
@@ -165,7 +290,7 @@ func runScriptSource(source string, ctx *ScriptContext, params map[string]string
 		respObj = responseToJS(rt, ctx.Response)
 		rt.Set("$response", respObj)
 	}
-	timer := time.AfterFunc(scriptTimeout, func() { rt.Interrupt(errScriptTimeout) })
+	timer := time.AfterFunc(scriptTimeoutFor(params), func() { rt.Interrupt(errScriptTimeout) })
 	defer timer.Stop()
 	value, err := rt.RunString(source)
 	if err != nil {
@@ -246,7 +371,11 @@ func requestToJS(rt *goja.Runtime, req *ScriptRequest) *goja.Object {
 	obj.Set("url", req.URL)
 	obj.Set("method", req.Method)
 	obj.Set("headers", headersToJS(rt, req.Headers))
-	obj.Set("body", string(req.Body))
+	// The body is only set when the caller buffered one, so a header-only
+	// script cannot replace the live request stream with an empty body.
+	if req.Body != nil {
+		obj.Set("body", string(req.Body))
+	}
 	return obj
 }
 
@@ -254,7 +383,9 @@ func responseToJS(rt *goja.Runtime, resp *ScriptResponse) *goja.Object {
 	obj := rt.NewObject()
 	obj.Set("status", resp.Status)
 	obj.Set("headers", headersToJS(rt, resp.Headers))
-	obj.Set("body", string(resp.Body))
+	if resp.Body != nil {
+		obj.Set("body", string(resp.Body))
+	}
 	return obj
 }
 
@@ -280,7 +411,7 @@ func applyRequestFromJS(req *ScriptRequest, obj *goja.Object) {
 	}
 	if v := obj.Get("headers"); v != nil && !goja.IsUndefined(v) && !goja.IsNull(v) {
 		if headers, ok := v.Export().(map[string]any); ok {
-			req.Headers = headersFromJS(headers)
+			req.Headers = applyHeadersFromJS(req.Headers, headers)
 		}
 	}
 }
@@ -294,17 +425,41 @@ func applyResponseFromJS(resp *ScriptResponse, obj *goja.Object) {
 	}
 	if v := obj.Get("headers"); v != nil && !goja.IsUndefined(v) && !goja.IsNull(v) {
 		if headers, ok := v.Export().(map[string]any); ok {
-			resp.Headers = headersFromJS(headers)
+			resp.Headers = applyHeadersFromJS(resp.Headers, headers)
 		}
 	}
 }
 
-func headersFromJS(values map[string]any) http.Header {
-	h := http.Header{}
-	for name, v := range values {
-		if s, ok := v.(string); ok {
-			h.Set(name, s)
+// applyHeadersFromJS merges the script's headers onto the originals, so a
+// key the script left alone keeps every value it had.
+func applyHeadersFromJS(original http.Header, exported map[string]any) http.Header {
+	merged := original.Clone()
+	if merged == nil {
+		merged = http.Header{}
+	}
+	seen := map[string]struct{}{}
+	for name, v := range exported {
+		canonical := http.CanonicalHeaderKey(name)
+		seen[canonical] = struct{}{}
+		value, ok := v.(string)
+		if !ok {
+			continue
+		}
+		if merged.Get(canonical) != value {
+			merged.Set(canonical, value)
 		}
 	}
-	return h
+	for name := range original {
+		if _, ok := seen[name]; !ok {
+			merged.Del(name)
+		}
+	}
+	return merged
+}
+
+func stringOrEmpty(v goja.Value) string {
+	if v == nil || goja.IsUndefined(v) || goja.IsNull(v) {
+		return ""
+	}
+	return v.String()
 }

@@ -201,12 +201,13 @@ func (s *ExchangeStore) Intercept(ctx context.Context, e *Engine, req *http.Requ
 	ex.ResponseHeader = cloneHeader(resp.Header)
 	s.mu.Unlock()
 	s.applyResponseBodyRewrite(e, resp, ex)
+	s.applyResponseRewrites(e, resp, ex)
+	s.applyResponseScripts(e, req, resp, ex)
 	if resp.Body != nil {
 		resp.Body = newTeeBody(resp.Body, !e.recordBodies(), func(capture *cappedCapture) {
 			s.finishResponse(ex, start, capture)
 		})
 	}
-	s.applyResponseRewrites(e, resp, ex)
 	return resp, nil
 }
 
@@ -507,6 +508,7 @@ func (t *teeBody) Close() error {
 // applyRequestRewrites applies URL and header rewrites to a decrypted request.
 func (s *ExchangeStore) applyRequestRewrites(e *Engine, req *http.Request, ex *Exchange) {
 	actions := requestRewriteActions(e, req)
+	actions = append(actions, e.runRequestScripts(req)...)
 	s.mu.Lock()
 	ex.Actions = append(ex.Actions, actions...)
 	ex.URL = req.URL.String()
@@ -535,6 +537,19 @@ func requestRewriteActions(e *Engine, req *http.Request) []Action {
 // applyResponseRewrites applies header rewrites to a decrypted response.
 func (s *ExchangeStore) applyResponseRewrites(e *Engine, resp *http.Response, ex *Exchange) {
 	actions := responseRewriteActions(e, resp, ex.OriginalURL)
+	s.mu.Lock()
+	ex.Actions = append(ex.Actions, actions...)
+	s.mu.Unlock()
+}
+
+// applyResponseScripts runs the matching http-response scripts and records
+// them. It runs before the response body is teed, so a script that replaces
+// the body still reaches the client.
+func (s *ExchangeStore) applyResponseScripts(e *Engine, req *http.Request, resp *http.Response, ex *Exchange) {
+	actions := e.runResponseScripts(req, resp, ex.OriginalURL)
+	if len(actions) == 0 {
+		return
+	}
 	s.mu.Lock()
 	ex.Actions = append(ex.Actions, actions...)
 	s.mu.Unlock()

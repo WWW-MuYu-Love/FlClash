@@ -1,5 +1,6 @@
 import Foundation
 import os
+import UserNotifications
 
 final class NECoreEventQueue {
   private let sharedStateStore: PacketTunnelSharedStateStore
@@ -26,12 +27,72 @@ final class NECoreEventQueue {
       else {
         return
       }
-      self.enqueue(event)
+      // A script notification is consumed here, in the extension, so it fires with the app closed.
+      guard let remaining = self.postScriptNotifications(from: event) else {
+        return
+      }
+      self.enqueue(remaining)
     }
   }
 
   func stop() {
     NECoreBridge.setEventListener(nil)
+  }
+
+  // Posts the scriptNotification messages in a batch and returns the batch
+  // without them, or nil when nothing is left for the app.
+  private func postScriptNotifications(from event: Data) -> Data? {
+    guard
+      let batch = try? JSONSerialization.jsonObject(with: event) as? [String: Any],
+      let arguments = batch["arguments"] as? [[String: Any]]
+    else {
+      return event
+    }
+    var kept: [[String: Any]] = []
+    var posted = false
+    for argument in arguments {
+      guard argument["type"] as? String == "scriptNotification" else {
+        kept.append(argument)
+        continue
+      }
+      posted = true
+      if let data = argument["data"] as? [String: Any] {
+        postNotification(
+          title: data["title"] as? String ?? "",
+          subtitle: data["subtitle"] as? String ?? "",
+          body: data["body"] as? String ?? ""
+        )
+      }
+    }
+    guard posted else {
+      return event
+    }
+    guard !kept.isEmpty else {
+      return nil
+    }
+    var stripped = batch
+    stripped["arguments"] = kept
+    return (try? JSONSerialization.data(withJSONObject: stripped)) ?? event
+  }
+
+  private func postNotification(title: String, subtitle: String, body: String) {
+    let content = UNMutableNotificationContent()
+    content.title = title
+    content.subtitle = subtitle
+    content.body = body
+    content.threadIdentifier = "flclash-mitm-script"
+    let request = UNNotificationRequest(
+      identifier: UUID().uuidString,
+      content: content,
+      trigger: nil
+    )
+    UNUserNotificationCenter.current().add(request) { [weak self] error in
+      if let error {
+        self?.logger.error(
+          "script notification failed: \(error.localizedDescription, privacy: .public)"
+        )
+      }
+    }
   }
 
   private func enqueue(_ event: Data) {

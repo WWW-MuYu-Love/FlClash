@@ -10,6 +10,7 @@ import (
 	"errors"
 	"fmt"
 	"net"
+	"runtime"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -263,6 +264,14 @@ func StartTun(callbacks TunCallbacks, fd int, stack, address, dns, options strin
 	if !started {
 		return false
 	}
+	// The handler lives only while a tunnel is up, so a script run in the
+	// app core (which never starts one) drops its notification instead of
+	// reaching the app as an event it cannot parse. It is iOS-only: the
+	// extension consumes the event as a local notification.
+	if runtime.GOOS == "ios" {
+		mitm.Default().SetNotifyHandler(notifyScriptNotification)
+	}
+	mitm.Default().StartCron()
 	if !isRunning.Load() {
 		handleStartListener()
 	} else {
@@ -347,6 +356,8 @@ func deliverEvent(data []byte) {
 
 func StopTun() {
 	defer recoverExport("stopTun")
+	mitm.Default().SetNotifyHandler(nil)
+	mitm.Default().StopCron()
 	handleStopTun()
 	if isRunning.Load() {
 		handleStopListener()
