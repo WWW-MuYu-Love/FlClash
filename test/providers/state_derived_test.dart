@@ -574,6 +574,24 @@ void main() {
     expect(container.read(proxyStateProvider).isStart, isFalse);
   });
 
+  test('MITM hostnames join the VPN bypass list without duplicates', () async {
+    container
+        .read(networkSettingProvider.notifier)
+        .update((state) => state.copyWith(bypassDomain: const ['localhost']));
+    container
+        .read(patchClashConfigProvider.notifier)
+        .update(
+          (state) => state.copyWith(
+            mitm: state.mitm.copyWith(
+              hostname: const ['example.com', 'localhost'],
+            ),
+          ),
+        );
+
+    final vpn = await container.read(vpnOptionsProvider.future);
+    expect(vpn.bypassDomain, ['localhost', 'example.com']);
+  });
+
   test(
     'an excluded SSID set to direct keeps the tunnel up instead of suspending',
     () {

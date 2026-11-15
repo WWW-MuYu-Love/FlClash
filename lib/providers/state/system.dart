@@ -277,6 +277,9 @@ Future<VpnOptions> vpnOptions(Ref ref) async {
       (state) => (tun: state.tun, mixedPort: state.mixedPort),
     ),
   );
+  final mitmHostnames = ref.watch(
+    patchClashConfigProvider.select((state) => state.mitm.hostname),
+  );
   final vpnSetting = ref.watch(vpnSettingProvider);
   final safeMode = ref.watch(safeModeProvider);
   final routeAddress = ref.watch(vpnRouteAddressProvider.future);
@@ -293,7 +296,13 @@ Future<VpnOptions> vpnOptions(Ref ref) async {
     dnsHijacking: vpnSetting.dnsHijacking,
     accessControlProps: vpnSetting.accessControlProps,
     allowBypass: vpnSetting.allowBypass,
-    bypassDomain: networkSetting.bypassDomain,
+    bypassDomain: [
+      ...networkSetting.bypassDomain,
+      // MITM hosts bypass the system proxy so their traffic enters through
+      // the tunnel, where the wrapped stack diverts it to the engine.
+      for (final host in mitmHostnames)
+        if (!networkSetting.bypassDomain.contains(host)) host,
+    ],
     routeAddress: await routeAddress,
     mtu: tun.mtu,
     congestionController: tun.congestionController,
