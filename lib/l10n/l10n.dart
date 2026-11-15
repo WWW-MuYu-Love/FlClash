@@ -3866,6 +3866,11 @@ class AppLocalizations {
     return Intl.message('Host', name: 'host', desc: '', args: []);
   }
 
+  /// `Hosts`
+  String get hosts {
+    return Intl.message('Hosts', name: 'hosts', desc: '', args: []);
+  }
+
   /// `Destination`
   String get destination {
     return Intl.message('Destination', name: 'destination', desc: '', args: []);

@@ -485,6 +485,7 @@
   "creationTime": "Время создания",
   "process": "Процесс",
   "host": "Хост",
+  "hosts": "Сопоставление хостов",
   "destination": "Назначение",
   "destinationGeoIP": "GeoIP назначения",
   "destinationIPASN": "ASN IP назначения",

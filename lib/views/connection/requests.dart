@@ -470,7 +470,10 @@ class _LiveFeedState extends ConsumerState<_LiveFeed>
   }
 
   Future<void> _close(Future<void> Function() close) async {
-    await globalState.safeRun(close, title: 'close connections');
+    await globalState.safeRun(
+      close,
+      title: currentAppLocalizations.closeConnections,
+    );
     if (mounted) {
       await _refreshConnections();
     }

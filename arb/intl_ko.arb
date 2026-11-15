@@ -485,6 +485,7 @@
   "creationTime": "생성 시간",
   "process": "프로세스",
   "host": "호스트",
+  "hosts": "호스트 매핑",
   "destination": "목적지",
   "destinationGeoIP": "목적지 GeoIP",
   "destinationIPASN": "목적지 IP ASN",

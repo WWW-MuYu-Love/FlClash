@@ -103,14 +103,14 @@ class HostsItem extends ConsumerWidget {
       patchClashConfigProvider.select((state) => state.hosts),
     );
     return ListItem.open(
-      title: const Text('Hosts'),
+      title: Text(appLocalizations.hosts),
       subtitle: Text(
         hosts.isEmpty
             ? appLocalizations.none
             : appLocalizations.itemsCount(hosts.length),
       ),
       widget: MapEditView(
-        title: 'Hosts',
+        title: appLocalizations.hosts,
         entries: hosts,
         keyMaxLength: TextInputLimits.domain,
         valueMaxLength: TextInputLimits.hostValue,

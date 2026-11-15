@@ -485,6 +485,7 @@
   "creationTime": "Creation time",
   "process": "Process",
   "host": "Host",
+  "hosts": "Hosts",
   "destination": "Destination",
   "destinationGeoIP": "Destination GeoIP",
   "destinationIPASN": "Destination IP ASN",

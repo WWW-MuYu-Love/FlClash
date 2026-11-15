@@ -485,6 +485,7 @@
   "creationTime": "Fecha de creación",
   "process": "Proceso",
   "host": "Host",
+  "hosts": "Asignación de hosts",
   "destination": "Destino",
   "destinationGeoIP": "GeoIP de destino",
   "destinationIPASN": "ASN de la IP de destino",

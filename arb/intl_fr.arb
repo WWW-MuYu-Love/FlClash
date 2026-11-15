@@ -485,6 +485,7 @@
   "creationTime": "Date de création",
   "process": "Processus",
   "host": "Hôte",
+  "hosts": "Correspondance d'hôtes",
   "destination": "Destination",
   "destinationGeoIP": "GeoIP de destination",
   "destinationIPASN": "ASN de l’IP de destination",

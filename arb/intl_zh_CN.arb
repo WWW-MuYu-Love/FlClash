@@ -485,6 +485,7 @@
   "creationTime": "创建时间",
   "process": "进程",
   "host": "主机",
+  "hosts": "主机映射",
   "destination": "目标地址",
   "destinationGeoIP": "目标地理定位",
   "destinationIPASN": "目标IP ASN",

@@ -485,6 +485,7 @@
   "creationTime": "作成日時",
   "process": "プロセス",
   "host": "ホスト",
+  "hosts": "ホストマッピング",
   "destination": "宛先",
   "destinationGeoIP": "宛先GeoIP",
   "destinationIPASN": "宛先IP ASN",
