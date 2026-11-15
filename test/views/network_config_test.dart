@@ -47,7 +47,7 @@ final _toggleCases = <_ToggleCase>[
     'vpn system proxy',
     const VpnSystemProxyItem(),
     (c) => c.read(vpnSettingProvider).systemProxy,
-    initial: true,
+    initial: false,
   ),
   _ToggleCase(
     'include all networks',

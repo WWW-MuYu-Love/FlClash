@@ -1008,6 +1008,9 @@ void main() {
   test('local authentication withholds the VPN system proxy', () async {
     await AppLocalizations.load(const Locale('en'));
     container.listen(sharedStateProvider, (_, _) {});
+    container
+        .read(vpnSettingProvider.notifier)
+        .update((state) => state.copyWith(systemProxy: true));
     await container.read(vpnOptionsProvider.future);
     expect(container.read(sharedStateProvider).vpnOptions?.systemProxy, true);
 
