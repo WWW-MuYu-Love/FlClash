@@ -442,6 +442,12 @@ void main() {
       expect(restored.bypassDomain, ['example.com']);
       expect(restored.bypassPrivateRoute, true);
     });
+
+    test('a stored legacy default list migrates to the new default', () {
+      const props = NetworkProps(bypassDomain: legacyDefaultBypassDomain);
+      final restored = roundTrip(() => props.toJson(), NetworkProps.fromJson);
+      expect(restored.bypassDomain, defaultBypassDomain);
+    });
   });
 
   group('Mitm', () {

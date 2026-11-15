@@ -1,5 +1,6 @@
 import 'package:fl_clash/common/common.dart';
 import 'package:fl_clash/enum/enum.dart';
+import 'package:flutter/foundation.dart' show listEquals;
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
@@ -11,6 +12,26 @@ part 'generated/config.freezed.dart';
 part 'generated/config.g.dart';
 
 const defaultBypassDomain = [
+  '127.0.0.0/8',
+  '10.0.0.0/8',
+  '172.16.0.0/12',
+  '192.168.0.0/16',
+  '169.254.0.0/16',
+  '100.64.0.0/10',
+  '224.0.0.0/4',
+  '255.255.255.255/32',
+  '::1/128',
+  'fc00::/7',
+  'fe80::/10',
+  'localhost',
+  '*.localhost',
+  '*.local',
+  '*.lan',
+  '*.home',
+];
+
+/// The previous default; a stored config holding it migrates on load.
+const legacyDefaultBypassDomain = [
   '*zhihu.com',
   '*zhimg.com',
   '*jd.com',
@@ -394,8 +415,16 @@ abstract class NetworkProps with _$NetworkProps {
     @Default(defaultAuthenticationProps) AuthenticationProps authentication,
   }) = _NetworkProps;
 
-  factory NetworkProps.fromJson(Map<String, Object?>? json) =>
-      json == null ? const NetworkProps() : _$NetworkPropsFromJson(json);
+  factory NetworkProps.fromJson(Map<String, Object?>? json) {
+    if (json == null) {
+      return const NetworkProps();
+    }
+    final props = _$NetworkPropsFromJson(json);
+    if (listEquals(props.bypassDomain, legacyDefaultBypassDomain)) {
+      return props.copyWith(bypassDomain: defaultBypassDomain);
+    }
+    return props;
+  }
 }
 
 /// Reads the styles named `standard`, `icon` and `none` before they became
