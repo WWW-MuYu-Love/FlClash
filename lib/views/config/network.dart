@@ -550,22 +550,25 @@ List<Widget> networkOptionsItems({
   ];
 }
 
-List<Widget> vpnSectionItems({required bool isIOS}) {
-  return [
-    const VpnSystemProxyItem(),
-    const BypassDomainItem(),
-    const AllowBypassItem(),
-    const Ipv6Item(),
-    const DNSHijackingItem(),
+List<Widget> vpnSectionItems() {
+  return const [
+    VpnSystemProxyItem(),
+    BypassDomainItem(),
+    AllowBypassItem(),
+    Ipv6Item(),
+    DNSHijackingItem(),
+  ];
+}
+
+List<Widget> iosTunnelSectionItems() {
+  return const [
+    IncludeAllNetworksItem(),
     // The exclusions below only take effect with include-all-networks on.
-    if (isIOS) ...[
-      const IncludeAllNetworksItem(),
-      const ExcludeLocalNetworksItem(),
-      const ExcludeAPNsItem(),
-      const ExcludeCellularServicesItem(),
-      const EnforceRoutesItem(),
-      const ExcludeDeviceCommunicationItem(),
-    ],
+    ExcludeLocalNetworksItem(),
+    ExcludeAPNsItem(),
+    ExcludeCellularServicesItem(),
+    EnforceRoutesItem(),
+    ExcludeDeviceCommunicationItem(),
   ];
 }
 
@@ -585,13 +588,18 @@ class VpnSections extends ConsumerWidget {
         generateSection(items: const [VPNItem()]),
         generateSection(
           title: 'VPN',
-          items: vpnSectionItems(isIOS: isIOS),
+          items: vpnSectionItems(),
           footer: [
             if (authenticationEnable)
               appLocalizations.authenticationSystemProxyDesc,
             appLocalizations.bypassDomainDesc,
           ].join('\n'),
         ),
+        if (isIOS)
+          generateSection(
+            title: appLocalizations.includeAllNetworks,
+            items: iosTunnelSectionItems(),
+          ),
       ],
     );
   }

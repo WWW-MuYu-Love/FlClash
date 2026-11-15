@@ -227,34 +227,52 @@ void main() {
   });
 
   group('vpn section items', () {
-    List<Type> types({required bool isIOS}) =>
-        vpnSectionItems(isIOS: isIOS).map((item) => item.runtimeType).toList();
-
-    test('the iOS tunnel options appear only on iOS', () {
-      expect(types(isIOS: true), contains(IncludeAllNetworksItem));
-      expect(types(isIOS: true), contains(ExcludeLocalNetworksItem));
-      expect(types(isIOS: true), contains(ExcludeAPNsItem));
-      expect(types(isIOS: true), contains(ExcludeCellularServicesItem));
-      expect(types(isIOS: true), contains(EnforceRoutesItem));
-      expect(types(isIOS: true), contains(ExcludeDeviceCommunicationItem));
-
-      final androidTypes = types(isIOS: false);
-      expect(androidTypes, isNot(contains(IncludeAllNetworksItem)));
-      expect(androidTypes, isNot(contains(ExcludeLocalNetworksItem)));
-      expect(androidTypes, isNot(contains(ExcludeAPNsItem)));
-      expect(androidTypes, isNot(contains(ExcludeCellularServicesItem)));
-      expect(androidTypes, isNot(contains(EnforceRoutesItem)));
-      expect(androidTypes, isNot(contains(ExcludeDeviceCommunicationItem)));
+    test('the VPN section lists only the base rows', () {
+      final types = vpnSectionItems().map((item) => item.runtimeType).toList();
+      expect(types, contains(VpnSystemProxyItem));
+      expect(types, contains(BypassDomainItem));
+      expect(types, contains(AllowBypassItem));
+      expect(types, contains(Ipv6Item));
+      expect(types, contains(DNSHijackingItem));
+      expect(types, isNot(contains(IncludeAllNetworksItem)));
+      expect(types, isNot(contains(ExcludeLocalNetworksItem)));
+      expect(types, isNot(contains(ExcludeAPNsItem)));
+      expect(types, isNot(contains(ExcludeCellularServicesItem)));
+      expect(types, isNot(contains(EnforceRoutesItem)));
+      expect(types, isNot(contains(ExcludeDeviceCommunicationItem)));
     });
 
-    test('the base VPN rows are always listed', () {
-      for (final isIOS in [true, false]) {
-        expect(types(isIOS: isIOS), contains(VpnSystemProxyItem));
-        expect(types(isIOS: isIOS), contains(BypassDomainItem));
-        expect(types(isIOS: isIOS), contains(AllowBypassItem));
-        expect(types(isIOS: isIOS), contains(Ipv6Item));
-        expect(types(isIOS: isIOS), contains(DNSHijackingItem));
-      }
+    test('the iOS tunnel section lists the six tunnel options', () {
+      final types = iosTunnelSectionItems()
+          .map((item) => item.runtimeType)
+          .toList();
+      expect(types, contains(IncludeAllNetworksItem));
+      expect(types, contains(ExcludeLocalNetworksItem));
+      expect(types, contains(ExcludeAPNsItem));
+      expect(types, contains(ExcludeCellularServicesItem));
+      expect(types, contains(EnforceRoutesItem));
+      expect(types, contains(ExcludeDeviceCommunicationItem));
+    });
+
+    testWidgets('the tunnel section renders only on iOS', (tester) async {
+      final l = currentAppLocalizations;
+
+      await pumpItem(tester, const VpnSections(isIOS: true));
+      expect(find.text(l.includeAllNetworks), findsNWidgets(2));
+      expect(find.text(l.excludeLocalNetworks), findsOneWidget);
+      expect(find.text(l.excludeAPNs), findsOneWidget);
+      expect(find.text(l.excludeCellularServices), findsOneWidget);
+      expect(find.text(l.enforceRoutes), findsOneWidget);
+      expect(find.text(l.excludeDeviceCommunication), findsOneWidget);
+
+      await pumpItem(tester, const VpnSections(isIOS: false));
+      expect(find.text(l.includeAllNetworks), findsNothing);
+      expect(find.text(l.excludeLocalNetworks), findsNothing);
+      expect(find.text(l.excludeAPNs), findsNothing);
+      expect(find.text(l.excludeCellularServices), findsNothing);
+      expect(find.text(l.enforceRoutes), findsNothing);
+      expect(find.text(l.excludeDeviceCommunication), findsNothing);
+      expect(find.text(l.dnsHijacking), findsOneWidget);
     });
   });
 
