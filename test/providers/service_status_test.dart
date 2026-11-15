@@ -7,7 +7,6 @@ import 'package:fl_clash/core/external_controller.dart';
 import 'package:fl_clash/core/interface.dart';
 import 'package:fl_clash/core/method.dart';
 import 'package:fl_clash/models/models.dart';
-import 'package:fl_clash/providers/app.dart';
 import 'package:fl_clash/providers/config.dart';
 import 'package:fl_clash/providers/core.dart';
 import 'package:fl_clash/providers/route_state.dart';
@@ -43,18 +42,6 @@ class _FakeExternalControllerClient extends ExternalControllerClient {
     return null;
   }
 }
-
-const _runningVpnOptions = VpnOptions(
-  enable: true,
-  port: 7890,
-  ipv6: false,
-  dnsHijacking: false,
-  accessControlProps: AccessControlProps(),
-  allowBypass: false,
-  systemProxy: false,
-  bypassDomain: [],
-  stack: 'gvisor',
-);
 
 ServiceCheckItem _item(String name, {String status = 'available'}) =>
     ServiceCheckItem(
@@ -114,32 +101,6 @@ void main() {
 
   ServiceStatus notifierOf(ProviderContainer scope) =>
       scope.read(serviceStatusProvider.notifier);
-
-  (ProviderContainer, _FakeExternalControllerClient) runningContainer({
-    List<ServiceCheckItem>? controllerItems,
-  }) {
-    final client = _FakeExternalControllerClient(controllerItems);
-    final scope = ProviderContainer(
-      overrides: [
-        routeTrackerProvider.overrideWithBuild(
-          (_, _) => const RouteState(
-            coreEpoch: 1,
-            routeVersion: 1,
-            hostEpoch: 1,
-            proxied: true,
-            synced: true,
-            live: true,
-          ),
-        ),
-        coreHandlerProvider.overrideWithValue(CoreController.scoped(core)),
-        externalControllerClientProvider.overrideWithValue(client),
-      ],
-    );
-    addTearDown(scope.dispose);
-    scope.read(runningVpnOptionsProvider.notifier).value = _runningVpnOptions;
-    scope.listen(serviceStatusProvider, (_, _) {});
-    return (scope, client);
-  }
 
   RoutedProbeState<ServiceTarget, ServiceCheck> stateOf(
     ProviderContainer scope,
@@ -397,41 +358,12 @@ void main() {
     },
   );
 
-  test('asks 9090 first and never calls the Core when it answers', () async {
-    final (scope, client) = runningContainer(
-      controllerItems: [_item('youtube')],
-    );
-    when(() => core.serviceCheck(any())).thenThrow(
-      const CoreMethodException(code: 'empty_response', message: 'empty'),
-    );
+  test('asks the app core directly', () async {
+    final scope = container();
 
     notifierOf(scope).watch(ServiceTarget.youtube);
     await pumpEventQueue();
 
-    expect(client.fetchServiceCheckCalls, 1);
-    verifyNever(() => core.serviceCheck(any()));
-    verifyNever(() => core.serviceCheck(any(), route: CoreRoute.app));
-    final state = stateOf(scope);
-    expect(state.entryOf(ServiceTarget.youtube).phase, ProbePhase.fresh);
-    expect(state.valueOf(ServiceTarget.youtube)?.node, 'HK-01');
-  });
-
-  test('falls back to the app core when 9090 is gone too', () async {
-    final (scope, client) = runningContainer(controllerItems: null);
-    when(() => core.serviceCheck(any(), route: CoreRoute.app)).thenAnswer((
-      invocation,
-    ) async {
-      final params =
-          invocation.positionalArguments.single as ServiceCheckParams;
-      return [for (final name in params.names) _item(name)];
-    });
-
-    notifierOf(scope).watch(ServiceTarget.youtube);
-    await pumpEventQueue();
-
-    // 9090 answers nothing, so the probe falls back to the App core.
-    expect(client.fetchServiceCheckCalls, 1);
-    verifyNever(() => core.serviceCheck(any()));
     verify(() => core.serviceCheck(any(), route: CoreRoute.app)).called(1);
     final state = stateOf(scope);
     expect(state.entryOf(ServiceTarget.youtube).phase, ProbePhase.fresh);

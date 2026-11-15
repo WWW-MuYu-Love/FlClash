@@ -28,8 +28,6 @@ const _answer = OutboundIpResult(
 void main() {
   setUpAll(() {
     registerFallbackValue(const OutboundIpParams(timeout: 0));
-    registerFallbackValue(const Duration(seconds: 1));
-    registerFallbackValue(() => Future<OutboundIpResult?>.value());
   });
 
   late _MockCore core;
@@ -153,7 +151,7 @@ void main() {
     ]);
   });
 
-  test('falls back to the app core when 9090 answers nothing', () async {
+  test('asks the app core directly', () async {
     when(
       () => core.outboundIp(any(), route: CoreRoute.app),
     ).thenAnswer((_) async => _answer);
@@ -194,63 +192,5 @@ void main() {
     await pumpEventQueue();
 
     verify(() => core.outboundIp(any(), route: CoreRoute.app)).called(1);
-  });
-
-  test('asks 9090 again when its answer cannot be parsed', () async {
-    const failure = OutboundIpResult(
-      error: 'timeout',
-      coreEpoch: 1,
-      routeVersion: 1,
-    );
-    final container = build();
-    var calls = 0;
-    when(() => client.fetchSettled<OutboundIpResult>(any(), any())).thenAnswer(
-      (_) async {
-        calls++;
-        return calls == 1 ? failure : _answer;
-      },
-    );
-    when(
-      () => core.outboundIp(any(), route: CoreRoute.app),
-    ).thenAnswer((_) async => _answer);
-
-    container.read(outboundIpProbeProvider.notifier).watch(routedOutbound);
-    await pumpEventQueue();
-
-    verify(
-      () => client.fetchSettled<OutboundIpResult>(any(), any()),
-    ).called(2);
-    final entry = container
-        .read(outboundIpProbeProvider)
-        .entryOf(routedOutbound);
-    expect(entry.phase, ProbePhase.fresh);
-    expect(entry.value?.ip, '2.2.2.2');
-    verifyNever(() => core.outboundIp(any(), route: CoreRoute.app));
-  });
-
-  test('takes the failure after three unusable 9090 answers', () async {
-    final container = build();
-    when(() => client.fetchSettled<OutboundIpResult>(any(), any())).thenAnswer(
-      (_) async => const OutboundIpResult(
-        error: 'timeout',
-        coreEpoch: 1,
-        routeVersion: 1,
-      ),
-    );
-    when(
-      () => core.outboundIp(any(), route: CoreRoute.app),
-    ).thenAnswer((_) async => _answer);
-
-    container.read(outboundIpProbeProvider.notifier).watch(routedOutbound);
-    await pumpEventQueue();
-
-    verify(
-      () => client.fetchSettled<OutboundIpResult>(any(), any()),
-    ).called(3);
-    expect(
-      container.read(outboundIpProbeProvider).entryOf(routedOutbound).phase,
-      ProbePhase.failed,
-    );
-    verifyNever(() => core.outboundIp(any(), route: CoreRoute.app));
   });
 }
