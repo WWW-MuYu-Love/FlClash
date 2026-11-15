@@ -41,9 +41,10 @@ Future<bool> _generateCertificate(MitmCa ca, String title) async {
 }
 
 class MitmView extends ConsumerStatefulWidget {
-  const MitmView({super.key, required this.isAndroid});
+  const MitmView({super.key, required this.isAndroid, this.isIOS});
 
   final bool isAndroid;
+  final bool? isIOS;
 
   @override
   ConsumerState<MitmView> createState() => _MitmViewState();
@@ -53,6 +54,8 @@ class _MitmViewState extends ConsumerState<MitmView> {
   late final AppLifecycleListener _lifecycle;
 
   bool get isAndroid => widget.isAndroid;
+
+  bool get isIOS => widget.isIOS ?? system.isIOS;
 
   @override
   void initState() {
@@ -103,7 +106,7 @@ class _MitmViewState extends ConsumerState<MitmView> {
           ? null
           : appLocalizations.mitmCertificateAndroidReadyTip;
     }
-    if (system.isIOS) {
+    if (isIOS) {
       return check?.trust == MitmTrust.ready
           ? null
           : appLocalizations.mitmIosTrustSteps;
@@ -169,7 +172,7 @@ class _MitmViewState extends ConsumerState<MitmView> {
     final appLocalizations = context.appLocalizations;
     final trust = ref.read(mitmTrustStateProvider.notifier);
     final outcome = await globalState.loadingRun<MitmInstallOutcome?>(
-      system.isIOS ? trust.installViaSafari : trust.install,
+      isIOS ? trust.installViaSafari : trust.install,
       tag: LoadingTag.mitm,
       title: appLocalizations.installCertificate,
     );
@@ -208,7 +211,7 @@ class _MitmViewState extends ConsumerState<MitmView> {
           await app?.openCertificateSettings();
         }
       case MitmInstallOutcome.prompted:
-        if (system.isIOS) {
+        if (isIOS) {
           await dialogs.showAlert(
             title: appLocalizations.installCertificate,
             message: TextSpan(text: appLocalizations.mitmIosSafariTrustSteps),
@@ -225,21 +228,19 @@ class _MitmViewState extends ConsumerState<MitmView> {
     MitmCertificate certificate,
   ) async {
     final appLocalizations = context.appLocalizations;
-    if (system.isIOS) {
-      final outcome = await globalState.loadingRun<MitmInstallOutcome?>(
+    if (isIOS) {
+      final confirmed = await dialogs.showMessage(
+        title: appLocalizations.exportCertificate,
+        message: TextSpan(text: appLocalizations.mitmIosTrustSteps),
+      );
+      if (confirmed != true || !context.mounted) {
+        return;
+      }
+      await globalState.loadingRun<MitmInstallOutcome?>(
         ref.read(mitmTrustStateProvider.notifier).install,
         tag: LoadingTag.mitm,
         title: appLocalizations.exportCertificate,
       );
-      if (!context.mounted) {
-        return;
-      }
-      if (outcome == MitmInstallOutcome.prompted) {
-        await dialogs.showAlert(
-          title: appLocalizations.exportCertificate,
-          message: TextSpan(text: appLocalizations.mitmIosTrustSteps),
-        );
-      }
       return;
     }
     final res = await globalState.safeRun<bool>(() async {
@@ -402,7 +403,7 @@ class _MitmViewState extends ConsumerState<MitmView> {
     );
     final showRestart =
         ref.watch(isStartProvider) &&
-        (!system.isIOS || tunnelRunning) &&
+        (!isIOS || tunnelRunning) &&
         ref.watch(
           patchClashConfigProvider.select((state) => state.mitm.enable),
         );

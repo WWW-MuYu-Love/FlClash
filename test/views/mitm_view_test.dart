@@ -85,6 +85,7 @@ void main() {
     MitmTrustStore? store,
     bool safeMode = false,
     bool running = false,
+    bool? isIOS,
   }) async {
     tester.view.physicalSize = const Size(1000, 2000);
     tester.view.devicePixelRatio = 1;
@@ -130,7 +131,7 @@ void main() {
     await tester.pumpWidget(
       UncontrolledProviderScope(
         container: container,
-        child: const TestApp(child: MitmView(isAndroid: false)),
+        child: TestApp(child: MitmView(isAndroid: false, isIOS: isIOS)),
       ),
     );
     await tester.pumpAndSettle();
@@ -371,6 +372,62 @@ void main() {
       expect(find.text(currentAppLocalizations.mitmTrustReady), findsOneWidget);
       expect(saved().trustedFingerprint, _certificate.fingerprint);
     });
+
+    Finder exportRow() => find.text(currentAppLocalizations.exportCertificate);
+
+    testWidgets('export asks before opening the share sheet', (tester) async {
+      final store = _FakeStore(MitmTrust.notInstalled);
+      await pumpView(
+        tester,
+        certificate: _certificate,
+        store: store,
+        isIOS: true,
+      );
+
+      await tester.tap(exportRow());
+      await tester.pumpAndSettle();
+
+      expect(button(currentAppLocalizations.cancel), findsOneWidget);
+      expect(button(currentAppLocalizations.confirm), findsOneWidget);
+      expect(store.installed, isEmpty);
+    });
+
+    testWidgets('export opens the share sheet once confirmed', (tester) async {
+      final store = _FakeStore(MitmTrust.notInstalled);
+      await pumpView(
+        tester,
+        certificate: _certificate,
+        store: store,
+        isIOS: true,
+      );
+
+      await tester.tap(exportRow());
+      await tester.pumpAndSettle();
+      await tester.tap(button(currentAppLocalizations.confirm));
+      await tester.pumpAndSettle();
+
+      expect(store.installed, [_certificate]);
+    });
+
+    testWidgets('export stays put when the prompt is cancelled', (
+      tester,
+    ) async {
+      final store = _FakeStore(MitmTrust.notInstalled);
+      await pumpView(
+        tester,
+        certificate: _certificate,
+        store: store,
+        isIOS: true,
+      );
+
+      await tester.tap(exportRow());
+      await tester.pumpAndSettle();
+      await tester.tap(button(currentAppLocalizations.cancel));
+      await tester.pumpAndSettle();
+
+      expect(store.installed, isEmpty);
+      expect(button(currentAppLocalizations.confirm), findsNothing);
+    });
   });
 
   testWidgets('a trusted certificate is decrypted with', (tester) async {
@@ -576,29 +633,30 @@ void main() {
     );
   });
 
-  testWidgets('trusting the certificate while running shows the restart banner', (
-    tester,
-  ) async {
-    final store = _FakeStore(MitmTrust.notInstalled);
-    await pumpView(
-      tester,
-      certificate: _certificate,
-      store: store,
-      mitm: const Mitm(enable: true),
-      running: true,
-    );
+  testWidgets(
+    'trusting the certificate while running shows the restart banner',
+    (tester) async {
+      final store = _FakeStore(MitmTrust.notInstalled);
+      await pumpView(
+        tester,
+        certificate: _certificate,
+        store: store,
+        mitm: const Mitm(enable: true),
+        running: true,
+      );
 
-    expect(
-      find.text(currentAppLocalizations.mitmRestartTunnelTip),
-      findsOneWidget,
-    );
-    store.trust = MitmTrust.ready;
-    await container.read(mitmTrustStateProvider.notifier).refresh();
-    await tester.pump();
+      expect(
+        find.text(currentAppLocalizations.mitmRestartTunnelTip),
+        findsOneWidget,
+      );
+      store.trust = MitmTrust.ready;
+      await container.read(mitmTrustStateProvider.notifier).refresh();
+      await tester.pump();
 
-    expect(
-      find.text(currentAppLocalizations.mitmRestartTunnelTip),
-      findsNWidgets(2),
-    );
-  });
+      expect(
+        find.text(currentAppLocalizations.mitmRestartTunnelTip),
+        findsNWidgets(2),
+      );
+    },
+  );
 }
