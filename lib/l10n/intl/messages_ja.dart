@@ -1197,8 +1197,11 @@ class MessageLookup extends MessageLookupByLibrary {
     "mitmInstallUserCaTip": MessageLookupByLibrary.simpleMessage(
       "root が見つからないため、ユーザー証明書としてのみインストールできます。復号されるのはユーザー証明書を信頼するアプリ（主にブラウザ）だけで、他のアプリは記載したホストへの接続に失敗するため、それらのホストは記載しないでください。Android 11 以降はシステム設定で手動でインストールを完了します。",
     ),
+    "mitmIosSafariTrustSteps": MessageLookupByLibrary.simpleMessage(
+      "Safari で証明書のダウンロードを開きました。「許可」をタップし、「設定」上部の「ダウンロード済みプロファイル」からインストールした後、「設定 → 一般 → 情報 → 証明書信頼設定」で完全な信頼を有効にしてください。ダウンロード後 8 分以内にインストールしないと削除されます。",
+    ),
     "mitmIosTrustSteps": MessageLookupByLibrary.simpleMessage(
-      "「ファイル」で証明書をインストールした後、「設定 → 一般 → VPNとデバイス管理」で完全な信頼を有効にしてください。",
+      "「ファイル」で証明書をインストールした後、「設定 → 一般 → 情報 → 証明書信頼設定」で完全な信頼を有効にしてください。",
     ),
     "mitmMissingStores": m64,
     "mitmModule": MessageLookupByLibrary.simpleMessage("モジュール"),

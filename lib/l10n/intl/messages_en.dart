@@ -1402,8 +1402,11 @@ class MessageLookup extends MessageLookupByLibrary {
     "mitmInstallUserCaTip": MessageLookupByLibrary.simpleMessage(
       "No root was found, so the certificate can only be installed as a user certificate. Only apps that trust user certificates, mostly browsers, are decrypted; other apps fail on the hosts you list, so leave those hosts out. On Android 11 and later you finish the install yourself in system settings.",
     ),
+    "mitmIosSafariTrustSteps": MessageLookupByLibrary.simpleMessage(
+      "Safari opened the certificate download. Tap \'Allow\', then install it from \'Downloaded Profile\' at the top of Settings, and turn on full trust in \'Settings → General → About → Certificate Trust Settings\'. A downloaded profile is deleted if it is not installed within 8 minutes.",
+    ),
     "mitmIosTrustSteps": MessageLookupByLibrary.simpleMessage(
-      "Install the certificate from Files, then enable full trust for it in Settings → General → VPN & Device Management.",
+      "Install the certificate from Files, then enable full trust for it in Settings → General → About → Certificate Trust Settings.",
     ),
     "mitmMissingStores": m64,
     "mitmModule": MessageLookupByLibrary.simpleMessage("Module"),

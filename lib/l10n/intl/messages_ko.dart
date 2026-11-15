@@ -1181,8 +1181,11 @@ class MessageLookup extends MessageLookupByLibrary {
     "mitmInstallUserCaTip": MessageLookupByLibrary.simpleMessage(
       "root가 감지되지 않아 사용자 인증서로만 설치할 수 있습니다. 사용자 인증서를 신뢰하는 앱(주로 브라우저)만 복호화되고 다른 앱은 나열한 호스트에 연결하지 못하므로 해당 호스트는 나열하지 마세요. Android 11부터는 시스템 설정에서 직접 설치를 마쳐야 합니다.",
     ),
+    "mitmIosSafariTrustSteps": MessageLookupByLibrary.simpleMessage(
+      "Safari에서 인증서 다운로드가 열렸습니다.「허용」을 탭한 뒤 설정 상단의「다운로드된 프로파일」에서 설치하고,「설정 → 일반 → 정보 → 인증서 신뢰 설정」에서 완전 신뢰를 켜세요. 다운로드 후 8분 안에 설치하지 않으면 삭제됩니다.",
+    ),
     "mitmIosTrustSteps": MessageLookupByLibrary.simpleMessage(
-      "파일 앱에서 인증서를 설치한 뒤 설정 → 일반 → VPN 및 기기 관리에서 해당 인증서를 완전히 신뢰하도록 설정하세요.",
+      "파일 앱에서 인증서를 설치한 뒤 설정 → 일반 → 정보 → 인증서 신뢰 설정에서 해당 인증서를 완전히 신뢰하도록 설정하세요.",
     ),
     "mitmMissingStores": m64,
     "mitmModule": MessageLookupByLibrary.simpleMessage("모듈"),

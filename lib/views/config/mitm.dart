@@ -167,7 +167,7 @@ class _MitmViewState extends ConsumerState<MitmView> {
     final appLocalizations = context.appLocalizations;
     final trust = ref.read(mitmTrustStateProvider.notifier);
     final outcome = await globalState.loadingRun<MitmInstallOutcome?>(
-      trust.install,
+      system.isIOS ? trust.installViaSafari : trust.install,
       tag: LoadingTag.mitm,
       title: appLocalizations.installCertificate,
     );
@@ -209,7 +209,7 @@ class _MitmViewState extends ConsumerState<MitmView> {
         if (system.isIOS) {
           await dialogs.showAlert(
             title: appLocalizations.installCertificate,
-            message: TextSpan(text: appLocalizations.mitmIosTrustSteps),
+            message: TextSpan(text: appLocalizations.mitmIosSafariTrustSteps),
           );
         }
       case MitmInstallOutcome.installed || null:
@@ -219,9 +219,27 @@ class _MitmViewState extends ConsumerState<MitmView> {
 
   Future<void> _export(
     BuildContext context,
+    WidgetRef ref,
     MitmCertificate certificate,
   ) async {
     final appLocalizations = context.appLocalizations;
+    if (system.isIOS) {
+      final outcome = await globalState.loadingRun<MitmInstallOutcome?>(
+        ref.read(mitmTrustStateProvider.notifier).install,
+        tag: LoadingTag.mitm,
+        title: appLocalizations.exportCertificate,
+      );
+      if (!context.mounted) {
+        return;
+      }
+      if (outcome == MitmInstallOutcome.prompted) {
+        await dialogs.showAlert(
+          title: appLocalizations.exportCertificate,
+          message: TextSpan(text: appLocalizations.mitmIosTrustSteps),
+        );
+      }
+      return;
+    }
     final res = await globalState.safeRun<bool>(() async {
       final uri = await picker.saveFile(
         mitmCertificateFileName,
@@ -349,7 +367,7 @@ class _MitmViewState extends ConsumerState<MitmView> {
         ),
       ListItem(
         title: Text(appLocalizations.exportCertificate),
-        onTap: () => _export(context, certificate),
+        onTap: () => _export(context, ref, certificate),
       ),
       ListItem(
         title: Text(appLocalizations.regenerateCertificate),

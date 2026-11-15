@@ -9,6 +9,7 @@ import 'package:fl_clash/plugins/app.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 const _pem = '''-----BEGIN CERTIFICATE-----
 MIIBxjCCAW2gAwIBAgIUE7mKNCkR6iuATGzZPqCqjJNFbKswCgYIKoZIzj0EAwIw
@@ -524,6 +525,94 @@ void main() {
 
       await expectLater(store().install(_ca), throwsA(anything));
       expect(processes.runs, isEmpty);
+    });
+  });
+
+  group('iOS', () {
+    Future<(int, String, List<int>)> get(Uri uri) async {
+      final client = HttpClient();
+      try {
+        final request = await client.getUrl(uri);
+        final response = await request.close();
+        final body = await response.fold<List<int>>(
+          [],
+          (bytes, chunk) => bytes..addAll(chunk),
+        );
+        return (
+          response.statusCode,
+          response.headers.contentType?.mimeType ?? '',
+          body,
+        );
+      } finally {
+        client.close();
+      }
+    }
+
+    test('the local server serves the CA as a DER .cer', () async {
+      final server = await MitmCertificateServer.start(mitmCertificateDer(_ca));
+      addTearDown(server.close);
+      final (status, type, body) = await get(server.uri);
+      expect(status, HttpStatus.ok);
+      expect(type, 'application/x-x509-ca-cert');
+      expect(body, mitmCertificateDer(_ca));
+      final (missing, _, _) = await get(server.uri.resolve('/nope'));
+      expect(missing, HttpStatus.notFound);
+    });
+
+    test('the local server stops itself after its lifetime', () async {
+      final server = await MitmCertificateServer.start(
+        mitmCertificateDer(_ca),
+        lifetime: const Duration(milliseconds: 50),
+      );
+      var closed = false;
+      for (var i = 0; i < 10 && !closed; i++) {
+        await Future<void>.delayed(const Duration(milliseconds: 100));
+        try {
+          await get(server.uri);
+        } catch (_) {
+          closed = true;
+        }
+      }
+      expect(closed, isTrue);
+    });
+
+    test('install via Safari opens the download in the browser', () async {
+      final launched = <(Uri, LaunchMode)>[];
+      final store = IOSMitmTrustStore(
+        launch: (uri, {mode = LaunchMode.platformDefault}) async {
+          launched.add((uri, mode));
+          return true;
+        },
+      );
+      final outcome = await store.installViaSafari(_ca);
+      expect(outcome, MitmInstallOutcome.prompted);
+      expect(launched, hasLength(1));
+      final (uri, mode) = launched.single;
+      expect(mode, LaunchMode.externalApplication);
+      final (status, _, body) = await get(uri);
+      expect(status, HttpStatus.ok);
+      expect(body, mitmCertificateDer(_ca));
+    });
+
+    test('a failed browser launch closes the server', () async {
+      Uri? launched;
+      final store = IOSMitmTrustStore(
+        launch: (uri, {mode = LaunchMode.platformDefault}) async {
+          launched = uri;
+          return false;
+        },
+      );
+      await expectLater(
+        store.installViaSafari(_ca),
+        throwsA(
+          isA<MessageException>().having(
+            (error) => error.message,
+            'message',
+            currentAppLocalizations.mitmSystemStoreFailed,
+          ),
+        ),
+      );
+      await expectLater(get(launched!), throwsA(anything));
     });
   });
 }

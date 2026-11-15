@@ -8417,11 +8417,21 @@ class AppLocalizations {
     );
   }
 
-  /// `Install the certificate from Files, then enable full trust for it in Settings → General → VPN & Device Management.`
+  /// `Install the certificate from Files, then enable full trust for it in Settings → General → About → Certificate Trust Settings.`
   String get mitmIosTrustSteps {
     return Intl.message(
-      'Install the certificate from Files, then enable full trust for it in Settings → General → VPN & Device Management.',
+      'Install the certificate from Files, then enable full trust for it in Settings → General → About → Certificate Trust Settings.',
       name: 'mitmIosTrustSteps',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Safari opened the certificate download. Tap 'Allow', then install it from 'Downloaded Profile' at the top of Settings, and turn on full trust in 'Settings → General → About → Certificate Trust Settings'. A downloaded profile is deleted if it is not installed within 8 minutes.`
+  String get mitmIosSafariTrustSteps {
+    return Intl.message(
+      'Safari opened the certificate download. Tap \'Allow\', then install it from \'Downloaded Profile\' at the top of Settings, and turn on full trust in \'Settings → General → About → Certificate Trust Settings\'. A downloaded profile is deleted if it is not installed within 8 minutes.',
+      name: 'mitmIosSafariTrustSteps',
       desc: '',
       args: [],
     );

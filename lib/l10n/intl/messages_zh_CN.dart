@@ -1087,8 +1087,11 @@ class MessageLookup extends MessageLookupByLibrary {
     "mitmInstallUserCaTip": MessageLookupByLibrary.simpleMessage(
       "未检测到 root，证书只能安装为用户证书。只有信任用户证书的应用（多为浏览器）会被解密，其他应用访问列出的主机会失败，请不要列出它们的主机。Android 11 起需在系统设置中手动完成安装。",
     ),
+    "mitmIosSafariTrustSteps": MessageLookupByLibrary.simpleMessage(
+      "已在 Safari 中打开证书下载，点「允许」后前往「设置」顶部的「已下载描述文件」安装，再到「设置 → 通用 → 关于本机 → 证书信任设置」打开完全信任。下载后 8 分钟内不安装会被系统删除。",
+    ),
     "mitmIosTrustSteps": MessageLookupByLibrary.simpleMessage(
-      "在“文件”中安装证书后，前往“设置 → 通用 → VPN 与设备管理”启用完全信任。",
+      "在「文件」中打开证书安装后，前往「设置 → 通用 → 关于本机 → 证书信任设置」启用完全信任。",
     ),
     "mitmMissingStores": m64,
     "mitmModule": MessageLookupByLibrary.simpleMessage("模块"),

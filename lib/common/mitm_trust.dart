@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:ffi';
 import 'dart:io';
@@ -12,6 +13,7 @@ import 'package:fl_clash/models/models.dart';
 import 'package:fl_clash/plugins/app.dart';
 import 'package:flutter/services.dart' show MethodChannel, PlatformException;
 import 'package:path/path.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 /// The name of the leaf the Core signs for a trust store to verify.
 const mitmCheckHost = 'mitm-check.flclash.invalid';
@@ -138,15 +140,76 @@ Future<ProcessResult> _runChecked(
   return result;
 }
 
+/// Serves the CA as a DER `.cer` on loopback so Safari downloads it as a profile.
+class MitmCertificateServer {
+  MitmCertificateServer._(this._server, this._der, Duration lifetime)
+    : _stop = Timer(lifetime, () => _server.close(force: true));
+
+  final HttpServer _server;
+  final List<int> _der;
+  final Timer _stop;
+
+  Uri get uri => Uri(
+    scheme: 'http',
+    host: '127.0.0.1',
+    port: _server.port,
+    path: '/flclash-ca.cer',
+  );
+
+  static Future<MitmCertificateServer> start(
+    List<int> der, {
+    Duration lifetime = const Duration(minutes: 2),
+  }) async {
+    final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
+    final served = MitmCertificateServer._(server, der, lifetime);
+    server.listen(served._serve, onError: (_) {});
+    return served;
+  }
+
+  Future<void> close() async {
+    _stop.cancel();
+    await _server.close(force: true);
+  }
+
+  void _serve(HttpRequest request) {
+    unawaited(
+      _handle(request).catchError((Object _) {
+        request.response.close().catchError((Object _) {});
+      }),
+    );
+  }
+
+  Future<void> _handle(HttpRequest request) async {
+    final response = request.response;
+    response.headers.set(HttpHeaders.cacheControlHeader, 'no-store');
+    if (request.method != 'GET' || request.uri.path != '/flclash-ca.cer') {
+      response.statusCode = HttpStatus.notFound;
+      await response.close();
+      return;
+    }
+    response.headers
+      ..contentType = ContentType('application', 'x-x509-ca-cert')
+      ..set('content-disposition', 'attachment; filename="FlClash CA.cer"');
+    response.contentLength = _der.length;
+    response.add(_der);
+    await response.close();
+  }
+}
+
+typedef UrlLauncher = Future<bool> Function(Uri url, {LaunchMode mode});
+
 /// iOS verifies the CA through the system trust store with SecTrust: the
 /// leaf issued for [mitmCheckHost] only validates when the CA is installed
 /// and fully trusted. Install shares the CA file; the user installs it from
 /// Files and enables trust in Settings.
 class IOSMitmTrustStore implements MitmTrustStore {
-  IOSMitmTrustStore({MethodChannel? channel})
-    : _channel = channel ?? const MethodChannel('$packageName/service');
+  IOSMitmTrustStore({MethodChannel? channel, UrlLauncher launch = launchUrl})
+    : _channel = channel ?? const MethodChannel('$packageName/service'),
+      _launch = launch;
 
   final MethodChannel _channel;
+  final UrlLauncher _launch;
+  MitmCertificateServer? _server;
 
   @override
   Future<MitmTrustCheck> check(
@@ -172,6 +235,23 @@ class IOSMitmTrustStore implements MitmTrustStore {
       'fileName': mitmSavedFileName(ca),
     });
     if (shared != true) {
+      throw MessageException(currentAppLocalizations.mitmSystemStoreFailed);
+    }
+    return MitmInstallOutcome.prompted;
+  }
+
+  Future<MitmInstallOutcome> installViaSafari(MitmCertificate ca) async {
+    await _server?.close();
+    final server = _server = await MitmCertificateServer.start(
+      mitmCertificateDer(ca),
+    );
+    final opened = await _launch(
+      server.uri,
+      mode: LaunchMode.externalApplication,
+    );
+    if (!opened) {
+      await _server?.close();
+      _server = null;
       throw MessageException(currentAppLocalizations.mitmSystemStoreFailed);
     }
     return MitmInstallOutcome.prompted;

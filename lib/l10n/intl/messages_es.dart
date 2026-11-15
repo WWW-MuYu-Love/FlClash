@@ -1509,8 +1509,11 @@ class MessageLookup extends MessageLookupByLibrary {
     "mitmInstallUserCaTip": MessageLookupByLibrary.simpleMessage(
       "No se detectó root: el certificado solo puede instalarse como certificado de usuario. Solo se descifran las apps que confían en certificados de usuario, sobre todo los navegadores; las demás fallan en los hosts que indiques, así que no indiques sus hosts. Desde Android 11 terminas la instalación tú mismo en los ajustes del sistema.",
     ),
+    "mitmIosSafariTrustSteps": MessageLookupByLibrary.simpleMessage(
+      "Safari abrió la descarga del certificado. Toca «Permitir», instálalo desde «Perfil descargado» en la parte superior de Ajustes y activa la confianza total en «Ajustes → General → Información → Ajustes de confianza de certificados». Un perfil descargado se elimina si no se instala en 8 minutos.",
+    ),
     "mitmIosTrustSteps": MessageLookupByLibrary.simpleMessage(
-      "Instala el certificado desde Archivos y luego activa la confianza total en Ajustes → General → VPN y gestión de dispositivos.",
+      "Instala el certificado desde Archivos y luego activa la confianza total en Ajustes → General → Información → Ajustes de confianza de certificados.",
     ),
     "mitmMissingStores": m64,
     "mitmModule": MessageLookupByLibrary.simpleMessage("Módulo"),

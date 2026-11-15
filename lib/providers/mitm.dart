@@ -72,9 +72,10 @@ Future<Set<String>> mitmDecryptedHosts(Ref ref) async {
     return const {};
   }
   final hosts = await _readRoutedMitm(
-    fetchVia9090: () => externalControllerUp(
-      tunnelUp: ref.read(runningVpnOptionsProvider)?.enable == true,
-    )
+    fetchVia9090: () =>
+        externalControllerUp(
+          tunnelUp: ref.read(runningVpnOptionsProvider)?.enable == true,
+        )
         ? ref.read(externalControllerClientProvider).fetchMitmDecryptedHosts()
         : Future.value(null),
     readCore: ({route}) =>
@@ -186,6 +187,18 @@ class MitmTrustState extends _$MitmTrustState {
       await refresh();
     }
     return outcome;
+  }
+
+  /// Opens the CA in Safari as a downloaded profile. iOS only.
+  Future<MitmInstallOutcome?> installViaSafari() async {
+    final ca = await ref.read(mitmCaProvider.future);
+    final store = ref.read(mitmTrustStoreProvider);
+    if (ca == null ||
+        store is! IOSMitmTrustStore ||
+        ref.read(safeModeProvider)) {
+      return null;
+    }
+    return store.installViaSafari(ca);
   }
 
   /// False when the old CA is left in the trust store for the user to remove,
