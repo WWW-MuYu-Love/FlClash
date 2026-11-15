@@ -35,6 +35,7 @@ Future<void> _setEnabled(WidgetRef ref, MitmModule module, bool enabled) async {
     return;
   }
   _putModule(ref, module.copyWith(enabled: enabled));
+  showMitmRestartTip(ref, currentAppLocalizations.vpnConfigChangeDetected);
 }
 
 /// Runs a cron, event or generic script line now; any other line, any while

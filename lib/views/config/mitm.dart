@@ -5,6 +5,7 @@ import 'package:fl_clash/common/common.dart';
 import 'package:fl_clash/common/mitm_trust.dart';
 import 'package:fl_clash/enum/enum.dart';
 import 'package:fl_clash/features/form/form.dart';
+import 'package:fl_clash/features/mitm/restart_tip.dart';
 import 'package:fl_clash/l10n/l10n.dart';
 import 'package:fl_clash/models/models.dart';
 import 'package:fl_clash/plugins/app.dart';
@@ -20,6 +21,7 @@ void _updateMitm(WidgetRef ref, Mitm Function(Mitm) update) {
   ref
       .read(patchClashConfigProvider.notifier)
       .update((state) => state.copyWith(mitm: update(state.mitm)));
+  showMitmRestartTip(ref, currentAppLocalizations.vpnConfigChangeDetected);
 }
 
 ConfigWriter<T> _mitmWriter<T>(Mitm Function(Mitm, T) update) {
@@ -380,6 +382,14 @@ class _MitmViewState extends ConsumerState<MitmView> {
   @override
   Widget build(BuildContext context) {
     final appLocalizations = context.appLocalizations;
+    ref.listen(mitmTrustStateProvider, (prev, next) {
+      final was = prev?.value?.trust;
+      final now = next.value?.trust;
+      if (was == null || was == MitmTrust.ready || now != MitmTrust.ready) {
+        return;
+      }
+      showMitmRestartTip(ref, appLocalizations.mitmRestartTunnelTip);
+    });
     final certificate = ref.watch(mitmCaProvider);
     final canTrust =
         ref.watch(mitmTrustStoreProvider) != null &&
@@ -539,6 +549,7 @@ class _MitmEnableItem extends ConsumerWidget {
     config.update(
       (state) => state.copyWith(mitm: state.mitm.copyWith(enable: value)),
     );
+    showMitmRestartTip(ref, currentAppLocalizations.vpnConfigChangeDetected);
   }
 
   @override
@@ -582,10 +593,18 @@ class _MitmRestartItem extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final loading = ref.watch(loadingProvider(LoadingTag.mitm));
     return ListItem(
       title: Text(context.appLocalizations.mitmRestartTunnel),
-      onTap: () =>
-          unawaited(ref.read(setupActionProvider.notifier).restartVpn()),
+      onTap: loading
+          ? null
+          : () => unawaited(
+              globalState.loadingRun(
+                ref.read(setupActionProvider.notifier).restartVpn,
+                tag: LoadingTag.mitm,
+                title: context.appLocalizations.mitmRestartTunnel,
+              ),
+            ),
     );
   }
 }

@@ -534,4 +534,71 @@ void main() {
     );
     expect(find.text(currentAppLocalizations.mitmRestartTunnel), findsNothing);
   });
+
+  testWidgets('flipping a MITM switch while running shows the restart banner', (
+    tester,
+  ) async {
+    await pumpView(
+      tester,
+      certificate: _certificate,
+      mitm: const Mitm(enable: true),
+      running: true,
+    );
+
+    expect(
+      find.text(currentAppLocalizations.vpnConfigChangeDetected),
+      findsNothing,
+    );
+    await tester.tap(find.text(currentAppLocalizations.blockQuic));
+    await tester.pump();
+
+    expect(
+      find.text(currentAppLocalizations.vpnConfigChangeDetected),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('flipping a MITM switch while down shows no banner', (
+    tester,
+  ) async {
+    await pumpView(
+      tester,
+      certificate: _certificate,
+      mitm: const Mitm(enable: true),
+    );
+
+    await tester.tap(find.text(currentAppLocalizations.blockQuic));
+    await tester.pump();
+
+    expect(
+      find.text(currentAppLocalizations.vpnConfigChangeDetected),
+      findsNothing,
+    );
+  });
+
+  testWidgets('trusting the certificate while running shows the restart banner', (
+    tester,
+  ) async {
+    final store = _FakeStore(MitmTrust.notInstalled);
+    await pumpView(
+      tester,
+      certificate: _certificate,
+      store: store,
+      mitm: const Mitm(enable: true),
+      running: true,
+    );
+
+    expect(
+      find.text(currentAppLocalizations.mitmRestartTunnelTip),
+      findsOneWidget,
+    );
+    store.trust = MitmTrust.ready;
+    await container.read(mitmTrustStateProvider.notifier).refresh();
+    await tester.pump();
+
+    expect(
+      find.text(currentAppLocalizations.mitmRestartTunnelTip),
+      findsNWidgets(2),
+    );
+  });
 }
