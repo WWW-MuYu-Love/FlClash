@@ -426,6 +426,7 @@ class _NumberItem extends ConsumerWidget {
 // same keys as overrides, so a profile's own values apply unless picked.
 List<Widget> tunItems({required bool isMipsStack}) {
   return [
+    const TunStackItem(),
     _NumberItem(
       title: (l) => 'MTU',
       min: minTunMtu,
@@ -539,7 +540,7 @@ List<Widget> networkOptionsItems({
   return [
     if (isDesktop) const TUNItem(),
     if (isMacOS) const AutoSetSystemDnsItem(),
-    const TunStackItem(),
+    if (isDesktop) const TunStackItem(),
     // mihomo's DefaultSocketHook ignores interface-name on Android
     // (core/lib.go installHooks, vendored dialer.go), so these rows only
     // apply on desktop.

@@ -224,6 +224,11 @@ void main() {
         isNot(contains(InterfaceNameItem)),
       );
     });
+
+    test('the stack row stays in the options only on desktop', () {
+      expect(types(isDesktop: true), contains(TunStackItem));
+      expect(types(isDesktop: false), isNot(contains(TunStackItem)));
+    });
   });
 
   group('vpn section items', () {
@@ -282,10 +287,11 @@ void main() {
 
     test('Android sets the routes its VPN service starts with', () {
       final types = items().map((item) => item.runtimeType);
+      expect(types, contains(TunStackItem));
       expect(types, contains(BypassPrivateRouteItem));
       expect(types, contains(RouteAddressItem));
-      expect(items(), hasLength(5));
-      expect(items(isMipsStack: false), hasLength(4));
+      expect(items(), hasLength(6));
+      expect(items(isMipsStack: false), hasLength(5));
     });
 
     Widget desktopSection({bool isWindows = false}) =>
@@ -350,7 +356,7 @@ void main() {
     testWidgets('a number shows the core default and resets to it', (
       tester,
     ) async {
-      await pumpItem(tester, items().first);
+      await pumpItem(tester, items()[1]);
       final l = currentAppLocalizations;
       expect(find.text('9000'), findsOneWidget);
 
