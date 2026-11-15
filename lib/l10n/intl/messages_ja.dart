@@ -708,6 +708,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "dnsHijackDesc": MessageLookupByLibrary.simpleMessage(
       "追加しない場合、ポート 53 宛てのすべての DNS 問い合わせをハイジャックします（any:53）。",
     ),
+    "dnsHijackList": MessageLookupByLibrary.simpleMessage("DNSハイジャックリスト"),
     "dnsHijacking": MessageLookupByLibrary.simpleMessage("DNSハイジャック"),
     "dnsMode": MessageLookupByLibrary.simpleMessage("DNSモード"),
     "dnsOverrideDesc": MessageLookupByLibrary.simpleMessage(

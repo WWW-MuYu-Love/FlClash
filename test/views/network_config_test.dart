@@ -328,8 +328,9 @@ void main() {
       expect(types, contains(SendMsgXItem));
       expect(types, contains(BypassPrivateRouteItem));
       expect(types, contains(RouteAddressItem));
-      expect(items(), hasLength(11));
-      expect(items(isMipsStack: false), hasLength(10));
+      expect(types, contains(DnsHijackItem));
+      expect(items(), hasLength(12));
+      expect(items(isMipsStack: false), hasLength(11));
     });
 
     Widget desktopSection({bool isWindows = false}) =>
@@ -436,10 +437,23 @@ void main() {
       );
     });
 
-    test('keep-alive rows stay off Android and the mark is Linux only', () {
-      expect(outboundItems(isDesktop: false, isLinux: false), isEmpty);
-      expect(outboundItems(isDesktop: true, isLinux: false), hasLength(3));
-      expect(outboundItems(isDesktop: true, isLinux: true), hasLength(4));
+    test('keep-alive rows show on desktop and iOS, never on Android', () {
+      expect(
+        outboundItems(isDesktop: false, isLinux: false, isIOS: false),
+        isEmpty,
+      );
+      expect(
+        outboundItems(isDesktop: true, isLinux: false, isIOS: false),
+        hasLength(3),
+      );
+      expect(
+        outboundItems(isDesktop: true, isLinux: true, isIOS: false),
+        hasLength(4),
+      );
+      expect(
+        outboundItems(isDesktop: false, isLinux: false, isIOS: true),
+        hasLength(3),
+      );
     });
   });
 }

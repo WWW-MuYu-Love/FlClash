@@ -825,6 +825,7 @@
   "clearDataFailed": "데이터를 지우지 못했습니다: {detail}",
   "bypassPrivateRoute": "사설 주소 우회",
   "disableIcmpForwarding": "ICMP 전달 사용 안 함",
+  "dnsHijackList": "DNS 하이재킹 목록",
   "endpointIndependentNat": "엔드포인트 독립 NAT",
   "recvMsgX": "일괄 수신",
   "sendMsgX": "일괄 송신",

@@ -130,6 +130,7 @@ asks for nothing. The tap runs `SetupAction.restartVpn`: a stop, then a start, a
 | `recvMsgX`             | `Tun`                                                         | with the VPN                           |
 | `sendMsgX`             | `Tun`                                                         | with the VPN                           |
 | `udpTimeout`           | `Tun`                                                         | with the VPN                           |
+| `dnsHijack`            | `Tun`                                                         | with the VPN                           |
 
 The service never reads the access list's sort and filter fields. `effective` resets them, along with every field
 the table does not mark as read, so changing them does not ask for a restart.

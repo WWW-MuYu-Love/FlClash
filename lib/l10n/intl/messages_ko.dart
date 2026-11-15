@@ -700,6 +700,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "dnsHijackDesc": MessageLookupByLibrary.simpleMessage(
       "추가하지 않으면 53번 포트로 가는 모든 DNS 쿼리를 하이재킹합니다(any:53).",
     ),
+    "dnsHijackList": MessageLookupByLibrary.simpleMessage("DNS 하이재킹 목록"),
     "dnsHijacking": MessageLookupByLibrary.simpleMessage("DNS 하이재킹"),
     "dnsMode": MessageLookupByLibrary.simpleMessage("DNS 모드"),
     "dnsOverrideDesc": MessageLookupByLibrary.simpleMessage(

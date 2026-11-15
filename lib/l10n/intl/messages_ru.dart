@@ -866,6 +866,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "dnsHijackDesc": MessageLookupByLibrary.simpleMessage(
       "Без этого параметра TUN перехватывает все DNS-запросы на порт 53 (any:53).",
     ),
+    "dnsHijackList": MessageLookupByLibrary.simpleMessage(
+      "Список перехвата DNS",
+    ),
     "dnsHijacking": MessageLookupByLibrary.simpleMessage("Перехват DNS"),
     "dnsMode": MessageLookupByLibrary.simpleMessage("Режим DNS"),
     "dnsOverrideDesc": MessageLookupByLibrary.simpleMessage(

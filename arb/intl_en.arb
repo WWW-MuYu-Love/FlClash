@@ -825,6 +825,7 @@
   "clearDataFailed": "Couldn't clear the data: {detail}",
   "bypassPrivateRoute": "Bypass private addresses",
   "disableIcmpForwarding": "Disable ICMP forwarding",
+  "dnsHijackList": "DNS hijack list",
   "endpointIndependentNat": "Endpoint-independent NAT",
   "recvMsgX": "Batch receive",
   "sendMsgX": "Batch send",

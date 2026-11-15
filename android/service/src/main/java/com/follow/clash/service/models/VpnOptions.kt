@@ -31,6 +31,7 @@ data class VpnOptions(
     val recvMsgX: Boolean = true,
     val sendMsgX: Boolean = false,
     val udpTimeout: Int = 300,
+    val dnsHijack: List<String> = emptyList(),
 )
 
 private const val DEFAULT_TUN_MTU = 9000
@@ -54,6 +55,7 @@ val VpnOptions.tunOptions: String
             "recvMsgX" to recvMsgX,
             "sendMsgX" to sendMsgX,
             "udp-timeout" to udpTimeout,
+            "dns-hijack" to dnsHijack,
         ),
     )
 

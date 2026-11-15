@@ -825,6 +825,7 @@
   "clearDataFailed": "Не удалось очистить данные: {detail}",
   "bypassPrivateRoute": "Обходить частные адреса",
   "disableIcmpForwarding": "Отключить пересылку ICMP",
+  "dnsHijackList": "Список перехвата DNS",
   "endpointIndependentNat": "NAT, независимый от конечной точки",
   "recvMsgX": "Пакетный приём",
   "sendMsgX": "Пакетная отправка",

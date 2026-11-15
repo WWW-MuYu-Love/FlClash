@@ -825,6 +825,7 @@
   "clearDataFailed": "Impossible d’effacer les données : {detail}",
   "bypassPrivateRoute": "Contourner les adresses privées",
   "disableIcmpForwarding": "Désactiver le transfert ICMP",
+  "dnsHijackList": "Liste de détournement DNS",
   "endpointIndependentNat": "NAT indépendant du point de terminaison",
   "recvMsgX": "Réception par lots",
   "sendMsgX": "Envoi par lots",

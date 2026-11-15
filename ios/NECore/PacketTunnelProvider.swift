@@ -148,6 +148,7 @@ final class PacketTunnelProvider: NEPacketTunnelProvider {
           endpointIndependentNat: vpnOptions.endpointIndependentNat,
           congestionController: vpnOptions.congestionController,
           udpTimeout: vpnOptions.udpTimeout,
+          dnsHijack: vpnOptions.dnsHijack,
           recvMsgX: vpnOptions.recvMsgX,
           sendMsgX: vpnOptions.sendMsgX
         )
@@ -313,6 +314,7 @@ private struct CoreTunOptions: Encodable {
   let endpointIndependentNat: Bool
   let congestionController: String
   let udpTimeout: Int
+  let dnsHijack: [String]
   let recvMsgX: Bool
   let sendMsgX: Bool
 }

@@ -178,6 +178,7 @@ class TunOptionsTest {
             recvMsgX = false,
             sendMsgX = true,
             udpTimeout = 60,
+            dnsHijack = listOf("8.8.8.8"),
         )
 
         val json = JsonParser.parseString(options.tunOptions).asJsonObject
@@ -187,5 +188,6 @@ class TunOptionsTest {
         assertEquals(false, json["recvMsgX"].asBoolean)
         assertEquals(true, json["sendMsgX"].asBoolean)
         assertEquals(60, json["udp-timeout"].asInt)
+        assertEquals("8.8.8.8", json["dns-hijack"].asJsonArray[0].asString)
     }
 }

@@ -29,30 +29,32 @@ import (
 // tunOptions is the JSON the NECore Swift side sends to startTUN. Keys are
 // camelCase, matching CoreTunOptions in PacketTunnelProvider.swift.
 type tunOptions struct {
-	RecvMsgX               bool   `json:"recvMsgX"`
-	SendMsgX               bool   `json:"sendMsgX"`
-	Stack                  string `json:"stack"`
-	Address                string `json:"address"`
-	DNS                    string `json:"dns"`
-	MTU                    uint32 `json:"mtu"`
-	DisableICMPForwarding  bool   `json:"disableIcmpForwarding"`
-	EndpointIndependentNAT bool   `json:"endpointIndependentNat"`
-	CongestionController   string `json:"congestionController"`
-	UDPTimeout             uint32 `json:"udpTimeout"`
+	RecvMsgX               bool     `json:"recvMsgX"`
+	SendMsgX               bool     `json:"sendMsgX"`
+	Stack                  string   `json:"stack"`
+	Address                string   `json:"address"`
+	DNS                    string   `json:"dns"`
+	MTU                    uint32   `json:"mtu"`
+	DisableICMPForwarding  bool     `json:"disableIcmpForwarding"`
+	EndpointIndependentNAT bool     `json:"endpointIndependentNat"`
+	CongestionController   string   `json:"congestionController"`
+	UDPTimeout             uint32   `json:"udpTimeout"`
+	DNSHijack              []string `json:"dnsHijack"`
 }
 
 // coreTunOptions is what core.StartTun's tun layer parses. Its keys match
 // core/tun.startOptions: kebab-case for the mihomo config keys Android
 // already sends, camelCase for the iOS-only flags.
 type coreTunOptions struct {
-	MTU                    uint32 `json:"mtu"`
-	CongestionController   string `json:"congestion-controller"`
-	RecvMsgX               bool   `json:"recvMsgX"`
-	SendMsgX               bool   `json:"sendMsgX"`
-	DisableICMPForwarding  bool   `json:"disableIcmpForwarding"`
-	EndpointIndependentNAT bool   `json:"endpointIndependentNat"`
-	UDPTimeout             uint32 `json:"udp-timeout"`
-	LoopbackAddress        string `json:"loopback-address"`
+	MTU                    uint32   `json:"mtu"`
+	CongestionController   string   `json:"congestion-controller"`
+	RecvMsgX               bool     `json:"recvMsgX"`
+	SendMsgX               bool     `json:"sendMsgX"`
+	DisableICMPForwarding  bool     `json:"disableIcmpForwarding"`
+	EndpointIndependentNAT bool     `json:"endpointIndependentNat"`
+	UDPTimeout             uint32   `json:"udp-timeout"`
+	DNSHijack              []string `json:"dns-hijack"`
+	LoopbackAddress        string   `json:"loopback-address"`
 }
 
 func protect(callback unsafe.Pointer, fd int) bool {
@@ -140,6 +142,7 @@ func startTUN(callback unsafe.Pointer, fd C.int, optionsChar *C.char) bool {
 		DisableICMPForwarding:  options.DisableICMPForwarding,
 		EndpointIndependentNAT: options.EndpointIndependentNAT,
 		UDPTimeout:             options.UDPTimeout,
+		DNSHijack:              options.DNSHijack,
 		LoopbackAddress:        "10.7.0.1",
 	})
 	if err != nil {

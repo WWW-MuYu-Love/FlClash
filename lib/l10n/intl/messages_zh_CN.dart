@@ -646,6 +646,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "dnsHijackDesc": MessageLookupByLibrary.simpleMessage(
       "未添加时劫持所有发往 53 端口的 DNS 请求（any:53）。",
     ),
+    "dnsHijackList": MessageLookupByLibrary.simpleMessage("DNS劫持列表"),
     "dnsHijacking": MessageLookupByLibrary.simpleMessage("DNS劫持"),
     "dnsMode": MessageLookupByLibrary.simpleMessage("DNS模式"),
     "dnsOverrideDesc": MessageLookupByLibrary.simpleMessage(

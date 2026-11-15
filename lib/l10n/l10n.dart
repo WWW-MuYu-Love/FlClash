@@ -6814,6 +6814,16 @@ class AppLocalizations {
     );
   }
 
+  /// `DNS hijack list`
+  String get dnsHijackList {
+    return Intl.message(
+      'DNS hijack list',
+      name: 'dnsHijackList',
+      desc: '',
+      args: [],
+    );
+  }
+
   /// `Endpoint-independent NAT`
   String get endpointIndependentNat {
     return Intl.message(

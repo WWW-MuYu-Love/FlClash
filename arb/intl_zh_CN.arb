@@ -825,6 +825,7 @@
   "clearDataFailed": "清除数据失败：{detail}",
   "bypassPrivateRoute": "绕过私有路由地址",
   "disableIcmpForwarding": "禁用ICMP转发",
+  "dnsHijackList": "DNS劫持列表",
   "endpointIndependentNat": "端点无关 NAT",
   "recvMsgX": "批量接收",
   "sendMsgX": "批量发送",

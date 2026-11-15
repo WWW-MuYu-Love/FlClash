@@ -106,6 +106,7 @@ void main() {
         options.copyWith(recvMsgX: false),
         options.copyWith(sendMsgX: true),
         options.copyWith(udpTimeout: 60),
+        options.copyWith(dnsHijack: const ['8.8.8.8']),
         options.copyWith(
           accessControlProps: options.accessControlProps.copyWith(
             acceptList: const ['c.app'],

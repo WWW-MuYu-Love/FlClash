@@ -889,6 +889,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "dnsHijackDesc": MessageLookupByLibrary.simpleMessage(
       "Sans cette entrée, TUN détourne toutes les requêtes DNS vers le port 53 (any:53).",
     ),
+    "dnsHijackList": MessageLookupByLibrary.simpleMessage(
+      "Liste de détournement DNS",
+    ),
     "dnsHijacking": MessageLookupByLibrary.simpleMessage("Détournement DNS"),
     "dnsMode": MessageLookupByLibrary.simpleMessage("Mode DNS"),
     "dnsOverrideDesc": MessageLookupByLibrary.simpleMessage(

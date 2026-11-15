@@ -21,12 +21,13 @@ type startOptions struct {
 	CongestionController string `json:"congestion-controller"`
 	// iOS-only; Android never sends these keys, so Android behavior is
 	// unchanged. Tags match core/cmd/ios's coreTunOptions.
-	RecvMsgX               bool   `json:"recvMsgX"`
-	SendMsgX               bool   `json:"sendMsgX"`
-	DisableICMPForwarding  bool   `json:"disableIcmpForwarding"`
-	EndpointIndependentNAT bool   `json:"endpointIndependentNat"`
-	UDPTimeout             uint32 `json:"udp-timeout"`
-	LoopbackAddress        string `json:"loopback-address"`
+	RecvMsgX               bool     `json:"recvMsgX"`
+	SendMsgX               bool     `json:"sendMsgX"`
+	DisableICMPForwarding  bool     `json:"disableIcmpForwarding"`
+	EndpointIndependentNAT bool     `json:"endpointIndependentNat"`
+	UDPTimeout             uint32   `json:"udp-timeout"`
+	DNSHijack              []string `json:"dns-hijack"`
+	LoopbackAddress        string   `json:"loopback-address"`
 }
 
 // Start takes ownership of fd. dupFd is handed to sing_tun.New, which only
@@ -80,6 +81,34 @@ func Start(fd int, stack, address, dns, rawOptions string) *sing_tun.Listener {
 			return nil
 		}
 		dnsHijack = append(dnsHijack, hijack)
+	}
+
+	// A user-supplied hijack list adds to the tunnel DNS servers instead of
+	// replacing them, so narrowing it can never break the tunnel's own DNS.
+	for _, d := range settings.DNSHijack {
+		d = strings.TrimSpace(d)
+		if len(d) == 0 {
+			continue
+		}
+		hijack := d
+		if _, err := netip.ParseAddrPort(d); err != nil {
+			if addr, err := netip.ParseAddr(d); err == nil {
+				hijack = net.JoinHostPort(addr.String(), "53")
+			} else {
+				log.Errorln("TUN: bad dns-hijack entry %q", d)
+				continue
+			}
+		}
+		seen := false
+		for _, h := range dnsHijack {
+			if h == hijack {
+				seen = true
+				break
+			}
+		}
+		if !seen {
+			dnsHijack = append(dnsHijack, hijack)
+		}
 	}
 
 	dupFd, err := syscall.Dup(fd)

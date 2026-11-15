@@ -3757,7 +3757,7 @@ as bool?,
 /// @nodoc
 mixin _$Tun {
 
- bool get enable; String get device; TunStack get stack;@JsonKey(name: 'route-address') List<String> get routeAddress;@JsonKey(fromJson: _mtuFromJson) int get mtu;@JsonKey(name: 'congestion-controller', fromJson: _congestionControllerFromJson) String get congestionController;@JsonKey(name: 'route-exclude-address') List<String> get routeExcludeAddress; bool get disableIcmpForwarding; bool get endpointIndependentNat; bool get recvMsgX; bool get sendMsgX; int get udpTimeout;
+ bool get enable; String get device; TunStack get stack;@JsonKey(name: 'route-address') List<String> get routeAddress;@JsonKey(fromJson: _mtuFromJson) int get mtu;@JsonKey(name: 'congestion-controller', fromJson: _congestionControllerFromJson) String get congestionController;@JsonKey(name: 'route-exclude-address') List<String> get routeExcludeAddress; bool get disableIcmpForwarding; bool get endpointIndependentNat; bool get recvMsgX; bool get sendMsgX; int get udpTimeout; List<String> get dnsHijack;
 /// Create a copy of Tun
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -3771,20 +3771,20 @@ $TunCopyWith<Tun> get copyWith => _$TunCopyWithImpl<Tun>(this as Tun, _$identity
 @override
 bool operator ==(Object other) {
   final _this = this as Tun;
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is Tun&&(identical(other.enable, _this.enable) || other.enable == _this.enable)&&(identical(other.device, _this.device) || other.device == _this.device)&&(identical(other.stack, _this.stack) || other.stack == _this.stack)&&const DeepCollectionEquality().equals(other.routeAddress, _this.routeAddress)&&(identical(other.mtu, _this.mtu) || other.mtu == _this.mtu)&&(identical(other.congestionController, _this.congestionController) || other.congestionController == _this.congestionController)&&const DeepCollectionEquality().equals(other.routeExcludeAddress, _this.routeExcludeAddress)&&(identical(other.disableIcmpForwarding, _this.disableIcmpForwarding) || other.disableIcmpForwarding == _this.disableIcmpForwarding)&&(identical(other.endpointIndependentNat, _this.endpointIndependentNat) || other.endpointIndependentNat == _this.endpointIndependentNat)&&(identical(other.recvMsgX, _this.recvMsgX) || other.recvMsgX == _this.recvMsgX)&&(identical(other.sendMsgX, _this.sendMsgX) || other.sendMsgX == _this.sendMsgX)&&(identical(other.udpTimeout, _this.udpTimeout) || other.udpTimeout == _this.udpTimeout));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is Tun&&(identical(other.enable, _this.enable) || other.enable == _this.enable)&&(identical(other.device, _this.device) || other.device == _this.device)&&(identical(other.stack, _this.stack) || other.stack == _this.stack)&&const DeepCollectionEquality().equals(other.routeAddress, _this.routeAddress)&&(identical(other.mtu, _this.mtu) || other.mtu == _this.mtu)&&(identical(other.congestionController, _this.congestionController) || other.congestionController == _this.congestionController)&&const DeepCollectionEquality().equals(other.routeExcludeAddress, _this.routeExcludeAddress)&&(identical(other.disableIcmpForwarding, _this.disableIcmpForwarding) || other.disableIcmpForwarding == _this.disableIcmpForwarding)&&(identical(other.endpointIndependentNat, _this.endpointIndependentNat) || other.endpointIndependentNat == _this.endpointIndependentNat)&&(identical(other.recvMsgX, _this.recvMsgX) || other.recvMsgX == _this.recvMsgX)&&(identical(other.sendMsgX, _this.sendMsgX) || other.sendMsgX == _this.sendMsgX)&&(identical(other.udpTimeout, _this.udpTimeout) || other.udpTimeout == _this.udpTimeout)&&const DeepCollectionEquality().equals(other.dnsHijack, _this.dnsHijack));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
 int get hashCode {
   final _this = this as Tun;
-  return Object.hash(runtimeType,_this.enable,_this.device,_this.stack,const DeepCollectionEquality().hash(_this.routeAddress),_this.mtu,_this.congestionController,const DeepCollectionEquality().hash(_this.routeExcludeAddress),_this.disableIcmpForwarding,_this.endpointIndependentNat,_this.recvMsgX,_this.sendMsgX,_this.udpTimeout);
+  return Object.hash(runtimeType,_this.enable,_this.device,_this.stack,const DeepCollectionEquality().hash(_this.routeAddress),_this.mtu,_this.congestionController,const DeepCollectionEquality().hash(_this.routeExcludeAddress),_this.disableIcmpForwarding,_this.endpointIndependentNat,_this.recvMsgX,_this.sendMsgX,_this.udpTimeout,const DeepCollectionEquality().hash(_this.dnsHijack));
 }
 
 @override
 String toString() {
   final _this = this as Tun;
-  return 'Tun(enable: ${_this.enable}, device: ${_this.device}, stack: ${_this.stack}, routeAddress: ${_this.routeAddress}, mtu: ${_this.mtu}, congestionController: ${_this.congestionController}, routeExcludeAddress: ${_this.routeExcludeAddress}, disableIcmpForwarding: ${_this.disableIcmpForwarding}, endpointIndependentNat: ${_this.endpointIndependentNat}, recvMsgX: ${_this.recvMsgX}, sendMsgX: ${_this.sendMsgX}, udpTimeout: ${_this.udpTimeout})';
+  return 'Tun(enable: ${_this.enable}, device: ${_this.device}, stack: ${_this.stack}, routeAddress: ${_this.routeAddress}, mtu: ${_this.mtu}, congestionController: ${_this.congestionController}, routeExcludeAddress: ${_this.routeExcludeAddress}, disableIcmpForwarding: ${_this.disableIcmpForwarding}, endpointIndependentNat: ${_this.endpointIndependentNat}, recvMsgX: ${_this.recvMsgX}, sendMsgX: ${_this.sendMsgX}, udpTimeout: ${_this.udpTimeout}, dnsHijack: ${_this.dnsHijack})';
 }
 
 
@@ -3795,7 +3795,7 @@ abstract mixin class $TunCopyWith<$Res>  {
   factory $TunCopyWith(Tun value, $Res Function(Tun) _then) = _$TunCopyWithImpl;
 @useResult
 $Res call({
- bool enable, String device, TunStack stack,@JsonKey(name: 'route-address') List<String> routeAddress,@JsonKey(fromJson: _mtuFromJson) int mtu,@JsonKey(name: 'congestion-controller', fromJson: _congestionControllerFromJson) String congestionController,@JsonKey(name: 'route-exclude-address') List<String> routeExcludeAddress, bool disableIcmpForwarding, bool endpointIndependentNat, bool recvMsgX, bool sendMsgX, int udpTimeout
+ bool enable, String device, TunStack stack,@JsonKey(name: 'route-address') List<String> routeAddress,@JsonKey(fromJson: _mtuFromJson) int mtu,@JsonKey(name: 'congestion-controller', fromJson: _congestionControllerFromJson) String congestionController,@JsonKey(name: 'route-exclude-address') List<String> routeExcludeAddress, bool disableIcmpForwarding, bool endpointIndependentNat, bool recvMsgX, bool sendMsgX, int udpTimeout, List<String> dnsHijack
 });
 
 
@@ -3812,7 +3812,7 @@ class _$TunCopyWithImpl<$Res>
 
 /// Create a copy of Tun
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? enable = null,Object? device = null,Object? stack = null,Object? routeAddress = null,Object? mtu = null,Object? congestionController = null,Object? routeExcludeAddress = null,Object? disableIcmpForwarding = null,Object? endpointIndependentNat = null,Object? recvMsgX = null,Object? sendMsgX = null,Object? udpTimeout = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? enable = null,Object? device = null,Object? stack = null,Object? routeAddress = null,Object? mtu = null,Object? congestionController = null,Object? routeExcludeAddress = null,Object? disableIcmpForwarding = null,Object? endpointIndependentNat = null,Object? recvMsgX = null,Object? sendMsgX = null,Object? udpTimeout = null,Object? dnsHijack = null,}) {
   return _then(Tun(
 enable: null == enable ? _self.enable : enable // ignore: cast_nullable_to_non_nullable
 as bool,device: null == device ? _self.device : device // ignore: cast_nullable_to_non_nullable
@@ -3826,7 +3826,8 @@ as bool,endpointIndependentNat: null == endpointIndependentNat ? _self.endpointI
 as bool,recvMsgX: null == recvMsgX ? _self.recvMsgX : recvMsgX // ignore: cast_nullable_to_non_nullable
 as bool,sendMsgX: null == sendMsgX ? _self.sendMsgX : sendMsgX // ignore: cast_nullable_to_non_nullable
 as bool,udpTimeout: null == udpTimeout ? _self.udpTimeout : udpTimeout // ignore: cast_nullable_to_non_nullable
-as int,
+as int,dnsHijack: null == dnsHijack ? _self.dnsHijack : dnsHijack // ignore: cast_nullable_to_non_nullable
+as List<String>,
   ));
 }
 
@@ -3911,10 +3912,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( bool enable,  String device,  TunStack stack, @JsonKey(name: 'route-address')  List<String> routeAddress, @JsonKey(fromJson: _mtuFromJson)  int mtu, @JsonKey(name: 'congestion-controller', fromJson: _congestionControllerFromJson)  String congestionController, @JsonKey(name: 'route-exclude-address')  List<String> routeExcludeAddress,  bool disableIcmpForwarding,  bool endpointIndependentNat,  bool recvMsgX,  bool sendMsgX,  int udpTimeout)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( bool enable,  String device,  TunStack stack, @JsonKey(name: 'route-address')  List<String> routeAddress, @JsonKey(fromJson: _mtuFromJson)  int mtu, @JsonKey(name: 'congestion-controller', fromJson: _congestionControllerFromJson)  String congestionController, @JsonKey(name: 'route-exclude-address')  List<String> routeExcludeAddress,  bool disableIcmpForwarding,  bool endpointIndependentNat,  bool recvMsgX,  bool sendMsgX,  int udpTimeout,  List<String> dnsHijack)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _Tun() when $default != null:
-return $default(_that.enable,_that.device,_that.stack,_that.routeAddress,_that.mtu,_that.congestionController,_that.routeExcludeAddress,_that.disableIcmpForwarding,_that.endpointIndependentNat,_that.recvMsgX,_that.sendMsgX,_that.udpTimeout);case _:
+return $default(_that.enable,_that.device,_that.stack,_that.routeAddress,_that.mtu,_that.congestionController,_that.routeExcludeAddress,_that.disableIcmpForwarding,_that.endpointIndependentNat,_that.recvMsgX,_that.sendMsgX,_that.udpTimeout,_that.dnsHijack);case _:
   return orElse();
 
 }
@@ -3932,10 +3933,10 @@ return $default(_that.enable,_that.device,_that.stack,_that.routeAddress,_that.m
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( bool enable,  String device,  TunStack stack, @JsonKey(name: 'route-address')  List<String> routeAddress, @JsonKey(fromJson: _mtuFromJson)  int mtu, @JsonKey(name: 'congestion-controller', fromJson: _congestionControllerFromJson)  String congestionController, @JsonKey(name: 'route-exclude-address')  List<String> routeExcludeAddress,  bool disableIcmpForwarding,  bool endpointIndependentNat,  bool recvMsgX,  bool sendMsgX,  int udpTimeout)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( bool enable,  String device,  TunStack stack, @JsonKey(name: 'route-address')  List<String> routeAddress, @JsonKey(fromJson: _mtuFromJson)  int mtu, @JsonKey(name: 'congestion-controller', fromJson: _congestionControllerFromJson)  String congestionController, @JsonKey(name: 'route-exclude-address')  List<String> routeExcludeAddress,  bool disableIcmpForwarding,  bool endpointIndependentNat,  bool recvMsgX,  bool sendMsgX,  int udpTimeout,  List<String> dnsHijack)  $default,) {final _that = this;
 switch (_that) {
 case _Tun():
-return $default(_that.enable,_that.device,_that.stack,_that.routeAddress,_that.mtu,_that.congestionController,_that.routeExcludeAddress,_that.disableIcmpForwarding,_that.endpointIndependentNat,_that.recvMsgX,_that.sendMsgX,_that.udpTimeout);case _:
+return $default(_that.enable,_that.device,_that.stack,_that.routeAddress,_that.mtu,_that.congestionController,_that.routeExcludeAddress,_that.disableIcmpForwarding,_that.endpointIndependentNat,_that.recvMsgX,_that.sendMsgX,_that.udpTimeout,_that.dnsHijack);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -3952,10 +3953,10 @@ return $default(_that.enable,_that.device,_that.stack,_that.routeAddress,_that.m
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( bool enable,  String device,  TunStack stack, @JsonKey(name: 'route-address')  List<String> routeAddress, @JsonKey(fromJson: _mtuFromJson)  int mtu, @JsonKey(name: 'congestion-controller', fromJson: _congestionControllerFromJson)  String congestionController, @JsonKey(name: 'route-exclude-address')  List<String> routeExcludeAddress,  bool disableIcmpForwarding,  bool endpointIndependentNat,  bool recvMsgX,  bool sendMsgX,  int udpTimeout)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( bool enable,  String device,  TunStack stack, @JsonKey(name: 'route-address')  List<String> routeAddress, @JsonKey(fromJson: _mtuFromJson)  int mtu, @JsonKey(name: 'congestion-controller', fromJson: _congestionControllerFromJson)  String congestionController, @JsonKey(name: 'route-exclude-address')  List<String> routeExcludeAddress,  bool disableIcmpForwarding,  bool endpointIndependentNat,  bool recvMsgX,  bool sendMsgX,  int udpTimeout,  List<String> dnsHijack)?  $default,) {final _that = this;
 switch (_that) {
 case _Tun() when $default != null:
-return $default(_that.enable,_that.device,_that.stack,_that.routeAddress,_that.mtu,_that.congestionController,_that.routeExcludeAddress,_that.disableIcmpForwarding,_that.endpointIndependentNat,_that.recvMsgX,_that.sendMsgX,_that.udpTimeout);case _:
+return $default(_that.enable,_that.device,_that.stack,_that.routeAddress,_that.mtu,_that.congestionController,_that.routeExcludeAddress,_that.disableIcmpForwarding,_that.endpointIndependentNat,_that.recvMsgX,_that.sendMsgX,_that.udpTimeout,_that.dnsHijack);case _:
   return null;
 
 }
@@ -3967,7 +3968,7 @@ return $default(_that.enable,_that.device,_that.stack,_that.routeAddress,_that.m
 @JsonSerializable()
 
 class _Tun implements Tun {
-  const _Tun({this.enable = false, this.device = appName, this.stack = TunStack.mips, @JsonKey(name: 'route-address')  List<String> routeAddress = const [], @JsonKey(fromJson: _mtuFromJson) this.mtu = defaultTunMtu, @JsonKey(name: 'congestion-controller', fromJson: _congestionControllerFromJson) this.congestionController = defaultCongestionController, @JsonKey(name: 'route-exclude-address')  List<String> routeExcludeAddress = const [], this.disableIcmpForwarding = false, this.endpointIndependentNat = false, this.recvMsgX = true, this.sendMsgX = false, this.udpTimeout = defaultTunUdpTimeout}): _routeAddress = routeAddress,_routeExcludeAddress = routeExcludeAddress;
+  const _Tun({this.enable = false, this.device = appName, this.stack = TunStack.mips, @JsonKey(name: 'route-address')  List<String> routeAddress = const [], @JsonKey(fromJson: _mtuFromJson) this.mtu = defaultTunMtu, @JsonKey(name: 'congestion-controller', fromJson: _congestionControllerFromJson) this.congestionController = defaultCongestionController, @JsonKey(name: 'route-exclude-address')  List<String> routeExcludeAddress = const [], this.disableIcmpForwarding = false, this.endpointIndependentNat = false, this.recvMsgX = true, this.sendMsgX = false, this.udpTimeout = defaultTunUdpTimeout,  List<String> dnsHijack = const []}): _routeAddress = routeAddress,_routeExcludeAddress = routeExcludeAddress,_dnsHijack = dnsHijack;
   factory _Tun.fromJson(Map<String, dynamic> json) => _$TunFromJson(json);
 
 @override@JsonKey() final  bool enable;
@@ -3994,6 +3995,13 @@ class _Tun implements Tun {
 @override@JsonKey() final  bool recvMsgX;
 @override@JsonKey() final  bool sendMsgX;
 @override@JsonKey() final  int udpTimeout;
+ final  List<String> _dnsHijack;
+@override@JsonKey() List<String> get dnsHijack {
+  if (_dnsHijack is EqualUnmodifiableListView) return _dnsHijack;
+  // ignore: implicit_dynamic_type
+  return EqualUnmodifiableListView(_dnsHijack);
+}
+
 
 /// Create a copy of Tun
 /// with the given fields replaced by the non-null parameter values.
@@ -4008,18 +4016,18 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-    return identical(this, other) || (other.runtimeType == runtimeType&&other is _Tun&&(identical(other.enable, enable) || other.enable == enable)&&(identical(other.device, device) || other.device == device)&&(identical(other.stack, stack) || other.stack == stack)&&const DeepCollectionEquality().equals(other.routeAddress, _routeAddress)&&(identical(other.mtu, mtu) || other.mtu == mtu)&&(identical(other.congestionController, congestionController) || other.congestionController == congestionController)&&const DeepCollectionEquality().equals(other.routeExcludeAddress, _routeExcludeAddress)&&(identical(other.disableIcmpForwarding, disableIcmpForwarding) || other.disableIcmpForwarding == disableIcmpForwarding)&&(identical(other.endpointIndependentNat, endpointIndependentNat) || other.endpointIndependentNat == endpointIndependentNat)&&(identical(other.recvMsgX, recvMsgX) || other.recvMsgX == recvMsgX)&&(identical(other.sendMsgX, sendMsgX) || other.sendMsgX == sendMsgX)&&(identical(other.udpTimeout, udpTimeout) || other.udpTimeout == udpTimeout));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _Tun&&(identical(other.enable, enable) || other.enable == enable)&&(identical(other.device, device) || other.device == device)&&(identical(other.stack, stack) || other.stack == stack)&&const DeepCollectionEquality().equals(other.routeAddress, _routeAddress)&&(identical(other.mtu, mtu) || other.mtu == mtu)&&(identical(other.congestionController, congestionController) || other.congestionController == congestionController)&&const DeepCollectionEquality().equals(other.routeExcludeAddress, _routeExcludeAddress)&&(identical(other.disableIcmpForwarding, disableIcmpForwarding) || other.disableIcmpForwarding == disableIcmpForwarding)&&(identical(other.endpointIndependentNat, endpointIndependentNat) || other.endpointIndependentNat == endpointIndependentNat)&&(identical(other.recvMsgX, recvMsgX) || other.recvMsgX == recvMsgX)&&(identical(other.sendMsgX, sendMsgX) || other.sendMsgX == sendMsgX)&&(identical(other.udpTimeout, udpTimeout) || other.udpTimeout == udpTimeout)&&const DeepCollectionEquality().equals(other.dnsHijack, _dnsHijack));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
 int get hashCode {
-    return Object.hash(runtimeType,enable,device,stack,const DeepCollectionEquality().hash(_routeAddress),mtu,congestionController,const DeepCollectionEquality().hash(_routeExcludeAddress),disableIcmpForwarding,endpointIndependentNat,recvMsgX,sendMsgX,udpTimeout);
+    return Object.hash(runtimeType,enable,device,stack,const DeepCollectionEquality().hash(_routeAddress),mtu,congestionController,const DeepCollectionEquality().hash(_routeExcludeAddress),disableIcmpForwarding,endpointIndependentNat,recvMsgX,sendMsgX,udpTimeout,const DeepCollectionEquality().hash(_dnsHijack));
 }
 
 @override
 String toString() {
-    return 'Tun(enable: $enable, device: $device, stack: $stack, routeAddress: $routeAddress, mtu: $mtu, congestionController: $congestionController, routeExcludeAddress: $routeExcludeAddress, disableIcmpForwarding: $disableIcmpForwarding, endpointIndependentNat: $endpointIndependentNat, recvMsgX: $recvMsgX, sendMsgX: $sendMsgX, udpTimeout: $udpTimeout)';
+    return 'Tun(enable: $enable, device: $device, stack: $stack, routeAddress: $routeAddress, mtu: $mtu, congestionController: $congestionController, routeExcludeAddress: $routeExcludeAddress, disableIcmpForwarding: $disableIcmpForwarding, endpointIndependentNat: $endpointIndependentNat, recvMsgX: $recvMsgX, sendMsgX: $sendMsgX, udpTimeout: $udpTimeout, dnsHijack: $dnsHijack)';
 }
 
 
@@ -4030,7 +4038,7 @@ abstract mixin class _$TunCopyWith<$Res> implements $TunCopyWith<$Res> {
   factory _$TunCopyWith(_Tun value, $Res Function(_Tun) _then) = __$TunCopyWithImpl;
 @override @useResult
 $Res call({
- bool enable, String device, TunStack stack,@JsonKey(name: 'route-address') List<String> routeAddress,@JsonKey(fromJson: _mtuFromJson) int mtu,@JsonKey(name: 'congestion-controller', fromJson: _congestionControllerFromJson) String congestionController,@JsonKey(name: 'route-exclude-address') List<String> routeExcludeAddress, bool disableIcmpForwarding, bool endpointIndependentNat, bool recvMsgX, bool sendMsgX, int udpTimeout
+ bool enable, String device, TunStack stack,@JsonKey(name: 'route-address') List<String> routeAddress,@JsonKey(fromJson: _mtuFromJson) int mtu,@JsonKey(name: 'congestion-controller', fromJson: _congestionControllerFromJson) String congestionController,@JsonKey(name: 'route-exclude-address') List<String> routeExcludeAddress, bool disableIcmpForwarding, bool endpointIndependentNat, bool recvMsgX, bool sendMsgX, int udpTimeout, List<String> dnsHijack
 });
 
 
@@ -4047,7 +4055,7 @@ class __$TunCopyWithImpl<$Res>
 
 /// Create a copy of Tun
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? enable = null,Object? device = null,Object? stack = null,Object? routeAddress = null,Object? mtu = null,Object? congestionController = null,Object? routeExcludeAddress = null,Object? disableIcmpForwarding = null,Object? endpointIndependentNat = null,Object? recvMsgX = null,Object? sendMsgX = null,Object? udpTimeout = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? enable = null,Object? device = null,Object? stack = null,Object? routeAddress = null,Object? mtu = null,Object? congestionController = null,Object? routeExcludeAddress = null,Object? disableIcmpForwarding = null,Object? endpointIndependentNat = null,Object? recvMsgX = null,Object? sendMsgX = null,Object? udpTimeout = null,Object? dnsHijack = null,}) {
   return _then(_Tun(
 enable: null == enable ? _self.enable : enable // ignore: cast_nullable_to_non_nullable
 as bool,device: null == device ? _self.device : device // ignore: cast_nullable_to_non_nullable
@@ -4061,7 +4069,8 @@ as bool,endpointIndependentNat: null == endpointIndependentNat ? _self.endpointI
 as bool,recvMsgX: null == recvMsgX ? _self.recvMsgX : recvMsgX // ignore: cast_nullable_to_non_nullable
 as bool,sendMsgX: null == sendMsgX ? _self.sendMsgX : sendMsgX // ignore: cast_nullable_to_non_nullable
 as bool,udpTimeout: null == udpTimeout ? _self.udpTimeout : udpTimeout // ignore: cast_nullable_to_non_nullable
-as int,
+as int,dnsHijack: null == dnsHijack ? _self._dnsHijack : dnsHijack // ignore: cast_nullable_to_non_nullable
+as List<String>,
   ));
 }
 

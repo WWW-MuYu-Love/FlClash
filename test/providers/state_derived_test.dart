@@ -625,6 +625,7 @@ void main() {
             recvMsgX: false,
             sendMsgX: true,
             udpTimeout: 60,
+            dnsHijack: const ['8.8.8.8'],
           ),
         );
 
@@ -634,6 +635,7 @@ void main() {
     expect(vpn.recvMsgX, isFalse);
     expect(vpn.sendMsgX, isTrue);
     expect(vpn.udpTimeout, 60);
+    expect(vpn.dnsHijack, ['8.8.8.8']);
   });
 
   test(

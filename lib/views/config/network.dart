@@ -413,6 +413,22 @@ class RouteAddressItem extends ConsumerWidget {
   }
 }
 
+class DnsHijackItem extends ConsumerWidget {
+  const DnsHijackItem({super.key});
+
+  @override
+  Widget build(BuildContext context, ref) {
+    return ConfigListEditItem(
+      title: (l) => l.dnsHijackList,
+      itemMaxLength: TextInputLimits.cidr,
+      selector: patchClashConfigProvider.select((state) => state.tun.dnsHijack),
+      onChanged: _tunWriter(
+        (state, value) => state.copyWith.tun(dnsHijack: value),
+      ),
+    );
+  }
+}
+
 class LoopbackItem extends StatelessWidget {
   const LoopbackItem({super.key});
 
@@ -533,6 +549,7 @@ List<Widget> tunItems({required bool isMipsStack}) {
         (state, value) => state.copyWith.tun(routeExcludeAddress: value),
       ),
     ),
+    const DnsHijackItem(),
   ];
 }
 
@@ -572,9 +589,13 @@ class TunSection extends ConsumerWidget {
 
 // mihomo keeps TCP keep-alive off on Android whatever the config says
 // (component/keepalive), and only Linux honours a routing mark.
-List<Widget> outboundItems({required bool isDesktop, required bool isLinux}) {
+List<Widget> outboundItems({
+  required bool isDesktop,
+  required bool isLinux,
+  required bool isIOS,
+}) {
   return [
-    if (isDesktop) ...[
+    if (isDesktop || isIOS) ...[
       ConfigToggleItem(
         title: (l) => l.disableKeepAlive,
         selector: patchClashConfigProvider.select(
@@ -745,6 +766,7 @@ class NetworkListView extends StatelessWidget {
           items: outboundItems(
             isDesktop: system.isDesktop,
             isLinux: system.isLinux,
+            isIOS: system.isIOS,
           ),
         ),
       ],

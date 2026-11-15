@@ -317,6 +317,7 @@ Future<VpnOptions> vpnOptions(Ref ref) async {
     recvMsgX: tun.recvMsgX,
     sendMsgX: tun.sendMsgX,
     udpTimeout: tun.udpTimeout,
+    dnsHijack: tun.dnsHijack,
   );
 }
 

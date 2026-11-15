@@ -451,6 +451,7 @@ void main() {
       expect(tun.recvMsgX, true);
       expect(tun.sendMsgX, false);
       expect(tun.udpTimeout, defaultTunUdpTimeout);
+      expect(tun.dnsHijack, isEmpty);
     });
 
     test('round-trip with custom values', () {
@@ -460,6 +461,7 @@ void main() {
         recvMsgX: false,
         sendMsgX: true,
         udpTimeout: 60,
+        dnsHijack: ['8.8.8.8'],
       );
       final restored = roundTrip(() => tun.toJson(), Tun.fromJson);
       expect(restored.disableIcmpForwarding, true);
@@ -467,6 +469,7 @@ void main() {
       expect(restored.recvMsgX, false);
       expect(restored.sendMsgX, true);
       expect(restored.udpTimeout, 60);
+      expect(restored.dnsHijack, ['8.8.8.8']);
     });
   });
 

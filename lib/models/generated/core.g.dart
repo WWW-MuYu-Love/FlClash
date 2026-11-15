@@ -360,6 +360,9 @@ _VpnOptions _$VpnOptionsFromJson(Map<String, dynamic> json) => _VpnOptions(
   recvMsgX: json['recvMsgX'] as bool? ?? true,
   sendMsgX: json['sendMsgX'] as bool? ?? false,
   udpTimeout: (json['udpTimeout'] as num?)?.toInt() ?? defaultTunUdpTimeout,
+  dnsHijack:
+      (json['dnsHijack'] as List<dynamic>?)?.map((e) => e as String).toList() ??
+      const [],
 );
 
 Map<String, dynamic> _$VpnOptionsToJson(_VpnOptions instance) =>
@@ -387,6 +390,7 @@ Map<String, dynamic> _$VpnOptionsToJson(_VpnOptions instance) =>
       'recvMsgX': instance.recvMsgX,
       'sendMsgX': instance.sendMsgX,
       'udpTimeout': instance.udpTimeout,
+      'dnsHijack': instance.dnsHijack,
     };
 
 _InitParams _$InitParamsFromJson(Map<String, dynamic> json) => _InitParams(

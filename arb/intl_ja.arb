@@ -825,6 +825,7 @@
   "clearDataFailed": "データを消去できませんでした：{detail}",
   "bypassPrivateRoute": "プライベートアドレスをバイパス",
   "disableIcmpForwarding": "ICMP 転送を無効化",
+  "dnsHijackList": "DNSハイジャックリスト",
   "endpointIndependentNat": "エンドポイント非依存 NAT",
   "recvMsgX": "バッチ受信",
   "sendMsgX": "バッチ送信",
