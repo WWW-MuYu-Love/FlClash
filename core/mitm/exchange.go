@@ -683,11 +683,28 @@ func trimSpace(s string) string {
 	return string(bytes.TrimSpace([]byte(s)))
 }
 
+var urlPatternCache = struct {
+	sync.RWMutex
+	compiled map[string]*regexp.Regexp
+}{compiled: make(map[string]*regexp.Regexp)}
+
+// Patterns are regular expressions, as module authors write them.
 func matchURLPattern(pattern, rawurl string) bool {
 	if pattern == "*" {
 		return true
 	}
-	// A plain prefix match covers the common Surge/Loon rewrite shape.
+	urlPatternCache.RLock()
+	re, ok := urlPatternCache.compiled[pattern]
+	urlPatternCache.RUnlock()
+	if !ok {
+		re, _ = regexp.Compile(pattern)
+		urlPatternCache.Lock()
+		urlPatternCache.compiled[pattern] = re
+		urlPatternCache.Unlock()
+	}
+	if re != nil {
+		return re.MatchString(rawurl)
+	}
 	return len(rawurl) >= len(pattern) && rawurl[:len(pattern)] == pattern
 }
 
