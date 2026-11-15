@@ -20,6 +20,8 @@ type ScriptOutput struct {
 	Logs   []string `json:"logs"`
 	Result string   `json:"result"`
 	Error  string   `json:"error"`
+	// Response is a $done answer for the intercept path only, never part of the runScript answer.
+	Response *ScriptResponse `json:"-"`
 }
 
 type ScriptNotification struct {
@@ -223,6 +225,10 @@ func runScriptSource(source string, ctx *ScriptContext, params map[string]string
 		"warn":  func(args ...goja.Value) { out.Logs = append(out.Logs, formatJSArgs(args)) },
 		"error": func(args ...goja.Value) { out.Logs = append(out.Logs, formatJSArgs(args)) },
 	})
+	// Env.js reads $environment to identify its host; a truthy surge-version selects the Surge branch.
+	rt.Set("$environment", map[string]any{
+		"surge-version": "5.0.0",
+	})
 	if env != nil {
 		if env.store != nil {
 			namespace := env.namespace
@@ -270,10 +276,15 @@ func runScriptSource(source string, ctx *ScriptContext, params map[string]string
 	}
 	rt.Set("$network", networkInfo())
 	var doneResult string
+	var doneResponse *ScriptResponse
 	var done bool
 	rt.Set("$done", func(v goja.Value) {
 		if v != nil && !goja.IsUndefined(v) && !goja.IsNull(v) {
-			doneResult = v.String()
+			if resp := parseDoneResponse(v); resp != nil {
+				doneResponse = resp
+			} else {
+				doneResult = v.String()
+			}
 		}
 		done = true
 		rt.Interrupt(errScriptDone)
@@ -299,6 +310,7 @@ func runScriptSource(source string, ctx *ScriptContext, params map[string]string
 			switch {
 			case errors.Is(interrupted.Unwrap(), errScriptDone):
 				out.Result = doneResult
+				out.Response = doneResponse
 				applyScriptContext(ctx, reqObj, respObj)
 				return out
 			case errors.Is(interrupted.Unwrap(), errScriptTimeout):
@@ -311,11 +323,70 @@ func runScriptSource(source string, ctx *ScriptContext, params map[string]string
 	}
 	if done {
 		out.Result = doneResult
+		out.Response = doneResponse
 	} else if value != nil && !goja.IsUndefined(value) && !goja.IsNull(value) {
 		out.Result = value.String()
 	}
 	applyScriptContext(ctx, reqObj, respObj)
 	return out
+}
+
+func parseDoneResponse(v goja.Value) *ScriptResponse {
+	exported, ok := v.Export().(map[string]any)
+	if !ok {
+		return nil
+	}
+	if raw, ok := exported["response"].(map[string]any); ok {
+		return doneResponseFrom(raw)
+	}
+	if _, ok := exported["status"]; ok {
+		return doneResponseFrom(exported)
+	}
+	if _, ok := exported["headers"]; ok {
+		return doneResponseFrom(exported)
+	}
+	return nil
+}
+
+func doneResponseFrom(obj map[string]any) *ScriptResponse {
+	resp := &ScriptResponse{Headers: http.Header{}}
+	resp.Status = doneStatus(obj["status"])
+	if raw, ok := obj["headers"].(map[string]any); ok {
+		for name, value := range raw {
+			switch v := value.(type) {
+			case string:
+				resp.Headers.Set(name, v)
+			case []any:
+				for _, item := range v {
+					if s, ok := item.(string); ok {
+						resp.Headers.Add(name, s)
+					}
+				}
+			}
+		}
+	}
+	if raw, ok := obj["body"].(string); ok {
+		resp.Body = []byte(raw)
+	}
+	return resp
+}
+
+func doneStatus(raw any) int {
+	switch v := raw.(type) {
+	case int:
+		return v
+	case int64:
+		return int(v)
+	case float64:
+		return int(v)
+	case string:
+		for _, field := range strings.Fields(v) {
+			if code, err := strconv.Atoi(field); err == nil && code >= 100 && code < 600 {
+				return code
+			}
+		}
+	}
+	return 0
 }
 
 func applyScriptContext(ctx *ScriptContext, reqObj, respObj *goja.Object) {

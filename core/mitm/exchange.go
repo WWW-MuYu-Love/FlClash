@@ -165,7 +165,7 @@ func (s *ExchangeStore) Intercept(ctx context.Context, e *Engine, req *http.Requ
 		req.Body = io.NopCloser(io.TeeReader(req.Body, reqCapture))
 	}
 	s.add(ex)
-	s.applyRequestRewrites(e, req, ex)
+	echo := s.applyRequestRewrites(e, req, ex)
 
 	var resp *http.Response
 	var err error
@@ -175,7 +175,9 @@ func (s *ExchangeStore) Intercept(ctx context.Context, e *Engine, req *http.Requ
 		ex.Actions = append(ex.Actions, mapActions...)
 		s.mu.Unlock()
 	}
-	if mapped != nil {
+	if echo != nil {
+		resp = scriptEchoResponse(req, echo)
+	} else if mapped != nil {
 		resp = mapped
 	} else {
 		resp, err = invoker.Invoke(req)
@@ -506,13 +508,16 @@ func (t *teeBody) Close() error {
 }
 
 // applyRequestRewrites applies URL and header rewrites to a decrypted request.
-func (s *ExchangeStore) applyRequestRewrites(e *Engine, req *http.Request, ex *Exchange) {
+// It returns the response a request script answered with, if any.
+func (s *ExchangeStore) applyRequestRewrites(e *Engine, req *http.Request, ex *Exchange) *ScriptResponse {
 	actions := requestRewriteActions(e, req)
-	actions = append(actions, e.runRequestScripts(req)...)
+	scriptActions, echo := e.runRequestScripts(req)
+	actions = append(actions, scriptActions...)
 	s.mu.Lock()
 	ex.Actions = append(ex.Actions, actions...)
 	ex.URL = req.URL.String()
 	s.mu.Unlock()
+	return echo
 }
 
 func requestRewriteActions(e *Engine, req *http.Request) []Action {

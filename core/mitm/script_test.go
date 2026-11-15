@@ -9,6 +9,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -407,8 +408,14 @@ func writeScriptResource(t *testing.T, home, name, source string) {
 
 func runScriptIntercept(t *testing.T, engine *Engine, rawURL, reqBody, respBody string) (*recordingInvoker, string) {
 	t.Helper()
+	invoker, _, seen := runScriptInterceptResp(t, engine, http.MethodPost, rawURL, reqBody, respBody)
+	return invoker, seen
+}
+
+func runScriptInterceptResp(t *testing.T, engine *Engine, method, rawURL, reqBody, respBody string) (*recordingInvoker, *http.Response, string) {
+	t.Helper()
 	invoker := &recordingInvoker{responseBody: []byte(respBody)}
-	req := httptest.NewRequest(http.MethodPost, rawURL, bytes.NewReader([]byte(reqBody)))
+	req := httptest.NewRequest(method, rawURL, bytes.NewReader([]byte(reqBody)))
 	req.RequestURI = ""
 	req.URL, _ = url.Parse(rawURL)
 	req.ContentLength = int64(len(reqBody))
@@ -423,7 +430,7 @@ func runScriptIntercept(t *testing.T, engine *Engine, rawURL, reqBody, respBody 
 	if err := resp.Body.Close(); err != nil {
 		t.Fatalf("closing response body: %v", err)
 	}
-	return invoker, string(body)
+	return invoker, resp, string(body)
 }
 
 func TestInterceptRunsRequestAndResponseScripts(t *testing.T) {
@@ -540,6 +547,152 @@ func TestInterceptCapturePathRunsResponseScripts(t *testing.T) {
 	}
 	if !found {
 		t.Fatalf("exchange actions = %+v, want a response script action", ex.Actions)
+	}
+}
+
+func TestInterceptRequestScriptSurgeEchoReturnsResponse(t *testing.T) {
+	writeScriptResource(t, scriptHome(t), "echo.js", `
+		$done({response: {status: 200, headers: {"Content-Type": "text/html"}, body: "<html>BoxJs</html>"}});
+	`)
+	engine := &Engine{
+		exchange: NewExchangeStore(10),
+		config: Config{Script: []string{
+			`Echo = type=http-request,pattern=https://boxjs.com/.*,script-path=echo.js`,
+		}},
+	}
+	invoker, resp, seen := runScriptInterceptResp(t, engine, http.MethodGet, "https://boxjs.com/", "", "upstream")
+	if seen != "<html>BoxJs</html>" {
+		t.Fatalf("client saw %q, want the scripted HTML", seen)
+	}
+	if invoker.seenURL != "" {
+		t.Fatalf("upstream was invoked for %q, want no upstream call", invoker.seenURL)
+	}
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("status = %d, want 200", resp.StatusCode)
+	}
+	if got := resp.Header.Get("Content-Type"); got != "text/html" {
+		t.Fatalf("Content-Type = %q, want text/html", got)
+	}
+	if got := resp.Header.Get("Content-Length"); got != strconv.Itoa(len("<html>BoxJs</html>")) {
+		t.Fatalf("Content-Length = %q, want %d", got, len("<html>BoxJs</html>"))
+	}
+}
+
+func TestInterceptRequestScriptQuanXEchoReturnsResponse(t *testing.T) {
+	writeScriptResource(t, scriptHome(t), "echo.js", `
+		$done({status: "HTTP/1.1 200", headers: {"Content-Type": "text/html"}, body: "<html>BoxJs</html>"});
+	`)
+	engine := &Engine{
+		exchange: NewExchangeStore(10),
+		config: Config{Script: []string{
+			`Echo = type=http-request,pattern=https://boxjs.com/.*,script-path=echo.js`,
+		}},
+	}
+	invoker, resp, seen := runScriptInterceptResp(t, engine, http.MethodGet, "https://boxjs.com/", "", "upstream")
+	if seen != "<html>BoxJs</html>" {
+		t.Fatalf("client saw %q, want the scripted HTML", seen)
+	}
+	if invoker.seenURL != "" {
+		t.Fatalf("upstream was invoked for %q, want no upstream call", invoker.seenURL)
+	}
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("status = %d, want 200", resp.StatusCode)
+	}
+	if got := resp.Header.Get("Content-Type"); got != "text/html" {
+		t.Fatalf("Content-Type = %q, want text/html", got)
+	}
+}
+
+func TestInterceptRequestScriptOptionsEchoHeadersOnly(t *testing.T) {
+	writeScriptResource(t, scriptHome(t), "echo.js", `
+		$done({response: {headers: {"Access-Control-Allow-Origin": "*"}}});
+	`)
+	engine := &Engine{
+		exchange: NewExchangeStore(10),
+		config: Config{Script: []string{
+			`Echo = type=http-request,pattern=https://boxjs.com/.*,script-path=echo.js`,
+		}},
+	}
+	invoker, resp, seen := runScriptInterceptResp(t, engine, http.MethodOptions, "https://boxjs.com/", "", "upstream")
+	if seen != "" {
+		t.Fatalf("client saw %q, want an empty body", seen)
+	}
+	if invoker.seenURL != "" {
+		t.Fatalf("upstream was invoked for %q, want no upstream call", invoker.seenURL)
+	}
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("status = %d, want 200", resp.StatusCode)
+	}
+	if got := resp.Header.Get("Access-Control-Allow-Origin"); got != "*" {
+		t.Fatalf("Access-Control-Allow-Origin = %q, want *", got)
+	}
+}
+
+func TestInterceptCapturePathRequestScriptEcho(t *testing.T) {
+	writeScriptResource(t, scriptHome(t), "echo.js", `
+		$done({response: {status: 200, headers: {"Content-Type": "text/html"}, body: "<html>BoxJs</html>"}});
+	`)
+	engine := &Engine{
+		exchange: NewExchangeStore(10),
+		config: Config{Script: []string{
+			`Echo = type=http-request,pattern=https://boxjs.com/.*,script-path=echo.js`,
+		}},
+	}
+	engine.SetCapture(true)
+	invoker, _, seen := runScriptInterceptResp(t, engine, http.MethodGet, "https://boxjs.com/", "", "upstream")
+	if seen != "<html>BoxJs</html>" || invoker.seenURL != "" {
+		t.Fatalf("client saw %q, upstream %q, want the echo and no upstream call", seen, invoker.seenURL)
+	}
+	list := engine.Exchanges("")
+	if len(list.Exchanges) != 1 {
+		t.Fatalf("Exchanges() = %d, want 1", len(list.Exchanges))
+	}
+	ex := engine.Exchange(list.Exchanges[0].ID)
+	if ex == nil {
+		t.Fatal("exchange missing")
+	}
+	if ex.Status != http.StatusOK {
+		t.Fatalf("exchange status = %d, want 200", ex.Status)
+	}
+	if http.Header(ex.ResponseHeader).Get("Content-Type") != "text/html" {
+		t.Fatalf("exchange Content-Type = %q, want text/html", http.Header(ex.ResponseHeader).Get("Content-Type"))
+	}
+}
+
+func TestRunScriptSourceDoneStringResultUnchanged(t *testing.T) {
+	out := runScriptSource(`$done("hello")`, nil, nil, nil)
+	if out.Error != "" {
+		t.Fatalf("error = %q, want none", out.Error)
+	}
+	if out.Result != "hello" {
+		t.Fatalf("result = %q, want hello", out.Result)
+	}
+	if out.Response != nil {
+		t.Fatalf("response = %+v, want nil", out.Response)
+	}
+	out = runScriptSource(`$done({foo: "bar"})`, nil, nil, nil)
+	if out.Error != "" {
+		t.Fatalf("error = %q, want none", out.Error)
+	}
+	if out.Response != nil {
+		t.Fatalf("response = %+v, want nil for a non-response object", out.Response)
+	}
+}
+
+func TestRunScriptSourceEnvironmentIdentifiesSurge(t *testing.T) {
+	out := runScriptSource(`$done($environment["surge-version"])`, nil, nil, nil)
+	if out.Error != "" {
+		t.Fatalf("error = %q, want none", out.Error)
+	}
+	if out.Result != "5.0.0" {
+		t.Fatalf("result = %q, want 5.0.0", out.Result)
+	}
+	out = runScriptSource(`$done(typeof $environment !== "undefined" && $environment["surge-version"] ? "Surge" : "other")`, nil, nil, nil)
+	if out.Error != "" {
+		t.Fatalf("error = %q, want none", out.Error)
+	}
+	if out.Result != "Surge" {
+		t.Fatalf("result = %q, want Surge", out.Result)
 	}
 }
 

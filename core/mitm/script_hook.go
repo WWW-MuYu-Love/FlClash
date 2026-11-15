@@ -33,7 +33,7 @@ func scriptBodyCap(parsed *scriptLine) int {
 	return maxRewriteBodySize
 }
 
-func (e *Engine) runRequestScripts(req *http.Request) []Action {
+func (e *Engine) runRequestScripts(req *http.Request) ([]Action, *ScriptResponse) {
 	e.mu.RLock()
 	lines := append([]string(nil), e.config.Script...)
 	e.mu.RUnlock()
@@ -47,16 +47,20 @@ func (e *Engine) runRequestScripts(req *http.Request) []Action {
 		if !matchURLPattern(scriptPattern(parsed), rawURL) {
 			continue
 		}
-		actions = append(actions, e.runRequestScript(parsed, line, req))
+		action, echo := e.runRequestScript(parsed, line, req)
+		actions = append(actions, action)
+		if echo != nil {
+			return actions, echo
+		}
 	}
-	return actions
+	return actions, nil
 }
 
-func (e *Engine) runRequestScript(parsed *scriptLine, line string, req *http.Request) Action {
+func (e *Engine) runRequestScript(parsed *scriptLine, line string, req *http.Request) (Action, *ScriptResponse) {
 	source, err := e.scriptSource(parsed)
 	if err != nil {
 		log.Warnln("[MITM] script %q: %v", parsed.name, err)
-		return Action{Kind: "script", Phase: "request", Detail: line + " (" + err.Error() + ")"}
+		return Action{Kind: "script", Phase: "request", Detail: line + " (" + err.Error() + ")"}, nil
 	}
 	scriptReq := &ScriptRequest{
 		URL:     req.URL.String(),
@@ -68,7 +72,7 @@ func (e *Engine) runRequestScript(parsed *scriptLine, line string, req *http.Req
 		raw, complete := readScriptBody(req.Body, scriptBodyCap(parsed))
 		if !complete {
 			log.Warnln("[MITM] script %q: request body past the cap, skipped", parsed.name)
-			return Action{Kind: "script", Phase: "request", Detail: line + " (request body past the cap)"}
+			return Action{Kind: "script", Phase: "request", Detail: line + " (request body past the cap)"}, nil
 		}
 		scriptReq.Body = raw
 	}
@@ -76,10 +80,36 @@ func (e *Engine) runRequestScript(parsed *scriptLine, line string, req *http.Req
 	out := runScriptSource(source, ctx, parsed.params, e.scriptEnv(parsed.name))
 	if out.Error != "" {
 		log.Warnln("[MITM] script %q: %v", parsed.name, out.Error)
-		return Action{Kind: "script", Phase: "request", Detail: line + " (" + out.Error + ")"}
+		return Action{Kind: "script", Phase: "request", Detail: line + " (" + out.Error + ")"}, nil
 	}
 	applyRequestScript(req, scriptReq, hadBody)
-	return Action{Kind: "script", Phase: "request", Detail: line}
+	return Action{Kind: "script", Phase: "request", Detail: line}, out.Response
+}
+
+// scriptEchoResponse serves a scripted response in place of the upstream one.
+func scriptEchoResponse(req *http.Request, echo *ScriptResponse) *http.Response {
+	header := echo.Headers.Clone()
+	if header == nil {
+		header = http.Header{}
+	}
+	header.Set("Content-Length", strconv.Itoa(len(echo.Body)))
+	status := echo.Status
+	if status == 0 {
+		status = http.StatusOK
+	}
+	proto := req.Proto
+	if proto == "" {
+		proto = "HTTP/1.1"
+	}
+	return &http.Response{
+		Status:        fmt.Sprintf("%d %s", status, http.StatusText(status)),
+		StatusCode:    status,
+		Proto:         proto,
+		Header:        header,
+		Body:          io.NopCloser(bytes.NewReader(echo.Body)),
+		ContentLength: int64(len(echo.Body)),
+		Request:       req,
+	}
 }
 
 func applyRequestScript(req *http.Request, edited *ScriptRequest, hadBody bool) {

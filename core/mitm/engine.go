@@ -598,11 +598,13 @@ func (e *Engine) intercept(ctx context.Context, req *http.Request, invoker mitmp
 		return e.exchange.Intercept(ctx, e, req, invoker)
 	}
 	requestRewriteActions(e, req)
-	e.runRequestScripts(req)
+	_, echo := e.runRequestScripts(req)
 	mapped, _ := mapLocalResponse(e, req, rawURL)
 	var resp *http.Response
 	var err error
-	if mapped != nil {
+	if echo != nil {
+		resp = scriptEchoResponse(req, echo)
+	} else if mapped != nil {
 		resp = mapped
 	} else {
 		resp, err = invoker.Invoke(req)
