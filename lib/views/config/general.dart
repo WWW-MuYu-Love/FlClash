@@ -4,6 +4,7 @@ import 'package:fl_clash/features/form/form.dart';
 import 'package:fl_clash/l10n/l10n.dart';
 import 'package:fl_clash/models/models.dart';
 import 'package:fl_clash/providers/providers.dart';
+import 'package:fl_clash/views/config/network.dart';
 import 'package:fl_clash/views/config/on_demand.dart';
 import 'package:fl_clash/views/config/override.dart';
 import 'package:fl_clash/views/config/user_agents.dart';
@@ -401,6 +402,14 @@ class GeneralView extends ConsumerWidget {
             title: appLocalizations.inbound,
             items: _inboundItems(authentication: authentication),
             footer: appLocalizations.externalControllerDesc,
+          ),
+          generateSection(
+            title: appLocalizations.outbound,
+            items: outboundItems(
+              isDesktop: system.isDesktop,
+              isLinux: system.isLinux,
+              isIOS: system.isIOS,
+            ),
           ),
           generateSection(
             title: appLocalizations.connection,

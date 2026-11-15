@@ -120,4 +120,20 @@ void main() {
     await tester.pumpAndSettle();
     expect(config().testUrl, 'https://probe.test/204');
   });
+
+  testWidgets('the outbound section sits below the inbound section', (
+    tester,
+  ) async {
+    await pumpGeneralView(tester);
+    final l = currentAppLocalizations;
+
+    expect(find.text(l.outbound), findsOneWidget);
+    expect(find.text(l.disableKeepAlive), findsOneWidget);
+    expect(find.text(l.keepAliveIdle), findsOneWidget);
+    expect(find.text(l.keepAliveIntervalDesc), findsOneWidget);
+    expect(
+      tester.getTopLeft(find.text(l.outbound)).dy,
+      greaterThan(tester.getTopLeft(find.text(l.inbound)).dy),
+    );
+  });
 }

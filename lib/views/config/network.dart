@@ -772,14 +772,6 @@ class NetworkListView extends StatelessWidget {
           isWindows: system.isWindows,
         ),
         IncludeAllNetworksSection(isIOS: system.isIOS),
-        generateSection(
-          title: context.appLocalizations.outbound,
-          items: outboundItems(
-            isDesktop: system.isDesktop,
-            isLinux: system.isLinux,
-            isIOS: system.isIOS,
-          ),
-        ),
       ],
     );
   }
