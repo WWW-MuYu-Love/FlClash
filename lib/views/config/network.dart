@@ -692,12 +692,22 @@ class VpnSections extends ConsumerWidget {
             appLocalizations.bypassDomainDesc,
           ].join('\n'),
         ),
-        if (isIOS)
-          generateSection(
-            title: appLocalizations.includeAllNetworks,
-            items: iosTunnelSectionItems(),
-          ),
       ],
+    );
+  }
+}
+
+class IncludeAllNetworksSection extends StatelessWidget {
+  const IncludeAllNetworksSection({super.key, required this.isIOS});
+
+  final bool isIOS;
+
+  @override
+  Widget build(BuildContext context) {
+    if (!isIOS) return const SizedBox.shrink();
+    return generateSection(
+      title: context.appLocalizations.includeAllNetworks,
+      items: iosTunnelSectionItems(),
     );
   }
 }
@@ -761,6 +771,7 @@ class NetworkListView extends StatelessWidget {
           isLinux: system.isLinux,
           isWindows: system.isWindows,
         ),
+        IncludeAllNetworksSection(isIOS: system.isIOS),
         generateSection(
           title: context.appLocalizations.outbound,
           items: outboundItems(

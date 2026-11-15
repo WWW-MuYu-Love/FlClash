@@ -296,7 +296,7 @@ void main() {
     testWidgets('the tunnel section renders only on iOS', (tester) async {
       final l = currentAppLocalizations;
 
-      await pumpItem(tester, const VpnSections(isIOS: true));
+      await pumpItem(tester, const IncludeAllNetworksSection(isIOS: true));
       expect(find.text(l.includeAllNetworks), findsNWidgets(2));
       expect(find.text(l.excludeLocalNetworks), findsOneWidget);
       expect(find.text(l.excludeAPNs), findsOneWidget);
@@ -304,13 +304,22 @@ void main() {
       expect(find.text(l.enforceRoutes), findsOneWidget);
       expect(find.text(l.excludeDeviceCommunication), findsOneWidget);
 
-      await pumpItem(tester, const VpnSections(isIOS: false));
+      await pumpItem(tester, const IncludeAllNetworksSection(isIOS: false));
       expect(find.text(l.includeAllNetworks), findsNothing);
       expect(find.text(l.excludeLocalNetworks), findsNothing);
       expect(find.text(l.excludeAPNs), findsNothing);
       expect(find.text(l.excludeCellularServices), findsNothing);
       expect(find.text(l.enforceRoutes), findsNothing);
       expect(find.text(l.excludeDeviceCommunication), findsNothing);
+    });
+
+    testWidgets('the VPN sections no longer carry the tunnel section', (
+      tester,
+    ) async {
+      final l = currentAppLocalizations;
+
+      await pumpItem(tester, const VpnSections(isIOS: true));
+      expect(find.text(l.includeAllNetworks), findsNothing);
       expect(find.text(l.dnsHijacking), findsOneWidget);
     });
   });
