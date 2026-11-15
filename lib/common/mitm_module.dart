@@ -615,28 +615,6 @@ List<String> _splitRule(String text, {bool nested = false}) {
   return parts;
 }
 
-List<String> _splitConditionalActions(String text) {
-  final parts = <String>[];
-  var depth = 0;
-  var quoted = false;
-  var start = 0;
-  for (var i = 0; i < text.length; i++) {
-    switch (text[i]) {
-      case '"':
-        quoted = !quoted;
-      case '(' when !quoted:
-        depth++;
-      case ')' when !quoted:
-        depth--;
-      case '|' when !quoted && depth == 0:
-        parts.add(text.substring(start, i).trim());
-        start = i + 1;
-    }
-  }
-  parts.add(text.substring(start).trim());
-  return parts.where((part) => part.isNotEmpty).toList();
-}
-
 const _logicalRules = {'AND', 'OR', 'NOT'};
 
 List<String> _ruleParts(String text) {
@@ -1372,110 +1350,8 @@ class _ModuleParser {
     );
   }
 
-  /// Loon's `response if ${url} ~= /pattern/flags then ...` mock: one
-  /// `response.body.mock_file` plus any `response.header.add`, which is the
-  /// local file a Surge module writes as Map Local.
-  bool _readLoonConditionalMock(String section, String line) {
-    final conditional = RegExp(
-      r'^response\s+if\s+\$\{url\}\s*~=\s*/((?:[^/\\]|\\.)*)/([a-z]*)\s+then\s+(.+)$',
-      caseSensitive: false,
-    ).firstMatch(line);
-    if (conditional == null) {
-      return false;
-    }
-    bool skip() {
-      _skip(section, line, MitmModuleSkipReason.conditional);
-      return true;
-    }
-
-    final flags = StringBuffer();
-    for (final flag in conditional.group(2)!.split('')) {
-      switch (flag) {
-        case 'i' || 'm' || 's':
-          flags.write(flag);
-        case 'g' || 'u':
-          break;
-        default:
-          return skip();
-      }
-    }
-    final pattern = conditional.group(1)!;
-    if (pattern.isEmpty) {
-      return skip();
-    }
-    String? url;
-    var status = 200;
-    String? contentType;
-    final headers = <String>[];
-    for (final action in _splitConditionalActions(conditional.group(3)!)) {
-      final mock = RegExp(
-        r'^response\.body\.mock_file\s*\((.*)\)$',
-        caseSensitive: false,
-      ).firstMatch(action);
-      if (mock != null) {
-        if (url != null) {
-          return skip();
-        }
-        final args = _splitRule(mock.group(1)!, nested: true);
-        if (args.length < 2 || args.length > 3) {
-          return skip();
-        }
-        contentType = _loonContentTypes[_unquote(args[0]).toLowerCase()];
-        url = _unquote(args[1]);
-        if (url.isEmpty) {
-          return skip();
-        }
-        if (args.length == 3) {
-          final parsed = int.tryParse(_unquote(args[2]));
-          if (parsed == null || parsed < 100 || parsed > 599) {
-            return skip();
-          }
-          status = parsed;
-        }
-        continue;
-      }
-      final header = RegExp(
-        r'^response\.header\.add\s*\((.*)\)$',
-        caseSensitive: false,
-      ).firstMatch(action);
-      if (header != null) {
-        final args = _splitRule(header.group(1)!, nested: true);
-        if (args.length != 2) {
-          return skip();
-        }
-        final name = _unquote(args[0]);
-        final value = _unquote(args[1]);
-        if (name.isEmpty ||
-            RegExp(r'[\s:|]').hasMatch(name) ||
-            value.contains('|')) {
-          return skip();
-        }
-        headers.add('$name:$value');
-        continue;
-      }
-      return skip();
-    }
-    if (url == null) {
-      return skip();
-    }
-    final headerParts = <String>[
-      if (contentType != null) 'Content-Type:$contentType',
-      ...headers,
-    ];
-    _addMapLocal(section, line, flags.isEmpty ? pattern : '(?$flags)$pattern', {
-      'data-type': 'file',
-      'data': url,
-      'status-code': '$status',
-      if (headerParts.isNotEmpty) 'header': headerParts.join('|'),
-    });
-    return true;
-  }
-
   /// Loon's legacy `pattern action ...`, which spreads over Surge's lists.
   void _readLoonRewrite(String section, String line) {
-    if (_readLoonConditionalMock(section, line)) {
-      return;
-    }
     if (_conditionalPattern.hasMatch(line)) {
       _skip(section, line, MitmModuleSkipReason.conditional);
       return;
