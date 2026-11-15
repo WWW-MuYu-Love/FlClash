@@ -732,14 +732,14 @@ class NetworkListView extends StatelessWidget {
         bottom: 16 + context.bottomInset,
       ),
       children: [
+        if (system.isMobile) VpnSections(isIOS: system.isIOS),
+        if (system.isDesktop) const SystemProxySection(),
+        const NetworkOptionsSection(),
         TunSection(
           isDesktop: system.isDesktop,
           isLinux: system.isLinux,
           isWindows: system.isWindows,
         ),
-        if (system.isMobile) VpnSections(isIOS: system.isIOS),
-        if (system.isDesktop) const SystemProxySection(),
-        const NetworkOptionsSection(),
         generateSection(
           title: context.appLocalizations.outbound,
           items: outboundItems(
