@@ -81,3 +81,22 @@ func TestValidateRules(t *testing.T) {
 		t.Errorf("header-rewrite issues = %v, want 0", issues["header-rewrite"])
 	}
 }
+
+func TestEngineQUICBlocked(t *testing.T) {
+	engine := &Engine{exchange: NewExchangeStore(defaultCaptureEntries)}
+	if engine.QUICBlocked() {
+		t.Fatal("QUICBlocked with a zero config")
+	}
+	engine.SetConfig(&Config{Enable: true, DecryptTLS: true, AutoQUICBlock: true})
+	if !engine.QUICBlocked() {
+		t.Fatal("QUICBlocked = false, want true")
+	}
+	engine.SetConfig(&Config{Enable: true, DecryptTLS: true, AutoQUICBlock: false})
+	if engine.QUICBlocked() {
+		t.Fatal("QUICBlocked with the switch off")
+	}
+	engine.SetConfig(&Config{Enable: false, DecryptTLS: false, AutoQUICBlock: true})
+	if engine.QUICBlocked() {
+		t.Fatal("QUICBlocked with MITM off")
+	}
+}

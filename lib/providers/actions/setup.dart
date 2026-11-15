@@ -710,6 +710,9 @@ class SetupAction extends _$SetupAction {
             : lastMatchTarget(profileBase.base.matchRules),
         safeMode: ref.read(safeModeProvider),
         mitmModules: setupState.mitmModules,
+        mitmCaUntrusted:
+            ref.read(mitmTrustStateProvider).value?.trust ==
+            MitmTrust.untrusted,
       ),
     );
     if (profileBase == null) {

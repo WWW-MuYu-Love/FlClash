@@ -262,7 +262,10 @@ Future<RealProfile> _makeRealProfileTask(MakeRealProfileState data) async {
         resources: module.resources,
       ),
   ]);
-  rawConfig['mitm'] = realPatchConfig.mitm.coreJson(mitm.mitm);
+  rawConfig['mitm'] = realPatchConfig.mitm.coreJson(
+    mitm.mitm,
+    caUntrusted: data.mitmCaUntrusted,
+  );
   if (rawConfig['profile'] == null) {
     rawConfig['profile'] = {};
   }

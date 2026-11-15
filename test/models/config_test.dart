@@ -524,6 +524,23 @@ void main() {
         expect(json['decrypt-tls'], isTrue);
         expect(json, isNot(contains('ca-fingerprint')));
       });
+
+      test('does not decrypt when the CA is known untrusted unless asked', () {
+        const enabled = Mitm(enable: true);
+
+        expect(
+          enabled.coreJson(const MitmRules(), caUntrusted: true)['decrypt-tls'],
+          isFalse,
+        );
+        expect(
+          const Mitm(
+            enable: true,
+            decryptUntrusted: true,
+          ).coreJson(const MitmRules(), caUntrusted: true)['decrypt-tls'],
+          isTrue,
+        );
+        expect(enabled.coreJson(const MitmRules())['decrypt-tls'], isTrue);
+      });
     });
 
     test('a clash config saved before MITM existed reads it as off', () {

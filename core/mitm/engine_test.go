@@ -113,6 +113,51 @@ func TestEngineServeEndToEnd(t *testing.T) {
 	}
 }
 
+func TestEngineH2Toggle(t *testing.T) {
+	home := t.TempDir()
+	constant.SetHomeDir(home)
+	defer constant.SetHomeDir("")
+
+	origin := newLeafOrigin(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_, _ = w.Write([]byte("hello"))
+	}))
+	defer origin.Close()
+	originURL, _ := url.Parse(origin.URL)
+	originHost := originURL.Host
+
+	negotiated := func(h2 bool) string {
+		t.Helper()
+		engine := &Engine{
+			exchange: NewExchangeStore(defaultCaptureEntries),
+			config: Config{
+				Enable: true, DecryptTLS: true, Hostname: []string{"127.0.0.1"},
+				SkipServerCertVerify: true, H2: h2,
+			},
+		}
+		if err := engine.Init(); err != nil {
+			t.Fatalf("Init: %v", err)
+		}
+		client := dialEngineClient(t, home, originHost, engine)
+		transport := client.Transport.(*http.Transport)
+		transport.ForceAttemptHTTP2 = true
+		transport.TLSClientConfig.NextProtos = []string{"h2", "http/1.1"}
+		resp, err := client.Get("https://" + originHost + "/")
+		if err != nil {
+			t.Fatalf("GET through engine: %v", err)
+		}
+		_, _ = io.ReadAll(resp.Body)
+		_ = resp.Body.Close()
+		return resp.TLS.NegotiatedProtocol
+	}
+
+	if got := negotiated(false); got != "http/1.1" {
+		t.Fatalf("H2 off: negotiated %q, want http/1.1", got)
+	}
+	if got := negotiated(true); got != "h2" {
+		t.Fatalf("H2 on: negotiated %q, want h2", got)
+	}
+}
+
 // newLeafOrigin starts an HTTPS server whose certificate is a leaf (CA:FALSE)
 // for 127.0.0.1, so the MITM handler can copy its SANs.
 func newLeafOrigin(t *testing.T, handler http.HandlerFunc) *httptest.Server {
@@ -151,7 +196,12 @@ func newLeafOrigin(t *testing.T, handler http.HandlerFunc) *httptest.Server {
 		t.Fatalf("origin key pair: %v", err)
 	}
 	server := httptest.NewUnstartedServer(handler)
-	server.TLS = &tls.Config{Certificates: []tls.Certificate{pair}}
+	// Offer both protocols: without h2 here the engine could never mirror
+	// it downstream, since it only offers what the origin negotiated.
+	server.TLS = &tls.Config{
+		Certificates: []tls.Certificate{pair},
+		NextProtos:   []string{"h2", "http/1.1"},
+	}
 	server.StartTLS()
 	return server
 }

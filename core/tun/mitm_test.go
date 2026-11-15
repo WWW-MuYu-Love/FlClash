@@ -113,8 +113,79 @@ func TestHandleTCPConnPassesBufferedConnectThrough(t *testing.T) {
 	}
 }
 
+// With the switch on, UDP to port 443 is dropped so clients fall back to
+// TLS; anything else passes through to the real tunnel.
+func TestHandleUDPPacketDropsQUICWhenBlocked(t *testing.T) {
+	mitm.Default().SetConfig(&mitm.Config{
+		Enable: true, DecryptTLS: true, AutoQUICBlock: true,
+	})
+	t.Cleanup(func() { mitm.Default().SetConfig(nil) })
+
+	inner := &recordingTunnel{}
+	wrapped := WrapTunnel(inner)
+
+	quic := &fakeUDPPacket{}
+	wrapped.HandleUDPPacket(quic, &C.Metadata{DstPort: 443})
+	if !quic.dropped {
+		t.Fatal("QUIC packet was not dropped")
+	}
+	if len(inner.packets) != 0 {
+		t.Fatalf("inner tunnel received %d packets, want 0", len(inner.packets))
+	}
+
+	dns := &fakeUDPPacket{}
+	wrapped.HandleUDPPacket(dns, &C.Metadata{DstPort: 53})
+	if dns.dropped {
+		t.Fatal("non-QUIC packet was dropped")
+	}
+	if len(inner.packets) != 1 {
+		t.Fatalf("inner tunnel received %d packets, want 1", len(inner.packets))
+	}
+}
+
+func TestHandleUDPPacketPassesQUICWhenNotBlocked(t *testing.T) {
+	inner := &recordingTunnel{}
+	wrapped := WrapTunnel(inner)
+
+	mitm.Default().SetConfig(&mitm.Config{
+		Enable: true, DecryptTLS: true, AutoQUICBlock: false,
+	})
+	quic := &fakeUDPPacket{}
+	wrapped.HandleUDPPacket(quic, &C.Metadata{DstPort: 443})
+	if quic.dropped || len(inner.packets) != 1 {
+		t.Fatal("QUIC packet dropped with the switch off")
+	}
+
+	mitm.Default().SetConfig(&mitm.Config{
+		Enable: false, DecryptTLS: false, AutoQUICBlock: true,
+	})
+	t.Cleanup(func() { mitm.Default().SetConfig(nil) })
+	quic = &fakeUDPPacket{}
+	wrapped.HandleUDPPacket(quic, &C.Metadata{DstPort: 443})
+	if quic.dropped || len(inner.packets) != 2 {
+		t.Fatal("QUIC packet dropped with MITM off")
+	}
+}
+
+type fakeUDPPacket struct {
+	dropped bool
+}
+
+func (f *fakeUDPPacket) Data() []byte { return nil }
+
+func (f *fakeUDPPacket) WriteBack(b []byte, addr net.Addr) (int, error) {
+	return len(b), nil
+}
+
+func (f *fakeUDPPacket) Drop() { f.dropped = true }
+
+func (f *fakeUDPPacket) LocalAddr() net.Addr {
+	return &net.UDPAddr{IP: net.IPv4zero}
+}
+
 type recordingTunnel struct {
 	received net.Conn
+	packets  []C.UDPPacket
 }
 
 func (f *recordingTunnel) HandleTCPConn(conn net.Conn, metadata *C.Metadata) {
@@ -122,6 +193,7 @@ func (f *recordingTunnel) HandleTCPConn(conn net.Conn, metadata *C.Metadata) {
 }
 
 func (f *recordingTunnel) HandleUDPPacket(packet C.UDPPacket, metadata *C.Metadata) {
+	f.packets = append(f.packets, packet)
 }
 
 func (f *recordingTunnel) NatTable() C.NatTable { return nil }

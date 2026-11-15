@@ -97,6 +97,17 @@ func (m mitmTunnel) HandleTCPConn(conn net.Conn, metadata *C.Metadata) {
 	}
 }
 
+// HandleUDPPacket drops QUIC (UDP to port 443) while the MITM config asks
+// for it, so clients fall back to TLS the engine can decrypt; every other
+// packet goes to the real tunnel unchanged.
+func (m mitmTunnel) HandleUDPPacket(packet C.UDPPacket, metadata *C.Metadata) {
+	if metadata.DstPort == 443 && mitm.Default().QUICBlocked() {
+		packet.Drop()
+		return
+	}
+	m.Tunnel.HandleUDPPacket(packet, metadata)
+}
+
 // sniffSNI peeks the TLS ClientHello and returns its SNI, or "" when the
 // connection is not TLS or the hello is not yet readable.
 func sniffSNI(bc *N.BufferedConn) string {

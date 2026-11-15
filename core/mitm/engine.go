@@ -325,6 +325,9 @@ func (e *Engine) rebuildHandlerLocked() error {
 	if e.config.SkipServerCertVerify {
 		opts = append(opts, mitmproxy.WithSkipVerifySSLFromServer())
 	}
+	if !e.config.H2 {
+		opts = append(opts, mitmproxy.WithDisableHTTP2())
+	}
 	handler, err := mitmproxy.NewMitmProxyHandler(opts...)
 	if err != nil {
 		return fmt.Errorf("mitm handler: %w", err)
@@ -376,6 +379,15 @@ func (e *Engine) Enabled() bool {
 	e.mu.RLock()
 	defer e.mu.RUnlock()
 	return e.config.Enable && e.config.DecryptTLS
+}
+
+// QUICBlocked reports whether the tunnel should drop QUIC, so clients fall
+// back to TLS the engine can decrypt. It follows the MITM switch itself:
+// with interception off there is nothing to fall back to.
+func (e *Engine) QUICBlocked() bool {
+	e.mu.RLock()
+	defer e.mu.RUnlock()
+	return e.config.AutoQUICBlock && e.config.Enable && e.config.DecryptTLS
 }
 
 // ShouldIntercept reports whether host is in the MITM hostname list.

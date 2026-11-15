@@ -2286,7 +2286,7 @@ extension MitmExt on Mitm {
   );
 
   /// The hostnames come from [rules] alone, which the user's own lead.
-  Map<String, Object?> coreJson(MitmRules rules) {
+  Map<String, Object?> coreJson(MitmRules rules, {bool caUntrusted = false}) {
     final json = toJson()
       ..remove('hostname')
       ..remove('decrypt-untrusted')
@@ -2296,13 +2296,13 @@ extension MitmExt on Mitm {
     return {
       ...json,
       ...rules.toJson(),
-      // Decrypt whenever MITM is on. Gating this on the recorded trust
-      // fingerprint left MITM silently dead on iOS: the trust check never
-      // records the fingerprint there, so the engine never decrypted even
-      // with the CA installed and trusted and hosts added. The trust state
-      // is still shown on the MITM page; an untrusted CA surfaces as
-      // certificate errors instead of silent nothing.
-      'decrypt-tls': enable,
+      // Decrypt whenever MITM is on, unless the device is known not to
+      // trust the CA and the user has not asked to decrypt anyway. Gating
+      // on the recorded fingerprint left MITM silently dead on iOS, so
+      // the gate reads the live trust check instead: only a completed
+      // check reporting untrusted blocks decryption, and anything unknown
+      // (not installed, not generated, still checking) decrypts.
+      'decrypt-tls': enable && (decryptUntrusted || !caUntrusted),
       'limits': {
         ..._mitmLimits(isAndroid: system.isAndroid),
         'capture-entries': ?captureEntries,

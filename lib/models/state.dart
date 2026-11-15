@@ -222,6 +222,9 @@ abstract class MakeRealProfileState with _$MakeRealProfileState {
     String? matchTarget,
     @Default(false) bool safeMode,
     @Default([]) List<MitmModuleSource> mitmModules,
+
+    /// The live trust check reported the CA installed but not trusted.
+    @Default(false) bool mitmCaUntrusted,
   }) = _MakeRealProfileState;
 }
 
