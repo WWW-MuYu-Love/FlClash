@@ -280,28 +280,10 @@ Future<VpnOptions> vpnOptions(Ref ref) async {
   final mitmHostnames = ref.watch(
     patchClashConfigProvider.select((state) => state.mitm.hostname),
   );
-  final mitmModules =
-      mitmFeature &&
-          ref.watch(
-            patchClashConfigProvider.select((state) => state.mitm.enable),
-          )
-      ? ref.watch(mitmModulesProvider.future)
-      : null;
   final vpnSetting = ref.watch(vpnSettingProvider);
   final safeMode = ref.watch(safeModeProvider);
   final routeAddress = ref.watch(vpnRouteAddressProvider.future);
   final tun = clashConfig.tun;
-  final bypassDomain = [
-    ...networkSetting.bypassDomain,
-    // MITM hosts bypass the proxy so their traffic enters through the tunnel.
-    for (final host in mitmHostnames)
-      if (!networkSetting.bypassDomain.contains(host)) host,
-  ];
-  for (final entry in await _moduleBypassEntries(mitmModules)) {
-    if (!bypassDomain.contains(entry)) {
-      bypassDomain.add(entry);
-    }
-  }
   return VpnOptions(
     enable: vpnSetting.enable && !safeMode,
     stack: tun.stack.name,
@@ -314,29 +296,17 @@ Future<VpnOptions> vpnOptions(Ref ref) async {
     dnsHijacking: vpnSetting.dnsHijacking,
     accessControlProps: vpnSetting.accessControlProps,
     allowBypass: vpnSetting.allowBypass,
-    bypassDomain: bypassDomain,
+    bypassDomain: [
+      ...networkSetting.bypassDomain,
+      // MITM hosts bypass the system proxy so their traffic enters through
+      // the tunnel, where the wrapped stack diverts it to the engine.
+      for (final host in mitmHostnames)
+        if (!networkSetting.bypassDomain.contains(host)) host,
+    ],
     routeAddress: await routeAddress,
     mtu: tun.mtu,
     congestionController: tun.congestionController,
   );
-}
-
-Future<List<String>> _moduleBypassEntries(
-  Future<List<MitmModule>>? modules,
-) async {
-  if (modules == null) {
-    return const [];
-  }
-  return [
-    for (final source in await mitmModuleSources(await modules))
-      ...mitmModuleBypassEntries(
-        parseMitmModule(
-          source.content,
-          values: source.arguments,
-          resources: source.resources,
-        ),
-      ),
-  ];
 }
 
 @riverpod

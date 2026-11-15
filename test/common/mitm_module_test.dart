@@ -989,48 +989,4 @@ cron {cron} script-path=https://cdn.test/sync.js, timeout=900, tag=Sync
       }
     });
   });
-
-  group('module bypass entries', () {
-    test('hostnames and rule destinations join', () {
-      final content = parseMitmModule('''
-[MITM]
-hostname = %APPEND% example.com, *.example.org, 192.168.1.1
-[Rule]
-IP-CIDR,10.0.0.0/8,DIRECT
-IP-CIDR6,fc00::/7,REJECT
-DOMAIN,exact.example.com,DIRECT
-DOMAIN-SUFFIX,example.net,DIRECT
-DOMAIN-WILDCARD,*.example.io,DIRECT
-DOMAIN-KEYWORD,example,DIRECT
-SRC-IP-CIDR,10.0.0.0/8,DIRECT
-DST-PORT,443,DIRECT
-''');
-      expect(mitmModuleBypassEntries(content), [
-        'example.com',
-        '*.example.org',
-        '192.168.1.1',
-        '10.0.0.0/8',
-        'fc00::/7',
-        'exact.example.com',
-        'example.net',
-        '*.example.net',
-        '*.example.io',
-      ]);
-    });
-
-    test('negated hostnames and nested rules yield nothing extra', () {
-      final content = parseMitmModule(
-        _surge,
-        resources: const {'https://cdn.example.com/blank.json': 'abc.json'},
-      );
-      expect(mitmModuleBypassEntries(content), [
-        '*.example.com',
-        'api.example.com',
-        'ads.example.com',
-        '*.ads.example.com',
-        'track.example.com',
-        '10.0.0.1/32',
-      ]);
-    });
-  });
 }
