@@ -161,6 +161,21 @@ mixin RoutedProbe<K, V>
         unawaited(_verify());
       }
     });
+    // On iOS the external controller lives in the VPN extension. After a
+    // cold app restart, the persisted tunnel can still be connected while
+    // runningVpnOptionsProvider is initially null. Probes started in that
+    // window fall back to the App Core (or fail); when the listener state is
+    // restored, rerun every visible target against the now-live controller.
+    ref.listen(runningVpnOptionsProvider, (previous, next) {
+      if (!system.isIOS ||
+          previous?.enable == next?.enable ||
+          next?.enable != true) {
+        return;
+      }
+      for (final target in _watchers.keys.toList()) {
+        _mark(target, forced: true);
+      }
+    });
     return RoutedProbeState<K, V>();
   }
 
