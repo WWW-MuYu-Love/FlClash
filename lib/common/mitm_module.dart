@@ -151,6 +151,27 @@ class MitmModuleContent {
   );
 }
 
+/// The destinations a module's parsed content adds to the exception list.
+List<String> mitmModuleBypassEntries(MitmModuleContent content) => [
+  ...content.insertedHostname.where((host) => !host.startsWith('-')),
+  ...content.hostname.where((host) => !host.startsWith('-')),
+  for (final rule in content.rules) ..._ruleBypassEntries(rule),
+];
+
+List<String> _ruleBypassEntries(String rule) {
+  final parts = rule.split(',');
+  if (parts.length < 2) {
+    return const [];
+  }
+  final value = parts[1].trim();
+  return switch (parts.first.trim().toUpperCase()) {
+    'IP-CIDR' || 'IP-CIDR6' => [value],
+    'DOMAIN' || 'DOMAIN-WILDCARD' => [value],
+    'DOMAIN-SUFFIX' => [value, '*.$value'],
+    _ => const [],
+  };
+}
+
 Map<String, String> mitmAttachments(MitmModule module) => {
   if (!module.isRemote)
     for (final MapEntry(:key, :value) in module.resources.entries)

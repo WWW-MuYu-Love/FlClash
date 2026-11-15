@@ -1,6 +1,9 @@
+import 'dart:io';
+
 import 'package:fl_clash/common/app_ports.dart';
 import 'package:fl_clash/common/cidr.dart';
 import 'package:fl_clash/common/constant.dart';
+import 'package:fl_clash/common/path.dart';
 import 'package:fl_clash/common/system.dart';
 import 'package:fl_clash/enum/enum.dart';
 import 'package:fl_clash/l10n/l10n.dart';
@@ -12,9 +15,12 @@ import 'package:fl_clash/providers/state.dart';
 import 'package:fl_clash/views/navigation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:path/path.dart';
 import 'package:prism_ui/prism_ui.dart';
 import 'package:riverpod/riverpod.dart';
 
+import '../helpers/app_paths.dart';
+import '../helpers/test_database_providers.dart';
 import '../helpers/test_profiles.dart';
 
 void main() {
@@ -589,6 +595,85 @@ void main() {
         );
 
     final vpn = await container.read(vpnOptionsProvider.future);
+    expect(vpn.bypassDomain, ['localhost', 'example.com']);
+  });
+
+  Future<ProviderContainer> moduleBypassContainer({
+    required bool mitmEnabled,
+  }) async {
+    final root = Directory.systemTemp.createTempSync('module-bypass-');
+    addTearDown(() {
+      if (root.existsSync()) {
+        root.deleteSync(recursive: true);
+      }
+    });
+    await useAppPaths(root);
+    final modulesDir = Directory(await appPath.mitmModulesDirPath)
+      ..createSync(recursive: true);
+    File(join(modulesDir.path, '1.txt')).writeAsStringSync('''
+[MITM]
+hostname = %APPEND% module.example.com, example.com
+[Rule]
+IP-CIDR,10.9.0.0/16,DIRECT
+DOMAIN-SUFFIX,module.example.net,DIRECT
+''');
+    final scoped = ProviderContainer(
+      overrides: [
+        profilesProvider.overrideWith(TestProfiles.new),
+        mitmModulesProvider.overrideWith(
+          () => TestMitmModules([
+            MitmModule(
+              id: 1,
+              name: 'Test',
+              lastUpdateTime: DateTime(2026, 11, 15),
+            ),
+            MitmModule(
+              id: 2,
+              name: 'Off',
+              enabled: false,
+              lastUpdateTime: DateTime(2026, 11, 15),
+            ),
+          ]),
+        ),
+      ],
+    );
+    addTearDown(scoped.dispose);
+    scoped
+        .read(networkSettingProvider.notifier)
+        .update((state) => state.copyWith(bypassDomain: const ['localhost']));
+    scoped
+        .read(patchClashConfigProvider.notifier)
+        .update(
+          (state) => state.copyWith(
+            mitm: state.mitm.copyWith(
+              enable: mitmEnabled,
+              hostname: const ['example.com', 'localhost'],
+            ),
+          ),
+        );
+    final subscription = scoped.listen(vpnOptionsProvider, (_, _) {});
+    addTearDown(subscription.close);
+    return scoped;
+  }
+
+  test('module IPs and domains join the VPN bypass list', () async {
+    final scoped = await moduleBypassContainer(mitmEnabled: true);
+
+    final vpn = await scoped.read(vpnOptionsProvider.future);
+    expect(vpn.bypassDomain, [
+      'localhost',
+      'example.com',
+      'module.example.com',
+      '10.9.0.0/16',
+      'module.example.net',
+      '*.module.example.net',
+    ]);
+  });
+
+  test('module entries stay out while MITM is off', () async {
+    final scoped = await moduleBypassContainer(mitmEnabled: false);
+
+    final vpn = await scoped.read(vpnOptionsProvider.future);
     expect(vpn.bypassDomain, ['localhost', 'example.com']);
   });
 
