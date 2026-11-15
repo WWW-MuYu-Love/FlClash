@@ -941,6 +941,7 @@ class _TestSetupAction extends SetupAction {
   Future<bool> applyProfile({
     bool silence = false,
     bool force = false,
+    bool restartFollows = false,
     Future<void> Function()? preloadInvoke,
   }) async {
     applyProfileCount++;
@@ -1032,6 +1033,7 @@ class _InitializingSetupAction extends _RaceSetupAction {
   Future<bool> applyProfile({
     bool silence = false,
     bool force = false,
+    bool restartFollows = false,
     Future<void> Function()? preloadInvoke,
   }) async {
     await _initializationCompleter.future;

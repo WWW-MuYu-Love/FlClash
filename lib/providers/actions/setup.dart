@@ -110,7 +110,10 @@ class SetupAction extends _$SetupAction {
     if (!ref.read(initProvider)) return true;
     ref.read(proxiesActionProvider.notifier).cancelDelayTests();
     ref.read(delayDataSourceProvider.notifier).value = {};
-    final setupResult = applyProfile(force: true);
+    // FullSetup restarts the tunnel when it is up, and the extension reads
+    // the new config from shared state at start, so a missed push needs no
+    // report at all.
+    final setupResult = applyProfile(force: true, restartFollows: true);
     ref.read(logsProvider.notifier).value = FixedList(maxLogsLength);
     ref.read(requestsProvider.notifier).value = FixedList(maxRequestsLength);
     ref.read(dnsQueriesProvider.notifier).value = FixedList(
@@ -586,11 +589,13 @@ class SetupAction extends _$SetupAction {
   Future<bool> applyProfile({
     bool silence = false,
     bool force = false,
+    bool restartFollows = false,
     Future<void> Function()? preloadInvoke,
   }) async {
     final result = await _runSetup(
       force: force,
       silence: silence,
+      restartFollows: restartFollows,
       preloadInvoke: preloadInvoke,
     );
     return result != _SetupTaskResult.failed;
@@ -599,12 +604,14 @@ class SetupAction extends _$SetupAction {
   Future<_SetupTaskResult> _runSetup({
     bool silence = false,
     bool force = false,
+    bool restartFollows = false,
     Future<void> Function()? preloadInvoke,
   }) async {
     final result = await _setupScheduler.run(() {
       return _setupConfig(
         force: force,
         silence: silence,
+        restartFollows: restartFollows,
         preloadInvoke: preloadInvoke,
         onUpdated: () async {
           await ref.read(proxiesActionProvider.notifier).updateGroups();
@@ -878,6 +885,7 @@ class SetupAction extends _$SetupAction {
   Future<_SetupTaskResult> _setupConfig({
     bool force = false,
     bool silence = false,
+    bool restartFollows = false,
     Future<void> Function()? preloadInvoke,
     FutureOr Function()? onUpdated,
   }) async {
@@ -989,15 +997,14 @@ class SetupAction extends _$SetupAction {
               // to the extension failed (XPC empty_response while the tunnel
               // is up). The extension reads the new config from shared state
               // at its next start, so this must not fail the setup or roll
-              // the running tunnel back.
-              commonPrint.log(
-                'extension did not receive the config: ${error.message}',
-                logLevel: LogLevel.warning,
-              );
-              dialogs.showBanner(
-                userFacingErrorMessage(error, currentAppLocalizations),
-                level: BannerLevel.error,
-              );
+              // the running tunnel back. The missed push is logged once,
+              // unless a restart follows and picks it up at start.
+              if (!restartFollows) {
+                commonPrint.log(
+                  'extension did not receive the config: ${error.message}',
+                  logLevel: LogLevel.warning,
+                );
+              }
             } else if (error.code != 'config_rejected') {
               rethrow;
             } else {

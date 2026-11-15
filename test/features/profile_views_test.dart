@@ -92,6 +92,7 @@ class _RecordingSetupAction extends SetupAction {
   Future<bool> applyProfile({
     bool silence = false,
     bool force = false,
+    bool restartFollows = false,
     Future<void> Function()? preloadInvoke,
   }) async {
     applyCalls++;

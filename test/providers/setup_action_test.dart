@@ -126,6 +126,7 @@ class TestSetupAction extends SetupAction {
   Future<bool> applyProfile({
     bool silence = false,
     bool force = false,
+    bool restartFollows = false,
     Future<void> Function()? preloadInvoke,
   }) async {
     applyProfileCalls++;
@@ -1366,6 +1367,14 @@ void main() {
       overrides: ProfileOverrides(),
     );
 
+    List<String?> capturePrints() {
+      final printed = <String?>[];
+      final originalPrint = debugPrint;
+      debugPrint = (message, {wrapWidth}) => printed.add(message);
+      addTearDown(() => debugPrint = originalPrint);
+      return printed;
+    }
+
     test(
       'a refresh failure still runs core.setupConfig and preloadInvoke',
       () async {
@@ -1399,6 +1408,7 @@ void main() {
     );
 
     test('an extension push failure still applies the config', () async {
+      final printed = capturePrints();
       final profile = Profile.normal(label: 'p', url: 'http://127.0.0.1:9/');
       final core = _MockCoreHandlerInterface();
       when(() => core.setupConfig(any())).thenThrow(
@@ -1425,6 +1435,53 @@ void main() {
           .applyProfile(force: true);
 
       expect(succeeded, isTrue);
+      expect(
+        printed.any(
+          (line) =>
+              line != null &&
+              line.contains('extension did not receive the config'),
+        ),
+        isTrue,
+      );
+      verify(() => core.setupConfig(any())).called(1);
+    });
+
+    test('a restart after the apply silences the missed push log', () async {
+      final printed = capturePrints();
+      final profile = Profile.normal(label: 'p', url: 'http://127.0.0.1:9/');
+      final core = _MockCoreHandlerInterface();
+      when(() => core.setupConfig(any())).thenThrow(
+        const CoreMethodException(
+          code: 'extension_config_failed',
+          message:
+              'App core applied the config, but the extension core '
+              'did not receive it: empty_response',
+        ),
+      );
+      final scoped = ProviderContainer(
+        overrides: [
+          profilesProvider.overrideWith(() => TestProfiles([profile])),
+          currentProfileIdProvider.overrideWithBuild((_, _) => profile.id),
+          setupStateProvider.overrideWith((_, _) => nullProfileSetupState),
+          coreHandlerProvider.overrideWithValue(CoreController.scoped(core)),
+          setupActionProvider.overrideWith(SetupAction.new),
+        ],
+      );
+      addTearDown(scoped.dispose);
+
+      final succeeded = await scoped
+          .read(setupActionProvider.notifier)
+          .applyProfile(force: true, restartFollows: true);
+
+      expect(succeeded, isTrue);
+      expect(
+        printed.any(
+          (line) =>
+              line != null &&
+              line.contains('extension did not receive the config'),
+        ),
+        isFalse,
+      );
       verify(() => core.setupConfig(any())).called(1);
     });
 
