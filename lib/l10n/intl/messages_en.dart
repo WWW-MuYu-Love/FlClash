@@ -873,17 +873,28 @@ class MessageLookup extends MessageLookupByLibrary {
     "emptyTip": m31,
     "en": MessageLookupByLibrary.simpleMessage("English"),
     "enabled": MessageLookupByLibrary.simpleMessage("Enabled"),
+    "enforceRoutes": MessageLookupByLibrary.simpleMessage("Enforce Routes"),
     "entries": MessageLookupByLibrary.simpleMessage(" entries"),
     "error": MessageLookupByLibrary.simpleMessage("Error"),
     "errorDetails": MessageLookupByLibrary.simpleMessage("Error details"),
     "es": MessageLookupByLibrary.simpleMessage("Spanish"),
     "exclude": MessageLookupByLibrary.simpleMessage("Hide from recent tasks"),
+    "excludeAPNs": MessageLookupByLibrary.simpleMessage("Exclude APNs"),
+    "excludeCellularServices": MessageLookupByLibrary.simpleMessage(
+      "Exclude Cellular Services",
+    ),
+    "excludeDeviceCommunication": MessageLookupByLibrary.simpleMessage(
+      "Exclude Device Communication",
+    ),
     "excludeDstPort": MessageLookupByLibrary.simpleMessage(
       "Excluded destination ports",
     ),
     "excludeFilter": MessageLookupByLibrary.simpleMessage("Exclude filter"),
     "excludeInterface": MessageLookupByLibrary.simpleMessage(
       "Excluded interfaces",
+    ),
+    "excludeLocalNetworks": MessageLookupByLibrary.simpleMessage(
+      "Exclude Local Networks",
     ),
     "excludeSrcPort": MessageLookupByLibrary.simpleMessage(
       "Excluded source ports",
@@ -1113,6 +1124,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "importUrl": MessageLookupByLibrary.simpleMessage("Import from URL"),
     "inProgress": MessageLookupByLibrary.simpleMessage("In progress"),
     "inbound": MessageLookupByLibrary.simpleMessage("Inbound"),
+    "includeAllNetworks": MessageLookupByLibrary.simpleMessage(
+      "Include All Networks",
+    ),
     "includeInterface": MessageLookupByLibrary.simpleMessage(
       "Included interfaces",
     ),

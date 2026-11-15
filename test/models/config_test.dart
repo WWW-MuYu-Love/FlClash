@@ -395,6 +395,12 @@ void main() {
       expect(props.ipv6, false);
       expect(props.allowBypass, true);
       expect(props.dnsHijacking, false);
+      expect(props.includeAllNetworks, false);
+      expect(props.excludeLocalNetworks, true);
+      expect(props.excludeAPNs, true);
+      expect(props.excludeCellularServices, true);
+      expect(props.enforceRoutes, false);
+      expect(props.excludeDeviceCommunication, true);
       expect(props.accessControlProps.enable, false);
     });
 
@@ -412,12 +418,24 @@ void main() {
         enable: false,
         systemProxy: false,
         ipv6: true,
+        includeAllNetworks: true,
+        excludeLocalNetworks: false,
+        excludeAPNs: false,
+        excludeCellularServices: false,
+        enforceRoutes: true,
+        excludeDeviceCommunication: false,
         accessControlProps: accessControl,
       );
       final restored = roundTrip(() => props.toJson(), VpnProps.fromJson);
       expect(restored.enable, false);
       expect(restored.systemProxy, false);
       expect(restored.ipv6, true);
+      expect(restored.includeAllNetworks, true);
+      expect(restored.excludeLocalNetworks, false);
+      expect(restored.excludeAPNs, false);
+      expect(restored.excludeCellularServices, false);
+      expect(restored.enforceRoutes, true);
+      expect(restored.excludeDeviceCommunication, false);
     });
   });
 

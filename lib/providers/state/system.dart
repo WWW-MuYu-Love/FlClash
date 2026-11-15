@@ -296,6 +296,12 @@ Future<VpnOptions> vpnOptions(Ref ref) async {
     dnsHijacking: vpnSetting.dnsHijacking,
     accessControlProps: vpnSetting.accessControlProps,
     allowBypass: vpnSetting.allowBypass,
+    includeAllNetworks: vpnSetting.includeAllNetworks,
+    excludeLocalNetworks: vpnSetting.excludeLocalNetworks,
+    excludeAPNs: vpnSetting.excludeAPNs,
+    excludeCellularServices: vpnSetting.excludeCellularServices,
+    enforceRoutes: vpnSetting.enforceRoutes,
+    excludeDeviceCommunication: vpnSetting.excludeDeviceCommunication,
     bypassDomain: [
       ...networkSetting.bypassDomain,
       // MITM hosts bypass the system proxy so their traffic enters through

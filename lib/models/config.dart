@@ -378,6 +378,12 @@ abstract class VpnProps with _$VpnProps {
     @Default(false) bool ipv6,
     @Default(true) bool allowBypass,
     @Default(false) bool dnsHijacking,
+    @Default(false) bool includeAllNetworks,
+    @Default(true) bool excludeLocalNetworks,
+    @Default(true) bool excludeAPNs,
+    @Default(true) bool excludeCellularServices,
+    @Default(false) bool enforceRoutes,
+    @Default(true) bool excludeDeviceCommunication,
     @Default(defaultAccessControlProps) AccessControlProps accessControlProps,
   }) = _VpnProps;
 
@@ -415,16 +421,14 @@ abstract class NetworkProps with _$NetworkProps {
     @Default(defaultAuthenticationProps) AuthenticationProps authentication,
   }) = _NetworkProps;
 
-  factory NetworkProps.fromJson(Map<String, Object?>? json) {
-    if (json == null) {
-      return const NetworkProps();
-    }
-    final props = _$NetworkPropsFromJson(json);
-    if (listEquals(props.bypassDomain, legacyDefaultBypassDomain)) {
-      return props.copyWith(bypassDomain: defaultBypassDomain);
-    }
-    return props;
-  }
+  factory NetworkProps.fromJson(Map<String, Object?>? json) => json == null
+      ? const NetworkProps()
+      : _migrateBypassDomain(_$NetworkPropsFromJson(json));
+
+  static NetworkProps _migrateBypassDomain(NetworkProps props) =>
+      listEquals(props.bypassDomain, legacyDefaultBypassDomain)
+      ? props.copyWith(bypassDomain: defaultBypassDomain)
+      : props;
 }
 
 /// Reads the styles named `standard`, `icon` and `none` before they became

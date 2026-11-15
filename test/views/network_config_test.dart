@@ -50,6 +50,40 @@ final _toggleCases = <_ToggleCase>[
     initial: true,
   ),
   _ToggleCase(
+    'include all networks',
+    const IncludeAllNetworksItem(),
+    (c) => c.read(vpnSettingProvider).includeAllNetworks,
+  ),
+  _ToggleCase(
+    'exclude local networks',
+    const ExcludeLocalNetworksItem(),
+    (c) => c.read(vpnSettingProvider).excludeLocalNetworks,
+    initial: true,
+  ),
+  _ToggleCase(
+    'exclude APNs',
+    const ExcludeAPNsItem(),
+    (c) => c.read(vpnSettingProvider).excludeAPNs,
+    initial: true,
+  ),
+  _ToggleCase(
+    'exclude cellular services',
+    const ExcludeCellularServicesItem(),
+    (c) => c.read(vpnSettingProvider).excludeCellularServices,
+    initial: true,
+  ),
+  _ToggleCase(
+    'enforce routes',
+    const EnforceRoutesItem(),
+    (c) => c.read(vpnSettingProvider).enforceRoutes,
+  ),
+  _ToggleCase(
+    'exclude device communication',
+    const ExcludeDeviceCommunicationItem(),
+    (c) => c.read(vpnSettingProvider).excludeDeviceCommunication,
+    initial: true,
+  ),
+  _ToggleCase(
     'system proxy',
     const SystemProxyItem(),
     (c) => c.read(networkSettingProvider).systemProxy,
@@ -189,6 +223,38 @@ void main() {
         types(isDesktop: true, isCustomInterfaceName: false),
         isNot(contains(InterfaceNameItem)),
       );
+    });
+  });
+
+  group('vpn section items', () {
+    List<Type> types({required bool isIOS}) =>
+        vpnSectionItems(isIOS: isIOS).map((item) => item.runtimeType).toList();
+
+    test('the iOS tunnel options appear only on iOS', () {
+      expect(types(isIOS: true), contains(IncludeAllNetworksItem));
+      expect(types(isIOS: true), contains(ExcludeLocalNetworksItem));
+      expect(types(isIOS: true), contains(ExcludeAPNsItem));
+      expect(types(isIOS: true), contains(ExcludeCellularServicesItem));
+      expect(types(isIOS: true), contains(EnforceRoutesItem));
+      expect(types(isIOS: true), contains(ExcludeDeviceCommunicationItem));
+
+      final androidTypes = types(isIOS: false);
+      expect(androidTypes, isNot(contains(IncludeAllNetworksItem)));
+      expect(androidTypes, isNot(contains(ExcludeLocalNetworksItem)));
+      expect(androidTypes, isNot(contains(ExcludeAPNsItem)));
+      expect(androidTypes, isNot(contains(ExcludeCellularServicesItem)));
+      expect(androidTypes, isNot(contains(EnforceRoutesItem)));
+      expect(androidTypes, isNot(contains(ExcludeDeviceCommunicationItem)));
+    });
+
+    test('the base VPN rows are always listed', () {
+      for (final isIOS in [true, false]) {
+        expect(types(isIOS: isIOS), contains(VpnSystemProxyItem));
+        expect(types(isIOS: isIOS), contains(BypassDomainItem));
+        expect(types(isIOS: isIOS), contains(AllowBypassItem));
+        expect(types(isIOS: isIOS), contains(Ipv6Item));
+        expect(types(isIOS: isIOS), contains(DNSHijackingItem));
+      }
     });
   });
 

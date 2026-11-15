@@ -336,6 +336,13 @@ _VpnOptions _$VpnOptionsFromJson(Map<String, dynamic> json) => _VpnOptions(
     json['accessControlProps'] as Map<String, dynamic>,
   ),
   allowBypass: json['allowBypass'] as bool,
+  includeAllNetworks: json['includeAllNetworks'] as bool? ?? false,
+  excludeLocalNetworks: json['excludeLocalNetworks'] as bool? ?? true,
+  excludeAPNs: json['excludeAPNs'] as bool? ?? true,
+  excludeCellularServices: json['excludeCellularServices'] as bool? ?? true,
+  enforceRoutes: json['enforceRoutes'] as bool? ?? false,
+  excludeDeviceCommunication:
+      json['excludeDeviceCommunication'] as bool? ?? true,
   systemProxy: json['systemProxy'] as bool,
   bypassDomain: (json['bypassDomain'] as List<dynamic>)
       .map((e) => e as String)
@@ -358,6 +365,12 @@ Map<String, dynamic> _$VpnOptionsToJson(_VpnOptions instance) =>
       'dnsHijacking': instance.dnsHijacking,
       'accessControlProps': instance.accessControlProps,
       'allowBypass': instance.allowBypass,
+      'includeAllNetworks': instance.includeAllNetworks,
+      'excludeLocalNetworks': instance.excludeLocalNetworks,
+      'excludeAPNs': instance.excludeAPNs,
+      'excludeCellularServices': instance.excludeCellularServices,
+      'enforceRoutes': instance.enforceRoutes,
+      'excludeDeviceCommunication': instance.excludeDeviceCommunication,
       'systemProxy': instance.systemProxy,
       'bypassDomain': instance.bypassDomain,
       'stack': instance.stack,

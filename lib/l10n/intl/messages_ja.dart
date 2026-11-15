@@ -734,14 +734,25 @@ class MessageLookup extends MessageLookupByLibrary {
     "emptyTip": m31,
     "en": MessageLookupByLibrary.simpleMessage("英語"),
     "enabled": MessageLookupByLibrary.simpleMessage("有効"),
+    "enforceRoutes": MessageLookupByLibrary.simpleMessage("ルートを強制"),
     "entries": MessageLookupByLibrary.simpleMessage(" 件"),
     "error": MessageLookupByLibrary.simpleMessage("エラー"),
     "errorDetails": MessageLookupByLibrary.simpleMessage("エラーの詳細"),
     "es": MessageLookupByLibrary.simpleMessage("スペイン語"),
     "exclude": MessageLookupByLibrary.simpleMessage("最近のタスクから隠す"),
+    "excludeAPNs": MessageLookupByLibrary.simpleMessage("APN を除外"),
+    "excludeCellularServices": MessageLookupByLibrary.simpleMessage(
+      "モバイル通信サービスを除外",
+    ),
+    "excludeDeviceCommunication": MessageLookupByLibrary.simpleMessage(
+      "デバイス間通信を除外",
+    ),
     "excludeDstPort": MessageLookupByLibrary.simpleMessage("除外宛先ポート"),
     "excludeFilter": MessageLookupByLibrary.simpleMessage("除外フィルター"),
     "excludeInterface": MessageLookupByLibrary.simpleMessage("除外インターフェース"),
+    "excludeLocalNetworks": MessageLookupByLibrary.simpleMessage(
+      "ローカルネットワークを除外",
+    ),
     "excludeSrcPort": MessageLookupByLibrary.simpleMessage("除外送信元ポート"),
     "excludeSsids": MessageLookupByLibrary.simpleMessage("除外SSID"),
     "excludeSsidsDesc": MessageLookupByLibrary.simpleMessage(
@@ -946,6 +957,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "importUrl": MessageLookupByLibrary.simpleMessage("URLからインポート"),
     "inProgress": MessageLookupByLibrary.simpleMessage("進行中"),
     "inbound": MessageLookupByLibrary.simpleMessage("インバウンド"),
+    "includeAllNetworks": MessageLookupByLibrary.simpleMessage(
+      "すべてのネットワークを含める",
+    ),
     "includeInterface": MessageLookupByLibrary.simpleMessage("対象インターフェース"),
     "includeInterfaceDesc": MessageLookupByLibrary.simpleMessage(
       "対象インターフェースから入る通信だけが TUN を通り、除外インターフェースは無効になります。",

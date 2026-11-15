@@ -167,6 +167,85 @@ class DNSHijackingItem extends ConsumerWidget {
   }
 }
 
+class IncludeAllNetworksItem extends ConsumerWidget {
+  const IncludeAllNetworksItem({super.key});
+
+  @override
+  Widget build(BuildContext context, ref) {
+    return _vpnToggle(
+      title: (l) => l.includeAllNetworks,
+      select: (state) => state.includeAllNetworks,
+      update: (state, value) => state.copyWith(includeAllNetworks: value),
+    );
+  }
+}
+
+class ExcludeLocalNetworksItem extends ConsumerWidget {
+  const ExcludeLocalNetworksItem({super.key});
+
+  @override
+  Widget build(BuildContext context, ref) {
+    return _vpnToggle(
+      title: (l) => l.excludeLocalNetworks,
+      select: (state) => state.excludeLocalNetworks,
+      update: (state, value) => state.copyWith(excludeLocalNetworks: value),
+    );
+  }
+}
+
+class ExcludeAPNsItem extends ConsumerWidget {
+  const ExcludeAPNsItem({super.key});
+
+  @override
+  Widget build(BuildContext context, ref) {
+    return _vpnToggle(
+      title: (l) => l.excludeAPNs,
+      select: (state) => state.excludeAPNs,
+      update: (state, value) => state.copyWith(excludeAPNs: value),
+    );
+  }
+}
+
+class ExcludeCellularServicesItem extends ConsumerWidget {
+  const ExcludeCellularServicesItem({super.key});
+
+  @override
+  Widget build(BuildContext context, ref) {
+    return _vpnToggle(
+      title: (l) => l.excludeCellularServices,
+      select: (state) => state.excludeCellularServices,
+      update: (state, value) => state.copyWith(excludeCellularServices: value),
+    );
+  }
+}
+
+class EnforceRoutesItem extends ConsumerWidget {
+  const EnforceRoutesItem({super.key});
+
+  @override
+  Widget build(BuildContext context, ref) {
+    return _vpnToggle(
+      title: (l) => l.enforceRoutes,
+      select: (state) => state.enforceRoutes,
+      update: (state, value) => state.copyWith(enforceRoutes: value),
+    );
+  }
+}
+
+class ExcludeDeviceCommunicationItem extends ConsumerWidget {
+  const ExcludeDeviceCommunicationItem({super.key});
+
+  @override
+  Widget build(BuildContext context, ref) {
+    return _vpnToggle(
+      title: (l) => l.excludeDeviceCommunication,
+      select: (state) => state.excludeDeviceCommunication,
+      update: (state, value) =>
+          state.copyWith(excludeDeviceCommunication: value),
+    );
+  }
+}
+
 class TunStackItem extends ConsumerWidget {
   const TunStackItem({super.key});
 
@@ -471,8 +550,29 @@ List<Widget> networkOptionsItems({
   ];
 }
 
+List<Widget> vpnSectionItems({required bool isIOS}) {
+  return [
+    const VpnSystemProxyItem(),
+    const BypassDomainItem(),
+    const AllowBypassItem(),
+    const Ipv6Item(),
+    const DNSHijackingItem(),
+    // The exclusions below only take effect with include-all-networks on.
+    if (isIOS) ...[
+      const IncludeAllNetworksItem(),
+      const ExcludeLocalNetworksItem(),
+      const ExcludeAPNsItem(),
+      const ExcludeCellularServicesItem(),
+      const EnforceRoutesItem(),
+      const ExcludeDeviceCommunicationItem(),
+    ],
+  ];
+}
+
 class VpnSections extends ConsumerWidget {
-  const VpnSections({super.key});
+  const VpnSections({super.key, required this.isIOS});
+
+  final bool isIOS;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -485,13 +585,7 @@ class VpnSections extends ConsumerWidget {
         generateSection(items: const [VPNItem()]),
         generateSection(
           title: 'VPN',
-          items: const [
-            VpnSystemProxyItem(),
-            BypassDomainItem(),
-            AllowBypassItem(),
-            Ipv6Item(),
-            DNSHijackingItem(),
-          ],
+          items: vpnSectionItems(isIOS: isIOS),
           footer: [
             if (authenticationEnable)
               appLocalizations.authenticationSystemProxyDesc,
@@ -554,7 +648,7 @@ class NetworkListView extends StatelessWidget {
         bottom: 16 + context.bottomInset,
       ),
       children: [
-        if (system.isMobile) const VpnSections(),
+        if (system.isMobile) VpnSections(isIOS: system.isIOS),
         if (system.isDesktop) const SystemProxySection(),
         const NetworkOptionsSection(),
         TunSection(

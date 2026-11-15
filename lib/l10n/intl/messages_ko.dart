@@ -726,14 +726,23 @@ class MessageLookup extends MessageLookupByLibrary {
     "emptyTip": m31,
     "en": MessageLookupByLibrary.simpleMessage("영어"),
     "enabled": MessageLookupByLibrary.simpleMessage("사용"),
+    "enforceRoutes": MessageLookupByLibrary.simpleMessage("라우트 강제"),
     "entries": MessageLookupByLibrary.simpleMessage("개 항목"),
     "error": MessageLookupByLibrary.simpleMessage("오류"),
     "errorDetails": MessageLookupByLibrary.simpleMessage("오류 세부 정보"),
     "es": MessageLookupByLibrary.simpleMessage("스페인어"),
     "exclude": MessageLookupByLibrary.simpleMessage("최근 작업에서 숨기기"),
+    "excludeAPNs": MessageLookupByLibrary.simpleMessage("APN 제외"),
+    "excludeCellularServices": MessageLookupByLibrary.simpleMessage(
+      "셀룰러 서비스 제외",
+    ),
+    "excludeDeviceCommunication": MessageLookupByLibrary.simpleMessage(
+      "기기 간 통신 제외",
+    ),
     "excludeDstPort": MessageLookupByLibrary.simpleMessage("제외할 대상 포트"),
     "excludeFilter": MessageLookupByLibrary.simpleMessage("제외 필터"),
     "excludeInterface": MessageLookupByLibrary.simpleMessage("제외할 인터페이스"),
+    "excludeLocalNetworks": MessageLookupByLibrary.simpleMessage("로컬 네트워크 제외"),
     "excludeSrcPort": MessageLookupByLibrary.simpleMessage("제외할 소스 포트"),
     "excludeSsids": MessageLookupByLibrary.simpleMessage("제외할 SSID"),
     "excludeSsidsDesc": MessageLookupByLibrary.simpleMessage(
@@ -936,6 +945,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "importUrl": MessageLookupByLibrary.simpleMessage("URL에서 가져오기"),
     "inProgress": MessageLookupByLibrary.simpleMessage("진행 중"),
     "inbound": MessageLookupByLibrary.simpleMessage("인바운드"),
+    "includeAllNetworks": MessageLookupByLibrary.simpleMessage("모든 네트워크 포함"),
     "includeInterface": MessageLookupByLibrary.simpleMessage("포함할 인터페이스"),
     "includeInterfaceDesc": MessageLookupByLibrary.simpleMessage(
       "포함할 인터페이스로 들어오는 트래픽만 TUN을 거치며, 제외할 인터페이스는 더 이상 적용되지 않습니다.",

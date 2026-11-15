@@ -592,6 +592,29 @@ void main() {
     expect(vpn.bypassDomain, ['localhost', 'example.com']);
   });
 
+  test('iOS tunnel options pass through to the VPN options', () async {
+    container
+        .read(vpnSettingProvider.notifier)
+        .update(
+          (state) => state.copyWith(
+            includeAllNetworks: true,
+            excludeLocalNetworks: false,
+            excludeAPNs: false,
+            excludeCellularServices: false,
+            enforceRoutes: true,
+            excludeDeviceCommunication: false,
+          ),
+        );
+
+    final vpn = await container.read(vpnOptionsProvider.future);
+    expect(vpn.includeAllNetworks, isTrue);
+    expect(vpn.excludeLocalNetworks, isFalse);
+    expect(vpn.excludeAPNs, isFalse);
+    expect(vpn.excludeCellularServices, isFalse);
+    expect(vpn.enforceRoutes, isTrue);
+    expect(vpn.excludeDeviceCommunication, isFalse);
+  });
+
   test(
     'an excluded SSID set to direct keeps the tunnel up instead of suspending',
     () {

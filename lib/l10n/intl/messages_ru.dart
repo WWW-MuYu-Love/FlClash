@@ -904,17 +904,30 @@ class MessageLookup extends MessageLookupByLibrary {
     "emptyTip": m31,
     "en": MessageLookupByLibrary.simpleMessage("Английский"),
     "enabled": MessageLookupByLibrary.simpleMessage("Включено"),
+    "enforceRoutes": MessageLookupByLibrary.simpleMessage(
+      "Принудительные маршруты",
+    ),
     "entries": MessageLookupByLibrary.simpleMessage(" записей"),
     "error": MessageLookupByLibrary.simpleMessage("Ошибка"),
     "errorDetails": MessageLookupByLibrary.simpleMessage("Подробности ошибки"),
     "es": MessageLookupByLibrary.simpleMessage("Испанский"),
     "exclude": MessageLookupByLibrary.simpleMessage("Скрыть из недавних задач"),
+    "excludeAPNs": MessageLookupByLibrary.simpleMessage("Исключать APN"),
+    "excludeCellularServices": MessageLookupByLibrary.simpleMessage(
+      "Исключать сотовые службы",
+    ),
+    "excludeDeviceCommunication": MessageLookupByLibrary.simpleMessage(
+      "Исключать связь между устройствами",
+    ),
     "excludeDstPort": MessageLookupByLibrary.simpleMessage(
       "Исключённые порты назначения",
     ),
     "excludeFilter": MessageLookupByLibrary.simpleMessage("Фильтр исключения"),
     "excludeInterface": MessageLookupByLibrary.simpleMessage(
       "Исключённые интерфейсы",
+    ),
+    "excludeLocalNetworks": MessageLookupByLibrary.simpleMessage(
+      "Исключать локальные сети",
     ),
     "excludeSrcPort": MessageLookupByLibrary.simpleMessage(
       "Исключённые исходные порты",
@@ -1154,6 +1167,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "importUrl": MessageLookupByLibrary.simpleMessage("Импорт по URL"),
     "inProgress": MessageLookupByLibrary.simpleMessage("Выполняется"),
     "inbound": MessageLookupByLibrary.simpleMessage("Входящие"),
+    "includeAllNetworks": MessageLookupByLibrary.simpleMessage(
+      "Включать все сети",
+    ),
     "includeInterface": MessageLookupByLibrary.simpleMessage(
       "Включённые интерфейсы",
     ),

@@ -927,6 +927,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "emptyTip": m31,
     "en": MessageLookupByLibrary.simpleMessage("Anglais"),
     "enabled": MessageLookupByLibrary.simpleMessage("Activé"),
+    "enforceRoutes": MessageLookupByLibrary.simpleMessage("Forcer les routes"),
     "entries": MessageLookupByLibrary.simpleMessage(" entrées"),
     "error": MessageLookupByLibrary.simpleMessage("Erreur"),
     "errorDetails": MessageLookupByLibrary.simpleMessage("Détails de l’erreur"),
@@ -934,12 +935,22 @@ class MessageLookup extends MessageLookupByLibrary {
     "exclude": MessageLookupByLibrary.simpleMessage(
       "Masquer des tâches récentes",
     ),
+    "excludeAPNs": MessageLookupByLibrary.simpleMessage("Exclure les APN"),
+    "excludeCellularServices": MessageLookupByLibrary.simpleMessage(
+      "Exclure les services cellulaires",
+    ),
+    "excludeDeviceCommunication": MessageLookupByLibrary.simpleMessage(
+      "Exclure la communication entre appareils",
+    ),
     "excludeDstPort": MessageLookupByLibrary.simpleMessage(
       "Ports de destination exclus",
     ),
     "excludeFilter": MessageLookupByLibrary.simpleMessage("Filtre d’exclusion"),
     "excludeInterface": MessageLookupByLibrary.simpleMessage(
       "Interfaces exclues",
+    ),
+    "excludeLocalNetworks": MessageLookupByLibrary.simpleMessage(
+      "Exclure les réseaux locaux",
     ),
     "excludeSrcPort": MessageLookupByLibrary.simpleMessage(
       "Ports source exclus",
@@ -1193,6 +1204,9 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "inProgress": MessageLookupByLibrary.simpleMessage("En cours"),
     "inbound": MessageLookupByLibrary.simpleMessage("Entrant"),
+    "includeAllNetworks": MessageLookupByLibrary.simpleMessage(
+      "Inclure tous les réseaux",
+    ),
     "includeInterface": MessageLookupByLibrary.simpleMessage(
       "Interfaces incluses",
     ),

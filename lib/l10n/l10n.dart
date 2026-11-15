@@ -6834,6 +6834,66 @@ class AppLocalizations {
     );
   }
 
+  /// `Include All Networks`
+  String get includeAllNetworks {
+    return Intl.message(
+      'Include All Networks',
+      name: 'includeAllNetworks',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Exclude Local Networks`
+  String get excludeLocalNetworks {
+    return Intl.message(
+      'Exclude Local Networks',
+      name: 'excludeLocalNetworks',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Exclude APNs`
+  String get excludeAPNs {
+    return Intl.message(
+      'Exclude APNs',
+      name: 'excludeAPNs',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Exclude Cellular Services`
+  String get excludeCellularServices {
+    return Intl.message(
+      'Exclude Cellular Services',
+      name: 'excludeCellularServices',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Enforce Routes`
+  String get enforceRoutes {
+    return Intl.message(
+      'Enforce Routes',
+      name: 'enforceRoutes',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Exclude Device Communication`
+  String get excludeDeviceCommunication {
+    return Intl.message(
+      'Exclude Device Communication',
+      name: 'excludeDeviceCommunication',
+      desc: '',
+      args: [],
+    );
+  }
+
   /// `Included interfaces`
   String get includeInterface {
     return Intl.message(
