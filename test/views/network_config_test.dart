@@ -254,7 +254,9 @@ void main() {
 
   group('vpn section items', () {
     test('the VPN section lists only the base rows', () {
-      final types = vpnSectionItems().map((item) => item.runtimeType).toList();
+      final types = vpnSectionItems(
+        isIOS: false,
+      ).map((item) => item.runtimeType).toList();
       expect(types, contains(VpnSystemProxyItem));
       expect(types, contains(BypassDomainItem));
       expect(types, contains(AllowBypassItem));
@@ -266,6 +268,17 @@ void main() {
       expect(types, isNot(contains(ExcludeCellularServicesItem)));
       expect(types, isNot(contains(EnforceRoutesItem)));
       expect(types, isNot(contains(ExcludeDeviceCommunicationItem)));
+    });
+
+    test('iOS hides the allow-bypass row the extension never reads', () {
+      final types = vpnSectionItems(
+        isIOS: true,
+      ).map((item) => item.runtimeType).toList();
+      expect(types, contains(VpnSystemProxyItem));
+      expect(types, contains(BypassDomainItem));
+      expect(types, isNot(contains(AllowBypassItem)));
+      expect(types, contains(Ipv6Item));
+      expect(types, contains(DNSHijackingItem));
     });
 
     test('the iOS tunnel section lists the six tunnel options', () {

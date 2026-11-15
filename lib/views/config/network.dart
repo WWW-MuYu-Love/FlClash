@@ -625,13 +625,14 @@ List<Widget> networkOptionsItems({
   ];
 }
 
-List<Widget> vpnSectionItems() {
-  return const [
-    VpnSystemProxyItem(),
-    BypassDomainItem(),
-    AllowBypassItem(),
-    Ipv6Item(),
-    DNSHijackingItem(),
+List<Widget> vpnSectionItems({required bool isIOS}) {
+  return [
+    const VpnSystemProxyItem(),
+    const BypassDomainItem(),
+    // The iOS extension never reads allow-bypass (no per-app bypass API).
+    if (!isIOS) const AllowBypassItem(),
+    const Ipv6Item(),
+    const DNSHijackingItem(),
   ];
 }
 
@@ -663,7 +664,7 @@ class VpnSections extends ConsumerWidget {
         generateSection(items: const [VPNItem()]),
         generateSection(
           title: 'VPN',
-          items: vpnSectionItems(),
+          items: vpnSectionItems(isIOS: isIOS),
           footer: [
             if (authenticationEnable)
               appLocalizations.authenticationSystemProxyDesc,
