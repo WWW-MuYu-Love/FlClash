@@ -397,12 +397,15 @@ void main() {
     );
 
     test(
-      'applies the selection through 9090 when the Core does not answer',
+      'applies the selection through 9090 and syncs it to the App core',
       () async {
         final externalController = MockExternalControllerClient();
         when(
           () => externalController.selectProxy(any(), any()),
         ).thenAnswer((_) async => true);
+        when(
+          () => core.changeProxy(any(), route: CoreRoute.app),
+        ).thenAnswer((_) async => const ChangeProxyResult(changed: true));
         final container = runningVpnContainer(
           profile: _selectedProfile('HK-00'),
           externalController: externalController,
@@ -415,10 +418,37 @@ void main() {
         expect(container.read(currentProfileProvider)?.selectedMap, {
           'Proxy': 'HK-01',
         });
-        verifyNever(() => core.changeProxy(any(), route: CoreRoute.app));
+        verify(
+          () => core.changeProxy(
+            const ChangeProxyParams(groupName: 'Proxy', proxyName: 'HK-01'),
+            route: CoreRoute.app,
+          ),
+        ).called(1);
         verifyNever(() => core.changeProxy(any()));
       },
     );
+
+    test('a failing App core sync does not fail the switch', () async {
+      final externalController = MockExternalControllerClient();
+      when(
+        () => externalController.selectProxy(any(), any()),
+      ).thenAnswer((_) async => true);
+      when(
+        () => core.changeProxy(any(), route: CoreRoute.app),
+      ).thenThrow(StateError('core down'));
+      final container = runningVpnContainer(
+        profile: _selectedProfile('HK-00'),
+        externalController: externalController,
+      );
+
+      await actionOf(
+        container,
+      ).changeProxy(groupName: 'Proxy', proxyName: 'HK-01');
+
+      expect(container.read(currentProfileProvider)?.selectedMap, {
+        'Proxy': 'HK-01',
+      });
+    });
 
     test('rolls the selection back when 9090 does not apply it', () async {
       final externalController = MockExternalControllerClient();

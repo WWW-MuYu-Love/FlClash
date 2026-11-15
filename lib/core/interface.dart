@@ -130,8 +130,12 @@ abstract class CoreHandlerInterface {
     return _command(CoreMethod.configSetup, arguments: params.toJson());
   }
 
-  Future<void> updateConfig(UpdateParams params) {
-    return _command(CoreMethod.configUpdate, arguments: params.toJson());
+  Future<void> updateConfig(UpdateParams params, {CoreRoute? route}) {
+    return _command(
+      CoreMethod.configUpdate,
+      arguments: params.toJson(),
+      route: route,
+    );
   }
 
   Future<String?> validateConfig(String path) {

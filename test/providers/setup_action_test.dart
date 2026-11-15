@@ -1023,6 +1023,12 @@ void main() {
         expect(params.mode, Mode.direct);
         expect(params.secret, 'abc');
         expect(params.externalController, ExternalControllerStatus.open);
+        final mirrored =
+            verify(
+                  () => core.updateConfig(captureAny(), route: CoreRoute.app),
+                ).captured.single
+                as UpdateParams;
+        expect(mirrored.mode, Mode.direct);
       },
     );
 
@@ -1077,6 +1083,9 @@ void main() {
           ),
           isTrue,
         );
+        // The XPC failure must not skip the App core mirror: the probes
+        // ask the App core, so its mode still has to follow.
+        verify(() => core.updateConfig(any(), route: CoreRoute.app)).called(1);
       },
     );
 
@@ -1110,6 +1119,7 @@ void main() {
 
       verifyNever(() => patchScope.externalController.patchConfigs(any()));
       verify(() => core.updateConfig(any())).called(1);
+      verifyNever(() => core.updateConfig(any(), route: CoreRoute.app));
     });
 
     test('skips the patch while the external controller is closed', () async {

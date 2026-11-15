@@ -517,6 +517,18 @@ class ProxiesAction extends _$ProxiesAction {
           .read(externalControllerClientProvider)
           .selectProxy(params.groupName, params.proxyName);
       if (applied) {
+        // The status and service probes ask the App core, which keeps its
+        // own selection, so mirror the switch there too: its route change
+        // is what re-runs the probes on the new node. A failure only
+        // leaves the probes on the old node; the switch itself stands.
+        try {
+          await _core.changeProxy(params, route: CoreRoute.app);
+        } catch (error) {
+          commonPrint.log(
+            'changeProxy(${params.groupName} -> ${params.proxyName}) app core sync failed: $error',
+            logLevel: LogLevel.warning,
+          );
+        }
         return (
           result: const ChangeProxyResult(changed: true),
           appliedToRoutingCore: true,

@@ -464,9 +464,23 @@ class SetupAction extends _$SetupAction {
             'delivered: ${error.message}',
             logLevel: LogLevel.warning,
           );
-          return;
+        } else {
+          rethrow;
         }
-        rethrow;
+      }
+      // The routed call above reached the extension only while the tunnel
+      // is up, but the status and service probes ask the App core: mirror
+      // the UpdateParams there so its mode follows the switch. A failure
+      // only leaves the probes on the old mode.
+      if (ref.read(runningVpnOptionsProvider)?.enable == true) {
+        try {
+          await _core.updateConfig(params, route: CoreRoute.app);
+        } catch (error) {
+          commonPrint.log(
+            'updateConfig: app core sync failed: $error',
+            logLevel: LogLevel.warning,
+          );
+        }
       }
     });
   }
