@@ -361,11 +361,20 @@ class SetupAction extends _$SetupAction {
     await setRunning(true);
   }
 
+  @visibleForTesting
+  bool get isIOSHandover => system.isIOS;
+
+  @visibleForTesting
+  Duration get tunnelSettleTimeout => const Duration(seconds: 3);
+
+  @visibleForTesting
+  Duration get tunnelSettlePollInterval => const Duration(milliseconds: 100);
+
   /// iOS only: move just the listeners across a VPN-switch flip, while the
   /// Core keeps running. False off iOS, where the switch still needs a
   /// service restart.
   Future<bool> setTunnelEnabled(bool enable) async {
-    if (!system.isIOS) {
+    if (!isIOSHandover) {
       return false;
     }
     return _listenerScheduler.run(() async {
@@ -379,10 +388,29 @@ class SetupAction extends _$SetupAction {
       if (enable) {
         // The extension reads the shared state when the tunnel starts.
         await _syncSharedState();
+      } else {
+        await _waitForTunnelStopped();
       }
       await setCoreRunning(true);
       return true;
     });
+  }
+
+  Future<void> _waitForTunnelStopped() async {
+    if (ref.read(tunnelStateProvider) == TunnelState.disconnected) {
+      return;
+    }
+    final deadline = DateTime.now().add(tunnelSettleTimeout);
+    while (ref.read(tunnelStateProvider) != TunnelState.disconnected) {
+      if (DateTime.now().isAfter(deadline)) {
+        commonPrint.log(
+          'tunnel settle timed out; handing listeners over anyway',
+          logLevel: LogLevel.warning,
+        );
+        return;
+      }
+      await Future.delayed(tunnelSettlePollInterval);
+    }
   }
 
   void _rollbackRunning(_RunRequest request) {

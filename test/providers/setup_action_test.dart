@@ -10,6 +10,7 @@ import 'package:fl_clash/core/spill.dart';
 import 'package:fl_clash/enum/enum.dart';
 import 'package:fl_clash/l10n/l10n.dart';
 import 'package:fl_clash/models/models.dart';
+import 'package:fl_clash/plugins/service.dart';
 import 'package:fl_clash/providers/action.dart';
 import 'package:fl_clash/providers/app.dart';
 import 'package:fl_clash/providers/config.dart';
@@ -66,6 +67,24 @@ class _UnflooredDebounceSetupAction extends SetupAction {
 class _CappedDebounceSetupAction extends _UnflooredDebounceSetupAction {
   @override
   Duration get maxApplyDebounce => const Duration(milliseconds: 300);
+}
+
+class _TunnelStateNotifier extends Notifier<TunnelState?> {
+  @override
+  TunnelState? build() => null;
+
+  void set(TunnelState? value) => state = value;
+}
+
+class _IOSHandoverSetupAction extends TestSetupAction {
+  @override
+  bool get isIOSHandover => true;
+
+  @override
+  Duration get tunnelSettleTimeout => const Duration(milliseconds: 50);
+
+  @override
+  Duration get tunnelSettlePollInterval => const Duration(milliseconds: 5);
 }
 
 class TestCommonAction extends CommonAction {
@@ -2404,5 +2423,74 @@ void main() {
         verify(() => core.setupConfig(any())).called(1);
       },
     );
+  });
+
+  group('setTunnelEnabled iOS handover', () {
+    late _IOSHandoverSetupAction handoverAction;
+    late _TunnelStateNotifier tunnelState;
+
+    ProviderContainer buildScopedContainer() {
+      handoverAction = _IOSHandoverSetupAction();
+      final tunnelStateOverride =
+          NotifierProvider<_TunnelStateNotifier, TunnelState?>(
+            _TunnelStateNotifier.new,
+          );
+      final scoped = ProviderContainer(
+        overrides: [
+          profilesProvider.overrideWith(TestProfiles.new),
+          setupActionProvider.overrideWith(() => handoverAction),
+          commonActionProvider.overrideWith(TestCommonAction.new),
+          tunnelStateProvider.overrideWith(
+            (ref) => ref.watch(tunnelStateOverride),
+          ),
+        ],
+      );
+      addTearDown(scoped.dispose);
+      globalState.container = scoped;
+      scoped.read(setupActionProvider.notifier);
+      tunnelState = scoped.read(tunnelStateOverride.notifier);
+      return scoped;
+    }
+
+    Future<void> startCore() async {
+      await handoverAction.setRunning(true, initialize: true);
+      handoverAction.coreRunningCalls.clear();
+    }
+
+    test(
+      'waits for the tunnel to stop before handing listeners over',
+      () async {
+        final scoped = buildScopedContainer();
+        await startCore();
+        tunnelState.set(TunnelState.connected);
+
+        final handover = handoverAction.setTunnelEnabled(false);
+        await Future.delayed(const Duration(milliseconds: 20));
+        expect(handoverAction.coreRunningCalls, [false]);
+
+        tunnelState.set(TunnelState.disconnected);
+        expect(await handover, isTrue);
+        expect(handoverAction.coreRunningCalls, [false, true]);
+        expect(scoped.read(runTimeProvider), isNotNull);
+      },
+    );
+
+    test('hands over at once when the tunnel is already stopped', () async {
+      buildScopedContainer();
+      await startCore();
+      tunnelState.set(TunnelState.disconnected);
+
+      expect(await handoverAction.setTunnelEnabled(false), isTrue);
+      expect(handoverAction.coreRunningCalls, [false, true]);
+    });
+
+    test('hands over anyway when the tunnel never settles', () async {
+      buildScopedContainer();
+      await startCore();
+      tunnelState.set(TunnelState.connected);
+
+      expect(await handoverAction.setTunnelEnabled(false), isTrue);
+      expect(handoverAction.coreRunningCalls, [false, true]);
+    });
   });
 }
