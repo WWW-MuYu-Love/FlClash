@@ -286,6 +286,42 @@ func TestLoadSetupConfigReadsConfigYamlWithoutABase(t *testing.T) {
 	}
 }
 
+func TestLoadSetupConfigFallsBackToTheLastMergedConfigWhenTheBaseIsUnreadable(t *testing.T) {
+	home := t.TempDir()
+	previous := constant.Path.HomeDir()
+	constant.SetHomeDir(home)
+	t.Cleanup(func() { constant.SetHomeDir(previous) })
+	profile := "rules:\n  - MATCH,REJECT\n"
+	if err := os.WriteFile(filepath.Join(home, "config.yaml"), []byte(profile), 0o600); err != nil {
+		t.Fatalf("write config: %v", err)
+	}
+
+	cfg, err := loadSetupConfig(&SetupParams{Base: &SetupBase{Path: filepath.Join(home, "missing.yaml"), Overlay: "{}"}})
+
+	if err != nil {
+		t.Fatalf("loadSetupConfig = %v", err)
+	}
+	if got := ruleStrings(cfg); !reflect.DeepEqual(got, []string{"Match,,REJECT"}) {
+		t.Errorf("rules = %v, want config.yaml's", got)
+	}
+}
+
+func TestLoadSetupConfigKeepsTheBaseErrorWhenTheLastMergedConfigIsMissing(t *testing.T) {
+	home := t.TempDir()
+	previous := constant.Path.HomeDir()
+	constant.SetHomeDir(home)
+	t.Cleanup(func() { constant.SetHomeDir(previous) })
+
+	_, err := loadSetupConfig(&SetupParams{Base: &SetupBase{Path: filepath.Join(home, "missing.yaml"), Overlay: "{}"}})
+
+	if err == nil {
+		t.Fatal("loadSetupConfig succeeded without a base or a merged config")
+	}
+	if !strings.Contains(err.Error(), "missing.yaml") {
+		t.Errorf("err = %v, want the base read error", err)
+	}
+}
+
 func TestHandleGetProxyDefinitionReadsTheRunningConfig(t *testing.T) {
 	home := t.TempDir()
 	previous := constant.Path.HomeDir()

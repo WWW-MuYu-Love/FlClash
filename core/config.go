@@ -134,7 +134,19 @@ func runningConfigPath() string {
 func loadSetupConfig(params *SetupParams) (*config.Config, error) {
 	path := runningConfigPath()
 	if params.Base != nil {
-		return loadConfigWithBase(params.Base, path)
+		cfg, baseErr := loadConfigWithBase(params.Base, path)
+		if baseErr == nil {
+			return cfg, nil
+		}
+		// An external start reuses the saved setup params, whose base
+		// path the extension cannot read (it lives in the app's
+		// container). Fall back to the merged config the last
+		// app-driven start wrote here.
+		log.Warnln("[config] base unreadable, using the last merged config: %v", baseErr)
+		if cfg, err := loadConfig(path); err == nil {
+			return cfg, nil
+		}
+		return nil, baseErr
 	}
 	return loadConfig(path)
 }
