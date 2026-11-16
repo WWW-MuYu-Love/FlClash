@@ -93,7 +93,7 @@ class Service {
           _tunnelError.value = failure;
           commonPrint.log(
             'Tunnel failed: ${failure.code} ${failure.detail}',
-            logLevel: LogLevel.info,
+            logLevel: LogLevel.warning,
           );
           break;
         case 'event':
