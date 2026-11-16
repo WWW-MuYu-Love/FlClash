@@ -669,6 +669,9 @@ final class TunnelCoordinator {
     else {
       return
     }
+    if stableState == .stopped, previousStatus == .connecting {
+      reportStartFailure()
+    }
     reportTunnelState(stableState)
     if publishedTunnelState == nil {
       // First observation: record it, but do not report it outward. The
