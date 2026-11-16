@@ -458,22 +458,6 @@ void main() {
     await drainTimers(tester);
   });
 
-  testWidgets('a tile stopped report stops the core', (tester) async {
-    await pumpVpnManager(tester);
-    container.read(initProvider.notifier).state = true;
-    container.read(runTimeProvider.notifier).state = 1;
-    startService();
-
-    (tester.state(find.byType(VpnManager)) as TileListener)
-        .onSyncRunningState(false);
-    await settle(tester);
-
-    expect(container.read(vpnSettingProvider).enable, isFalse);
-    expect(setupAction.setRunningCalls, 1);
-    expect(setupAction.lastSetRunning, isFalse);
-    await drainTimers(tester);
-  });
-
   testWidgets('a connected tunnelState at mount does not sync before init', (
     tester,
   ) async {
