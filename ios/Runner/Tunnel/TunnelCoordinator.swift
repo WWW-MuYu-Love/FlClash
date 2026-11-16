@@ -18,6 +18,7 @@ final class TunnelCoordinator {
   )
 
   private var observedTunnelStatus: NEVPNStatus?
+  private var observedConnecting = false
   private var reportedTunnelState: TunnelTarget?
   private var publishedTunnelState: TunnelTarget?
   private var lastStartError: NSError?
@@ -660,6 +661,20 @@ final class TunnelCoordinator {
       )
     }
 
+    // A failed start ends connecting -> disconnecting -> disconnected, so
+    // the step before the stop is disconnecting, not connecting. Remember
+    // that a start was in flight instead of comparing with the last status.
+    if status == .connecting {
+      observedConnecting = true
+    } else if status.tunnelState == .running {
+      observedConnecting = false
+    } else if status.tunnelState == .stopped, observedConnecting {
+      observedConnecting = false
+      if tunnelRequest == nil {
+        reportStartFailure()
+      }
+    }
+
     if tunnelWait != nil {
       consumeWaitStatus(status)
       return
@@ -668,9 +683,6 @@ final class TunnelCoordinator {
       let stableState = status.tunnelState
     else {
       return
-    }
-    if stableState == .stopped, previousStatus == .connecting {
-      reportStartFailure()
     }
     reportTunnelState(stableState)
     if publishedTunnelState == nil {
