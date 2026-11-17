@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:fl_clash/core/external_controller.dart';
+import 'package:fl_clash/enum/enum.dart';
 import 'package:fl_clash/models/models.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -732,6 +733,69 @@ void main() {
       addTearDown(dead.close);
 
       expect(await dead.patchConfigs({'mode': 'rule'}), isFalse);
+    });
+  });
+
+  group('ExternalControllerClient.fetchMode', () {
+    late HttpServer server;
+    late ExternalControllerClient client;
+
+    setUp(() async {
+      server = await _serve((request) async {
+        request.response.headers.contentType = ContentType.json;
+        request.response.write(jsonEncode({'mode': 'direct'}));
+        await request.response.close();
+      });
+      client = ExternalControllerClient(
+        baseUri: Uri.parse('http://127.0.0.1:${server.port}'),
+      );
+    });
+
+    tearDown(() async {
+      client.close();
+      await server.close(force: true);
+    });
+
+    test('reads the mode from /configs', () async {
+      expect(await client.fetchMode(), Mode.direct);
+    });
+
+    test('returns null when the controller answers 401', () async {
+      await server.close(force: true);
+      server = await _serve((request) async {
+        request.response.statusCode = HttpStatus.unauthorized;
+        await request.response.close();
+      });
+      client = ExternalControllerClient(
+        baseUri: Uri.parse('http://127.0.0.1:${server.port}'),
+      );
+
+      expect(await client.fetchMode(), isNull);
+    });
+
+    test('returns null for an unknown mode', () async {
+      await server.close(force: true);
+      server = await _serve((request) async {
+        request.response.headers.contentType = ContentType.json;
+        request.response.write(jsonEncode({'mode': 'turbo'}));
+        await request.response.close();
+      });
+      client = ExternalControllerClient(
+        baseUri: Uri.parse('http://127.0.0.1:${server.port}'),
+      );
+
+      expect(await client.fetchMode(), isNull);
+    });
+
+    test('returns null when nothing listens', () async {
+      final port = server.port;
+      await server.close(force: true);
+      final dead = ExternalControllerClient(
+        baseUri: Uri.parse('http://127.0.0.1:$port'),
+      );
+      addTearDown(dead.close);
+
+      expect(await dead.fetchMode(), isNull);
     });
   });
 

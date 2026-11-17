@@ -398,6 +398,52 @@ class ExternalControllerClient {
     }
   }
 
+  /// GET /configs reads the routing core's live mode, which an SSID
+  /// override can switch behind Dart's back.
+  Future<Mode?> fetchMode() async {
+    if (_skipWhileRefused()) {
+      return null;
+    }
+    try {
+      final request = await _http
+          .getUrl(baseUri.replace(path: '/configs'))
+          .timeout(_fetchTimeout);
+      if (secret.isNotEmpty) {
+        request.headers.set(HttpHeaders.authorizationHeader, 'Bearer $secret');
+      }
+      final response = await request.close().timeout(_fetchTimeout);
+      _noteStatus(response);
+      if (response.statusCode != HttpStatus.ok) {
+        await response.drain<void>();
+        _reportFailure('configs', 'HTTP ${response.statusCode}');
+        return null;
+      }
+      final body = await response
+          .transform(utf8.decoder)
+          .join()
+          .timeout(_fetchTimeout);
+      final json = jsonDecode(body);
+      if (json is! Map<String, Object?> || json['mode'] is! String) {
+        _reportFailure('configs', 'bad response');
+        return null;
+      }
+      final mode = Mode.values
+          .where((value) => value.name == json['mode'])
+          .firstOrNull;
+      if (mode == null) {
+        _reportFailure('configs', 'unknown mode');
+        return null;
+      }
+      _reportSuccess('configs');
+      return mode;
+    } catch (error) {
+      _reportFailure('configs', compactError(error));
+      _noteRefused(error);
+      unauthorized = false;
+      return null;
+    }
+  }
+
   // PATCH /configs applies the given fields on the core behind 9090.
   Future<bool> patchConfigs(Map<String, Object?> body) async {
     try {

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:fl_clash/common/common.dart';
 import 'package:fl_clash/enum/enum.dart';
 import 'package:fl_clash/providers/providers.dart';
@@ -17,8 +19,16 @@ Glyph _glyphOf(Mode mode) => switch (mode) {
 };
 
 void _changeMode(WidgetRef ref, Mode mode) {
-  if (ref.read(patchClashConfigProvider).mode == mode) return;
-  ref.read(setupActionProvider.notifier).changeMode(mode);
+  if (ref.read(effectiveModeProvider) == mode) return;
+  final notifier = ref.read(setupActionProvider.notifier);
+  if (ref.read(patchClashConfigProvider).mode == mode) {
+    // The configured value already is `mode`: an SSID override left the
+    // routing core on another mode, and a same-value state update would
+    // notify no listener, so push the current config directly.
+    unawaited(notifier.pushCurrentMode());
+  } else {
+    notifier.changeMode(mode);
+  }
 }
 
 class OutboundModeCard extends ConsumerWidget {
@@ -28,9 +38,7 @@ class OutboundModeCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final mode = ref.watch(
-      patchClashConfigProvider.select((state) => state.mode),
-    );
+    final mode = ref.watch(effectiveModeProvider);
     final tone = DashboardColors.of(context).tone;
     final style = AppTextStyle.footnote.of(context, emphasized: true);
     return DashboardCard(
@@ -95,9 +103,7 @@ class OutboundModeBar extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final density = DashboardDensityScope.of(context);
-    final mode = ref.watch(
-      patchClashConfigProvider.select((state) => state.mode),
-    );
+    final mode = ref.watch(effectiveModeProvider);
     final appLocalizations = context.appLocalizations;
     final outer = dashboardCardRadius(density) - _inset;
     final style = AppTextStyle.subheadline.of(context, emphasized: true);

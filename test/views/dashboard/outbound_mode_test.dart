@@ -16,6 +16,11 @@ import '../../helpers/test_profiles.dart';
 import 'package:prism_ui/prism_ui.dart';
 import '../../helpers/host_scaffold.dart';
 
+class _LiveDirectMode extends EffectiveMode {
+  @override
+  Mode build() => Mode.direct;
+}
+
 void main() {
   late ProviderContainer container;
 
@@ -106,6 +111,28 @@ void main() {
     expect(decorationOf(tester, Mode.rule).color, isNot(colorScheme.primary));
     expect(startRadiusOf(tester, Mode.direct), greaterThan(innerRadius));
   });
+
+  testWidgets(
+    'the card shows the live mode while the configured mode differs',
+    (tester) async {
+      container.dispose();
+      container = ProviderContainer(
+        overrides: [
+          profilesProvider.overrideWith(TestProfiles.new),
+          effectiveModeProvider.overrideWith(_LiveDirectMode.new),
+        ],
+      );
+      globalState.container = container;
+      await pump(tester, const OutboundModeCard());
+      final colorScheme = Theme.of(
+        tester.element(find.byType(OutboundModeCard)),
+      ).colorScheme;
+
+      expect(container.read(patchClashConfigProvider).mode, Mode.rule);
+      expect(decorationOf(tester, Mode.direct).color, colorScheme.primary);
+      expect(decorationOf(tester, Mode.rule).color, isNot(colorScheme.primary));
+    },
+  );
 
   testWidgets('the modes keep their fills with glass on', (tester) async {
     await pump(

@@ -513,6 +513,9 @@ class SetupAction extends _$SetupAction {
           );
         }
       }
+      // A push may have changed the routing core's mode, so the mode
+      // segment re-reads the live value instead of keeping the configured one.
+      unawaited(ref.read(effectiveModeProvider.notifier).refresh());
     });
   }
 
@@ -566,6 +569,14 @@ class SetupAction extends _$SetupAction {
           .read(proxiesActionProvider.notifier)
           .updateCurrentGroupName(GroupName.GLOBAL.name);
     }
+  }
+
+  /// Re-pushes the current config even when nothing changed. An SSID
+  /// override can leave the routing core on another mode, and a same-value
+  /// state update notifies no listener, so the debounced push never fires.
+  Future<void> pushCurrentMode() async {
+    _lastPatchedConfigBody = null;
+    await updateConfig();
   }
 
   /// For leaving an editor: a profile whose inputs match the config the Core
