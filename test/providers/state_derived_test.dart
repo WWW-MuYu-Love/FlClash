@@ -567,11 +567,6 @@ void main() {
         .read(authorizedTunEnableProvider.notifier)
         .update((_) => TunAuthorizationState.unauthorized);
     expect(container.read(shouldPatchSystemDnsProvider), isFalse);
-
-    container.read(excludeSSIDsProvider.notifier).update((_) => ['Office']);
-    container.read(currentSSIDProvider.notifier).update((_) => 'Office');
-    expect(container.read(suspendProvider), isTrue);
-    expect(container.read(proxyStateProvider).isStart, isFalse);
   });
 
   test('MITM hostnames join the VPN bypass list without duplicates', () async {
@@ -637,28 +632,6 @@ void main() {
     expect(vpn.udpTimeout, 60);
     expect(vpn.dnsHijack, ['8.8.8.8']);
   });
-
-  test(
-    'an excluded SSID set to direct keeps the tunnel up instead of suspending',
-    () {
-      container
-          .read(excludeSSIDsProvider.notifier)
-          .update((_) => ['Home', 'Office']);
-      container.read(directSSIDsProvider.notifier).update((_) => ['Home']);
-
-      container.read(currentSSIDProvider.notifier).update((_) => 'Office');
-      expect(container.read(suspendProvider), isTrue);
-
-      container.read(currentSSIDProvider.notifier).update((_) => 'Home');
-      expect(container.read(suspendProvider), isFalse);
-
-      container.read(currentSSIDProvider.notifier).update((_) => 'Cafe');
-      expect(container.read(suspendProvider), isFalse);
-
-      container.read(currentSSIDProvider.notifier).update((_) => null);
-      expect(container.read(suspendProvider), isFalse);
-    },
-  );
 
   test('safe mode keeps every host integration off', () async {
     await AppLocalizations.load(const Locale('en'));

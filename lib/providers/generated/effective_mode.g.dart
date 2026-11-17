@@ -8,27 +8,18 @@ part of '../effective_mode.dart';
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
-/// The mode the routing core actually runs. The configured value is what
-/// the dashboard showed until now, but an SSID override switches the
-/// extension core's mode without telling Dart, so while the tunnel is up
-/// this asks the core behind 9090; otherwise the configured value is the
-/// core's mode by construction.
+/// The mode the routing core actually runs; while the tunnel is up it
+/// asks the core behind 9090, whose mode an SSID override can change.
 
 @ProviderFor(EffectiveMode)
 final effectiveModeProvider = EffectiveModeProvider._();
 
-/// The mode the routing core actually runs. The configured value is what
-/// the dashboard showed until now, but an SSID override switches the
-/// extension core's mode without telling Dart, so while the tunnel is up
-/// this asks the core behind 9090; otherwise the configured value is the
-/// core's mode by construction.
+/// The mode the routing core actually runs; while the tunnel is up it
+/// asks the core behind 9090, whose mode an SSID override can change.
 final class EffectiveModeProvider
     extends $NotifierProvider<EffectiveMode, Mode> {
-  /// The mode the routing core actually runs. The configured value is what
-  /// the dashboard showed until now, but an SSID override switches the
-  /// extension core's mode without telling Dart, so while the tunnel is up
-  /// this asks the core behind 9090; otherwise the configured value is the
-  /// core's mode by construction.
+  /// The mode the routing core actually runs; while the tunnel is up it
+  /// asks the core behind 9090, whose mode an SSID override can change.
   EffectiveModeProvider._()
     : super(
         from: null,
@@ -58,11 +49,8 @@ final class EffectiveModeProvider
 
 String _$effectiveModeHash() => r'd4b812a96b6c51b7304b27e8b2420d390f3f2705';
 
-/// The mode the routing core actually runs. The configured value is what
-/// the dashboard showed until now, but an SSID override switches the
-/// extension core's mode without telling Dart, so while the tunnel is up
-/// this asks the core behind 9090; otherwise the configured value is the
-/// core's mode by construction.
+/// The mode the routing core actually runs; while the tunnel is up it
+/// asks the core behind 9090, whose mode an SSID override can change.
 
 abstract class _$EffectiveMode extends $Notifier<Mode> {
   Mode build();

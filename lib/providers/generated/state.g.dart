@@ -220,7 +220,7 @@ final class TrayStateProvider
   }
 }
 
-String _$trayStateHash() => r'd4fe17e62e479ff316ab5deb11475b4ea533d0bb';
+String _$trayStateHash() => r'abe7fd4f494e95ec9d6835f052c80b63108d67bb';
 
 /// Measured delays of the proxies the tray lists, by group and then proxy
 /// name. Resolved like a proxy card, so a nested group shows its selection.
@@ -622,7 +622,7 @@ final class VpnOptionsProvider
   }
 }
 
-String _$vpnOptionsHash() => r'59009efbc4142ad87fdb09fa1f6bc5d6eb219bf2';
+String _$vpnOptionsHash() => r'642fc8d214fdc1092f6046a5f80b46f7afbc327a';
 
 @ProviderFor(AccessControlState)
 final accessControlStateProvider = AccessControlStateProvider._();
@@ -676,46 +676,6 @@ abstract class _$AccessControlState extends $Notifier<AccessControlProps> {
     return element.handleCreate(ref, build);
   }
 }
-
-@ProviderFor(suspend)
-final suspendProvider = SuspendProvider._();
-
-final class SuspendProvider extends $FunctionalProvider<bool, bool, bool>
-    with $Provider<bool> {
-  SuspendProvider._()
-    : super(
-        from: null,
-        argument: null,
-        retry: null,
-        name: r'suspendProvider',
-        isAutoDispose: true,
-        dependencies: null,
-        $allTransitiveDependencies: null,
-      );
-
-  @override
-  String debugGetCreateSourceHash() => _$suspendHash();
-
-  @$internal
-  @override
-  $ProviderElement<bool> $createElement($ProviderPointer pointer) =>
-      $ProviderElement(pointer);
-
-  @override
-  bool create(Ref ref) {
-    return suspend(ref);
-  }
-
-  /// {@macro riverpod.override_with_value}
-  Override overrideWithValue(bool value) {
-    return $ProviderOverride(
-      origin: this,
-      providerOverride: $SyncValueProvider<bool>(value),
-    );
-  }
-}
-
-String _$suspendHash() => r'8f3b4e5f5f41f2a69537fd9b1158e64e9e7648f3';
 
 @ProviderFor(DynamicColor)
 final dynamicColorProvider = DynamicColorProvider._();
@@ -2021,7 +1981,7 @@ final class ProxyStateProvider
   }
 }
 
-String _$proxyStateHash() => r'76a71ab5da07dca9aeb351282c5c03ab222d0760';
+String _$proxyStateHash() => r'211e9aaa571cedb70bcf3473ace95758dc674498';
 
 /// Watching the delay map instead would drop nodes one probe at a time, and
 /// reading it on any other rebuild would drop them whenever something

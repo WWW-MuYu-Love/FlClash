@@ -271,7 +271,7 @@ final class TunnelCoordinator {
       }
 
       manager.isEnabled = true
-      managerStore.applyNetworkExtensionOptions(to: manager, enableOnDemand: true)
+      managerStore.applyNetworkExtensionOptions(to: manager)
       log("start save preferences")
       do {
         try await awaitPreferenceResult { completion in
@@ -600,11 +600,7 @@ final class TunnelCoordinator {
         else {
           return nil
         }
-        let status = manager.connection.status
-        managerStore.applyNetworkExtensionOptions(
-          to: manager,
-          enableOnDemand: status == .connecting || status.tunnelState == .running
-        )
+        managerStore.applyNetworkExtensionOptions(to: manager)
         try await awaitPreferenceResult { completion in
           manager.saveToPreferences(completionHandler: completion)
         }

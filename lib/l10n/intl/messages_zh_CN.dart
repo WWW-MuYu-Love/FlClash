@@ -692,7 +692,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "excludeSrcPort": MessageLookupByLibrary.simpleMessage("排除源端口"),
     "excludeSsids": MessageLookupByLibrary.simpleMessage("排除SSIDs"),
     "excludeSsidsDesc": MessageLookupByLibrary.simpleMessage(
-      "连接到被排除 SSID 的 Wi-Fi 时，会按该 SSID 的设置自动断开或切换为直连。",
+      "连接到被排除 SSID 的 Wi-Fi 时，会按该 SSID 的设置自动切换为规则模式或直连。",
     ),
     "excludeUid": MessageLookupByLibrary.simpleMessage("排除用户 ID"),
     "existsTip": m32,

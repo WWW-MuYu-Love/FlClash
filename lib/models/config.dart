@@ -554,8 +554,8 @@ abstract class Config with _$Config {
     WindowProps windowProps,
     @Default(defaultClashConfig) PatchClashConfig patchClashConfig,
     @Default([]) List<String> excludeSSIDs,
-    // Excluded SSIDs that switch the proxy mode to direct instead of
-    // suspending the tunnel; a subset of excludeSSIDs.
+    // Excluded SSIDs that switch the proxy mode to direct; the rest of
+    // excludeSSIDs switch it to rule. A subset of excludeSSIDs.
     @Default([]) List<String> directSSIDs,
   }) = _Config;
 

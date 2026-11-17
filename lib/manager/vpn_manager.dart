@@ -151,9 +151,7 @@ class _VpnContainerState extends ConsumerState<VpnManager> with TileListener {
       }
       return;
     }
-    if (!ref.read(isStartProvider) ||
-        !ref.read(vpnSettingProvider).enable ||
-        ref.read(suspendProvider)) {
+    if (!ref.read(isStartProvider) || !ref.read(vpnSettingProvider).enable) {
       return;
     }
     // The tunnel went away; the Core keeps running. The switch flip hands

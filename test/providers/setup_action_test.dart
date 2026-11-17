@@ -472,90 +472,23 @@ void main() {
     });
   });
 
-  group('suspend', () {
-    test('skips starting the core on an excluded SSID', () async {
-      container.dispose();
-      action = TestSetupAction();
-      container = ProviderContainer(
-        overrides: [
-          profilesProvider.overrideWith(TestProfiles.new),
-          setupActionProvider.overrideWith(() => action),
-          commonActionProvider.overrideWith(TestCommonAction.new),
-          excludeSSIDsProvider.overrideWithValue(const ['Office Wi-Fi']),
-        ],
-      );
-      globalState.container = container;
-      container.read(initProvider.notifier).value = true;
-      container.read(currentSSIDProvider.notifier).value = 'Office Wi-Fi';
+  test('still stops the core on an excluded SSID', () async {
+    container.dispose();
+    action = TestSetupAction();
+    container = ProviderContainer(
+      overrides: [
+        profilesProvider.overrideWith(TestProfiles.new),
+        setupActionProvider.overrideWith(() => action),
+        commonActionProvider.overrideWith(TestCommonAction.new),
+        excludeSSIDsProvider.overrideWithValue(const ['Office Wi-Fi']),
+      ],
+    );
+    globalState.container = container;
+    container.read(currentSSIDProvider.notifier).value = 'Office Wi-Fi';
 
-      await container.read(setupActionProvider.notifier).setRunning(true);
+    await container.read(setupActionProvider.notifier).setRunning(false);
 
-      expect(action.coreRunningCalls, isEmpty);
-      expect(container.read(runningVpnOptionsProvider), isNull);
-    });
-
-    test('an excluded SSID parks a run and leaving it resumes', () async {
-      container.dispose();
-      action = TestSetupAction();
-      container = ProviderContainer(
-        overrides: [
-          profilesProvider.overrideWith(TestProfiles.new),
-          setupActionProvider.overrideWith(() => action),
-          commonActionProvider.overrideWith(TestCommonAction.new),
-          excludeSSIDsProvider.overrideWithValue(const ['Office Wi-Fi']),
-        ],
-      );
-      globalState.container = container;
-      container.read(initProvider.notifier).value = true;
-      final setup = container.read(setupActionProvider.notifier);
-      await setup.setRunning(true);
-      action.coreRunningCalls.clear();
-
-      container.read(currentSSIDProvider.notifier).value = 'Office Wi-Fi';
-      setup.syncSuspend();
-      await Future<void>.delayed(const Duration(milliseconds: 700));
-
-      expect(action.coreRunningCalls, [false]);
-      expect(container.read(isStartProvider), isTrue);
-      expect(container.read(runningVpnOptionsProvider), isNull);
-
-      container.read(currentSSIDProvider.notifier).value = 'Home';
-      setup.syncSuspend();
-      await Future<void>.delayed(const Duration(milliseconds: 700));
-
-      expect(action.coreRunningCalls, [false, true]);
-      expect(
-        container.read(runningVpnOptionsProvider),
-        await container.read(vpnOptionsProvider.future),
-      );
-    });
-
-    test('an SSID change leaves a stopped run alone', () async {
-      markInitialized();
-      container.read(setupActionProvider.notifier).syncSuspend();
-      await Future<void>.delayed(const Duration(milliseconds: 700));
-
-      expect(action.coreRunningCalls, isEmpty);
-    });
-
-    test('still stops the core on an excluded SSID', () async {
-      container.dispose();
-      action = TestSetupAction();
-      container = ProviderContainer(
-        overrides: [
-          profilesProvider.overrideWith(TestProfiles.new),
-          setupActionProvider.overrideWith(() => action),
-          commonActionProvider.overrideWith(TestCommonAction.new),
-          excludeSSIDsProvider.overrideWithValue(const ['Office Wi-Fi']),
-        ],
-      );
-      globalState.container = container;
-      container.read(currentSSIDProvider.notifier).value = 'Office Wi-Fi';
-
-      await container.read(setupActionProvider.notifier).setRunning(false);
-
-      expect(action.coreRunningCalls, [false]);
-    });
+    expect(action.coreRunningCalls, [false]);
   });
 
   group('running vpn options', () {

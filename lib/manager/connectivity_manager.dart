@@ -81,7 +81,7 @@ class _ConnectivityManagerState extends ConsumerState<ConnectivityManager>
   // A Wi-Fi to Wi-Fi switch may not move the connectivity stream, and the
   // app may have been suspended while the network changed, so re-read the
   // current network and SSID when coming back to the foreground. This is
-  // what lets the direct/disconnect action restore the previous mode.
+  // what lets the direct/rule action restore the previous mode.
   Future<void> _refreshOnResume() async {
     try {
       final results = await Connectivity().checkConnectivity();

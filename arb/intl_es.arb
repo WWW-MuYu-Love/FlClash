@@ -668,7 +668,7 @@
   "locationPermission": "Permiso de ubicación",
   "locationPermissionDesc": "El sistema requiere el permiso de ubicación para leer el nombre de la red Wi-Fi. En Android elige “Permitir todo el tiempo”; de lo contrario, no se podrá leer el nombre de la red Wi-Fi mientras la app esté en segundo plano.",
   "excludeSsids": "Excluir SSID",
-  "excludeSsidsDesc": "Al conectarse a una red Wi-Fi con un SSID excluido, la aplicación se desconecta automáticamente o cambia al modo directo según lo configurado para ese SSID.",
+  "excludeSsidsDesc": "Al conectarse a una red Wi-Fi con un SSID excluido, la aplicación cambia automáticamente al modo de reglas o al modo directo según lo configurado para ese SSID.",
   "ssidsEmpty": "No hay SSID",
   "onDemand": "Bajo demanda",
   "locationPermissionDeniedMessage": "Se denegó el permiso de ubicación, por lo que no se puede leer el nombre de la red Wi-Fi actual. Activa el permiso de ubicación manualmente en los ajustes del sistema.",

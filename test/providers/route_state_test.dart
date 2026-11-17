@@ -111,7 +111,6 @@ void main() {
           initProvider.overrideWithBuild((_, _) => init),
           coreStatusProvider.overrideWithBuild((_, _) => status),
           runTimeProvider.overrideWithBuild((_, _) => running ? 1 : null),
-          suspendProvider.overrideWithValue(false),
           coreHandlerProvider.overrideWithValue(CoreController.scoped(core)),
         ],
       );

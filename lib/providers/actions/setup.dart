@@ -296,14 +296,8 @@ class SetupAction extends _$SetupAction {
 
   Future<void> _setCoreRunning(_RunRequest request) {
     return _listenerScheduler.run(() async {
-      if (!_isCurrent(request) ||
-          request.running && ref.read(suspendProvider) ||
-          ref.read(safeModeProvider)) {
-        final reason = !_isCurrent(request)
-            ? 'stale request'
-            : request.running && ref.read(suspendProvider)
-            ? 'suspended'
-            : 'safe mode';
+      if (!_isCurrent(request) || ref.read(safeModeProvider)) {
+        final reason = !_isCurrent(request) ? 'stale request' : 'safe mode';
         commonPrint.log('flag skip: $reason', logLevel: LogLevel.warning);
         return;
       }
@@ -334,24 +328,6 @@ class SetupAction extends _$SetupAction {
   bool _isUnanswered(Object error) =>
       isUnansweredCoreError(error) ||
       error is CoreMethodException && error.code == 'service_refused';
-
-  /// An excluded SSID parks the listener without ending the run.
-  void syncSuspend() {
-    debouncer.call(FunctionTag.suspend, () {
-      return _listenerScheduler.run(() async {
-        if (!ref.read(isStartProvider) || ref.read(safeModeProvider)) {
-          return;
-        }
-        try {
-          await _setListening(!ref.read(suspendProvider));
-        } catch (error) {
-          if (!_isUnanswered(error)) {
-            rethrow;
-          }
-        }
-      });
-    });
-  }
 
   Future<void> restartVpn() async {
     if (!ref.read(isStartProvider)) {

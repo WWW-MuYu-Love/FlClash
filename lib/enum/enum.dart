@@ -443,7 +443,6 @@ enum FunctionTag {
   dnsQueries,
   loadedProvider,
   saveSharedFile,
-  suspend,
   coreErrorNotifier,
   dialerLoopNotifier,
   reloadPackages,

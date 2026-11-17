@@ -28,7 +28,6 @@ bool _hasSelection(Proxy proxy) => proxy.now?.isNotEmpty ?? false;
 
 @riverpod
 ProxyState proxyState(Ref ref) {
-  final suspend = ref.watch(suspendProvider);
   final isStart = ref.watch(runTimeProvider.select((state) => state != null));
   final systemProxySelector = ref.watch(
     networkSettingProvider.select(
@@ -42,7 +41,7 @@ ProxyState proxyState(Ref ref) {
     patchClashConfigProvider.select((state) => state.mixedPort),
   );
   return ProxyState(
-    isStart: suspend ? false : isStart,
+    isStart: isStart,
     systemProxy: systemProxySelector.systemProxy,
     bassDomain: systemProxySelector.bypassDomain,
     port: mixedPort,

@@ -94,17 +94,4 @@ void main() {
     expect(state.systemProxy, isTrue);
     expect(state.port, 7892);
   });
-
-  test('an excluded SSID suspends the system proxy', () {
-    final suspended = ProviderContainer(
-      overrides: [
-        excludeSSIDsProvider.overrideWithValue(const ['Office Wi-Fi']),
-      ],
-    );
-    addTearDown(suspended.dispose);
-    suspended.read(runTimeProvider.notifier).value = 1;
-    suspended.read(currentSSIDProvider.notifier).value = 'Office Wi-Fi';
-
-    expect(suspended.read(proxyStateProvider).isStart, isFalse);
-  });
 }
