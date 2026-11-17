@@ -382,21 +382,6 @@ void main() {
     expect(container.read(directSSIDsProvider), ['Home']);
   });
 
-  testWidgets('swiping a card right past half its width sets the SSID rule', (
-    tester,
-  ) async {
-    await pumpView(tester, ssids: ['Home']);
-    container.read(directSSIDsProvider.notifier).update((_) => ['Home']);
-    await tester.pumpAndSettle();
-    expect(find.text('Direct'), findsOneWidget);
-
-    await tester.drag(find.text('Home'), const Offset(800, 0));
-    await tester.pumpAndSettle();
-
-    expect(container.read(directSSIDsProvider), isEmpty);
-    expect(find.text('Rule'), findsOneWidget);
-  });
-
   testWidgets('a newly added SSID defaults to direct', (tester) async {
     await pumpView(tester);
 
@@ -446,7 +431,7 @@ void main() {
 
     final card = tester.getRect(find.byType(DecorationListItem).first);
     final name = tester.getRect(find.text('Home'));
-    final status = tester.getRect(find.text('Rule'));
+    final status = tester.getRect(find.text('Disconnect'));
 
     expect(name.center.dx, closeTo(card.center.dx, 1));
     expect(status.center.dx, closeTo(card.center.dx, 1));

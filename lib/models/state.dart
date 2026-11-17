@@ -33,7 +33,8 @@ abstract class TrayState with _$TrayState {
     required bool systemProxy,
     required bool tunEnable,
     required bool isStart,
-    @Default([]) List<Group> groups,
+    @Default(false) bool suspended,
+    required List<Group> groups,
     required Map<String, String> selectedMap,
     required bool showTrayTitle,
     @Default(true) bool monochromeTrayIcon,
@@ -171,9 +172,9 @@ abstract class SharedState with _$SharedState {
     required bool onlyStatisticsProxy,
     @Default(true) bool showStopAction,
     // The native side reads these from the App Group to enforce the
-    // exclude-SSID actions without the main app running: the extension
-    // switches the core to direct on the direct SSIDs and to rule on the
-    // rest of the excluded SSIDs.
+    // exclude-SSID actions without the main app running: the system
+    // disconnects the VPN on the disconnect SSIDs via on-demand rules,
+    // and the extension switches the core to direct on the direct SSIDs.
     @Default([]) List<String> excludeSSIDs,
     @Default([]) List<String> directSSIDs,
     @Default('') String controllerSecret,

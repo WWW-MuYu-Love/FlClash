@@ -966,7 +966,7 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "excludeSsids": MessageLookupByLibrary.simpleMessage("Excluir SSID"),
     "excludeSsidsDesc": MessageLookupByLibrary.simpleMessage(
-      "Al conectarse a una red Wi-Fi con un SSID excluido, la aplicación cambia automáticamente al modo de reglas o al modo directo según lo configurado para ese SSID.",
+      "Al conectarse a una red Wi-Fi con un SSID excluido, la aplicación se desconecta automáticamente o cambia al modo directo según lo configurado para ese SSID.",
     ),
     "excludeUid": MessageLookupByLibrary.simpleMessage(
       "ID de usuario excluidos",
@@ -1242,9 +1242,10 @@ class MessageLookup extends MessageLookupByLibrary {
     "installCertificateSuccess": MessageLookupByLibrary.simpleMessage(
       "Certificado instalado",
     ),
-    "installedAppsPermissionDeniedMessage": MessageLookupByLibrary.simpleMessage(
-      "Se denegó el permiso de lista de apps, por lo que no se pueden mostrar las apps instaladas. Concédelo manualmente en los ajustes del sistema.",
-    ),
+    "installedAppsPermissionDeniedMessage":
+        MessageLookupByLibrary.simpleMessage(
+          "Se denegó el permiso de lista de apps, por lo que no se pueden mostrar las apps instaladas. Concédelo manualmente en los ajustes del sistema.",
+        ),
     "installedAppsPermissionDesc": MessageLookupByLibrary.simpleMessage(
       "Este sistema oculta la lista de apps instaladas hasta que se concede el permiso. Autorízalo para configurar el proxy por app.",
     ),

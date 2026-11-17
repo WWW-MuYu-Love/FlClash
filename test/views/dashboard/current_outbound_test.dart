@@ -103,6 +103,7 @@ Widget _app(
     locale: const Locale('en'),
     overrides: [
       profilesProvider.overrideWithValue(const [_profile]),
+      suspendProvider.overrideWithValue(false),
       rootAccessProvider.overrideWith((_) async => root),
       outboundIpProbeProvider.overrideWithBuild(
         (_, _) => const RoutedProbeState({
@@ -266,6 +267,7 @@ void main() {
           locale: const Locale('en'),
           overrides: [
             profilesProvider.overrideWithValue(const [_profile]),
+            suspendProvider.overrideWithValue(false),
             outboundIpProbeProvider.overrideWith(_Ips.new),
             ipQualityProvider.overrideWith((_, _) => quality.future),
           ],
@@ -519,6 +521,7 @@ void main() {
 
     ProviderContainer containerWith({
       List<Profile> profiles = const [_profile],
+      bool suspended = false,
     }) => ProviderContainer(
       overrides: [
         initProvider.overrideWithBuild((_, _) => true),
@@ -526,6 +529,7 @@ void main() {
         outboundIpProbeProvider.overrideWith(_Ips.new),
         ipQualityProvider.overrideWith((_, _) async => _residential),
         setupActionProvider.overrideWith(_RecordingSetupAction.new),
+        suspendProvider.overrideWithValue(suspended),
       ],
     );
 
@@ -574,6 +578,23 @@ void main() {
       expect(container.read(isStartProvider), isTrue);
       await tester.pumpAndSettle();
       expect(find.byTooltip('Stop'), findsOneWidget);
+    });
+
+    testWidgets('a suspended tunnel swaps in the Wi-Fi off glyph and says so', (
+      tester,
+    ) async {
+      container = containerWith(suspended: true);
+      container.read(runTimeProvider.notifier).value = 1;
+      await pumpCard(tester);
+      await tester.pumpAndSettle();
+
+      final context = tester.element(find.byType(CurrentOutboundCard));
+      expect(
+        find.byTooltip(context.appLocalizations.suspended),
+        findsOneWidget,
+      );
+      expect(find.text(context.appLocalizations.suspended), findsOneWidget);
+      expect(find.byGlyph(AppGlyphs.wifiOff), findsOneWidget);
     });
 
     testWidgets('swells under a press and on glass bends within its shape', (

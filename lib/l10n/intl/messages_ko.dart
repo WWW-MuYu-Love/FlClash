@@ -750,7 +750,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "excludeSrcPort": MessageLookupByLibrary.simpleMessage("제외할 소스 포트"),
     "excludeSsids": MessageLookupByLibrary.simpleMessage("제외할 SSID"),
     "excludeSsidsDesc": MessageLookupByLibrary.simpleMessage(
-      "제외된 SSID의 Wi-Fi에 연결되면 해당 SSID의 설정에 따라 자동으로 규칙 모드 또는 다이렉트 모드로 전환됩니다.",
+      "제외된 SSID의 Wi-Fi에 연결되면 해당 SSID의 설정에 따라 자동으로 연결이 해제되거나 다이렉트 모드로 전환됩니다.",
     ),
     "excludeUid": MessageLookupByLibrary.simpleMessage("제외할 사용자 ID"),
     "existsTip": m32,

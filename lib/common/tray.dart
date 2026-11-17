@@ -97,7 +97,7 @@ class AppTray implements TrayPort {
       TraySpec(
         icon: TrayIcon.asset(
           getTrayIcon(
-            isStart: trayState.isStart,
+            isStart: trayState.isStart && !trayState.suspended,
             tunEnable: trayState.tunEnable,
             safeMode: trayState.safeMode,
             monochrome: trayState.monochromeTrayIcon,

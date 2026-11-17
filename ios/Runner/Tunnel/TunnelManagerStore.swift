@@ -106,7 +106,10 @@ final class TunnelManagerStore {
     return true
   }
 
-  func applyNetworkExtensionOptions(to manager: NETunnelProviderManager) {
+  func applyNetworkExtensionOptions(
+    to manager: NETunnelProviderManager,
+    enableOnDemand: Bool
+  ) {
     let configuration = sharedStateStore.loadTunnelConfiguration()
     let options = configuration.options
     guard
@@ -139,12 +142,38 @@ final class TunnelManagerStore {
       log("persisted tunnel config to providerConfiguration")
     }
 
-    // No on-demand rules: the tunnel stays up on every SSID, and the
-    // extension switches the core's mode on the excluded ones. Clearing
-    // any rules an older build saved, so a stale disconnect rule can never
-    // cut the tunnel on a rule SSID.
-    manager.onDemandRules = nil
-    manager.isOnDemandEnabled = false
+    var rules: [NEOnDemandRule] = []
+    // Only the disconnect SSIDs get a disconnect rule: a direct SSID must
+    // keep the tunnel up so the extension can switch the core to direct.
+    let disconnectSSIDs = configuration.disconnectSSIDs
+    if !disconnectSSIDs.isEmpty {
+      let disconnectRule = NEOnDemandRuleDisconnect()
+      disconnectRule.ssidMatch = disconnectSSIDs
+      disconnectRule.interfaceTypeMatch = .wiFi
+      rules.append(disconnectRule)
+    }
+
+    // A connect rule after the disconnect rule makes the VPN come back on
+    // its own when the phone leaves a disconnect SSID; without it the
+    // tunnel would stay down until the user starts it again. The rules
+    // only take effect while on-demand is enabled, which the tunnel
+    // disables when the user stops it, so this never starts a VPN the
+    // user did not ask for.
+    if configuration.alwaysOn || !disconnectSSIDs.isEmpty {
+      let connectWifi = NEOnDemandRuleConnect()
+      connectWifi.interfaceTypeMatch = .wiFi
+      rules.append(connectWifi)
+
+      let connectCellular = NEOnDemandRuleConnect()
+      connectCellular.interfaceTypeMatch = .cellular
+      rules.append(connectCellular)
+    }
+
+    manager.onDemandRules = rules.isEmpty ? nil : rules
+    manager.isOnDemandEnabled = enableOnDemand && !rules.isEmpty
+    log(
+      "applyOnDemandRules disconnectSSIDs=\(disconnectSSIDs) directSSIDs=\(configuration.directSSIDs) enabled=\(manager.isOnDemandEnabled)"
+    )
   }
 
   func isManagedConnection(_ connection: NEVPNConnection) -> Bool {

@@ -47,7 +47,7 @@ final class MitmDecryptedHostsProvider
 }
 
 String _$mitmDecryptedHostsHash() =>
-    r'f500d66f3cdd2331e7a0a3151b4f412a9d01459b';
+    r'fa61bd7fa8f3bafd72ab02b1654f4adffdf7d08e';
 
 @ProviderFor(MitmCa)
 final mitmCaProvider = MitmCaProvider._();
@@ -167,7 +167,7 @@ final class MitmTrustStateProvider
   MitmTrustState create() => MitmTrustState();
 }
 
-String _$mitmTrustStateHash() => r'f7f7f6d0f6589075dbaa14fa94c13eecc464cca5';
+String _$mitmTrustStateHash() => r'94078270dd9682be591a28b1f0e1c92b55ce2f31';
 
 /// Whether this device trusts the CA. A check records the CA it found
 /// trusted, which is the one the Core decrypts HTTPS with.

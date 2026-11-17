@@ -156,6 +156,7 @@ class RouteTracker extends _$RouteTracker {
   RouteState build() {
     ref.onDispose(_cancelRetry);
     ref.listen(isStartProvider, (_, _) => _scheduleSyncProxied());
+    ref.listen(suspendProvider, (_, _) => _scheduleSyncProxied());
     ref.listen(initProvider, (_, _) => _subscribe());
     ref.listen(appVisibleProvider, (_, visible) {
       if (visible) {
@@ -174,7 +175,7 @@ class RouteTracker extends _$RouteTracker {
     return RouteState(proxied: _proxied);
   }
 
-  bool get _proxied => ref.read(isStartProvider);
+  bool get _proxied => ref.read(isStartProvider) && !ref.read(suspendProvider);
 
   bool get _ready =>
       _watchers > 0 &&

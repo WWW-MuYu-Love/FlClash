@@ -71,6 +71,7 @@ class _CurrentOutboundCardState extends ConsumerState<CurrentOutboundCard>
       profilesProvider.select((state) => state.isNotEmpty),
     );
     final isStart = ref.watch(isStartProvider);
+    final suspended = isStart && ref.watch(suspendProvider);
     final rootAccess =
         mitmFeature && (ref.watch(rootAccessProvider).value ?? false);
     final entry = ref.watch(
@@ -90,7 +91,9 @@ class _CurrentOutboundCardState extends ConsumerState<CurrentOutboundCard>
     final appLocalizations = context.appLocalizations;
     final colorScheme = context.colorScheme;
     final colors = DashboardColors.of(context);
-    final (chipLabel, chipTone) = isStart
+    final (chipLabel, chipTone) = suspended
+        ? (appLocalizations.suspended, DashboardChipTone.warn)
+        : isStart
         ? (appLocalizations.running, DashboardChipTone.ok)
         : (appLocalizations.notRunning, DashboardChipTone.idle);
     return TweenAnimationBuilder<double>(
@@ -190,7 +193,7 @@ class _CurrentOutboundCardState extends ConsumerState<CurrentOutboundCard>
                       _Cells(
                         quality: quality,
                         loading: loading,
-                        active: isStart,
+                        active: isStart && !suspended,
                         gap: metrics.cellGap,
                       ),
                     ],
@@ -203,6 +206,7 @@ class _CurrentOutboundCardState extends ConsumerState<CurrentOutboundCard>
                       size: metrics.buttonSize,
                       enabled: hasProfile,
                       running: isStart,
+                      suspended: suspended,
                     ),
                   ),
                 ),
@@ -704,11 +708,13 @@ class _StartToggle extends ConsumerStatefulWidget {
     required this.size,
     required this.enabled,
     required this.running,
+    required this.suspended,
   });
 
   final double size;
   final bool enabled;
   final bool running;
+  final bool suspended;
 
   @override
   ConsumerState<_StartToggle> createState() => _StartToggleState();
@@ -770,7 +776,9 @@ class _StartToggleState extends ConsumerState<_StartToggle>
         ? colorScheme.primary
         : DashboardColors.of(context).tone2;
     final ink = enabled ? colorScheme.onPrimary : colorScheme.onSurfaceVariant;
-    final tooltip = widget.running
+    final tooltip = widget.suspended
+        ? appLocalizations.suspended
+        : widget.running
         ? appLocalizations.stop
         : appLocalizations.start;
     final stateDuration = context.motionDuration(_stateDuration);
@@ -824,17 +832,24 @@ class _StartToggleState extends ConsumerState<_StartToggle>
               child: SizedBox.square(
                 dimension: size,
                 child: Center(
-                  child: TweenAnimationBuilder<double>(
-                    tween: Tween(end: widget.running ? 1 : 0),
-                    duration: _morphDuration,
-                    curve: Curves.easeOutBack,
-                    builder: (_, progress, _) => GlyphIcon(
-                      AppGlyphs.playPause(progress),
-                      size: size * 0.34,
-                      color: ink,
-                      fill: 1,
-                    ),
-                  ),
+                  child: widget.suspended
+                      ? GlyphIcon(
+                          AppGlyphs.wifiOff,
+                          size: size * 0.34,
+                          color: ink,
+                          fill: 1,
+                        )
+                      : TweenAnimationBuilder<double>(
+                          tween: Tween(end: widget.running ? 1 : 0),
+                          duration: _morphDuration,
+                          curve: Curves.easeOutBack,
+                          builder: (_, progress, _) => GlyphIcon(
+                            AppGlyphs.playPause(progress),
+                            size: size * 0.34,
+                            color: ink,
+                            fill: 1,
+                          ),
+                        ),
                 ),
               ),
             ),

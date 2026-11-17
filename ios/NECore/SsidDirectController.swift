@@ -3,18 +3,18 @@ import Network
 import NetworkExtension
 import os
 
-/// Switches the extension core to direct mode on a direct SSID and to rule
-/// mode on a rule SSID, restoring the previous mode when the phone leaves,
-/// without the main app running.
+/// Switches the extension core to direct mode while the phone is on an
+/// excluded SSID whose action is direct, and restores the previous mode when
+/// it leaves, without the main app running.
 ///
 /// The main app cannot do this: it is killed in the background, so nobody
 /// would watch the SSID. The extension is the process that stays alive while
 /// the VPN is up, so it watches the network itself (NWPathMonitor plus
 /// NEHotspotNetwork) and talks to its own core through the 9090 external
-/// controller, the same PATCH /configs the app uses. The rule SSIDs are the
-/// excluded SSIDs that are not direct; the tunnel stays up on them, so the
-/// switch is the whole enforcement — there is no disconnect rule anywhere.
-final class SsidModeController {
+/// controller, the same PATCH /configs the app uses. The disconnect SSIDs do
+/// not reach here: the system disconnects the VPN on those through the
+/// on-demand rules, so the tunnel (and this controller) is gone while on one.
+final class SsidDirectController {
   private static let requestTimeout: TimeInterval = 4
   private static let maxAttempts = 3
   private static let maxPendingRetries = 5
@@ -22,30 +22,23 @@ final class SsidModeController {
   private let sharedStateStore: PacketTunnelSharedStateStore
   private let logger = Logger(
     subsystem: PacketTunnelEnvironment.extensionBundleIdentifier,
-    category: "SsidModeController"
+    category: "SsidDirectController"
   )
   private let session: URLSession
 
-  private let queue = DispatchQueue(label: "love.muyu.flclash.ssid-mode")
+  private let queue = DispatchQueue(label: "love.muyu.flclash.ssid-direct")
   private var monitor: NWPathMonitor?
   private var running = false
 
-  /// The mode to restore when the phone leaves an override SSID, nil while
-  /// no override is active. Only cleared once the restore is issued or the
-  /// user takes the mode over; a failed 9090 call never drops it.
+  /// The mode to restore when the phone leaves a direct SSID, nil while no
+  /// direct override is active. Only cleared once the restore is issued
+  /// or the user takes the mode over; a failed 9090 call never drops it.
   private var restoreMode: String?
-  /// The mode the override switched to, nil while no override is active.
-  /// A Wi-Fi to Wi-Fi switch between override SSIDs changes this without
-  /// touching restoreMode, which still holds the pre-override mode.
-  private var activeTargetMode: String?
   private var currentSsid: String?
-  /// An override SSID entered whose switch is not confirmed yet.
+  /// A direct SSID entered whose switch to direct is not confirmed yet.
   private var pendingEnterSsid: String?
-  /// The target mode of the unconfirmed switch.
-  private var pendingTargetMode: String?
   /// The mode recorded before an unconfirmed switch, moved into
-  /// restoreMode once the switch is confirmed to have landed. Only set
-  /// when the switch starts a fresh override, never while one is active.
+  /// restoreMode once the switch is confirmed to have landed.
   private var pendingRestoreMode: String?
   private var pendingRetryWorkItem: DispatchWorkItem?
   private var pendingRetryCount = 0
@@ -69,7 +62,7 @@ final class SsidModeController {
       }
       monitor.start(queue: self.queue)
       self.refreshSsid()
-      self.logger.info("ssid mode monitor started")
+      self.logger.info("ssid direct monitor started")
     }
   }
 
@@ -80,13 +73,11 @@ final class SsidModeController {
       self.monitor?.cancel()
       self.monitor = nil
       self.restoreMode = nil
-      self.activeTargetMode = nil
       self.currentSsid = nil
       self.pendingEnterSsid = nil
-      self.pendingTargetMode = nil
       self.pendingRestoreMode = nil
       self.resetPendingRetry()
-      self.logger.info("ssid mode monitor stopped")
+      self.logger.info("ssid direct monitor stopped")
     }
   }
 
@@ -108,7 +99,7 @@ final class SsidModeController {
           // On Wi-Fi but the SSID could not be read, likely for lack of
           // location permission: hold the current state, do not restore.
           self.logger.warning(
-            "ssid mode: on Wi-Fi but SSID unreadable; holding current mode"
+            "ssid direct: on Wi-Fi but SSID unreadable; holding current mode"
           )
           return
         }
@@ -119,9 +110,8 @@ final class SsidModeController {
 
   private func apply(ssid: String?) {
     guard running else { return }
-    let settings = sharedStateStore.loadSsidModeSettings()
-    let direct = Set(settings.directSSIDs)
-    let rule = Set(settings.ruleSSIDs)
+    let (directSSIDs, _) = sharedStateStore.loadDirectModeSettings()
+    let direct = Set(directSSIDs)
     let previous = currentSsid
     currentSsid = ssid
     if previous == ssid {
@@ -131,41 +121,31 @@ final class SsidModeController {
       return
     }
     if let ssid, direct.contains(ssid) {
-      enterMode(ssid: ssid, target: "direct")
+      enterDirect(ssid: ssid)
       return
     }
-    if let ssid, rule.contains(ssid) {
-      enterMode(ssid: ssid, target: "rule")
-      return
-    }
-    leaveMode()
+    leaveDirect()
   }
 
   private func retryPending() {
-    if let pending = pendingEnterSsid, let target = pendingTargetMode,
-      currentSsid == pending
+    if let pending = pendingEnterSsid, currentSsid == pending,
+      restoreMode == nil
     {
-      enterMode(ssid: pending, target: target)
+      enterDirect(ssid: pending)
       return
     }
     if restoreMode != nil {
-      let settings = sharedStateStore.loadSsidModeSettings()
-      let override = Set(settings.directSSIDs).union(settings.ruleSSIDs)
-      if let current = currentSsid, override.contains(current) {
+      let (directSSIDs, _) = sharedStateStore.loadDirectModeSettings()
+      if let current = currentSsid, Set(directSSIDs).contains(current) {
         return
       }
-      leaveMode()
+      leaveDirect()
     }
   }
 
-  private func enterMode(ssid: String, target: String) {
-    if restoreMode != nil, activeTargetMode == target {
-      return
-    }
+  private func enterDirect(ssid: String) {
+    guard restoreMode == nil else { return }
     pendingEnterSsid = ssid
-    pendingTargetMode = target
-    let expectedRestore = restoreMode
-    let expectedActive = activeTargetMode
     fetchMode { [weak self] mode in
       guard let self else { return }
       self.queue.async {
@@ -174,26 +154,21 @@ final class SsidModeController {
           self.schedulePendingRetry()
           return
         }
-        guard self.currentSsid == ssid,
-          self.restoreMode == expectedRestore,
-          self.activeTargetMode == expectedActive,
-          self.pendingEnterSsid == ssid, self.pendingTargetMode == target
+        guard self.currentSsid == ssid, self.restoreMode == nil,
+          self.pendingEnterSsid == ssid
         else {
           if self.currentSsid != ssid {
             self.pendingEnterSsid = nil
-            self.pendingTargetMode = nil
           }
           return
         }
-        if mode == target {
+        if mode == "direct" {
           // The switch landed on an earlier attempt whose reply was lost.
           if let pending = self.pendingRestoreMode {
             self.restoreMode = pending
           }
-          self.activeTargetMode = target
           self.pendingRestoreMode = nil
           self.pendingEnterSsid = nil
-          self.pendingTargetMode = nil
           self.resetPendingRetry()
           return
         }
@@ -201,7 +176,6 @@ final class SsidModeController {
           // The user changed the mode while the switch was unconfirmed.
           self.pendingRestoreMode = nil
           self.pendingEnterSsid = nil
-          self.pendingTargetMode = nil
           self.resetPendingRetry()
           return
         }
@@ -209,14 +183,10 @@ final class SsidModeController {
           guard let self else { return }
           self.queue.async {
             guard self.running, self.currentSsid == ssid,
-              self.restoreMode == expectedRestore,
-              self.activeTargetMode == expectedActive,
-              self.pendingEnterSsid == ssid,
-              self.pendingTargetMode == target
+              self.restoreMode == nil, self.pendingEnterSsid == ssid
             else {
               if self.currentSsid != ssid {
                 self.pendingEnterSsid = nil
-                self.pendingTargetMode = nil
               }
               return
             }
@@ -225,39 +195,32 @@ final class SsidModeController {
               return
             }
             if current != mode {
-              if current == target,
+              if current == "direct",
                 let pending = self.pendingRestoreMode
               {
                 self.restoreMode = pending
               } else {
                 self.logger.info(
-                  "ssid mode: mode changed while entering \(ssid, privacy: .public), abandoning switch"
+                  "ssid direct: mode changed while entering \(ssid, privacy: .public), abandoning switch"
                 )
               }
               self.pendingRestoreMode = nil
               self.pendingEnterSsid = nil
-              self.pendingTargetMode = nil
               self.resetPendingRetry()
               return
             }
-            if self.restoreMode == nil {
-              self.pendingRestoreMode = mode
-            }
-            self.setMode(target) { [weak self] succeeded in
+            self.pendingRestoreMode = mode
+            self.setMode("direct") { [weak self] succeeded in
               guard let self else { return }
               self.queue.async {
                 guard self.running else { return }
                 if succeeded {
-                  if self.restoreMode == nil {
-                    self.restoreMode = mode
-                  }
-                  self.activeTargetMode = target
+                  self.restoreMode = mode
                   self.pendingRestoreMode = nil
                   self.pendingEnterSsid = nil
-                  self.pendingTargetMode = nil
                   self.resetPendingRetry()
                   self.logger.info(
-                    "ssid mode: \(ssid, privacy: .public) mode \(mode, privacy: .public) -> \(target, privacy: .public)"
+                    "ssid direct: \(ssid, privacy: .public) mode \(mode, privacy: .public) -> direct"
                   )
                 } else {
                   self.schedulePendingRetry()
@@ -270,29 +233,25 @@ final class SsidModeController {
     }
   }
 
-  private func leaveMode() {
-    guard let restoreMode, let activeTarget = activeTargetMode else { return }
+  private func leaveDirect() {
+    guard let restoreMode else { return }
     fetchMode { [weak self] mode in
       guard let self else { return }
       self.queue.async {
-        guard self.running, self.restoreMode == restoreMode,
-          self.activeTargetMode == activeTarget
-        else { return }
+        guard self.running, self.restoreMode == restoreMode else { return }
         guard let mode else {
           self.schedulePendingRetry()
           return
         }
-        // The phone may have entered another override SSID while the mode
+        // The phone may have entered another direct SSID while the mode
         // was being read; only restore when it is not on one now.
-        let settings = self.sharedStateStore.loadSsidModeSettings()
-        let override = Set(settings.directSSIDs).union(settings.ruleSSIDs)
-        if let current = self.currentSsid, override.contains(current) {
+        let (directSSIDs, _) = self.sharedStateStore.loadDirectModeSettings()
+        if let current = self.currentSsid, Set(directSSIDs).contains(current) {
           return
         }
-        guard mode == activeTarget else {
+        guard mode == "direct" else {
           // The user changed the mode themselves; their choice stands.
           self.restoreMode = nil
-          self.activeTargetMode = nil
           self.resetPendingRetry()
           return
         }
@@ -304,12 +263,9 @@ final class SsidModeController {
               if self.restoreMode == restoreMode {
                 self.restoreMode = nil
               }
-              if self.activeTargetMode == activeTarget {
-                self.activeTargetMode = nil
-              }
               self.resetPendingRetry()
               self.logger.info(
-                "ssid mode: left, mode \(activeTarget, privacy: .public) -> \(restoreMode, privacy: .public)"
+                "ssid direct: left, mode direct -> \(restoreMode, privacy: .public)"
               )
             } else {
               self.schedulePendingRetry()
@@ -326,7 +282,7 @@ final class SsidModeController {
       if !pendingRetryExhausted {
         pendingRetryExhausted = true
         logger.warning(
-          "ssid mode: keeping pending switch/restore after \(Self.maxPendingRetries, privacy: .public) timer retries; will retry on the next network change"
+          "ssid direct: keeping pending switch/restore after \(Self.maxPendingRetries, privacy: .public) timer retries; will retry on the next network change"
         )
       }
       return
@@ -358,7 +314,7 @@ final class SsidModeController {
     completion: @escaping (String?) -> Void
   ) {
     guard let request = controllerRequest() else {
-      logger.warning("ssid mode: cannot build controller request")
+      logger.warning("ssid direct: cannot build controller request")
       completion(nil)
       return
     }
@@ -367,7 +323,7 @@ final class SsidModeController {
       let status = (response as? HTTPURLResponse)?.statusCode
       if status == 401 {
         self.logger.warning(
-          "ssid mode: fetch mode unauthorized (401); controller secret out of sync"
+          "ssid direct: fetch mode unauthorized (401); controller secret out of sync"
         )
         completion(nil)
         return
@@ -381,7 +337,7 @@ final class SsidModeController {
         return
       }
       self.logger.warning(
-        "ssid mode: fetch mode failed attempt \(attempt, privacy: .public)/\(Self.maxAttempts, privacy: .public) status=\(status.map(String.init) ?? "none", privacy: .public) error=\(error?.localizedDescription ?? "none", privacy: .public)"
+        "ssid direct: fetch mode failed attempt \(attempt, privacy: .public)/\(Self.maxAttempts, privacy: .public) status=\(status.map(String.init) ?? "none", privacy: .public) error=\(error?.localizedDescription ?? "none", privacy: .public)"
       )
       if attempt < Self.maxAttempts {
         let delay = TimeInterval(1 << (attempt - 1))
@@ -417,7 +373,7 @@ final class SsidModeController {
       let status = (response as? HTTPURLResponse)?.statusCode
       if status == 401 {
         self.logger.warning(
-          "ssid mode: set mode unauthorized (401); controller secret out of sync"
+          "ssid direct: set mode unauthorized (401); controller secret out of sync"
         )
         completion?(false)
         return
@@ -427,7 +383,7 @@ final class SsidModeController {
         return
       }
       self.logger.warning(
-        "ssid mode: set mode \(mode, privacy: .public) failed attempt \(attempt, privacy: .public)/\(Self.maxAttempts, privacy: .public) status=\(status.map(String.init) ?? "none", privacy: .public) error=\(error?.localizedDescription ?? "none", privacy: .public)"
+        "ssid direct: set mode \(mode, privacy: .public) failed attempt \(attempt, privacy: .public)/\(Self.maxAttempts, privacy: .public) status=\(status.map(String.init) ?? "none", privacy: .public) error=\(error?.localizedDescription ?? "none", privacy: .public)"
       )
       if attempt < Self.maxAttempts {
         let delay = TimeInterval(1 << (attempt - 1))
@@ -447,7 +403,7 @@ final class SsidModeController {
       return nil
     }
     var request = URLRequest(url: url)
-    let (_, _, secret) = sharedStateStore.loadSsidModeSettings()
+    let (_, secret) = sharedStateStore.loadDirectModeSettings()
     if !secret.isEmpty {
       request.setValue("Bearer \(secret)", forHTTPHeaderField: "Authorization")
     }

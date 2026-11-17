@@ -85,6 +85,7 @@ TrayState trayState(Ref ref) {
   final groups = ref.watch(currentGroupsStateProvider).value;
   final selectedMap = ref.watch(selectedMapProvider);
   final safeMode = ref.watch(safeModeProvider);
+  final suspended = ref.watch(suspendProvider);
   final hotKeys = _trayHotKeys(ref);
 
   return TrayState(
@@ -94,6 +95,7 @@ TrayState trayState(Ref ref) {
     systemProxy: systemProxy,
     tunEnable: clashConfig.tunEnable,
     isStart: isStart,
+    suspended: isStart && suspended,
     groups: groups,
     selectedMap: selectedMap,
     showTrayTitle: appSetting.showTrayTitle,
@@ -326,4 +328,13 @@ class AccessControlState extends _$AccessControlState
   @override
   AccessControlProps build() =>
       ref.read(vpnSettingProvider.select((state) => state.accessControlProps));
+}
+
+@riverpod
+bool suspend(Ref ref) {
+  final currentSSID = ref.watch(currentSSIDProvider);
+  final excludeSSIDs = ref.watch(excludeSSIDsProvider);
+  final directSSIDs = ref.watch(directSSIDsProvider);
+  return excludeSSIDs.contains(currentSSID) &&
+      !directSSIDs.contains(currentSSID);
 }

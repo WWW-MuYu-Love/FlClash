@@ -5521,10 +5521,10 @@ class AppLocalizations {
     );
   }
 
-  /// `When connected to Wi-Fi with an excluded SSID, the app automatically switches to rule mode or direct mode as set for that SSID.`
+  /// `When connected to Wi-Fi with an excluded SSID, the app automatically disconnects or switches to direct mode as set for that SSID.`
   String get excludeSsidsDesc {
     return Intl.message(
-      'When connected to Wi-Fi with an excluded SSID, the app automatically switches to rule mode or direct mode as set for that SSID.',
+      'When connected to Wi-Fi with an excluded SSID, the app automatically disconnects or switches to direct mode as set for that SSID.',
       name: 'excludeSsidsDesc',
       desc: '',
       args: [],
@@ -7813,8 +7813,7 @@ class AppLocalizations {
   String customImportDroppedSubRules(num count, Object label) {
     return Intl.plural(
       count,
-      one:
-          '1 SUB-RULE rule was dropped, since custom profiles do not support sub-rules',
+      one: '1 SUB-RULE rule was dropped, since custom profiles do not support sub-rules',
       other:
           '$label SUB-RULE rules were dropped, since custom profiles do not support sub-rules',
       name: 'customImportDroppedSubRules',

@@ -760,7 +760,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "excludeSrcPort": MessageLookupByLibrary.simpleMessage("除外送信元ポート"),
     "excludeSsids": MessageLookupByLibrary.simpleMessage("除外SSID"),
     "excludeSsidsDesc": MessageLookupByLibrary.simpleMessage(
-      "除外した SSID の Wi-Fi に接続すると、その SSID の設定に従って自動的にルールモードまたはダイレクトモードに切り替わります。",
+      "除外した SSID の Wi-Fi に接続すると、その SSID の設定に従って自動的に切断されるか、ダイレクトモードに切り替わります。",
     ),
     "excludeUid": MessageLookupByLibrary.simpleMessage("除外ユーザー ID"),
     "existsTip": m32,

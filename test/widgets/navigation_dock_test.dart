@@ -57,6 +57,7 @@ Future<ProviderContainer> _pumpHome(
       profilesProvider.overrideWithValue([
         const Profile(id: 1, autoUpdateDuration: Duration.zero),
       ]),
+      suspendProvider.overrideWithValue(false),
       ...overrides,
       navigationItemsStateProvider.overrideWithValue(
         NavigationItemsState(

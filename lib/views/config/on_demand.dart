@@ -221,7 +221,9 @@ class _OnDemandViewState extends ConsumerState<OnDemandView>
                 ),
               ),
               subtitle: Text(
-                isDirect ? appLocalizations.direct : appLocalizations.rule,
+                isDirect
+                    ? appLocalizations.direct
+                    : appLocalizations.disconnect,
                 textAlign: TextAlign.center,
               ),
               isSelected: isSelected,
@@ -539,8 +541,8 @@ class _SsidSwipeCard extends StatefulWidget {
 
 class _SsidSwipeCardState extends State<_SsidSwipeCard>
     with SingleTickerProviderStateMixin {
-  // Wide enough for the longest action label ("Direct" / "Rule") on one
-  // line; a wrapped label makes the button column taller than the card.
+  // Wide enough for the longest action label ("Disconnect") on one line;
+  // a wrapped label makes the button column taller than the card.
   static const _revealWidth = 88.0;
   static const _buttonWidth = 84.0;
 
@@ -715,10 +717,10 @@ class _SsidSwipeCardState extends State<_SsidSwipeCard>
                 centerX: _offset / 2,
                 progress: progress,
                 child: _swipeActionButton(
-                  label: appLocalizations.rule,
-                  glyph: AppGlyphs.rules,
-                  color: colorScheme.primary,
-                  foreground: colorScheme.onPrimary,
+                  label: appLocalizations.disconnect,
+                  glyph: AppGlyphs.wifiOff,
+                  color: colorScheme.error,
+                  foreground: colorScheme.onError,
                   onTap: () => _execute(false),
                 ),
               ),

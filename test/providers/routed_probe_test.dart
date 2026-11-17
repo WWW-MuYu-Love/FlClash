@@ -9,6 +9,7 @@ import 'package:fl_clash/providers/app.dart';
 import 'package:fl_clash/providers/core.dart';
 import 'package:fl_clash/providers/route_state.dart';
 import 'package:fl_clash/providers/routed_probe.dart';
+import 'package:fl_clash/providers/state.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:riverpod/riverpod.dart';
@@ -672,6 +673,7 @@ void main() {
           initProvider.overrideWithBuild((_, _) => true),
           coreStatusProvider.overrideWithBuild((_, _) => CoreStatus.connected),
           runTimeProvider.overrideWithBuild((_, _) => 1),
+          suspendProvider.overrideWithValue(false),
           coreHandlerProvider.overrideWithValue(CoreController.scoped(core)),
         ],
       );
