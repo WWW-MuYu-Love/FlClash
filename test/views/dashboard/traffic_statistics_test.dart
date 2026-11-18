@@ -4,21 +4,28 @@ import 'package:fl_clash/models/models.dart';
 import 'package:fl_clash/providers/app.dart';
 import 'package:fl_clash/providers/traffic_statistics.dart';
 import 'package:fl_clash/state.dart';
+import 'package:fl_clash/views/dashboard/style.dart';
 import 'package:fl_clash/views/dashboard/widgets/traffic_statistics.dart';
 import 'package:fl_clash/views/traffic_statistics.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:prism_ui/prism_ui.dart';
 
 import '../../helpers/host_scaffold.dart';
 import '../../helpers/test_app.dart';
 
 const _size = Size(400, 800);
 
-TrafficStatisticsData _data({int count = 3}) {
+TrafficStatisticsData _data({
+  int count = 3,
+  TrafficStatisticsRange range = TrafficStatisticsRange.day,
+  List<TrafficStatisticsBucket>? trend,
+  List<TrafficStatisticsRank>? ruleHits,
+}) {
   final start = DateTime(2026, 11, 19);
   return TrafficStatisticsData(
-    range: TrafficStatisticsRange.day,
+    range: range,
     start: start,
     end: start.add(const Duration(hours: 10)),
     count: count,
@@ -27,18 +34,22 @@ TrafficStatisticsData _data({int count = 3}) {
     directUpload: 500,
     directDownload: 500,
     uptime: const Duration(hours: 17, minutes: 26),
-    trend: [
-      TrafficStatisticsBucket(start: start, upload: 100, download: 200),
-      TrafficStatisticsBucket(
-        start: start.add(const Duration(hours: 1)),
-        upload: 1400,
-        download: 2300,
-      ),
-    ],
-    ruleHits: const [
-      TrafficStatisticsRank(label: 'RULE-SET', bytes: 3000, hits: 2),
-      TrafficStatisticsRank(label: 'DIRECT', bytes: 1000, hits: 1),
-    ],
+    trend:
+        trend ??
+        [
+          TrafficStatisticsBucket(start: start, upload: 100, download: 200),
+          TrafficStatisticsBucket(
+            start: start.add(const Duration(hours: 1)),
+            upload: 1400,
+            download: 2300,
+          ),
+        ],
+    ruleHits:
+        ruleHits ??
+        const [
+          TrafficStatisticsRank(label: 'RULE-SET', bytes: 3000, hits: 2),
+          TrafficStatisticsRank(label: 'DIRECT', bytes: 1000, hits: 1),
+        ],
     domains: const [
       TrafficStatisticsRank(label: 'example.com', bytes: 3000, hits: 2),
       TrafficStatisticsRank(label: 'other.test', bytes: 1000, hits: 1),
@@ -186,6 +197,103 @@ void main() {
       findsOneWidget,
     );
     expect(find.text('Overview'), findsNothing);
+
+    await teardownWidget(tester);
+  });
+
+  test('trend bars stay thin in wide slots and scale with narrow ones', () {
+    expect(trafficTrendBarWidth(42.0), 16.0);
+    expect(trafficTrendBarWidth(30.0), 16.0);
+    expect(trafficTrendBarWidth(10.0), 6.0);
+    expect(trafficTrendBarWidth(8.0), moreOrLessEquals(4.8));
+  });
+
+  testWidgets('day trend hour labels stay on one line', (tester) async {
+    await pumpWidget(tester, const TrafficStatisticsView());
+
+    for (final hour in ['12', '18']) {
+      final label = tester.widget<Text>(find.text(hour));
+      expect(label.softWrap, isFalse);
+      expect(label.textAlign, TextAlign.center);
+    }
+
+    await teardownWidget(tester);
+  });
+
+  testWidgets('week trend date labels stay on one line', (tester) async {
+    container.dispose();
+    container = createContainer(
+      _data(
+        range: TrafficStatisticsRange.week,
+        trend: [
+          for (var i = 0; i < 7; i++)
+            TrafficStatisticsBucket(
+              start: DateTime(2026, 11, 16).add(Duration(days: i)),
+              upload: 100,
+              download: 200,
+            ),
+        ],
+      ),
+    );
+    globalState.container = container;
+
+    await pumpWidget(tester, const TrafficStatisticsView());
+    await tester.tap(find.text('Week'));
+    await tester.pump();
+    await tester.pump();
+
+    for (final label in ['11-16', '11-19', '11-22']) {
+      final text = tester.widget<Text>(find.text(label));
+      expect(text.softWrap, isFalse);
+      expect(text.maxLines, 1);
+    }
+
+    await teardownWidget(tester);
+  });
+
+  testWidgets('rule hit cards use an unfilled type tag and show full counts', (
+    tester,
+  ) async {
+    container.dispose();
+    container = createContainer(
+      _data(
+        ruleHits: const [
+          TrafficStatisticsRank(
+            label: 'DIRECT',
+            bytes: 10485760,
+            hits: 1404,
+            ruleType: 'Match',
+          ),
+          TrafficStatisticsRank(
+            label: 'ads',
+            bytes: 3000,
+            hits: 2,
+            ruleType: 'RuleSet',
+          ),
+        ],
+      ),
+    );
+    globalState.container = container;
+
+    await pumpWidget(tester, const TrafficStatisticsView());
+
+    expect(find.text('1404 hits'), findsOneWidget);
+    expect(find.text((10485760).traffic.show), findsOneWidget);
+    expect(find.text('1404 hits · ${(10485760).traffic.show}'), findsNothing);
+    for (final ruleType in ['Match', 'RuleSet']) {
+      final tag = find.text(ruleType);
+      expect(tag, findsOneWidget);
+      final tagText = tester.widget<Text>(tag);
+      final BuildContext tagContext = tester.element(tag);
+      expect(tagText.style?.color, tagContext.colorScheme.onSurfaceVariant);
+      final pill = tester.widget<Container>(
+        find.ancestor(of: tag, matching: find.byType(Container)).first,
+      );
+      expect(
+        (pill.decoration as ShapeDecoration?)?.color,
+        DashboardColors.of(tester.element(tag)).card,
+      );
+    }
 
     await teardownWidget(tester);
   });

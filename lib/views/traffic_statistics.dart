@@ -176,7 +176,7 @@ class _TrafficStatisticsViewState extends ConsumerState<TrafficStatisticsView> {
             Padding(
               padding: const EdgeInsets.only(top: 8),
               child: SizedBox(
-                height: 116,
+                height: 132,
                 child: ListView.separated(
                   scrollDirection: Axis.horizontal,
                   separatorBuilder: (_, _) => const SizedBox(width: 12),
@@ -799,6 +799,9 @@ class _TrendChart extends StatelessWidget {
                           Expanded(
                             child: Text(
                               hour % 6 == 0 ? '$hour' : '',
+                              textAlign: TextAlign.center,
+                              softWrap: false,
+                              overflow: TextOverflow.visible,
                               style: AppTextStyle.footnote
                                   .of(context)
                                   .copyWith(
@@ -814,6 +817,8 @@ class _TrendChart extends StatelessWidget {
                         for (final label in _xLabels(data))
                           Text(
                             label,
+                            softWrap: false,
+                            maxLines: 1,
                             style: AppTextStyle.footnote
                                 .of(context)
                                 .copyWith(color: colorScheme.onSurfaceVariant),
@@ -878,13 +883,22 @@ class _TrendBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final (download, upload) = _stackedHeights(bucket, max);
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.end,
-      spacing: 2,
-      children: [
-        _TrendSegment(height: upload, color: uploadColor),
-        _TrendSegment(height: download, color: downloadColor),
-      ],
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return Center(
+          child: SizedBox(
+            width: trafficTrendBarWidth(constraints.maxWidth),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.end,
+              spacing: 2,
+              children: [
+                _TrendSegment(height: upload, color: uploadColor),
+                _TrendSegment(height: download, color: downloadColor),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }
@@ -906,6 +920,9 @@ class _TrendSegment extends StatelessWidget {
     );
   }
 }
+
+double trafficTrendBarWidth(double slotWidth) =>
+    math.min(slotWidth * 0.6, 16.0);
 
 (double, double) _stackedHeights(TrafficStatisticsBucket bucket, int max) {
   final total = bucket.upload + bucket.download;
@@ -992,19 +1009,6 @@ class _AxisLabel extends StatelessWidget {
   }
 }
 
-(Color, Color) _ruleTypePillColors(BuildContext context, String? ruleType) {
-  final colorScheme = context.colorScheme;
-  final colors = DashboardColors.of(context);
-  switch (ruleType?.toLowerCase().replaceAll('-', '')) {
-    case 'ruleset':
-      return (colorScheme.primaryContainer, colorScheme.onPrimaryContainer);
-    case 'match':
-      return (colors.okContainer, colors.onOkContainer);
-    default:
-      return (colors.warnContainer, colors.onWarnContainer);
-  }
-}
-
 class _RuleHitCard extends StatelessWidget {
   const _RuleHitCard({required this.rank, required this.ratio});
 
@@ -1016,7 +1020,6 @@ class _RuleHitCard extends StatelessWidget {
     final appLocalizations = context.appLocalizations;
     final colorScheme = context.colorScheme;
     final ruleType = rank.ruleType;
-    final (pillColor, pillTextColor) = _ruleTypePillColors(context, ruleType);
     return Card(
       inert: true,
       padding: const EdgeInsets.all(12),
@@ -1058,7 +1061,7 @@ class _RuleHitCard extends StatelessWidget {
                     vertical: 3,
                   ),
                   decoration: ShapeDecoration(
-                    color: pillColor,
+                    color: DashboardColors.of(context).card,
                     shape: AppShape.full,
                   ),
                   child: Text(
@@ -1066,20 +1069,29 @@ class _RuleHitCard extends StatelessWidget {
                     maxLines: 1,
                     style: AppTextStyle.caption1
                         .of(context)
-                        .copyWith(color: pillTextColor),
+                        .copyWith(color: colorScheme.onSurfaceVariant),
                   ),
                 ),
               const Spacer(),
-              Flexible(
-                child: Text(
-                  '${appLocalizations.trafficStatisticsHits(rank.hits)} · '
-                  '${rank.bytes.traffic.show}',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: AppTextStyle.footnote
-                      .of(context)
-                      .copyWith(color: colorScheme.onSurfaceVariant),
-                ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                spacing: 2,
+                children: [
+                  Text(
+                    appLocalizations.trafficStatisticsHits(rank.hits),
+                    maxLines: 1,
+                    style: AppTextStyle.caption1
+                        .of(context)
+                        .copyWith(color: colorScheme.onSurfaceVariant),
+                  ),
+                  Text(
+                    rank.bytes.traffic.show,
+                    maxLines: 1,
+                    style: AppTextStyle.caption1
+                        .of(context)
+                        .copyWith(color: colorScheme.onSurfaceVariant),
+                  ),
+                ],
               ),
             ],
           ),
