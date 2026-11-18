@@ -1110,7 +1110,7 @@ void main() {
     );
 
     test(
-      'a failed patch still shows the banner when XPC answers nothing',
+      'a failed patch also suppresses the banner when XPC answers nothing',
       () async {
         await AppLocalizations.load(const Locale('en'));
         final printed = capturePrints();
@@ -1124,9 +1124,22 @@ void main() {
         await patchScope.action.updateConfig();
 
         expect(
-          printed.any((line) => line?.contains('banner: ') ?? false),
+          printed.where((line) => line?.contains('banner: ') ?? false),
+          isEmpty,
+        );
+        expect(
+          printed.any(
+            (line) =>
+                line?.contains(
+                  'updateConfig: extension did not receive the config',
+                ) ??
+                false,
+          ),
           isTrue,
         );
+        // The XPC failure must not skip the App core mirror: the probes
+        // ask the App core, so its mode still has to follow.
+        verify(() => core.updateConfig(any(), route: CoreRoute.app)).called(1);
       },
     );
 

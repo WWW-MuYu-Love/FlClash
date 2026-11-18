@@ -487,14 +487,22 @@ class SetupAction extends _$SetupAction {
       try {
         await _core.updateConfig(params);
       } on CoreMethodException catch (error) {
-        if (patched && error.code == 'extension_config_failed') {
-          commonPrint.log(
-            'updateConfig: extension received the UpdateParams fields via '
-            '9090; XPC-only fields (tun, external-controller, secret, '
-            'unified-delay, authentication, geo-*, options) were not '
-            'delivered: ${error.message}',
-            logLevel: LogLevel.warning,
-          );
+        if (error.code == 'extension_config_failed') {
+          if (patched) {
+            commonPrint.log(
+              'updateConfig: extension received the UpdateParams fields via '
+              '9090; XPC-only fields (tun, external-controller, secret, '
+              'unified-delay, authentication, geo-*, options) were not '
+              'delivered: ${error.message}',
+              logLevel: LogLevel.warning,
+            );
+          } else {
+            commonPrint.log(
+              'updateConfig: extension did not receive the config: '
+              '${error.message}',
+              logLevel: LogLevel.warning,
+            );
+          }
         } else {
           rethrow;
         }
