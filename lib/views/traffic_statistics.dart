@@ -7,6 +7,7 @@ import 'package:fl_clash/providers/traffic_statistics.dart';
 import 'package:fl_clash/ui/icons/icons.dart';
 import 'package:fl_clash/views/dashboard/style.dart';
 import 'package:fl_clash/widgets/widgets.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -764,14 +765,17 @@ class _TrendChart extends StatelessWidget {
                         ],
                       ),
                     ),
-                    if (data.range == TrafficStatisticsRange.day)
-                      Positioned.fill(
-                        child: CustomPaint(
-                          painter: _TrendGridPainter(
-                            color: Divider.colorOf(context),
+                    Positioned.fill(
+                      child: CustomPaint(
+                        painter: _TrendGridPainter(
+                          color: Divider.colorOf(context),
+                          fractions: trafficTrendGridFractions(
+                            data.range,
+                            buckets.length,
                           ),
                         ),
                       ),
+                    ),
                     Positioned.fill(
                       child: Row(
                         crossAxisAlignment: CrossAxisAlignment.end,
@@ -856,11 +860,10 @@ class _TrendChart extends StatelessWidget {
 }
 
 class _TrendGridPainter extends CustomPainter {
-  _TrendGridPainter({required this.color});
+  _TrendGridPainter({required this.color, required this.fractions});
 
   final Color color;
-
-  static const _fractions = [0.0, 0.25, 0.5, 0.75];
+  final List<double> fractions;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -870,7 +873,7 @@ class _TrendGridPainter extends CustomPainter {
       ..strokeWidth = 1;
     const dash = 4.0;
     const gap = 4.0;
-    for (final fraction in _fractions) {
+    for (final fraction in fractions) {
       final x = fraction * size.width;
       var y = 0.0;
       while (y < size.height) {
@@ -885,7 +888,8 @@ class _TrendGridPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(_TrendGridPainter old) => old.color != color;
+  bool shouldRepaint(_TrendGridPainter old) =>
+      old.color != color || !listEquals(old.fractions, fractions);
 }
 
 class _TrendBar extends StatelessWidget {
@@ -944,6 +948,21 @@ class _TrendSegment extends StatelessWidget {
 
 double trafficTrendBarWidth(double slotWidth) =>
     math.min(slotWidth * 0.6, 16.0);
+
+List<double> trafficTrendGridFractions(
+  TrafficStatisticsRange range,
+  int bucketCount,
+) {
+  if (bucketCount <= 0) {
+    return const [0.0, 1.0];
+  }
+  final step = switch (range) {
+    TrafficStatisticsRange.day => 6,
+    TrafficStatisticsRange.week => 1,
+    TrafficStatisticsRange.month => 7,
+  };
+  return [for (var i = 0; i < bucketCount; i += step) i / bucketCount, 1.0];
+}
 
 (double, double) _stackedHeights(TrafficStatisticsBucket bucket, int max) {
   final total = bucket.upload + bucket.download;

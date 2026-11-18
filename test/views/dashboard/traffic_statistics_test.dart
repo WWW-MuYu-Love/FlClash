@@ -234,6 +234,108 @@ void main() {
     expect(trafficTrendBarWidth(8.0), moreOrLessEquals(4.8));
   });
 
+  test('trend grid fractions cover every range end to end', () {
+    expect(trafficTrendGridFractions(TrafficStatisticsRange.day, 24), [
+      0.0,
+      0.25,
+      0.5,
+      0.75,
+      1.0,
+    ]);
+    final week = trafficTrendGridFractions(TrafficStatisticsRange.week, 7);
+    expect(week, hasLength(8));
+    expect(week.first, 0.0);
+    expect(week.last, 1.0);
+    expect(week[3], moreOrLessEquals(3 / 7));
+    expect(trafficTrendGridFractions(TrafficStatisticsRange.month, 28), [
+      0.0,
+      0.25,
+      0.5,
+      0.75,
+      1.0,
+    ]);
+    final month30 = trafficTrendGridFractions(TrafficStatisticsRange.month, 30);
+    expect(month30, hasLength(6));
+    expect(month30.first, 0.0);
+    expect(month30.last, 1.0);
+    expect(month30[1], moreOrLessEquals(7 / 30));
+    expect(month30[4], moreOrLessEquals(28 / 30));
+    expect(
+      trafficTrendGridFractions(TrafficStatisticsRange.month, 31),
+      hasLength(6),
+    );
+  });
+
+  Finder findTrendGrid() {
+    return find.byWidgetPredicate(
+      (widget) =>
+          widget is CustomPaint &&
+          widget.painter?.runtimeType.toString() == '_TrendGridPainter',
+    );
+  }
+
+  testWidgets('trend grid mounts in the day view', (tester) async {
+    await pumpWidget(tester, const TrafficStatisticsView());
+
+    expect(findTrendGrid(), findsOneWidget);
+
+    await teardownWidget(tester);
+  });
+
+  testWidgets('trend grid mounts in the week view', (tester) async {
+    container.dispose();
+    container = createContainer(
+      _data(
+        range: TrafficStatisticsRange.week,
+        trend: [
+          for (var i = 0; i < 7; i++)
+            TrafficStatisticsBucket(
+              start: DateTime(2026, 11, 16).add(Duration(days: i)),
+              upload: 100,
+              download: 200,
+            ),
+        ],
+      ),
+    );
+    globalState.container = container;
+
+    await pumpWidget(tester, const TrafficStatisticsView());
+    await tester.tap(find.text('Week'));
+    await tester.pump();
+    await tester.pump();
+
+    expect(findTrendGrid(), findsOneWidget);
+
+    await teardownWidget(tester);
+  });
+
+  testWidgets('trend grid mounts in the month view', (tester) async {
+    container.dispose();
+    container = createContainer(
+      _data(
+        range: TrafficStatisticsRange.month,
+        trend: [
+          for (var i = 0; i < 30; i++)
+            TrafficStatisticsBucket(
+              start: DateTime(2026, 11, 1).add(Duration(days: i)),
+              upload: 100,
+              download: 200,
+            ),
+        ],
+      ),
+    );
+    globalState.container = container;
+
+    await pumpWidget(tester, const TrafficStatisticsView());
+    await tester.tap(find.text('Month'));
+    await tester.pump();
+    await tester.pump();
+
+    expect(findTrendGrid(), findsOneWidget);
+
+    await teardownWidget(tester);
+  });
+
   testWidgets('day trend hour labels stay on one line', (tester) async {
     await pumpWidget(tester, const TrafficStatisticsView());
 
