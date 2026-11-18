@@ -39,6 +39,7 @@ part 'traffic_statistics.dart';
     IpQualities,
     MitmModules,
     TrafficStatistics,
+    TunnelSessions,
   ],
   daos: [
     ProfilesDao,
@@ -53,13 +54,14 @@ part 'traffic_statistics.dart';
     IpQualitiesDao,
     MitmModulesDao,
     TrafficStatisticsDao,
+    TunnelSessionsDao,
   ],
 )
 class Database extends _$Database {
   Database([QueryExecutor? executor]) : super(executor ?? _openConnection());
 
   @override
-  int get schemaVersion => 24;
+  int get schemaVersion => 25;
 
   static LazyDatabase _openConnection() {
     return LazyDatabase(() async {
@@ -131,6 +133,9 @@ class Database extends _$Database {
         }
         if (from < 24) {
           await _createTableIfMissing(m, trafficStatistics);
+        }
+        if (from < 25) {
+          await _createTableIfMissing(m, tunnelSessions);
         }
       }),
       beforeOpen: (_) => customStatement('PRAGMA foreign_keys = ON'),

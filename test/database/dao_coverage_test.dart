@@ -1259,6 +1259,15 @@ void main() {
         ('DIRECT', 1),
       ]);
       expect(hits.first.bytes, 1200);
+      expect(hits.first.ruleType, 'RULE-SET');
+
+      final rules = await dao.rankBy(TrafficStatisticsRankBy.rule, start, end);
+      expect(rules.map((rank) => (rank.label, rank.bytes)), [
+        ('ads', 1200),
+        ('DIRECT', 50),
+      ]);
+      expect(rules.first.upload, 150);
+      expect(rules.first.download, 1050);
 
       final domains = await dao.rankBy(
         TrafficStatisticsRankBy.domain,
@@ -1344,5 +1353,33 @@ void main() {
       )).count,
       1,
     );
+  });
+
+  test('tunnel sessions DAO measures overlap within a window', () async {
+    final dao = database.tunnelSessionsDao;
+    final start = DateTime(2026, 11, 19, 10);
+    final end = start.add(const Duration(hours: 1));
+
+    await dao.openSession(start.subtract(const Duration(hours: 1)));
+    await dao.closeOpenSessions(start.add(const Duration(minutes: 30)));
+    await dao.openSession(start.add(const Duration(minutes: 15)));
+    await dao.closeOpenSessions(
+      start.add(const Duration(hours: 1, minutes: 30)),
+    );
+    final openId = await dao.openSession(
+      start.add(const Duration(minutes: 45)),
+    );
+
+    expect(await dao.uptime(start, end), const Duration(minutes: 90));
+
+    final sessions = await database.select(database.tunnelSessions).get();
+    expect(sessions.map((session) => session.id), contains(openId));
+    expect(
+      sessions.singleWhere((session) => session.id == openId).endedAt == null,
+      isTrue,
+    );
+
+    expect(await dao.pruneClosedBefore(start.add(const Duration(hours: 1))), 1);
+    expect(await database.tunnelSessions.count.getSingle(), 2);
   });
 }

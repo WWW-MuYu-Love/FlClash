@@ -40,7 +40,22 @@ class TrafficStatistics extends Table {
   TextColumn get profileLabel => text()();
 }
 
-enum TrafficStatisticsRankBy { domain, process, proxy, profile }
+/// One tunnel session: opened when the tunnel comes up, closed when it
+/// goes down. A session left open by a killed process is closed when the
+/// next one opens, so its time still counts contiguously.
+@DataClassName('TunnelSessionRecord')
+class TunnelSessions extends Table {
+  @override
+  String get tableName => 'tunnel_sessions';
+
+  IntColumn get id => integer().autoIncrement()();
+
+  DateTimeColumn get startedAt => dateTime()();
+
+  DateTimeColumn get endedAt => dateTime().nullable()();
+}
+
+enum TrafficStatisticsRankBy { domain, process, proxy, profile, rule }
 
 class TrafficStatisticsTotals {
   const TrafficStatisticsTotals({
@@ -75,11 +90,61 @@ class TrafficStatisticsRank {
     required this.label,
     required this.bytes,
     required this.hits,
+    this.upload = 0,
+    this.download = 0,
+    this.ruleType,
   });
 
   final String label;
   final int bytes;
   final int hits;
+  final int upload;
+  final int download;
+  final String? ruleType;
+}
+
+@DriftAccessor(tables: [TunnelSessions])
+class TunnelSessionsDao extends DatabaseAccessor<Database>
+    with _$TunnelSessionsDaoMixin {
+  TunnelSessionsDao(super.attachedDatabase);
+
+  Future<int> openSession(DateTime startedAt) {
+    return into(
+      tunnelSessions,
+    ).insert(TunnelSessionsCompanion.insert(startedAt: startedAt));
+  }
+
+  Future<void> closeOpenSessions(DateTime endedAt) {
+    return (update(tunnelSessions)..where((t) => t.endedAt.isNull())).write(
+      TunnelSessionsCompanion(endedAt: Value(endedAt)),
+    );
+  }
+
+  Future<Duration> uptime(DateTime start, DateTime end) async {
+    final rows = await customSelect(
+      'SELECT started_at, ended_at FROM tunnel_sessions '
+      'WHERE started_at < ? AND (ended_at IS NULL OR ended_at > ?)',
+      variables: [Variable.withDateTime(end), Variable.withDateTime(start)],
+    ).get();
+    var total = Duration.zero;
+    for (final row in rows) {
+      final sessionStart = row.read<DateTime>('started_at');
+      final sessionEnd = row.readNullable<DateTime>('ended_at') ?? end;
+      final overlapStart = sessionStart.isAfter(start) ? sessionStart : start;
+      final overlapEnd = sessionEnd.isBefore(end) ? sessionEnd : end;
+      if (overlapEnd.isAfter(overlapStart)) {
+        total += overlapEnd.difference(overlapStart);
+      }
+    }
+    return total;
+  }
+
+  Future<int> pruneClosedBefore(DateTime cutoff) {
+    return (delete(tunnelSessions)..where(
+          (t) => t.endedAt.isNotNull() & t.endedAt.isSmallerThanValue(cutoff),
+        ))
+        .go();
+  }
 }
 
 @DriftAccessor(tables: [TrafficStatistics])
@@ -156,18 +221,27 @@ class TrafficStatisticsDao extends DatabaseAccessor<Database>
     int limit = 10,
   }) async {
     final rows = await customSelect(
-      'SELECT CASE WHEN rule_payload != \'\' THEN rule_payload ELSE rule END '
+      'SELECT rule AS rule_type, '
+      "CASE WHEN rule_payload != '' THEN rule_payload ELSE rule END "
       'AS label, COUNT(*) AS hits, '
       'COALESCE(SUM(upload + download), 0) AS bytes '
       'FROM traffic_statistics WHERE ended_at >= ? AND ended_at < ? '
-      'GROUP BY label ORDER BY hits DESC, bytes DESC LIMIT ?',
+      'GROUP BY rule, label ORDER BY hits DESC, bytes DESC LIMIT ?',
       variables: [
         Variable.withDateTime(start),
         Variable.withDateTime(end),
         Variable.withInt(limit),
       ],
     ).get();
-    return _ranksOf(rows);
+    return [
+      for (final row in rows)
+        TrafficStatisticsRank(
+          label: row.read<String>('label'),
+          bytes: row.read<int>('bytes'),
+          hits: row.read<int>('hits'),
+          ruleType: row.read<String>('rule_type'),
+        ),
+    ];
   }
 
   Future<List<TrafficStatisticsRank>> rankBy(
@@ -176,21 +250,27 @@ class TrafficStatisticsDao extends DatabaseAccessor<Database>
     DateTime end, {
     int limit = 10,
   }) async {
-    final column = switch (by) {
-      TrafficStatisticsRankBy.domain => 'host',
-      TrafficStatisticsRankBy.process => 'process',
-      TrafficStatisticsRankBy.proxy => 'proxy',
-      TrafficStatisticsRankBy.profile => 'profile_label',
+    final (groupBy, exclusion) = switch (by) {
+      TrafficStatisticsRankBy.domain => ('host', ''),
+      TrafficStatisticsRankBy.process => ('process', ''),
+      TrafficStatisticsRankBy.proxy => (
+        'proxy',
+        " AND proxy NOT IN ('DIRECT', 'REJECT')",
+      ),
+      TrafficStatisticsRankBy.profile => ('profile_label', ''),
+      TrafficStatisticsRankBy.rule => (
+        "CASE WHEN rule_payload != '' THEN rule_payload ELSE rule END",
+        '',
+      ),
     };
-    final exclusion = by == TrafficStatisticsRankBy.proxy
-        ? " AND $column NOT IN ('DIRECT', 'REJECT')"
-        : '';
     final rows = await customSelect(
-      'SELECT $column AS label, '
-      'COALESCE(SUM(upload + download), 0) AS bytes, COUNT(*) AS hits '
+      'SELECT $groupBy AS label, '
+      'COALESCE(SUM(upload + download), 0) AS bytes, COUNT(*) AS hits, '
+      'COALESCE(SUM(upload), 0) AS upload, '
+      'COALESCE(SUM(download), 0) AS download '
       'FROM traffic_statistics '
-      'WHERE ended_at >= ? AND ended_at < ? AND $column != \'\'$exclusion '
-      'GROUP BY $column ORDER BY bytes DESC, hits DESC LIMIT ?',
+      'WHERE ended_at >= ? AND ended_at < ? AND $groupBy != \'\'$exclusion '
+      'GROUP BY $groupBy ORDER BY bytes DESC, hits DESC LIMIT ?',
       variables: [
         Variable.withDateTime(start),
         Variable.withDateTime(end),
@@ -207,6 +287,8 @@ class TrafficStatisticsDao extends DatabaseAccessor<Database>
           label: row.read<String>('label'),
           bytes: row.read<int>('bytes'),
           hits: row.read<int>('hits'),
+          upload: row.read<int>('upload'),
+          download: row.read<int>('download'),
         ),
     ];
   }

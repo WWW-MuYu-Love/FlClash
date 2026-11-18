@@ -167,7 +167,7 @@ void main() {
     ]);
 
     final data = await container.read(
-      trafficStatisticsProvider(TrafficStatisticsRange.day).future,
+      trafficStatisticsProvider(TrafficStatisticsRange.day, 0).future,
     );
 
     expect(data.count, 2);
@@ -177,6 +177,7 @@ void main() {
     expect(data.directUpload, 10);
     expect(data.directDownload, 40);
     expect(data.proxyUpload, 100);
+    expect(data.uptime, Duration.zero);
     expect(data.start, dayStart);
     expect(data.trend.length, now.hour + 1);
     expect(
@@ -187,20 +188,89 @@ void main() {
       ('ads', 1),
       ('DIRECT', 1),
     ]);
+    expect(data.ruleHits.first.ruleType, 'RULE-SET');
     expect(data.domains.first.label, 'example.com');
     expect(data.domains.first.bytes, 1000);
+    expect(data.domains.first.upload, 100);
+    expect(data.domains.first.download, 900);
     expect(data.proxies.single.label, 'Node-A');
     expect(data.profiles.single.label, 'Home');
+    expect(data.rules.map((rule) => (rule.label, rule.bytes)), [
+      ('ads', 1000),
+      ('DIRECT', 50),
+    ]);
   });
+
+  test('the statistics provider reads an earlier day with an offset', () async {
+    final now = DateTime.now();
+    final yesterday = DateTime(now.year, now.month, now.day - 1);
+    await testDatabase.trafficStatisticsDao.recordClosed([
+      db.TrafficStatisticsCompanion.insert(
+        connectionId: 'old',
+        host: 'example.com',
+        process: '',
+        proxy: 'Node-A',
+        direct: false,
+        rule: 'DIRECT',
+        rulePayload: '',
+        upload: 10,
+        download: 40,
+        startedAt: yesterday.add(const Duration(hours: 10)),
+        endedAt: yesterday.add(const Duration(hours: 10, minutes: 1)),
+        profileId: 1,
+        profileLabel: 'Home',
+      ),
+    ]);
+
+    final today = await container.read(
+      trafficStatisticsProvider(TrafficStatisticsRange.day, 0).future,
+    );
+    expect(today.count, 0);
+
+    final past = await container.read(
+      trafficStatisticsProvider(TrafficStatisticsRange.day, 1).future,
+    );
+    expect(past.count, 1);
+    expect(past.start, yesterday);
+    expect(past.end, yesterday.add(const Duration(days: 1)));
+  });
+
+  test(
+    'a tunnel session opens on the first event and closes on stop',
+    () async {
+      recorder.onRequest(connection(id: 'a', upload: 1, download: 2));
+      await recorder.flush();
+
+      var sessions = await testDatabase
+          .select(testDatabase.tunnelSessions)
+          .get();
+      expect(sessions, hasLength(1));
+      expect(sessions.single.endedAt, isNull);
+
+      container.read(runTimeProvider.notifier).value = null;
+      await Future<void>.delayed(Duration.zero);
+      await recorder.flush();
+
+      sessions = await testDatabase.select(testDatabase.tunnelSessions).get();
+      expect(sessions, hasLength(1));
+      expect(sessions.single.endedAt, isNotNull);
+
+      final data = await container.read(
+        trafficStatisticsProvider(TrafficStatisticsRange.day, 0).future,
+      );
+      expect(data.uptime, greaterThanOrEqualTo(Duration.zero));
+    },
+  );
 
   test('the statistics provider returns empty data without rows', () async {
     final now = DateTime.now();
     final data = await container.read(
-      trafficStatisticsProvider(TrafficStatisticsRange.month).future,
+      trafficStatisticsProvider(TrafficStatisticsRange.month, 0).future,
     );
 
     expect(data.count, 0);
     expect(data.total, 0);
+    expect(data.uptime, Duration.zero);
     expect(data.ruleHits, isEmpty);
     expect(data.domains, isEmpty);
     expect(data.trend.length, now.day);

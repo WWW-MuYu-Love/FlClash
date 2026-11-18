@@ -6044,6 +6044,262 @@ class TrafficStatisticsCompanion
   }
 }
 
+class $TunnelSessionsTable extends TunnelSessions
+    with TableInfo<$TunnelSessionsTable, TunnelSessionRecord> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $TunnelSessionsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _startedAtMeta = const VerificationMeta(
+    'startedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> startedAt = GeneratedColumn<DateTime>(
+    'started_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _endedAtMeta = const VerificationMeta(
+    'endedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> endedAt = GeneratedColumn<DateTime>(
+    'ended_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [id, startedAt, endedAt];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'tunnel_sessions';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<TunnelSessionRecord> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('started_at')) {
+      context.handle(
+        _startedAtMeta,
+        startedAt.isAcceptableOrUnknown(data['started_at']!, _startedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_startedAtMeta);
+    }
+    if (data.containsKey('ended_at')) {
+      context.handle(
+        _endedAtMeta,
+        endedAt.isAcceptableOrUnknown(data['ended_at']!, _endedAtMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  TunnelSessionRecord map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return TunnelSessionRecord(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      startedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}started_at'],
+      )!,
+      endedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}ended_at'],
+      ),
+    );
+  }
+
+  @override
+  $TunnelSessionsTable createAlias(String alias) {
+    return $TunnelSessionsTable(attachedDatabase, alias);
+  }
+}
+
+class TunnelSessionRecord extends DataClass
+    implements Insertable<TunnelSessionRecord> {
+  final int id;
+  final DateTime startedAt;
+  final DateTime? endedAt;
+  const TunnelSessionRecord({
+    required this.id,
+    required this.startedAt,
+    this.endedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['started_at'] = Variable<DateTime>(startedAt);
+    if (!nullToAbsent || endedAt != null) {
+      map['ended_at'] = Variable<DateTime>(endedAt);
+    }
+    return map;
+  }
+
+  TunnelSessionsCompanion toCompanion(bool nullToAbsent) {
+    return TunnelSessionsCompanion(
+      id: Value(id),
+      startedAt: Value(startedAt),
+      endedAt: endedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(endedAt),
+    );
+  }
+
+  factory TunnelSessionRecord.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return TunnelSessionRecord(
+      id: serializer.fromJson<int>(json['id']),
+      startedAt: serializer.fromJson<DateTime>(json['startedAt']),
+      endedAt: serializer.fromJson<DateTime?>(json['endedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'startedAt': serializer.toJson<DateTime>(startedAt),
+      'endedAt': serializer.toJson<DateTime?>(endedAt),
+    };
+  }
+
+  TunnelSessionRecord copyWith({
+    int? id,
+    DateTime? startedAt,
+    Value<DateTime?> endedAt = const Value.absent(),
+  }) => TunnelSessionRecord(
+    id: id ?? this.id,
+    startedAt: startedAt ?? this.startedAt,
+    endedAt: endedAt.present ? endedAt.value : this.endedAt,
+  );
+  TunnelSessionRecord copyWithCompanion(TunnelSessionsCompanion data) {
+    return TunnelSessionRecord(
+      id: data.id.present ? data.id.value : this.id,
+      startedAt: data.startedAt.present ? data.startedAt.value : this.startedAt,
+      endedAt: data.endedAt.present ? data.endedAt.value : this.endedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('TunnelSessionRecord(')
+          ..write('id: $id, ')
+          ..write('startedAt: $startedAt, ')
+          ..write('endedAt: $endedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, startedAt, endedAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is TunnelSessionRecord &&
+          other.id == this.id &&
+          other.startedAt == this.startedAt &&
+          other.endedAt == this.endedAt);
+}
+
+class TunnelSessionsCompanion extends UpdateCompanion<TunnelSessionRecord> {
+  final Value<int> id;
+  final Value<DateTime> startedAt;
+  final Value<DateTime?> endedAt;
+  const TunnelSessionsCompanion({
+    this.id = const Value.absent(),
+    this.startedAt = const Value.absent(),
+    this.endedAt = const Value.absent(),
+  });
+  TunnelSessionsCompanion.insert({
+    this.id = const Value.absent(),
+    required DateTime startedAt,
+    this.endedAt = const Value.absent(),
+  }) : startedAt = Value(startedAt);
+  static Insertable<TunnelSessionRecord> custom({
+    Expression<int>? id,
+    Expression<DateTime>? startedAt,
+    Expression<DateTime>? endedAt,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (startedAt != null) 'started_at': startedAt,
+      if (endedAt != null) 'ended_at': endedAt,
+    });
+  }
+
+  TunnelSessionsCompanion copyWith({
+    Value<int>? id,
+    Value<DateTime>? startedAt,
+    Value<DateTime?>? endedAt,
+  }) {
+    return TunnelSessionsCompanion(
+      id: id ?? this.id,
+      startedAt: startedAt ?? this.startedAt,
+      endedAt: endedAt ?? this.endedAt,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (startedAt.present) {
+      map['started_at'] = Variable<DateTime>(startedAt.value);
+    }
+    if (endedAt.present) {
+      map['ended_at'] = Variable<DateTime>(endedAt.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('TunnelSessionsCompanion(')
+          ..write('id: $id, ')
+          ..write('startedAt: $startedAt, ')
+          ..write('endedAt: $endedAt')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$Database extends GeneratedDatabase {
   _$Database(QueryExecutor e) : super(e);
   $DatabaseManager get managers => $DatabaseManager(this);
@@ -6061,6 +6317,7 @@ abstract class _$Database extends GeneratedDatabase {
   late final $MitmModulesTable mitmModules = $MitmModulesTable(this);
   late final $TrafficStatisticsTable trafficStatistics =
       $TrafficStatisticsTable(this);
+  late final $TunnelSessionsTable tunnelSessions = $TunnelSessionsTable(this);
   late final Index idxRuleTarget = Index(
     'idx_rule_target',
     'CREATE INDEX idx_rule_target ON rules (rule_target)',
@@ -6101,6 +6358,9 @@ abstract class _$Database extends GeneratedDatabase {
   late final TrafficStatisticsDao trafficStatisticsDao = TrafficStatisticsDao(
     this as Database,
   );
+  late final TunnelSessionsDao tunnelSessionsDao = TunnelSessionsDao(
+    this as Database,
+  );
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -6119,6 +6379,7 @@ abstract class _$Database extends GeneratedDatabase {
     ipQualities,
     mitmModules,
     trafficStatistics,
+    tunnelSessions,
     idxRuleTarget,
     idxRulesProfileOrder,
     idxProxyGroupsProfileOrder,
@@ -10621,6 +10882,175 @@ typedef $$TrafficStatisticsTableProcessedTableManager =
       TrafficStatisticsRecord,
       PrefetchHooks Function()
     >;
+typedef $$TunnelSessionsTableCreateCompanionBuilder =
+    TunnelSessionsCompanion Function({
+      Value<int> id,
+      required DateTime startedAt,
+      Value<DateTime?> endedAt,
+    });
+typedef $$TunnelSessionsTableUpdateCompanionBuilder =
+    TunnelSessionsCompanion Function({
+      Value<int> id,
+      Value<DateTime> startedAt,
+      Value<DateTime?> endedAt,
+    });
+
+class $$TunnelSessionsTableFilterComposer
+    extends Composer<_$Database, $TunnelSessionsTable> {
+  $$TunnelSessionsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get startedAt => $composableBuilder(
+    column: $table.startedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get endedAt => $composableBuilder(
+    column: $table.endedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$TunnelSessionsTableOrderingComposer
+    extends Composer<_$Database, $TunnelSessionsTable> {
+  $$TunnelSessionsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get startedAt => $composableBuilder(
+    column: $table.startedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get endedAt => $composableBuilder(
+    column: $table.endedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$TunnelSessionsTableAnnotationComposer
+    extends Composer<_$Database, $TunnelSessionsTable> {
+  $$TunnelSessionsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get startedAt =>
+      $composableBuilder(column: $table.startedAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get endedAt =>
+      $composableBuilder(column: $table.endedAt, builder: (column) => column);
+}
+
+class $$TunnelSessionsTableTableManager
+    extends
+        RootTableManager<
+          _$Database,
+          $TunnelSessionsTable,
+          TunnelSessionRecord,
+          $$TunnelSessionsTableFilterComposer,
+          $$TunnelSessionsTableOrderingComposer,
+          $$TunnelSessionsTableAnnotationComposer,
+          $$TunnelSessionsTableCreateCompanionBuilder,
+          $$TunnelSessionsTableUpdateCompanionBuilder,
+          (
+            TunnelSessionRecord,
+            BaseReferences<
+              _$Database,
+              $TunnelSessionsTable,
+              TunnelSessionRecord
+            >,
+          ),
+          TunnelSessionRecord,
+          PrefetchHooks Function()
+        > {
+  $$TunnelSessionsTableTableManager(_$Database db, $TunnelSessionsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$TunnelSessionsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$TunnelSessionsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$TunnelSessionsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<DateTime> startedAt = const Value.absent(),
+                Value<DateTime?> endedAt = const Value.absent(),
+              }) => TunnelSessionsCompanion(
+                id: id,
+                startedAt: startedAt,
+                endedAt: endedAt,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required DateTime startedAt,
+                Value<DateTime?> endedAt = const Value.absent(),
+              }) => TunnelSessionsCompanion.insert(
+                id: id,
+                startedAt: startedAt,
+                endedAt: endedAt,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$TunnelSessionsTable, TunnelSessionRecord>(table),
+                  BaseReferences<
+                    _$Database,
+                    $TunnelSessionsTable,
+                    TunnelSessionRecord
+                  >(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$TunnelSessionsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$Database,
+      $TunnelSessionsTable,
+      TunnelSessionRecord,
+      $$TunnelSessionsTableFilterComposer,
+      $$TunnelSessionsTableOrderingComposer,
+      $$TunnelSessionsTableAnnotationComposer,
+      $$TunnelSessionsTableCreateCompanionBuilder,
+      $$TunnelSessionsTableUpdateCompanionBuilder,
+      (
+        TunnelSessionRecord,
+        BaseReferences<_$Database, $TunnelSessionsTable, TunnelSessionRecord>,
+      ),
+      TunnelSessionRecord,
+      PrefetchHooks Function()
+    >;
 
 class $DatabaseManager {
   final _$Database _db;
@@ -10651,6 +11081,8 @@ class $DatabaseManager {
       $$MitmModulesTableTableManager(_db, _db.mitmModules);
   $$TrafficStatisticsTableTableManager get trafficStatistics =>
       $$TrafficStatisticsTableTableManager(_db, _db.trafficStatistics);
+  $$TunnelSessionsTableTableManager get tunnelSessions =>
+      $$TunnelSessionsTableTableManager(_db, _db.tunnelSessions);
 }
 
 mixin _$ProfilesDaoMixin on DatabaseAccessor<Database> {
@@ -10816,5 +11248,20 @@ class TrafficStatisticsDaoManager {
       $$TrafficStatisticsTableTableManager(
         _db.attachedDatabase,
         _db.trafficStatistics,
+      );
+}
+
+mixin _$TunnelSessionsDaoMixin on DatabaseAccessor<Database> {
+  $TunnelSessionsTable get tunnelSessions => attachedDatabase.tunnelSessions;
+  TunnelSessionsDaoManager get managers => TunnelSessionsDaoManager(this);
+}
+
+class TunnelSessionsDaoManager {
+  final _$TunnelSessionsDaoMixin _db;
+  TunnelSessionsDaoManager(this._db);
+  $$TunnelSessionsTableTableManager get tunnelSessions =>
+      $$TunnelSessionsTableTableManager(
+        _db.attachedDatabase,
+        _db.tunnelSessions,
       );
 }

@@ -22,12 +22,13 @@ class TrafficStatisticsData {
     required this.download,
     required this.directUpload,
     required this.directDownload,
+    required this.uptime,
     required this.trend,
     required this.ruleHits,
     required this.domains,
-    required this.processes,
     required this.proxies,
     required this.profiles,
+    required this.rules,
   });
 
   final TrafficStatisticsRange range;
@@ -38,19 +39,52 @@ class TrafficStatisticsData {
   final int download;
   final int directUpload;
   final int directDownload;
+  final Duration uptime;
   final List<TrafficStatisticsBucket> trend;
   final List<TrafficStatisticsRank> ruleHits;
   final List<TrafficStatisticsRank> domains;
-  final List<TrafficStatisticsRank> processes;
   final List<TrafficStatisticsRank> proxies;
   final List<TrafficStatisticsRank> profiles;
+  final List<TrafficStatisticsRank> rules;
 
   int get total => upload + download;
 
   int get proxyUpload => upload - directUpload;
 
   int get proxyDownload => download - directDownload;
+
+  int get totalRuleHits => ruleHits.fold<int>(0, (sum, hit) => sum + hit.hits);
 }
+
+int maxTrafficStatisticsOffset(TrafficStatisticsRange range) {
+  return switch (range) {
+    TrafficStatisticsRange.day => 89,
+    TrafficStatisticsRange.week => 12,
+    TrafficStatisticsRange.month => 2,
+  };
+}
+
+String trafficStatisticsRangeLabel(TrafficStatisticsRange range, int offset) {
+  final now = DateTime.now();
+  final (start, end, _) = _rangeWindow(range, now, offset);
+  switch (range) {
+    case TrafficStatisticsRange.day:
+      return _dateLabel(start);
+    case TrafficStatisticsRange.week:
+      final last = offset == 0 ? now : end.subtract(const Duration(days: 1));
+      return '${_shortDateLabel(start)} ~ ${_shortDateLabel(last)}';
+    case TrafficStatisticsRange.month:
+      return '${start.year}-${_twoDigits(start.month)}';
+  }
+}
+
+String _dateLabel(DateTime date) =>
+    '${date.year}-${_twoDigits(date.month)}-${_twoDigits(date.day)}';
+
+String _shortDateLabel(DateTime date) =>
+    '${_twoDigits(date.month)}-${_twoDigits(date.day)}';
+
+String _twoDigits(int value) => value.toString().padLeft(2, '0');
 
 /// Records closed connections while the tunnel is up: opens and traffic
 /// updates arrive as core events, and the live snapshot says which ones
@@ -62,20 +96,72 @@ class TrafficStatisticsRecorder extends _$TrafficStatisticsRecorder {
   DateTime? _lastPruneAt;
   DateTime? _lastInvalidatedAt;
   Future<void> _writes = Future.value();
+  int? _openSessionId;
 
   @override
   void build() {
     // Pruning waits for the first live snapshot: the database may not be
     // openable yet when this notifier is first read.
+    ref.listen(isStartProvider, (_, running) {
+      if (running) {
+        unawaited(_openSession());
+      } else {
+        unawaited(_closeSession());
+      }
+    });
   }
 
   bool get _tunnelUp => ref.read(isStartProvider);
+
+  Future<void> _openSession() {
+    final run = _writes.then((_) async {
+      if (_openSessionId != null) {
+        return;
+      }
+      final now = DateTime.now();
+      try {
+        await database.tunnelSessionsDao.closeOpenSessions(now);
+        _openSessionId = await database.tunnelSessionsDao.openSession(now);
+      } catch (error) {
+        commonPrint.log(
+          'Traffic statistics session failed: ${compactError(error)}',
+          logLevel: LogLevel.warning,
+        );
+      }
+    });
+    _writes = run.then<void>((_) {}, onError: (_) {});
+    return run;
+  }
+
+  Future<void> _closeSession() {
+    final run = _writes.then((_) async {
+      try {
+        await database.tunnelSessionsDao.closeOpenSessions(DateTime.now());
+      } catch (error) {
+        commonPrint.log(
+          'Traffic statistics session failed: ${compactError(error)}',
+          logLevel: LogLevel.warning,
+        );
+      }
+      _openSessionId = null;
+    });
+    _writes = run.then<void>((_) {}, onError: (_) {});
+    return run;
+  }
+
+  void _ensureSessionOpen() {
+    if (_openSessionId != null) {
+      return;
+    }
+    unawaited(_openSession());
+  }
 
   void onRequest(TrackerInfo connection) {
     if (!_tunnelUp) {
       unawaited(flush());
       return;
     }
+    _ensureSessionOpen();
     final now = DateTime.now();
     final existing = _open[connection.id];
     if (existing == null) {
@@ -89,6 +175,7 @@ class TrafficStatisticsRecorder extends _$TrafficStatisticsRecorder {
     if (!_tunnelUp) {
       return;
     }
+    _ensureSessionOpen();
     final now = DateTime.now();
     for (final MapEntry(key: id, value: totals) in traffic.entries) {
       _open[id]?.updateTraffic(totals.upload, totals.download, now);
@@ -100,6 +187,7 @@ class TrafficStatisticsRecorder extends _$TrafficStatisticsRecorder {
       await flush();
       return;
     }
+    _ensureSessionOpen();
     final now = DateTime.now();
     final live = <String>{};
     for (final connection in connections) {
@@ -128,6 +216,9 @@ class TrafficStatisticsRecorder extends _$TrafficStatisticsRecorder {
   /// Writes every still-open connection with the traffic seen so far, as
   /// of its last sighting.
   Future<void> flush() {
+    if (!_tunnelUp) {
+      unawaited(_closeSession());
+    }
     if (_open.isEmpty) {
       return _writes;
     }
@@ -233,19 +324,23 @@ class _OpenConnection {
 Future<TrafficStatisticsData> trafficStatistics(
   Ref ref,
   TrafficStatisticsRange range,
+  int offset,
 ) async {
   final dao = database.trafficStatisticsDao;
+  final sessionsDao = database.tunnelSessionsDao;
   final now = DateTime.now();
-  final (start, end, hourly) = _rangeWindow(range, now);
+  final (start, end, hourly) = _rangeWindow(range, now, offset);
   await dao.pruneOlderThan(now.subtract(trafficStatisticsRetention));
+  await sessionsDao.pruneClosedBefore(now.subtract(trafficStatisticsRetention));
   final results = await Future.wait([
     dao.totals(start, end),
     dao.trend(start, end, hourly: hourly),
     dao.ruleHits(start, end),
     dao.rankBy(TrafficStatisticsRankBy.domain, start, end),
-    dao.rankBy(TrafficStatisticsRankBy.process, start, end),
     dao.rankBy(TrafficStatisticsRankBy.proxy, start, end),
     dao.rankBy(TrafficStatisticsRankBy.profile, start, end),
+    dao.rankBy(TrafficStatisticsRankBy.rule, start, end),
+    sessionsDao.uptime(start, end),
   ]);
   final totals = results[0] as TrafficStatisticsTotals;
   final buckets = results[1] as List<TrafficStatisticsBucket>;
@@ -258,29 +353,47 @@ Future<TrafficStatisticsData> trafficStatistics(
     download: totals.download,
     directUpload: totals.directUpload,
     directDownload: totals.directDownload,
+    uptime: results[7] as Duration,
     trend: _fillTrend(start, end, hourly, buckets),
     ruleHits: results[2] as List<TrafficStatisticsRank>,
     domains: results[3] as List<TrafficStatisticsRank>,
-    processes: results[4] as List<TrafficStatisticsRank>,
-    proxies: results[5] as List<TrafficStatisticsRank>,
-    profiles: results[6] as List<TrafficStatisticsRank>,
+    proxies: results[4] as List<TrafficStatisticsRank>,
+    profiles: results[5] as List<TrafficStatisticsRank>,
+    rules: results[6] as List<TrafficStatisticsRank>,
   );
 }
 
 (DateTime, DateTime, bool) _rangeWindow(
   TrafficStatisticsRange range,
   DateTime now,
+  int offset,
 ) {
   final dayStart = DateTime(now.year, now.month, now.day);
-  return switch (range) {
-    TrafficStatisticsRange.day => (dayStart, now, true),
-    TrafficStatisticsRange.week => (
-      dayStart.subtract(Duration(days: now.weekday - 1)),
-      now,
-      false,
-    ),
-    TrafficStatisticsRange.month => (DateTime(now.year, now.month), now, false),
-  };
+  switch (range) {
+    case TrafficStatisticsRange.day:
+      final start = dayStart.subtract(Duration(days: offset));
+      return (
+        start,
+        offset == 0 ? now : start.add(const Duration(days: 1)),
+        true,
+      );
+    case TrafficStatisticsRange.week:
+      final start = dayStart.subtract(
+        Duration(days: now.weekday - 1 + offset * 7),
+      );
+      return (
+        start,
+        offset == 0 ? now : start.add(const Duration(days: 7)),
+        false,
+      );
+    case TrafficStatisticsRange.month:
+      final start = DateTime(now.year, now.month - offset);
+      return (
+        start,
+        offset == 0 ? now : DateTime(start.year, start.month + 1),
+        false,
+      );
+  }
 }
 
 List<TrafficStatisticsBucket> _fillTrend(

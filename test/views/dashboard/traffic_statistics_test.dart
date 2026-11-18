@@ -26,6 +26,7 @@ TrafficStatisticsData _data({int count = 3}) {
     download: 2500,
     directUpload: 500,
     directDownload: 500,
+    uptime: const Duration(hours: 17, minutes: 26),
     trend: [
       TrafficStatisticsBucket(start: start, upload: 100, download: 200),
       TrafficStatisticsBucket(
@@ -42,15 +43,13 @@ TrafficStatisticsData _data({int count = 3}) {
       TrafficStatisticsRank(label: 'example.com', bytes: 3000, hits: 2),
       TrafficStatisticsRank(label: 'other.test', bytes: 1000, hits: 1),
     ],
-    processes: const [
-      TrafficStatisticsRank(label: 'Safari', bytes: 3000, hits: 2),
-    ],
     proxies: const [
       TrafficStatisticsRank(label: 'Node-A', bytes: 3000, hits: 2),
     ],
     profiles: const [
       TrafficStatisticsRank(label: 'Default', bytes: 4000, hits: 3),
     ],
+    rules: const [TrafficStatisticsRank(label: 'ads', bytes: 1000, hits: 1)],
   );
 }
 
@@ -63,7 +62,7 @@ void main() {
     return ProviderContainer(
       overrides: [
         for (final range in TrafficStatisticsRange.values)
-          trafficStatisticsProvider(range).overrideWith((_) async => data),
+          trafficStatisticsProvider(range, 0).overrideWith((_) async => data),
       ],
     );
   }
@@ -103,7 +102,10 @@ void main() {
     expect(find.text((4000).traffic.show), findsOneWidget);
     expect(find.textContaining((1500).traffic.show), findsOneWidget);
     expect(find.textContaining((2500).traffic.show), findsOneWidget);
-    expect(find.text('Today'), findsOneWidget);
+    expect(find.text('75%'), findsOneWidget);
+    expect(find.text('Proxy'), findsOneWidget);
+    expect(find.text('Direct'), findsOneWidget);
+    expect(find.text('Uptime 17 hours 26 minutes'), findsOneWidget);
 
     await teardownWidget(tester);
   });
@@ -131,15 +133,36 @@ void main() {
     expect(find.text('Rule hits'), findsOneWidget);
     expect(find.text('Rankings'), findsOneWidget);
     expect(find.text((4000).traffic.show), findsOneWidget);
+    expect(find.text('75%'), findsOneWidget);
+    expect(find.text('17 hours 26 minutes'), findsOneWidget);
+    final now = DateTime.now();
+    expect(
+      find.text(
+        '${now.year}-${now.month.toString().padLeft(2, '0')}-'
+        '${now.day.toString().padLeft(2, '0')}',
+      ),
+      findsOneWidget,
+    );
     expect(find.text('RULE-SET'), findsOneWidget);
     expect(find.text('example.com'), findsOneWidget);
     expect(find.text('Node-A'), findsNothing);
+    expect(find.text('ads'), findsNothing);
 
     await tester.ensureVisible(find.text('Proxy').last);
     await tester.pumpAndSettle();
     await tester.tap(find.text('Proxy').last);
     await tester.pump();
     expect(find.text('Node-A'), findsOneWidget);
+
+    await tester.ensureVisible(find.text('Rule').last);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Rule').last);
+    await tester.pump();
+    expect(find.text('ads'), findsOneWidget);
+
+    await tester.tap(find.byTooltip('Refresh'));
+    await tester.pump();
+    expect(find.text((4000).traffic.show), findsOneWidget);
 
     await teardownWidget(tester);
   });

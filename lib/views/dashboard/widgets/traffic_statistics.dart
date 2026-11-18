@@ -19,7 +19,7 @@ class TrafficStatisticsCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final appLocalizations = context.appLocalizations;
     final statistics = ref.watch(
-      trafficStatisticsProvider(TrafficStatisticsRange.day),
+      trafficStatisticsProvider(TrafficStatisticsRange.day, 0),
     );
     return DashboardCard(
       semanticLabel: appLocalizations.trafficStatistics,
@@ -53,27 +53,122 @@ class _TodayFigures extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final appLocalizations = context.appLocalizations;
+    final colorScheme = context.colorScheme;
+    final colors = DashboardColors.of(context);
+    final total = data.total;
+    final proxyBytes = data.proxyUpload + data.proxyDownload;
+    final directBytes = data.directUpload + data.directDownload;
+    final proxyRatio = total == 0 ? 0.0 : proxyBytes / total;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
-      spacing: 2,
       children: [
-        Text(
-          data.total.traffic.show,
-          maxLines: 1,
-          style: DashboardText.figure(context, AppTextStyle.title2),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    total.traffic.show,
+                    maxLines: 1,
+                    style: DashboardText.figure(context, AppTextStyle.title2),
+                  ),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 8,
+                    children: [
+                      TrafficStatisticsPill(
+                        label: '↓ ${data.download.traffic.show}',
+                      ),
+                      TrafficStatisticsPill(
+                        label: '↑ ${data.upload.traffic.show}',
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 12,
+                    runSpacing: 4,
+                    children: [
+                      _SplitGroup(
+                        color: colorScheme.primary,
+                        label: appLocalizations.trafficStatisticsProxy,
+                        value: proxyBytes.traffic.show,
+                      ),
+                      _SplitGroup(
+                        color: colors.series2,
+                        label: appLocalizations.direct,
+                        value: directBytes.traffic.show,
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 12),
+            ProxyRatioRing(
+              ratio: proxyRatio,
+              size: 64,
+              strokeWidth: 6,
+              child: Text(
+                '${(proxyRatio * 100).round()}%',
+                maxLines: 1,
+                style: AppTextStyle.subheadline.of(context, emphasized: true),
+              ),
+            ),
+          ],
         ),
-        Text(
-          '${appLocalizations.upload} ${data.upload.traffic.show} · '
-          '${appLocalizations.download} ${data.download.traffic.show}',
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: DashboardText.label(context),
+        const SizedBox(height: 8),
+        Row(
+          children: [
+            GlyphIcon(
+              AppGlyphs.clock,
+              size: 14,
+              color: colorScheme.onSurfaceVariant,
+            ),
+            const SizedBox(width: 6),
+            Expanded(
+              child: Text(
+                '${appLocalizations.trafficStatisticsUptime} '
+                '${trafficStatisticsUptimeText(appLocalizations.hours, appLocalizations.minutes, data.uptime)}',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: DashboardText.label(context),
+              ),
+            ),
+          ],
         ),
-        Text(
-          appLocalizations.trafficStatisticsToday,
-          maxLines: 1,
-          style: DashboardText.label(context),
+      ],
+    );
+  }
+}
+
+class _SplitGroup extends StatelessWidget {
+  const _SplitGroup({
+    required this.color,
+    required this.label,
+    required this.value,
+  });
+
+  final Color color;
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 8,
+          height: 8,
+          decoration: ShapeDecoration(color: color, shape: AppShape.full),
         ),
+        const SizedBox(width: 4),
+        Text(label, style: DashboardText.label(context)),
+        const SizedBox(width: 4),
+        Text(value, style: DashboardText.label(context)),
       ],
     );
   }

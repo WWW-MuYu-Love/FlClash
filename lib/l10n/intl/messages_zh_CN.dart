@@ -243,23 +243,25 @@ class MessageLookup extends MessageLookupByLibrary {
 
   static String m102(value) => "峰值 ${value}";
 
-  static String m103(value) => "累计 ${value}";
+  static String m103(count) => "${count} 次";
 
-  static String m104(transport) => "${transport} 请求头";
+  static String m104(value) => "累计 ${value}";
 
-  static String m105(detail) => "扩展启动失败：${detail}";
+  static String m105(transport) => "${transport} 请求头";
 
-  static String m106(detail) => "隧道启动失败：${detail}";
+  static String m106(detail) => "扩展启动失败：${detail}";
 
-  static String m107(detail) => "隧道未能连接：${detail}";
+  static String m107(detail) => "隧道启动失败：${detail}";
 
-  static String m108(label) => "${label}必须为URL";
+  static String m108(detail) => "隧道未能连接：${detail}";
 
-  static String m109(date) => "有效期至 ${date}";
+  static String m109(label) => "${label}必须为URL";
 
-  static String m110(count) => "${count} 年前";
+  static String m110(date) => "有效期至 ${date}";
 
   static String m111(count) => "${count} 年前";
+
+  static String m112(count) => "${count} 年前";
 
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
@@ -1699,22 +1701,27 @@ class MessageLookup extends MessageLookupByLibrary {
     "trafficStatistics": MessageLookupByLibrary.simpleMessage("流量统计"),
     "trafficStatisticsDay": MessageLookupByLibrary.simpleMessage("日"),
     "trafficStatisticsDesc": MessageLookupByLibrary.simpleMessage(
-      "按日、周、月查看规则、域名、进程和节点的流量",
+      "按日、周、月查看规则、域名和节点的流量",
     ),
+    "trafficStatisticsHits": m103,
     "trafficStatisticsMonth": MessageLookupByLibrary.simpleMessage("月"),
+    "trafficStatisticsNext": MessageLookupByLibrary.simpleMessage("下一个"),
     "trafficStatisticsNoData": MessageLookupByLibrary.simpleMessage(
       "还没有记录到流量。保持隧道开启，等一些连接结束后再来看。",
     ),
+    "trafficStatisticsPrevious": MessageLookupByLibrary.simpleMessage("上一个"),
     "trafficStatisticsProxy": MessageLookupByLibrary.simpleMessage("代理"),
     "trafficStatisticsRankings": MessageLookupByLibrary.simpleMessage("流量排行"),
+    "trafficStatisticsRefresh": MessageLookupByLibrary.simpleMessage("刷新"),
     "trafficStatisticsRuleHits": MessageLookupByLibrary.simpleMessage("规则命中"),
     "trafficStatisticsToday": MessageLookupByLibrary.simpleMessage("今天"),
     "trafficStatisticsTrend": MessageLookupByLibrary.simpleMessage("流量趋势"),
+    "trafficStatisticsUptime": MessageLookupByLibrary.simpleMessage("累计运行"),
     "trafficStatisticsWeek": MessageLookupByLibrary.simpleMessage("周"),
-    "trafficTotal": m103,
+    "trafficTotal": m104,
     "trafficUsage": MessageLookupByLibrary.simpleMessage("流量统计"),
     "transport": MessageLookupByLibrary.simpleMessage("传输协议"),
-    "transportHeaders": m104,
+    "transportHeaders": m105,
     "trustCertificate": MessageLookupByLibrary.simpleMessage("信任证书"),
     "tun": MessageLookupByLibrary.simpleMessage("虚拟网卡"),
     "tunAuthorizationFailed": MessageLookupByLibrary.simpleMessage(
@@ -1730,11 +1737,11 @@ class MessageLookup extends MessageLookupByLibrary {
     "tunnelStartConfigInvalid": MessageLookupByLibrary.simpleMessage(
       "VPN 配置无效或已过期，请重新开启 VPN",
     ),
-    "tunnelStartExtensionFailed": m105,
+    "tunnelStartExtensionFailed": m106,
     "tunnelStartFailed": MessageLookupByLibrary.simpleMessage("隧道启动失败"),
-    "tunnelStartFailedDetail": m106,
+    "tunnelStartFailedDetail": m107,
     "tunnelStartNotStarted": MessageLookupByLibrary.simpleMessage("隧道未能连接"),
-    "tunnelStartNotStartedDetail": m107,
+    "tunnelStartNotStartedDetail": m108,
     "turnOff": MessageLookupByLibrary.simpleMessage("关闭"),
     "turnOn": MessageLookupByLibrary.simpleMessage("开启"),
     "udpRelayMode": MessageLookupByLibrary.simpleMessage("UDP 中继模式"),
@@ -1770,14 +1777,14 @@ class MessageLookup extends MessageLookupByLibrary {
     "uploadBandwidth": MessageLookupByLibrary.simpleMessage("上行带宽"),
     "url": MessageLookupByLibrary.simpleMessage("URL"),
     "urlRewrite": MessageLookupByLibrary.simpleMessage("URL 重写"),
-    "urlTip": m108,
+    "urlTip": m109,
     "useHosts": MessageLookupByLibrary.simpleMessage("使用Hosts"),
     "useSystemHosts": MessageLookupByLibrary.simpleMessage("使用系统Hosts"),
     "usedShort": MessageLookupByLibrary.simpleMessage("已用"),
     "usedTraffic": MessageLookupByLibrary.simpleMessage("已用流量"),
     "userAgent": MessageLookupByLibrary.simpleMessage("用户代理"),
     "username": MessageLookupByLibrary.simpleMessage("用户名"),
-    "validUntil": m109,
+    "validUntil": m110,
     "value": MessageLookupByLibrary.simpleMessage("值"),
     "view": MessageLookupByLibrary.simpleMessage("查看"),
     "viewAll": MessageLookupByLibrary.simpleMessage("查看全部"),
@@ -1792,8 +1799,8 @@ class MessageLookup extends MessageLookupByLibrary {
     "writeToSystemDesc": MessageLookupByLibrary.simpleMessage(
       "写入系统会同时设置系统时钟，Android 上不生效。",
     ),
-    "yearsAgo": m110,
-    "yearsAgoShort": m111,
+    "yearsAgo": m111,
+    "yearsAgoShort": m112,
     "yes": MessageLookupByLibrary.simpleMessage("是"),
     "zhCN": MessageLookupByLibrary.simpleMessage("中文简体"),
   };

@@ -54,7 +54,7 @@ final class TrafficStatisticsRecorderProvider
 }
 
 String _$trafficStatisticsRecorderHash() =>
-    r'781964af10df3c7a1f5ba01d2ae661baf47e91dc';
+    r'7edd7db8d6b440a68e1c1fd9093d5eb2180f42df';
 
 /// Records closed connections while the tunnel is up: opens and traffic
 /// updates arrive as core events, and the live snapshot says which ones
@@ -94,7 +94,7 @@ final class TrafficStatisticsProvider
         $FutureProvider<TrafficStatisticsData> {
   TrafficStatisticsProvider._({
     required TrafficStatisticsFamily super.from,
-    required TrafficStatisticsRange super.argument,
+    required (TrafficStatisticsRange, int) super.argument,
   }) : super(
          retry: null,
          name: r'trafficStatisticsProvider',
@@ -110,7 +110,7 @@ final class TrafficStatisticsProvider
   String toString() {
     return r'trafficStatisticsProvider'
         ''
-        '($argument)';
+        '$argument';
   }
 
   @$internal
@@ -121,8 +121,8 @@ final class TrafficStatisticsProvider
 
   @override
   FutureOr<TrafficStatisticsData> create(Ref ref) {
-    final argument = this.argument as TrafficStatisticsRange;
-    return trafficStatistics(ref, argument);
+    final argument = this.argument as (TrafficStatisticsRange, int);
+    return trafficStatistics(ref, argument.$1, argument.$2);
   }
 
   @override
@@ -136,13 +136,13 @@ final class TrafficStatisticsProvider
   }
 }
 
-String _$trafficStatisticsHash() => r'1d097ac1d336343182d3e08bb1a43e94a2f72fac';
+String _$trafficStatisticsHash() => r'7dfce724cf98712d6cdda684f992ae95de79fcff';
 
 final class TrafficStatisticsFamily extends $Family
     with
         $FunctionalFamilyOverride<
           FutureOr<TrafficStatisticsData>,
-          TrafficStatisticsRange
+          (TrafficStatisticsRange, int)
         > {
   TrafficStatisticsFamily._()
     : super(
@@ -153,8 +153,8 @@ final class TrafficStatisticsFamily extends $Family
         isAutoDispose: true,
       );
 
-  TrafficStatisticsProvider call(TrafficStatisticsRange range) =>
-      TrafficStatisticsProvider._(argument: range, from: this);
+  TrafficStatisticsProvider call(TrafficStatisticsRange range, int offset) =>
+      TrafficStatisticsProvider._(argument: (range, offset), from: this);
 
   @override
   String toString() => r'trafficStatisticsProvider';

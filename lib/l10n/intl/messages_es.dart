@@ -285,24 +285,26 @@ class MessageLookup extends MessageLookupByLibrary {
 
   static String m102(value) => "Pico: ${value}";
 
-  static String m103(value) => "Total: ${value}";
+  static String m103(count) => "${count} aciertos";
 
-  static String m104(transport) => "Encabezados ${transport}";
+  static String m104(value) => "Total: ${value}";
 
-  static String m105(detail) => "No se pudo iniciar la extensión: ${detail}";
+  static String m105(transport) => "Encabezados ${transport}";
 
-  static String m106(detail) => "No se pudo iniciar el túnel: ${detail}";
+  static String m106(detail) => "No se pudo iniciar la extensión: ${detail}";
 
-  static String m107(detail) => "El túnel no se conectó: ${detail}";
+  static String m107(detail) => "No se pudo iniciar el túnel: ${detail}";
 
-  static String m108(label) => "${label} debe ser una URL";
+  static String m108(detail) => "El túnel no se conectó: ${detail}";
 
-  static String m109(date) => "Válido hasta el ${date}";
+  static String m109(label) => "${label} debe ser una URL";
 
-  static String m110(count) =>
-      "${Intl.plural(count, one: 'hace 1 año', other: 'hace ${count} años')}";
+  static String m110(date) => "Válido hasta el ${date}";
 
   static String m111(count) =>
+      "${Intl.plural(count, one: 'hace 1 año', other: 'hace ${count} años')}";
+
+  static String m112(count) =>
       "${Intl.plural(count, other: 'hace ${count} a')}";
 
   final messages = _notInlinedMessages(_notInlinedMessages);
@@ -2381,26 +2383,37 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "trafficStatisticsDay": MessageLookupByLibrary.simpleMessage("Día"),
     "trafficStatisticsDesc": MessageLookupByLibrary.simpleMessage(
-      "Tráfico diario, semanal y mensual por regla, dominio, proceso y proxy",
+      "Tráfico diario, semanal y mensual por regla, dominio y proxy",
     ),
+    "trafficStatisticsHits": m103,
     "trafficStatisticsMonth": MessageLookupByLibrary.simpleMessage("Mes"),
+    "trafficStatisticsNext": MessageLookupByLibrary.simpleMessage("Siguiente"),
     "trafficStatisticsNoData": MessageLookupByLibrary.simpleMessage(
       "Aún no hay tráfico registrado. Mantén el túnel activado y vuelve cuando se cierren algunas conexiones.",
+    ),
+    "trafficStatisticsPrevious": MessageLookupByLibrary.simpleMessage(
+      "Anterior",
     ),
     "trafficStatisticsProxy": MessageLookupByLibrary.simpleMessage("Proxy"),
     "trafficStatisticsRankings": MessageLookupByLibrary.simpleMessage(
       "Clasificación",
+    ),
+    "trafficStatisticsRefresh": MessageLookupByLibrary.simpleMessage(
+      "Actualizar",
     ),
     "trafficStatisticsRuleHits": MessageLookupByLibrary.simpleMessage(
       "Reglas aplicadas",
     ),
     "trafficStatisticsToday": MessageLookupByLibrary.simpleMessage("Hoy"),
     "trafficStatisticsTrend": MessageLookupByLibrary.simpleMessage("Tendencia"),
+    "trafficStatisticsUptime": MessageLookupByLibrary.simpleMessage(
+      "Tiempo activo",
+    ),
     "trafficStatisticsWeek": MessageLookupByLibrary.simpleMessage("Semana"),
-    "trafficTotal": m103,
+    "trafficTotal": m104,
     "trafficUsage": MessageLookupByLibrary.simpleMessage("Uso de tráfico"),
     "transport": MessageLookupByLibrary.simpleMessage("Transporte"),
-    "transportHeaders": m104,
+    "transportHeaders": m105,
     "trustCertificate": MessageLookupByLibrary.simpleMessage(
       "Confiar en el certificado",
     ),
@@ -2420,15 +2433,15 @@ class MessageLookup extends MessageLookupByLibrary {
     "tunnelStartConfigInvalid": MessageLookupByLibrary.simpleMessage(
       "La configuración de VPN no es válida o está desactualizada. Apaga y enciende la VPN de nuevo.",
     ),
-    "tunnelStartExtensionFailed": m105,
+    "tunnelStartExtensionFailed": m106,
     "tunnelStartFailed": MessageLookupByLibrary.simpleMessage(
       "No se pudo iniciar el túnel",
     ),
-    "tunnelStartFailedDetail": m106,
+    "tunnelStartFailedDetail": m107,
     "tunnelStartNotStarted": MessageLookupByLibrary.simpleMessage(
       "El túnel no se conectó",
     ),
-    "tunnelStartNotStartedDetail": m107,
+    "tunnelStartNotStartedDetail": m108,
     "turnOff": MessageLookupByLibrary.simpleMessage("Desactivar"),
     "turnOn": MessageLookupByLibrary.simpleMessage("Activar"),
     "udpRelayMode": MessageLookupByLibrary.simpleMessage(
@@ -2478,7 +2491,7 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "url": MessageLookupByLibrary.simpleMessage("URL"),
     "urlRewrite": MessageLookupByLibrary.simpleMessage("Reescritura de URL"),
-    "urlTip": m108,
+    "urlTip": m109,
     "useHosts": MessageLookupByLibrary.simpleMessage("Usar hosts"),
     "useSystemHosts": MessageLookupByLibrary.simpleMessage(
       "Usar hosts del sistema",
@@ -2487,7 +2500,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "usedTraffic": MessageLookupByLibrary.simpleMessage("Tráfico usado"),
     "userAgent": MessageLookupByLibrary.simpleMessage("User-Agent"),
     "username": MessageLookupByLibrary.simpleMessage("Usuario"),
-    "validUntil": m109,
+    "validUntil": m110,
     "value": MessageLookupByLibrary.simpleMessage("Valor"),
     "view": MessageLookupByLibrary.simpleMessage("Ver"),
     "viewAll": MessageLookupByLibrary.simpleMessage("Ver todo"),
@@ -2506,8 +2519,8 @@ class MessageLookup extends MessageLookupByLibrary {
     "writeToSystemDesc": MessageLookupByLibrary.simpleMessage(
       "Escribir en el sistema también ajusta el reloj del sistema; Android lo ignora.",
     ),
-    "yearsAgo": m110,
-    "yearsAgoShort": m111,
+    "yearsAgo": m111,
+    "yearsAgoShort": m112,
     "yes": MessageLookupByLibrary.simpleMessage("Sí"),
     "zhCN": MessageLookupByLibrary.simpleMessage("Chino simplificado"),
   };

@@ -130,10 +130,10 @@ class AppLocalizations {
     );
   }
 
-  /// `Daily, weekly and monthly traffic by rule, domain, process and proxy`
+  /// `Daily, weekly and monthly traffic by rule, domain and proxy`
   String get trafficStatisticsDesc {
     return Intl.message(
-      'Daily, weekly and monthly traffic by rule, domain, process and proxy',
+      'Daily, weekly and monthly traffic by rule, domain and proxy',
       name: 'trafficStatisticsDesc',
       desc: '',
       args: [],
@@ -227,6 +227,58 @@ class AppLocalizations {
       name: 'trafficStatisticsNoData',
       desc: '',
       args: [],
+    );
+  }
+
+  /// `Uptime`
+  String get trafficStatisticsUptime {
+    return Intl.message(
+      'Uptime',
+      name: 'trafficStatisticsUptime',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Refresh`
+  String get trafficStatisticsRefresh {
+    return Intl.message(
+      'Refresh',
+      name: 'trafficStatisticsRefresh',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Previous`
+  String get trafficStatisticsPrevious {
+    return Intl.message(
+      'Previous',
+      name: 'trafficStatisticsPrevious',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Next`
+  String get trafficStatisticsNext {
+    return Intl.message(
+      'Next',
+      name: 'trafficStatisticsNext',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `{count, plural, =1{1 hit} other{{count} hits}}`
+  String trafficStatisticsHits(num count) {
+    return Intl.plural(
+      count,
+      one: '1 hit',
+      other: '$count hits',
+      name: 'trafficStatisticsHits',
+      desc: '',
+      args: [count],
     );
   }
 

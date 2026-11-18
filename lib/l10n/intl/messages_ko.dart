@@ -251,23 +251,25 @@ class MessageLookup extends MessageLookupByLibrary {
 
   static String m102(value) => "최고 ${value}";
 
-  static String m103(value) => "합계 ${value}";
+  static String m103(count) => "${count}회";
 
-  static String m104(transport) => "${transport} 요청 헤더";
+  static String m104(value) => "합계 ${value}";
 
-  static String m105(detail) => "확장 프로그램을 시작하지 못했습니다: ${detail}";
+  static String m105(transport) => "${transport} 요청 헤더";
 
-  static String m106(detail) => "터널을 시작하지 못했습니다: ${detail}";
+  static String m106(detail) => "확장 프로그램을 시작하지 못했습니다: ${detail}";
 
-  static String m107(detail) => "터널에 연결되지 않았습니다: ${detail}";
+  static String m107(detail) => "터널을 시작하지 못했습니다: ${detail}";
 
-  static String m108(label) => "${label}은(는) URL이어야 합니다";
+  static String m108(detail) => "터널에 연결되지 않았습니다: ${detail}";
 
-  static String m109(date) => "${date}까지 유효";
+  static String m109(label) => "${label}은(는) URL이어야 합니다";
 
-  static String m110(count) => "${Intl.plural(count, other: '${count}년 전')}";
+  static String m110(date) => "${date}까지 유효";
 
   static String m111(count) => "${Intl.plural(count, other: '${count}년 전')}";
+
+  static String m112(count) => "${Intl.plural(count, other: '${count}년 전')}";
 
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
@@ -1861,22 +1863,27 @@ class MessageLookup extends MessageLookupByLibrary {
     "trafficStatistics": MessageLookupByLibrary.simpleMessage("트래픽 통계"),
     "trafficStatisticsDay": MessageLookupByLibrary.simpleMessage("일"),
     "trafficStatisticsDesc": MessageLookupByLibrary.simpleMessage(
-      "규칙, 도메인, 프로세스, 프록시별 일간, 주간, 월간 트래픽",
+      "규칙, 도메인, 프록시별 일간, 주간, 월간 트래픽",
     ),
+    "trafficStatisticsHits": m103,
     "trafficStatisticsMonth": MessageLookupByLibrary.simpleMessage("월"),
+    "trafficStatisticsNext": MessageLookupByLibrary.simpleMessage("다음"),
     "trafficStatisticsNoData": MessageLookupByLibrary.simpleMessage(
       "아직 기록된 트래픽이 없습니다. 터널을 켠 상태로 두고 연결이 종료된 뒤 다시 확인하세요.",
     ),
+    "trafficStatisticsPrevious": MessageLookupByLibrary.simpleMessage("이전"),
     "trafficStatisticsProxy": MessageLookupByLibrary.simpleMessage("프록시"),
     "trafficStatisticsRankings": MessageLookupByLibrary.simpleMessage("순위"),
+    "trafficStatisticsRefresh": MessageLookupByLibrary.simpleMessage("새로고침"),
     "trafficStatisticsRuleHits": MessageLookupByLibrary.simpleMessage("규칙 적중"),
     "trafficStatisticsToday": MessageLookupByLibrary.simpleMessage("오늘"),
     "trafficStatisticsTrend": MessageLookupByLibrary.simpleMessage("추세"),
+    "trafficStatisticsUptime": MessageLookupByLibrary.simpleMessage("누적 실행 시간"),
     "trafficStatisticsWeek": MessageLookupByLibrary.simpleMessage("주"),
-    "trafficTotal": m103,
+    "trafficTotal": m104,
     "trafficUsage": MessageLookupByLibrary.simpleMessage("트래픽 사용량"),
     "transport": MessageLookupByLibrary.simpleMessage("전송"),
-    "transportHeaders": m104,
+    "transportHeaders": m105,
     "trustCertificate": MessageLookupByLibrary.simpleMessage("인증서 신뢰"),
     "tun": MessageLookupByLibrary.simpleMessage("TUN"),
     "tunAuthorizationFailed": MessageLookupByLibrary.simpleMessage(
@@ -1892,13 +1899,13 @@ class MessageLookup extends MessageLookupByLibrary {
     "tunnelStartConfigInvalid": MessageLookupByLibrary.simpleMessage(
       "VPN 구성이 유효하지 않거나 오래되었습니다. VPN을 껐다가 다시 켜 보세요.",
     ),
-    "tunnelStartExtensionFailed": m105,
+    "tunnelStartExtensionFailed": m106,
     "tunnelStartFailed": MessageLookupByLibrary.simpleMessage("터널을 시작하지 못했습니다"),
-    "tunnelStartFailedDetail": m106,
+    "tunnelStartFailedDetail": m107,
     "tunnelStartNotStarted": MessageLookupByLibrary.simpleMessage(
       "터널에 연결되지 않았습니다",
     ),
-    "tunnelStartNotStartedDetail": m107,
+    "tunnelStartNotStartedDetail": m108,
     "turnOff": MessageLookupByLibrary.simpleMessage("끄기"),
     "turnOn": MessageLookupByLibrary.simpleMessage("켜기"),
     "udpRelayMode": MessageLookupByLibrary.simpleMessage("UDP 릴레이 모드"),
@@ -1942,14 +1949,14 @@ class MessageLookup extends MessageLookupByLibrary {
     "uploadBandwidth": MessageLookupByLibrary.simpleMessage("업로드 대역폭"),
     "url": MessageLookupByLibrary.simpleMessage("URL"),
     "urlRewrite": MessageLookupByLibrary.simpleMessage("URL 재작성"),
-    "urlTip": m108,
+    "urlTip": m109,
     "useHosts": MessageLookupByLibrary.simpleMessage("hosts 사용"),
     "useSystemHosts": MessageLookupByLibrary.simpleMessage("시스템 hosts 사용"),
     "usedShort": MessageLookupByLibrary.simpleMessage("사용"),
     "usedTraffic": MessageLookupByLibrary.simpleMessage("사용한 트래픽"),
     "userAgent": MessageLookupByLibrary.simpleMessage("User-Agent"),
     "username": MessageLookupByLibrary.simpleMessage("사용자 이름"),
-    "validUntil": m109,
+    "validUntil": m110,
     "value": MessageLookupByLibrary.simpleMessage("값"),
     "view": MessageLookupByLibrary.simpleMessage("보기"),
     "viewAll": MessageLookupByLibrary.simpleMessage("모두 보기"),
@@ -1964,8 +1971,8 @@ class MessageLookup extends MessageLookupByLibrary {
     "writeToSystemDesc": MessageLookupByLibrary.simpleMessage(
       "시스템에 기록하면 시스템 시계도 설정합니다. Android에서는 무시됩니다.",
     ),
-    "yearsAgo": m110,
-    "yearsAgoShort": m111,
+    "yearsAgo": m111,
+    "yearsAgoShort": m112,
     "yes": MessageLookupByLibrary.simpleMessage("예"),
     "zhCN": MessageLookupByLibrary.simpleMessage("중국어 간체"),
   };

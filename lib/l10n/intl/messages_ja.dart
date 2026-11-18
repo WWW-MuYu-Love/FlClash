@@ -247,23 +247,25 @@ class MessageLookup extends MessageLookupByLibrary {
 
   static String m102(value) => "ピーク ${value}";
 
-  static String m103(value) => "累計 ${value}";
+  static String m103(count) => "${count} 回";
 
-  static String m104(transport) => "${transport} リクエストヘッダー";
+  static String m104(value) => "累計 ${value}";
 
-  static String m105(detail) => "拡張機能を開始できませんでした：${detail}";
+  static String m105(transport) => "${transport} リクエストヘッダー";
 
-  static String m106(detail) => "トンネルを開始できませんでした：${detail}";
+  static String m106(detail) => "拡張機能を開始できませんでした：${detail}";
 
-  static String m107(detail) => "トンネルに接続できませんでした：${detail}";
+  static String m107(detail) => "トンネルを開始できませんでした：${detail}";
 
-  static String m108(label) => "${label}はURLである必要があります";
+  static String m108(detail) => "トンネルに接続できませんでした：${detail}";
 
-  static String m109(date) => "有効期限 ${date}";
+  static String m109(label) => "${label}はURLである必要があります";
 
-  static String m110(count) => "${count} 年前";
+  static String m110(date) => "有効期限 ${date}";
 
   static String m111(count) => "${count} 年前";
+
+  static String m112(count) => "${count} 年前";
 
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
@@ -1891,22 +1893,27 @@ class MessageLookup extends MessageLookupByLibrary {
     "trafficStatistics": MessageLookupByLibrary.simpleMessage("トラフィック統計"),
     "trafficStatisticsDay": MessageLookupByLibrary.simpleMessage("日"),
     "trafficStatisticsDesc": MessageLookupByLibrary.simpleMessage(
-      "ルール、ドメイン、プロセス、プロキシ別の日次・週次・月次トラフィック",
+      "ルール、ドメイン、プロキシ別の日次・週次・月次トラフィック",
     ),
+    "trafficStatisticsHits": m103,
     "trafficStatisticsMonth": MessageLookupByLibrary.simpleMessage("月"),
+    "trafficStatisticsNext": MessageLookupByLibrary.simpleMessage("次へ"),
     "trafficStatisticsNoData": MessageLookupByLibrary.simpleMessage(
       "まだトラフィックが記録されていません。トンネルをオンにしたまま、接続が終了してから再度ご確認ください。",
     ),
+    "trafficStatisticsPrevious": MessageLookupByLibrary.simpleMessage("前へ"),
     "trafficStatisticsProxy": MessageLookupByLibrary.simpleMessage("プロキシ"),
     "trafficStatisticsRankings": MessageLookupByLibrary.simpleMessage("ランキング"),
+    "trafficStatisticsRefresh": MessageLookupByLibrary.simpleMessage("更新"),
     "trafficStatisticsRuleHits": MessageLookupByLibrary.simpleMessage("ルールヒット"),
     "trafficStatisticsToday": MessageLookupByLibrary.simpleMessage("今日"),
     "trafficStatisticsTrend": MessageLookupByLibrary.simpleMessage("推移"),
+    "trafficStatisticsUptime": MessageLookupByLibrary.simpleMessage("累計稼働時間"),
     "trafficStatisticsWeek": MessageLookupByLibrary.simpleMessage("週"),
-    "trafficTotal": m103,
+    "trafficTotal": m104,
     "trafficUsage": MessageLookupByLibrary.simpleMessage("トラフィック統計"),
     "transport": MessageLookupByLibrary.simpleMessage("トランスポート"),
-    "transportHeaders": m104,
+    "transportHeaders": m105,
     "trustCertificate": MessageLookupByLibrary.simpleMessage("証明書を信頼"),
     "tun": MessageLookupByLibrary.simpleMessage("TUN"),
     "tunAuthorizationFailed": MessageLookupByLibrary.simpleMessage(
@@ -1922,15 +1929,15 @@ class MessageLookup extends MessageLookupByLibrary {
     "tunnelStartConfigInvalid": MessageLookupByLibrary.simpleMessage(
       "VPN 構成が無効か古くなっています。VPN を一度オフにしてから再度オンにしてください。",
     ),
-    "tunnelStartExtensionFailed": m105,
+    "tunnelStartExtensionFailed": m106,
     "tunnelStartFailed": MessageLookupByLibrary.simpleMessage(
       "トンネルを開始できませんでした",
     ),
-    "tunnelStartFailedDetail": m106,
+    "tunnelStartFailedDetail": m107,
     "tunnelStartNotStarted": MessageLookupByLibrary.simpleMessage(
       "トンネルに接続できませんでした",
     ),
-    "tunnelStartNotStartedDetail": m107,
+    "tunnelStartNotStartedDetail": m108,
     "turnOff": MessageLookupByLibrary.simpleMessage("オフにする"),
     "turnOn": MessageLookupByLibrary.simpleMessage("オンにする"),
     "udpRelayMode": MessageLookupByLibrary.simpleMessage("UDP リレーモード"),
@@ -1974,14 +1981,14 @@ class MessageLookup extends MessageLookupByLibrary {
     "uploadBandwidth": MessageLookupByLibrary.simpleMessage("アップロード帯域幅"),
     "url": MessageLookupByLibrary.simpleMessage("URL"),
     "urlRewrite": MessageLookupByLibrary.simpleMessage("URL 書き換え"),
-    "urlTip": m108,
+    "urlTip": m109,
     "useHosts": MessageLookupByLibrary.simpleMessage("Hostsを使用"),
     "useSystemHosts": MessageLookupByLibrary.simpleMessage("システムのHostsを使用"),
     "usedShort": MessageLookupByLibrary.simpleMessage("使用済み"),
     "usedTraffic": MessageLookupByLibrary.simpleMessage("使用済みトラフィック"),
     "userAgent": MessageLookupByLibrary.simpleMessage("User-Agent"),
     "username": MessageLookupByLibrary.simpleMessage("ユーザー名"),
-    "validUntil": m109,
+    "validUntil": m110,
     "value": MessageLookupByLibrary.simpleMessage("値"),
     "view": MessageLookupByLibrary.simpleMessage("表示"),
     "viewAll": MessageLookupByLibrary.simpleMessage("すべて表示"),
@@ -1996,8 +2003,8 @@ class MessageLookup extends MessageLookupByLibrary {
     "writeToSystemDesc": MessageLookupByLibrary.simpleMessage(
       "システムに書き込むを有効にするとシステムクロックも設定します。Android では無視されます。",
     ),
-    "yearsAgo": m110,
-    "yearsAgoShort": m111,
+    "yearsAgo": m111,
+    "yearsAgoShort": m112,
     "yes": MessageLookupByLibrary.simpleMessage("はい"),
     "zhCN": MessageLookupByLibrary.simpleMessage("簡体字中国語"),
   };

@@ -275,24 +275,26 @@ class MessageLookup extends MessageLookupByLibrary {
 
   static String m102(value) => "Пик ${value}";
 
-  static String m103(value) => "Всего ${value}";
+  static String m103(count) => "${count} совпадений";
 
-  static String m104(transport) => "Заголовки ${transport}";
+  static String m104(value) => "Всего ${value}";
 
-  static String m105(detail) => "Не удалось запустить расширение: ${detail}";
+  static String m105(transport) => "Заголовки ${transport}";
 
-  static String m106(detail) => "Не удалось запустить туннель: ${detail}";
+  static String m106(detail) => "Не удалось запустить расширение: ${detail}";
 
-  static String m107(detail) => "Туннель не подключился: ${detail}";
+  static String m107(detail) => "Не удалось запустить туннель: ${detail}";
 
-  static String m108(label) => "Значение «${label}» должно быть URL";
+  static String m108(detail) => "Туннель не подключился: ${detail}";
 
-  static String m109(date) => "Действителен до ${date}";
+  static String m109(label) => "Значение «${label}» должно быть URL";
 
-  static String m110(count) =>
-      "${Intl.plural(count, one: '${count} год назад', few: '${count} года назад', many: '${count} лет назад', other: '${count} года назад')}";
+  static String m110(date) => "Действителен до ${date}";
 
   static String m111(count) =>
+      "${Intl.plural(count, one: '${count} год назад', few: '${count} года назад', many: '${count} лет назад', other: '${count} года назад')}";
+
+  static String m112(count) =>
       "${Intl.plural(count, one: '${count} г. назад', few: '${count} г. назад', many: '${count} л. назад', other: '${count} г. назад')}";
 
   final messages = _notInlinedMessages(_notInlinedMessages);
@@ -2317,26 +2319,35 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "trafficStatisticsDay": MessageLookupByLibrary.simpleMessage("День"),
     "trafficStatisticsDesc": MessageLookupByLibrary.simpleMessage(
-      "Трафик по дням, неделям и месяцам: по правилам, доменам, процессам и прокси",
+      "Трафик по дням, неделям и месяцам: по правилам, доменам и прокси",
     ),
+    "trafficStatisticsHits": m103,
     "trafficStatisticsMonth": MessageLookupByLibrary.simpleMessage("Месяц"),
+    "trafficStatisticsNext": MessageLookupByLibrary.simpleMessage("Вперёд"),
     "trafficStatisticsNoData": MessageLookupByLibrary.simpleMessage(
       "Трафик пока не записан. Оставьте туннель включённым и вернитесь, когда завершатся соединения.",
     ),
+    "trafficStatisticsPrevious": MessageLookupByLibrary.simpleMessage("Назад"),
     "trafficStatisticsProxy": MessageLookupByLibrary.simpleMessage("Прокси"),
     "trafficStatisticsRankings": MessageLookupByLibrary.simpleMessage(
       "Рейтинг",
+    ),
+    "trafficStatisticsRefresh": MessageLookupByLibrary.simpleMessage(
+      "Обновить",
     ),
     "trafficStatisticsRuleHits": MessageLookupByLibrary.simpleMessage(
       "Срабатывания правил",
     ),
     "trafficStatisticsToday": MessageLookupByLibrary.simpleMessage("Сегодня"),
     "trafficStatisticsTrend": MessageLookupByLibrary.simpleMessage("Динамика"),
+    "trafficStatisticsUptime": MessageLookupByLibrary.simpleMessage(
+      "Время работы",
+    ),
     "trafficStatisticsWeek": MessageLookupByLibrary.simpleMessage("Неделя"),
-    "trafficTotal": m103,
+    "trafficTotal": m104,
     "trafficUsage": MessageLookupByLibrary.simpleMessage("Статистика трафика"),
     "transport": MessageLookupByLibrary.simpleMessage("Транспорт"),
-    "transportHeaders": m104,
+    "transportHeaders": m105,
     "trustCertificate": MessageLookupByLibrary.simpleMessage(
       "Доверять сертификату",
     ),
@@ -2356,15 +2367,15 @@ class MessageLookup extends MessageLookupByLibrary {
     "tunnelStartConfigInvalid": MessageLookupByLibrary.simpleMessage(
       "Конфигурация VPN недействительна или устарела. Выключите и снова включите VPN.",
     ),
-    "tunnelStartExtensionFailed": m105,
+    "tunnelStartExtensionFailed": m106,
     "tunnelStartFailed": MessageLookupByLibrary.simpleMessage(
       "Не удалось запустить туннель",
     ),
-    "tunnelStartFailedDetail": m106,
+    "tunnelStartFailedDetail": m107,
     "tunnelStartNotStarted": MessageLookupByLibrary.simpleMessage(
       "Туннель не подключился",
     ),
-    "tunnelStartNotStartedDetail": m107,
+    "tunnelStartNotStartedDetail": m108,
     "turnOff": MessageLookupByLibrary.simpleMessage("Выключить"),
     "turnOn": MessageLookupByLibrary.simpleMessage("Включить"),
     "udpRelayMode": MessageLookupByLibrary.simpleMessage(
@@ -2412,7 +2423,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "uploadBandwidth": MessageLookupByLibrary.simpleMessage("Скорость отдачи"),
     "url": MessageLookupByLibrary.simpleMessage("URL"),
     "urlRewrite": MessageLookupByLibrary.simpleMessage("Перезапись URL"),
-    "urlTip": m108,
+    "urlTip": m109,
     "useHosts": MessageLookupByLibrary.simpleMessage("Использовать hosts"),
     "useSystemHosts": MessageLookupByLibrary.simpleMessage(
       "Использовать системный hosts",
@@ -2423,7 +2434,7 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "userAgent": MessageLookupByLibrary.simpleMessage("User-Agent"),
     "username": MessageLookupByLibrary.simpleMessage("Имя пользователя"),
-    "validUntil": m109,
+    "validUntil": m110,
     "value": MessageLookupByLibrary.simpleMessage("Значение"),
     "view": MessageLookupByLibrary.simpleMessage("Просмотр"),
     "viewAll": MessageLookupByLibrary.simpleMessage("Показать всё"),
@@ -2444,8 +2455,8 @@ class MessageLookup extends MessageLookupByLibrary {
     "writeToSystemDesc": MessageLookupByLibrary.simpleMessage(
       "«Записывать в систему» также устанавливает системные часы; Android это игнорирует.",
     ),
-    "yearsAgo": m110,
-    "yearsAgoShort": m111,
+    "yearsAgo": m111,
+    "yearsAgoShort": m112,
     "yes": MessageLookupByLibrary.simpleMessage("Да"),
     "zhCN": MessageLookupByLibrary.simpleMessage("Упрощённый китайский"),
   };

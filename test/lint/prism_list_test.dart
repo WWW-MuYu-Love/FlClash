@@ -15,6 +15,7 @@ const _allowed = {
   'lib/ui/scaffold/scaffold_actions.dart': 'the keyword strip runs sideways',
   'lib/features/editor/completion_popup.dart': 'a few suggestions at most',
   'lib/views/dashboard/edit.dart': 'a few cards, each lifting its own way',
+  'lib/views/traffic_statistics.dart': 'the rule-hits strip runs sideways',
 };
 
 void main() {
