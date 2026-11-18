@@ -2201,6 +2201,27 @@ class MessageLookup extends MessageLookupByLibrary {
     "tproxyPort": MessageLookupByLibrary.simpleMessage("TProxy port"),
     "traffic": MessageLookupByLibrary.simpleMessage("Traffic"),
     "trafficPeak": m102,
+    "trafficStatistics": MessageLookupByLibrary.simpleMessage(
+      "Traffic statistics",
+    ),
+    "trafficStatisticsDay": MessageLookupByLibrary.simpleMessage("Day"),
+    "trafficStatisticsDesc": MessageLookupByLibrary.simpleMessage(
+      "Daily, weekly and monthly traffic by rule, domain, process and proxy",
+    ),
+    "trafficStatisticsMonth": MessageLookupByLibrary.simpleMessage("Month"),
+    "trafficStatisticsNoData": MessageLookupByLibrary.simpleMessage(
+      "No traffic recorded yet. Keep the tunnel on and come back after some connections close.",
+    ),
+    "trafficStatisticsProxy": MessageLookupByLibrary.simpleMessage("Proxy"),
+    "trafficStatisticsRankings": MessageLookupByLibrary.simpleMessage(
+      "Rankings",
+    ),
+    "trafficStatisticsRuleHits": MessageLookupByLibrary.simpleMessage(
+      "Rule hits",
+    ),
+    "trafficStatisticsToday": MessageLookupByLibrary.simpleMessage("Today"),
+    "trafficStatisticsTrend": MessageLookupByLibrary.simpleMessage("Trend"),
+    "trafficStatisticsWeek": MessageLookupByLibrary.simpleMessage("Week"),
     "trafficTotal": m103,
     "trafficUsage": MessageLookupByLibrary.simpleMessage("Traffic usage"),
     "transport": MessageLookupByLibrary.simpleMessage("Transport"),

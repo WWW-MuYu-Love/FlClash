@@ -141,6 +141,7 @@ class SetupAction extends _$SetupAction {
       debouncer.cancel(FunctionTag.applyProfile);
       _pendingForceApply = false;
       _updateRunTime();
+      unawaited(ref.read(trafficStatisticsRecorderProvider.notifier).flush());
       return;
     }
 

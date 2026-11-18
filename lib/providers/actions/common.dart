@@ -102,6 +102,11 @@ class CommonAction extends _$CommonAction {
     if (snapshot == null) {
       return null;
     }
+    unawaited(
+      ref
+          .read(trafficStatisticsRecorderProvider.notifier)
+          .onLiveConnections(snapshot.connections),
+    );
     final onlyStatisticsProxy = ref.read(
       appSettingProvider.select((state) => state.onlyStatisticsProxy),
     );

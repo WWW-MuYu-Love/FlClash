@@ -2375,6 +2375,29 @@ class MessageLookup extends MessageLookupByLibrary {
     "tproxyPort": MessageLookupByLibrary.simpleMessage("Port TProxy"),
     "traffic": MessageLookupByLibrary.simpleMessage("Trafic"),
     "trafficPeak": m102,
+    "trafficStatistics": MessageLookupByLibrary.simpleMessage(
+      "Statistiques de trafic",
+    ),
+    "trafficStatisticsDay": MessageLookupByLibrary.simpleMessage("Jour"),
+    "trafficStatisticsDesc": MessageLookupByLibrary.simpleMessage(
+      "Trafic quotidien, hebdomadaire et mensuel par règle, domaine, processus et proxy",
+    ),
+    "trafficStatisticsMonth": MessageLookupByLibrary.simpleMessage("Mois"),
+    "trafficStatisticsNoData": MessageLookupByLibrary.simpleMessage(
+      "Aucun trafic enregistré pour le moment. Laissez le tunnel activé et revenez une fois des connexions terminées.",
+    ),
+    "trafficStatisticsProxy": MessageLookupByLibrary.simpleMessage("Proxy"),
+    "trafficStatisticsRankings": MessageLookupByLibrary.simpleMessage(
+      "Classement",
+    ),
+    "trafficStatisticsRuleHits": MessageLookupByLibrary.simpleMessage(
+      "Règles déclenchées",
+    ),
+    "trafficStatisticsToday": MessageLookupByLibrary.simpleMessage(
+      "Aujourd\'hui",
+    ),
+    "trafficStatisticsTrend": MessageLookupByLibrary.simpleMessage("Tendance"),
+    "trafficStatisticsWeek": MessageLookupByLibrary.simpleMessage("Semaine"),
     "trafficTotal": m103,
     "trafficUsage": MessageLookupByLibrary.simpleMessage("Trafic utilisé"),
     "transport": MessageLookupByLibrary.simpleMessage("Transport"),

@@ -2312,6 +2312,27 @@ class MessageLookup extends MessageLookupByLibrary {
     "tproxyPort": MessageLookupByLibrary.simpleMessage("Порт TProxy"),
     "traffic": MessageLookupByLibrary.simpleMessage("Трафик"),
     "trafficPeak": m102,
+    "trafficStatistics": MessageLookupByLibrary.simpleMessage(
+      "Статистика трафика",
+    ),
+    "trafficStatisticsDay": MessageLookupByLibrary.simpleMessage("День"),
+    "trafficStatisticsDesc": MessageLookupByLibrary.simpleMessage(
+      "Трафик по дням, неделям и месяцам: по правилам, доменам, процессам и прокси",
+    ),
+    "trafficStatisticsMonth": MessageLookupByLibrary.simpleMessage("Месяц"),
+    "trafficStatisticsNoData": MessageLookupByLibrary.simpleMessage(
+      "Трафик пока не записан. Оставьте туннель включённым и вернитесь, когда завершатся соединения.",
+    ),
+    "trafficStatisticsProxy": MessageLookupByLibrary.simpleMessage("Прокси"),
+    "trafficStatisticsRankings": MessageLookupByLibrary.simpleMessage(
+      "Рейтинг",
+    ),
+    "trafficStatisticsRuleHits": MessageLookupByLibrary.simpleMessage(
+      "Срабатывания правил",
+    ),
+    "trafficStatisticsToday": MessageLookupByLibrary.simpleMessage("Сегодня"),
+    "trafficStatisticsTrend": MessageLookupByLibrary.simpleMessage("Динамика"),
+    "trafficStatisticsWeek": MessageLookupByLibrary.simpleMessage("Неделя"),
     "trafficTotal": m103,
     "trafficUsage": MessageLookupByLibrary.simpleMessage("Статистика трафика"),
     "transport": MessageLookupByLibrary.simpleMessage("Транспорт"),

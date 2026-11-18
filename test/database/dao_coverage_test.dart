@@ -1162,4 +1162,187 @@ void main() {
     expect(record?.quality, current);
     expect(await database.ipQualities.count.getSingle(), 1);
   });
+
+  test(
+    'traffic statistics DAO totals, splits, rules, rankings and trends',
+    () async {
+      final dao = database.trafficStatisticsDao;
+      final day = DateTime(2026, 11, 19);
+      TrafficStatisticsCompanion row({
+        required String id,
+        required String host,
+        String process = '',
+        required String proxy,
+        bool direct = false,
+        required String rule,
+        String rulePayload = '',
+        required int upload,
+        required int download,
+        required DateTime endedAt,
+        String profileLabel = 'Home',
+      }) {
+        return TrafficStatisticsCompanion.insert(
+          connectionId: id,
+          host: host,
+          process: process,
+          proxy: proxy,
+          direct: direct,
+          rule: rule,
+          rulePayload: rulePayload,
+          upload: upload,
+          download: download,
+          startedAt: endedAt.subtract(const Duration(seconds: 30)),
+          endedAt: endedAt,
+          profileId: 1,
+          profileLabel: profileLabel,
+        );
+      }
+
+      await dao.recordClosed([
+        row(
+          id: 'a',
+          host: 'example.com',
+          process: 'Safari',
+          proxy: 'Node-A',
+          rule: 'RULE-SET',
+          rulePayload: 'ads',
+          upload: 100,
+          download: 900,
+          endedAt: day.add(const Duration(hours: 10, minutes: 15)),
+        ),
+        row(
+          id: 'b',
+          host: 'example.com',
+          process: 'Safari',
+          proxy: 'Node-A',
+          rule: 'RULE-SET',
+          rulePayload: 'ads',
+          upload: 50,
+          download: 150,
+          endedAt: day.add(const Duration(hours: 10, minutes: 45)),
+        ),
+        row(
+          id: 'c',
+          host: '203.0.113.9',
+          proxy: 'DIRECT',
+          direct: true,
+          rule: 'DIRECT',
+          upload: 10,
+          download: 40,
+          endedAt: day.add(const Duration(hours: 11, minutes: 5)),
+        ),
+        row(
+          id: 'd',
+          host: 'other.example',
+          process: 'Mail',
+          proxy: 'Node-B',
+          rule: 'GEOIP',
+          rulePayload: 'CN',
+          upload: 200,
+          download: 800,
+          endedAt: day.add(const Duration(days: 1, hours: 9)),
+        ),
+      ]);
+
+      final start = day;
+      final end = day.add(const Duration(days: 1));
+      final totals = await dao.totals(start, end);
+      expect(totals.count, 3);
+      expect(totals.upload, 160);
+      expect(totals.download, 1090);
+      expect(totals.directUpload, 10);
+      expect(totals.directDownload, 40);
+
+      final hits = await dao.ruleHits(start, end);
+      expect(hits.map((hit) => (hit.label, hit.hits)), [
+        ('ads', 2),
+        ('DIRECT', 1),
+      ]);
+      expect(hits.first.bytes, 1200);
+
+      final domains = await dao.rankBy(
+        TrafficStatisticsRankBy.domain,
+        start,
+        end,
+      );
+      expect(domains.map((rank) => (rank.label, rank.bytes)), [
+        ('example.com', 1200),
+        ('203.0.113.9', 50),
+      ]);
+      final processes = await dao.rankBy(
+        TrafficStatisticsRankBy.process,
+        start,
+        end,
+      );
+      expect(processes.map((rank) => rank.label), ['Safari']);
+      final proxies = await dao.rankBy(
+        TrafficStatisticsRankBy.proxy,
+        start,
+        end,
+      );
+      expect(proxies.map((rank) => rank.label), ['Node-A']);
+      final profiles = await dao.rankBy(
+        TrafficStatisticsRankBy.profile,
+        start,
+        end,
+      );
+      expect(profiles.single.label, 'Home');
+      expect(profiles.single.bytes, 1250);
+
+      final hourly = await dao.trend(start, end, hourly: true);
+      expect(hourly.map((bucket) => (bucket.start.hour, bucket.download)), [
+        (10, 1050),
+        (11, 40),
+      ]);
+      final daily = await dao.trend(
+        start,
+        end.add(const Duration(days: 1)),
+        hourly: false,
+      );
+      expect(daily.map((bucket) => bucket.download), [1090, 800]);
+    },
+  );
+
+  test('traffic statistics DAO prunes rows older than the retention', () async {
+    final dao = database.trafficStatisticsDao;
+    final now = DateTime.now();
+    Future<void> put(String id, DateTime endedAt) {
+      return dao.recordClosed([
+        TrafficStatisticsCompanion.insert(
+          connectionId: id,
+          host: 'example.com',
+          process: '',
+          proxy: 'Node-A',
+          direct: false,
+          rule: 'DIRECT',
+          rulePayload: '',
+          upload: 1,
+          download: 1,
+          startedAt: endedAt,
+          endedAt: endedAt,
+          profileId: 0,
+          profileLabel: '',
+        ),
+      ]);
+    }
+
+    await put(
+      'old',
+      now.subtract(trafficStatisticsRetention + const Duration(days: 1)),
+    );
+    await put('kept', now.subtract(const Duration(days: 1)));
+
+    expect(
+      await dao.pruneOlderThan(now.subtract(trafficStatisticsRetention)),
+      1,
+    );
+    expect(await database.trafficStatistics.count.getSingle(), 1);
+    expect(
+      (await dao.totals(
+        now.subtract(const Duration(days: 2)),
+        now.add(const Duration(days: 1)),
+      )).count,
+      1,
+    );
+  });
 }

@@ -120,6 +120,116 @@ class AppLocalizations {
     );
   }
 
+  /// `Traffic statistics`
+  String get trafficStatistics {
+    return Intl.message(
+      'Traffic statistics',
+      name: 'trafficStatistics',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Daily, weekly and monthly traffic by rule, domain, process and proxy`
+  String get trafficStatisticsDesc {
+    return Intl.message(
+      'Daily, weekly and monthly traffic by rule, domain, process and proxy',
+      name: 'trafficStatisticsDesc',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Day`
+  String get trafficStatisticsDay {
+    return Intl.message(
+      'Day',
+      name: 'trafficStatisticsDay',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Week`
+  String get trafficStatisticsWeek {
+    return Intl.message(
+      'Week',
+      name: 'trafficStatisticsWeek',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Month`
+  String get trafficStatisticsMonth {
+    return Intl.message(
+      'Month',
+      name: 'trafficStatisticsMonth',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Today`
+  String get trafficStatisticsToday {
+    return Intl.message(
+      'Today',
+      name: 'trafficStatisticsToday',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Trend`
+  String get trafficStatisticsTrend {
+    return Intl.message(
+      'Trend',
+      name: 'trafficStatisticsTrend',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Rule hits`
+  String get trafficStatisticsRuleHits {
+    return Intl.message(
+      'Rule hits',
+      name: 'trafficStatisticsRuleHits',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Rankings`
+  String get trafficStatisticsRankings {
+    return Intl.message(
+      'Rankings',
+      name: 'trafficStatisticsRankings',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Proxy`
+  String get trafficStatisticsProxy {
+    return Intl.message(
+      'Proxy',
+      name: 'trafficStatisticsProxy',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `No traffic recorded yet. Keep the tunnel on and come back after some connections close.`
+  String get trafficStatisticsNoData {
+    return Intl.message(
+      'No traffic recorded yet. Keep the tunnel on and come back after some connections close.',
+      name: 'trafficStatisticsNoData',
+      desc: '',
+      args: [],
+    );
+  }
+
   /// `Network speed`
   String get networkSpeed {
     return Intl.message(

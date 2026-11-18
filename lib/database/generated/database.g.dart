@@ -5241,6 +5241,809 @@ class MitmModulesCompanion extends UpdateCompanion<RawMitmModule> {
   }
 }
 
+class $TrafficStatisticsTable extends TrafficStatistics
+    with TableInfo<$TrafficStatisticsTable, TrafficStatisticsRecord> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $TrafficStatisticsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _connectionIdMeta = const VerificationMeta(
+    'connectionId',
+  );
+  @override
+  late final GeneratedColumn<String> connectionId = GeneratedColumn<String>(
+    'connection_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _hostMeta = const VerificationMeta('host');
+  @override
+  late final GeneratedColumn<String> host = GeneratedColumn<String>(
+    'host',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _processMeta = const VerificationMeta(
+    'process',
+  );
+  @override
+  late final GeneratedColumn<String> process = GeneratedColumn<String>(
+    'process',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _proxyMeta = const VerificationMeta('proxy');
+  @override
+  late final GeneratedColumn<String> proxy = GeneratedColumn<String>(
+    'proxy',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _directMeta = const VerificationMeta('direct');
+  @override
+  late final GeneratedColumn<bool> direct = GeneratedColumn<bool>(
+    'direct',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("direct" IN (0, 1))',
+    ),
+  );
+  static const VerificationMeta _ruleMeta = const VerificationMeta('rule');
+  @override
+  late final GeneratedColumn<String> rule = GeneratedColumn<String>(
+    'rule',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _rulePayloadMeta = const VerificationMeta(
+    'rulePayload',
+  );
+  @override
+  late final GeneratedColumn<String> rulePayload = GeneratedColumn<String>(
+    'rule_payload',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _uploadMeta = const VerificationMeta('upload');
+  @override
+  late final GeneratedColumn<int> upload = GeneratedColumn<int>(
+    'upload',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _downloadMeta = const VerificationMeta(
+    'download',
+  );
+  @override
+  late final GeneratedColumn<int> download = GeneratedColumn<int>(
+    'download',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _startedAtMeta = const VerificationMeta(
+    'startedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> startedAt = GeneratedColumn<DateTime>(
+    'started_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _endedAtMeta = const VerificationMeta(
+    'endedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> endedAt = GeneratedColumn<DateTime>(
+    'ended_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _profileIdMeta = const VerificationMeta(
+    'profileId',
+  );
+  @override
+  late final GeneratedColumn<int> profileId = GeneratedColumn<int>(
+    'profile_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _profileLabelMeta = const VerificationMeta(
+    'profileLabel',
+  );
+  @override
+  late final GeneratedColumn<String> profileLabel = GeneratedColumn<String>(
+    'profile_label',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    connectionId,
+    host,
+    process,
+    proxy,
+    direct,
+    rule,
+    rulePayload,
+    upload,
+    download,
+    startedAt,
+    endedAt,
+    profileId,
+    profileLabel,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'traffic_statistics';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<TrafficStatisticsRecord> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('connection_id')) {
+      context.handle(
+        _connectionIdMeta,
+        connectionId.isAcceptableOrUnknown(
+          data['connection_id']!,
+          _connectionIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_connectionIdMeta);
+    }
+    if (data.containsKey('host')) {
+      context.handle(
+        _hostMeta,
+        host.isAcceptableOrUnknown(data['host']!, _hostMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_hostMeta);
+    }
+    if (data.containsKey('process')) {
+      context.handle(
+        _processMeta,
+        process.isAcceptableOrUnknown(data['process']!, _processMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_processMeta);
+    }
+    if (data.containsKey('proxy')) {
+      context.handle(
+        _proxyMeta,
+        proxy.isAcceptableOrUnknown(data['proxy']!, _proxyMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_proxyMeta);
+    }
+    if (data.containsKey('direct')) {
+      context.handle(
+        _directMeta,
+        direct.isAcceptableOrUnknown(data['direct']!, _directMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_directMeta);
+    }
+    if (data.containsKey('rule')) {
+      context.handle(
+        _ruleMeta,
+        rule.isAcceptableOrUnknown(data['rule']!, _ruleMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_ruleMeta);
+    }
+    if (data.containsKey('rule_payload')) {
+      context.handle(
+        _rulePayloadMeta,
+        rulePayload.isAcceptableOrUnknown(
+          data['rule_payload']!,
+          _rulePayloadMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_rulePayloadMeta);
+    }
+    if (data.containsKey('upload')) {
+      context.handle(
+        _uploadMeta,
+        upload.isAcceptableOrUnknown(data['upload']!, _uploadMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_uploadMeta);
+    }
+    if (data.containsKey('download')) {
+      context.handle(
+        _downloadMeta,
+        download.isAcceptableOrUnknown(data['download']!, _downloadMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_downloadMeta);
+    }
+    if (data.containsKey('started_at')) {
+      context.handle(
+        _startedAtMeta,
+        startedAt.isAcceptableOrUnknown(data['started_at']!, _startedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_startedAtMeta);
+    }
+    if (data.containsKey('ended_at')) {
+      context.handle(
+        _endedAtMeta,
+        endedAt.isAcceptableOrUnknown(data['ended_at']!, _endedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_endedAtMeta);
+    }
+    if (data.containsKey('profile_id')) {
+      context.handle(
+        _profileIdMeta,
+        profileId.isAcceptableOrUnknown(data['profile_id']!, _profileIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_profileIdMeta);
+    }
+    if (data.containsKey('profile_label')) {
+      context.handle(
+        _profileLabelMeta,
+        profileLabel.isAcceptableOrUnknown(
+          data['profile_label']!,
+          _profileLabelMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_profileLabelMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  TrafficStatisticsRecord map(
+    Map<String, dynamic> data, {
+    String? tablePrefix,
+  }) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return TrafficStatisticsRecord(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      connectionId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}connection_id'],
+      )!,
+      host: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}host'],
+      )!,
+      process: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}process'],
+      )!,
+      proxy: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}proxy'],
+      )!,
+      direct: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}direct'],
+      )!,
+      rule: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}rule'],
+      )!,
+      rulePayload: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}rule_payload'],
+      )!,
+      upload: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}upload'],
+      )!,
+      download: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}download'],
+      )!,
+      startedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}started_at'],
+      )!,
+      endedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}ended_at'],
+      )!,
+      profileId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}profile_id'],
+      )!,
+      profileLabel: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}profile_label'],
+      )!,
+    );
+  }
+
+  @override
+  $TrafficStatisticsTable createAlias(String alias) {
+    return $TrafficStatisticsTable(attachedDatabase, alias);
+  }
+}
+
+class TrafficStatisticsRecord extends DataClass
+    implements Insertable<TrafficStatisticsRecord> {
+  final int id;
+  final String connectionId;
+  final String host;
+  final String process;
+  final String proxy;
+  final bool direct;
+  final String rule;
+  final String rulePayload;
+  final int upload;
+  final int download;
+  final DateTime startedAt;
+  final DateTime endedAt;
+  final int profileId;
+  final String profileLabel;
+  const TrafficStatisticsRecord({
+    required this.id,
+    required this.connectionId,
+    required this.host,
+    required this.process,
+    required this.proxy,
+    required this.direct,
+    required this.rule,
+    required this.rulePayload,
+    required this.upload,
+    required this.download,
+    required this.startedAt,
+    required this.endedAt,
+    required this.profileId,
+    required this.profileLabel,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['connection_id'] = Variable<String>(connectionId);
+    map['host'] = Variable<String>(host);
+    map['process'] = Variable<String>(process);
+    map['proxy'] = Variable<String>(proxy);
+    map['direct'] = Variable<bool>(direct);
+    map['rule'] = Variable<String>(rule);
+    map['rule_payload'] = Variable<String>(rulePayload);
+    map['upload'] = Variable<int>(upload);
+    map['download'] = Variable<int>(download);
+    map['started_at'] = Variable<DateTime>(startedAt);
+    map['ended_at'] = Variable<DateTime>(endedAt);
+    map['profile_id'] = Variable<int>(profileId);
+    map['profile_label'] = Variable<String>(profileLabel);
+    return map;
+  }
+
+  TrafficStatisticsCompanion toCompanion(bool nullToAbsent) {
+    return TrafficStatisticsCompanion(
+      id: Value(id),
+      connectionId: Value(connectionId),
+      host: Value(host),
+      process: Value(process),
+      proxy: Value(proxy),
+      direct: Value(direct),
+      rule: Value(rule),
+      rulePayload: Value(rulePayload),
+      upload: Value(upload),
+      download: Value(download),
+      startedAt: Value(startedAt),
+      endedAt: Value(endedAt),
+      profileId: Value(profileId),
+      profileLabel: Value(profileLabel),
+    );
+  }
+
+  factory TrafficStatisticsRecord.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return TrafficStatisticsRecord(
+      id: serializer.fromJson<int>(json['id']),
+      connectionId: serializer.fromJson<String>(json['connectionId']),
+      host: serializer.fromJson<String>(json['host']),
+      process: serializer.fromJson<String>(json['process']),
+      proxy: serializer.fromJson<String>(json['proxy']),
+      direct: serializer.fromJson<bool>(json['direct']),
+      rule: serializer.fromJson<String>(json['rule']),
+      rulePayload: serializer.fromJson<String>(json['rulePayload']),
+      upload: serializer.fromJson<int>(json['upload']),
+      download: serializer.fromJson<int>(json['download']),
+      startedAt: serializer.fromJson<DateTime>(json['startedAt']),
+      endedAt: serializer.fromJson<DateTime>(json['endedAt']),
+      profileId: serializer.fromJson<int>(json['profileId']),
+      profileLabel: serializer.fromJson<String>(json['profileLabel']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'connectionId': serializer.toJson<String>(connectionId),
+      'host': serializer.toJson<String>(host),
+      'process': serializer.toJson<String>(process),
+      'proxy': serializer.toJson<String>(proxy),
+      'direct': serializer.toJson<bool>(direct),
+      'rule': serializer.toJson<String>(rule),
+      'rulePayload': serializer.toJson<String>(rulePayload),
+      'upload': serializer.toJson<int>(upload),
+      'download': serializer.toJson<int>(download),
+      'startedAt': serializer.toJson<DateTime>(startedAt),
+      'endedAt': serializer.toJson<DateTime>(endedAt),
+      'profileId': serializer.toJson<int>(profileId),
+      'profileLabel': serializer.toJson<String>(profileLabel),
+    };
+  }
+
+  TrafficStatisticsRecord copyWith({
+    int? id,
+    String? connectionId,
+    String? host,
+    String? process,
+    String? proxy,
+    bool? direct,
+    String? rule,
+    String? rulePayload,
+    int? upload,
+    int? download,
+    DateTime? startedAt,
+    DateTime? endedAt,
+    int? profileId,
+    String? profileLabel,
+  }) => TrafficStatisticsRecord(
+    id: id ?? this.id,
+    connectionId: connectionId ?? this.connectionId,
+    host: host ?? this.host,
+    process: process ?? this.process,
+    proxy: proxy ?? this.proxy,
+    direct: direct ?? this.direct,
+    rule: rule ?? this.rule,
+    rulePayload: rulePayload ?? this.rulePayload,
+    upload: upload ?? this.upload,
+    download: download ?? this.download,
+    startedAt: startedAt ?? this.startedAt,
+    endedAt: endedAt ?? this.endedAt,
+    profileId: profileId ?? this.profileId,
+    profileLabel: profileLabel ?? this.profileLabel,
+  );
+  TrafficStatisticsRecord copyWithCompanion(TrafficStatisticsCompanion data) {
+    return TrafficStatisticsRecord(
+      id: data.id.present ? data.id.value : this.id,
+      connectionId: data.connectionId.present
+          ? data.connectionId.value
+          : this.connectionId,
+      host: data.host.present ? data.host.value : this.host,
+      process: data.process.present ? data.process.value : this.process,
+      proxy: data.proxy.present ? data.proxy.value : this.proxy,
+      direct: data.direct.present ? data.direct.value : this.direct,
+      rule: data.rule.present ? data.rule.value : this.rule,
+      rulePayload: data.rulePayload.present
+          ? data.rulePayload.value
+          : this.rulePayload,
+      upload: data.upload.present ? data.upload.value : this.upload,
+      download: data.download.present ? data.download.value : this.download,
+      startedAt: data.startedAt.present ? data.startedAt.value : this.startedAt,
+      endedAt: data.endedAt.present ? data.endedAt.value : this.endedAt,
+      profileId: data.profileId.present ? data.profileId.value : this.profileId,
+      profileLabel: data.profileLabel.present
+          ? data.profileLabel.value
+          : this.profileLabel,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('TrafficStatisticsRecord(')
+          ..write('id: $id, ')
+          ..write('connectionId: $connectionId, ')
+          ..write('host: $host, ')
+          ..write('process: $process, ')
+          ..write('proxy: $proxy, ')
+          ..write('direct: $direct, ')
+          ..write('rule: $rule, ')
+          ..write('rulePayload: $rulePayload, ')
+          ..write('upload: $upload, ')
+          ..write('download: $download, ')
+          ..write('startedAt: $startedAt, ')
+          ..write('endedAt: $endedAt, ')
+          ..write('profileId: $profileId, ')
+          ..write('profileLabel: $profileLabel')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    connectionId,
+    host,
+    process,
+    proxy,
+    direct,
+    rule,
+    rulePayload,
+    upload,
+    download,
+    startedAt,
+    endedAt,
+    profileId,
+    profileLabel,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is TrafficStatisticsRecord &&
+          other.id == this.id &&
+          other.connectionId == this.connectionId &&
+          other.host == this.host &&
+          other.process == this.process &&
+          other.proxy == this.proxy &&
+          other.direct == this.direct &&
+          other.rule == this.rule &&
+          other.rulePayload == this.rulePayload &&
+          other.upload == this.upload &&
+          other.download == this.download &&
+          other.startedAt == this.startedAt &&
+          other.endedAt == this.endedAt &&
+          other.profileId == this.profileId &&
+          other.profileLabel == this.profileLabel);
+}
+
+class TrafficStatisticsCompanion
+    extends UpdateCompanion<TrafficStatisticsRecord> {
+  final Value<int> id;
+  final Value<String> connectionId;
+  final Value<String> host;
+  final Value<String> process;
+  final Value<String> proxy;
+  final Value<bool> direct;
+  final Value<String> rule;
+  final Value<String> rulePayload;
+  final Value<int> upload;
+  final Value<int> download;
+  final Value<DateTime> startedAt;
+  final Value<DateTime> endedAt;
+  final Value<int> profileId;
+  final Value<String> profileLabel;
+  const TrafficStatisticsCompanion({
+    this.id = const Value.absent(),
+    this.connectionId = const Value.absent(),
+    this.host = const Value.absent(),
+    this.process = const Value.absent(),
+    this.proxy = const Value.absent(),
+    this.direct = const Value.absent(),
+    this.rule = const Value.absent(),
+    this.rulePayload = const Value.absent(),
+    this.upload = const Value.absent(),
+    this.download = const Value.absent(),
+    this.startedAt = const Value.absent(),
+    this.endedAt = const Value.absent(),
+    this.profileId = const Value.absent(),
+    this.profileLabel = const Value.absent(),
+  });
+  TrafficStatisticsCompanion.insert({
+    this.id = const Value.absent(),
+    required String connectionId,
+    required String host,
+    required String process,
+    required String proxy,
+    required bool direct,
+    required String rule,
+    required String rulePayload,
+    required int upload,
+    required int download,
+    required DateTime startedAt,
+    required DateTime endedAt,
+    required int profileId,
+    required String profileLabel,
+  }) : connectionId = Value(connectionId),
+       host = Value(host),
+       process = Value(process),
+       proxy = Value(proxy),
+       direct = Value(direct),
+       rule = Value(rule),
+       rulePayload = Value(rulePayload),
+       upload = Value(upload),
+       download = Value(download),
+       startedAt = Value(startedAt),
+       endedAt = Value(endedAt),
+       profileId = Value(profileId),
+       profileLabel = Value(profileLabel);
+  static Insertable<TrafficStatisticsRecord> custom({
+    Expression<int>? id,
+    Expression<String>? connectionId,
+    Expression<String>? host,
+    Expression<String>? process,
+    Expression<String>? proxy,
+    Expression<bool>? direct,
+    Expression<String>? rule,
+    Expression<String>? rulePayload,
+    Expression<int>? upload,
+    Expression<int>? download,
+    Expression<DateTime>? startedAt,
+    Expression<DateTime>? endedAt,
+    Expression<int>? profileId,
+    Expression<String>? profileLabel,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (connectionId != null) 'connection_id': connectionId,
+      if (host != null) 'host': host,
+      if (process != null) 'process': process,
+      if (proxy != null) 'proxy': proxy,
+      if (direct != null) 'direct': direct,
+      if (rule != null) 'rule': rule,
+      if (rulePayload != null) 'rule_payload': rulePayload,
+      if (upload != null) 'upload': upload,
+      if (download != null) 'download': download,
+      if (startedAt != null) 'started_at': startedAt,
+      if (endedAt != null) 'ended_at': endedAt,
+      if (profileId != null) 'profile_id': profileId,
+      if (profileLabel != null) 'profile_label': profileLabel,
+    });
+  }
+
+  TrafficStatisticsCompanion copyWith({
+    Value<int>? id,
+    Value<String>? connectionId,
+    Value<String>? host,
+    Value<String>? process,
+    Value<String>? proxy,
+    Value<bool>? direct,
+    Value<String>? rule,
+    Value<String>? rulePayload,
+    Value<int>? upload,
+    Value<int>? download,
+    Value<DateTime>? startedAt,
+    Value<DateTime>? endedAt,
+    Value<int>? profileId,
+    Value<String>? profileLabel,
+  }) {
+    return TrafficStatisticsCompanion(
+      id: id ?? this.id,
+      connectionId: connectionId ?? this.connectionId,
+      host: host ?? this.host,
+      process: process ?? this.process,
+      proxy: proxy ?? this.proxy,
+      direct: direct ?? this.direct,
+      rule: rule ?? this.rule,
+      rulePayload: rulePayload ?? this.rulePayload,
+      upload: upload ?? this.upload,
+      download: download ?? this.download,
+      startedAt: startedAt ?? this.startedAt,
+      endedAt: endedAt ?? this.endedAt,
+      profileId: profileId ?? this.profileId,
+      profileLabel: profileLabel ?? this.profileLabel,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (connectionId.present) {
+      map['connection_id'] = Variable<String>(connectionId.value);
+    }
+    if (host.present) {
+      map['host'] = Variable<String>(host.value);
+    }
+    if (process.present) {
+      map['process'] = Variable<String>(process.value);
+    }
+    if (proxy.present) {
+      map['proxy'] = Variable<String>(proxy.value);
+    }
+    if (direct.present) {
+      map['direct'] = Variable<bool>(direct.value);
+    }
+    if (rule.present) {
+      map['rule'] = Variable<String>(rule.value);
+    }
+    if (rulePayload.present) {
+      map['rule_payload'] = Variable<String>(rulePayload.value);
+    }
+    if (upload.present) {
+      map['upload'] = Variable<int>(upload.value);
+    }
+    if (download.present) {
+      map['download'] = Variable<int>(download.value);
+    }
+    if (startedAt.present) {
+      map['started_at'] = Variable<DateTime>(startedAt.value);
+    }
+    if (endedAt.present) {
+      map['ended_at'] = Variable<DateTime>(endedAt.value);
+    }
+    if (profileId.present) {
+      map['profile_id'] = Variable<int>(profileId.value);
+    }
+    if (profileLabel.present) {
+      map['profile_label'] = Variable<String>(profileLabel.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('TrafficStatisticsCompanion(')
+          ..write('id: $id, ')
+          ..write('connectionId: $connectionId, ')
+          ..write('host: $host, ')
+          ..write('process: $process, ')
+          ..write('proxy: $proxy, ')
+          ..write('direct: $direct, ')
+          ..write('rule: $rule, ')
+          ..write('rulePayload: $rulePayload, ')
+          ..write('upload: $upload, ')
+          ..write('download: $download, ')
+          ..write('startedAt: $startedAt, ')
+          ..write('endedAt: $endedAt, ')
+          ..write('profileId: $profileId, ')
+          ..write('profileLabel: $profileLabel')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$Database extends GeneratedDatabase {
   _$Database(QueryExecutor e) : super(e);
   $DatabaseManager get managers => $DatabaseManager(this);
@@ -5256,6 +6059,8 @@ abstract class _$Database extends GeneratedDatabase {
   late final $ProxyDialersTable proxyDialers = $ProxyDialersTable(this);
   late final $IpQualitiesTable ipQualities = $IpQualitiesTable(this);
   late final $MitmModulesTable mitmModules = $MitmModulesTable(this);
+  late final $TrafficStatisticsTable trafficStatistics =
+      $TrafficStatisticsTable(this);
   late final Index idxRuleTarget = Index(
     'idx_rule_target',
     'CREATE INDEX idx_rule_target ON rules (rule_target)',
@@ -5271,6 +6076,10 @@ abstract class _$Database extends GeneratedDatabase {
   late final Index lastAccessedUrl = Index(
     'last_accessed_url',
     'CREATE INDEX last_accessed_url ON icon_records (last_accessed, url)',
+  );
+  late final Index idxTrafficStatisticsEndedAt = Index(
+    'idx_traffic_statistics_ended_at',
+    'CREATE INDEX idx_traffic_statistics_ended_at ON traffic_statistics (ended_at)',
   );
   late final ProfilesDao profilesDao = ProfilesDao(this as Database);
   late final ScriptsDao scriptsDao = ScriptsDao(this as Database);
@@ -5289,6 +6098,9 @@ abstract class _$Database extends GeneratedDatabase {
   );
   late final IpQualitiesDao ipQualitiesDao = IpQualitiesDao(this as Database);
   late final MitmModulesDao mitmModulesDao = MitmModulesDao(this as Database);
+  late final TrafficStatisticsDao trafficStatisticsDao = TrafficStatisticsDao(
+    this as Database,
+  );
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -5306,10 +6118,12 @@ abstract class _$Database extends GeneratedDatabase {
     proxyDialers,
     ipQualities,
     mitmModules,
+    trafficStatistics,
     idxRuleTarget,
     idxRulesProfileOrder,
     idxProxyGroupsProfileOrder,
     lastAccessedUrl,
+    idxTrafficStatisticsEndedAt,
   ];
   @override
   StreamQueryUpdateRules get streamUpdateRules => const StreamQueryUpdateRules([
@@ -9412,6 +10226,401 @@ typedef $$MitmModulesTableProcessedTableManager =
       RawMitmModule,
       PrefetchHooks Function()
     >;
+typedef $$TrafficStatisticsTableCreateCompanionBuilder =
+    TrafficStatisticsCompanion Function({
+      Value<int> id,
+      required String connectionId,
+      required String host,
+      required String process,
+      required String proxy,
+      required bool direct,
+      required String rule,
+      required String rulePayload,
+      required int upload,
+      required int download,
+      required DateTime startedAt,
+      required DateTime endedAt,
+      required int profileId,
+      required String profileLabel,
+    });
+typedef $$TrafficStatisticsTableUpdateCompanionBuilder =
+    TrafficStatisticsCompanion Function({
+      Value<int> id,
+      Value<String> connectionId,
+      Value<String> host,
+      Value<String> process,
+      Value<String> proxy,
+      Value<bool> direct,
+      Value<String> rule,
+      Value<String> rulePayload,
+      Value<int> upload,
+      Value<int> download,
+      Value<DateTime> startedAt,
+      Value<DateTime> endedAt,
+      Value<int> profileId,
+      Value<String> profileLabel,
+    });
+
+class $$TrafficStatisticsTableFilterComposer
+    extends Composer<_$Database, $TrafficStatisticsTable> {
+  $$TrafficStatisticsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get connectionId => $composableBuilder(
+    column: $table.connectionId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get host => $composableBuilder(
+    column: $table.host,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get process => $composableBuilder(
+    column: $table.process,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get proxy => $composableBuilder(
+    column: $table.proxy,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get direct => $composableBuilder(
+    column: $table.direct,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get rule => $composableBuilder(
+    column: $table.rule,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get rulePayload => $composableBuilder(
+    column: $table.rulePayload,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get upload => $composableBuilder(
+    column: $table.upload,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get download => $composableBuilder(
+    column: $table.download,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get startedAt => $composableBuilder(
+    column: $table.startedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get endedAt => $composableBuilder(
+    column: $table.endedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get profileId => $composableBuilder(
+    column: $table.profileId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get profileLabel => $composableBuilder(
+    column: $table.profileLabel,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$TrafficStatisticsTableOrderingComposer
+    extends Composer<_$Database, $TrafficStatisticsTable> {
+  $$TrafficStatisticsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get connectionId => $composableBuilder(
+    column: $table.connectionId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get host => $composableBuilder(
+    column: $table.host,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get process => $composableBuilder(
+    column: $table.process,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get proxy => $composableBuilder(
+    column: $table.proxy,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get direct => $composableBuilder(
+    column: $table.direct,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get rule => $composableBuilder(
+    column: $table.rule,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get rulePayload => $composableBuilder(
+    column: $table.rulePayload,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get upload => $composableBuilder(
+    column: $table.upload,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get download => $composableBuilder(
+    column: $table.download,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get startedAt => $composableBuilder(
+    column: $table.startedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get endedAt => $composableBuilder(
+    column: $table.endedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get profileId => $composableBuilder(
+    column: $table.profileId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get profileLabel => $composableBuilder(
+    column: $table.profileLabel,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$TrafficStatisticsTableAnnotationComposer
+    extends Composer<_$Database, $TrafficStatisticsTable> {
+  $$TrafficStatisticsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get connectionId => $composableBuilder(
+    column: $table.connectionId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get host =>
+      $composableBuilder(column: $table.host, builder: (column) => column);
+
+  GeneratedColumn<String> get process =>
+      $composableBuilder(column: $table.process, builder: (column) => column);
+
+  GeneratedColumn<String> get proxy =>
+      $composableBuilder(column: $table.proxy, builder: (column) => column);
+
+  GeneratedColumn<bool> get direct =>
+      $composableBuilder(column: $table.direct, builder: (column) => column);
+
+  GeneratedColumn<String> get rule =>
+      $composableBuilder(column: $table.rule, builder: (column) => column);
+
+  GeneratedColumn<String> get rulePayload => $composableBuilder(
+    column: $table.rulePayload,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get upload =>
+      $composableBuilder(column: $table.upload, builder: (column) => column);
+
+  GeneratedColumn<int> get download =>
+      $composableBuilder(column: $table.download, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get startedAt =>
+      $composableBuilder(column: $table.startedAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get endedAt =>
+      $composableBuilder(column: $table.endedAt, builder: (column) => column);
+
+  GeneratedColumn<int> get profileId =>
+      $composableBuilder(column: $table.profileId, builder: (column) => column);
+
+  GeneratedColumn<String> get profileLabel => $composableBuilder(
+    column: $table.profileLabel,
+    builder: (column) => column,
+  );
+}
+
+class $$TrafficStatisticsTableTableManager
+    extends
+        RootTableManager<
+          _$Database,
+          $TrafficStatisticsTable,
+          TrafficStatisticsRecord,
+          $$TrafficStatisticsTableFilterComposer,
+          $$TrafficStatisticsTableOrderingComposer,
+          $$TrafficStatisticsTableAnnotationComposer,
+          $$TrafficStatisticsTableCreateCompanionBuilder,
+          $$TrafficStatisticsTableUpdateCompanionBuilder,
+          (
+            TrafficStatisticsRecord,
+            BaseReferences<
+              _$Database,
+              $TrafficStatisticsTable,
+              TrafficStatisticsRecord
+            >,
+          ),
+          TrafficStatisticsRecord,
+          PrefetchHooks Function()
+        > {
+  $$TrafficStatisticsTableTableManager(
+    _$Database db,
+    $TrafficStatisticsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$TrafficStatisticsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$TrafficStatisticsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$TrafficStatisticsTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<String> connectionId = const Value.absent(),
+                Value<String> host = const Value.absent(),
+                Value<String> process = const Value.absent(),
+                Value<String> proxy = const Value.absent(),
+                Value<bool> direct = const Value.absent(),
+                Value<String> rule = const Value.absent(),
+                Value<String> rulePayload = const Value.absent(),
+                Value<int> upload = const Value.absent(),
+                Value<int> download = const Value.absent(),
+                Value<DateTime> startedAt = const Value.absent(),
+                Value<DateTime> endedAt = const Value.absent(),
+                Value<int> profileId = const Value.absent(),
+                Value<String> profileLabel = const Value.absent(),
+              }) => TrafficStatisticsCompanion(
+                id: id,
+                connectionId: connectionId,
+                host: host,
+                process: process,
+                proxy: proxy,
+                direct: direct,
+                rule: rule,
+                rulePayload: rulePayload,
+                upload: upload,
+                download: download,
+                startedAt: startedAt,
+                endedAt: endedAt,
+                profileId: profileId,
+                profileLabel: profileLabel,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required String connectionId,
+                required String host,
+                required String process,
+                required String proxy,
+                required bool direct,
+                required String rule,
+                required String rulePayload,
+                required int upload,
+                required int download,
+                required DateTime startedAt,
+                required DateTime endedAt,
+                required int profileId,
+                required String profileLabel,
+              }) => TrafficStatisticsCompanion.insert(
+                id: id,
+                connectionId: connectionId,
+                host: host,
+                process: process,
+                proxy: proxy,
+                direct: direct,
+                rule: rule,
+                rulePayload: rulePayload,
+                upload: upload,
+                download: download,
+                startedAt: startedAt,
+                endedAt: endedAt,
+                profileId: profileId,
+                profileLabel: profileLabel,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$TrafficStatisticsTable, TrafficStatisticsRecord>(
+                    table,
+                  ),
+                  BaseReferences<
+                    _$Database,
+                    $TrafficStatisticsTable,
+                    TrafficStatisticsRecord
+                  >(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$TrafficStatisticsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$Database,
+      $TrafficStatisticsTable,
+      TrafficStatisticsRecord,
+      $$TrafficStatisticsTableFilterComposer,
+      $$TrafficStatisticsTableOrderingComposer,
+      $$TrafficStatisticsTableAnnotationComposer,
+      $$TrafficStatisticsTableCreateCompanionBuilder,
+      $$TrafficStatisticsTableUpdateCompanionBuilder,
+      (
+        TrafficStatisticsRecord,
+        BaseReferences<
+          _$Database,
+          $TrafficStatisticsTable,
+          TrafficStatisticsRecord
+        >,
+      ),
+      TrafficStatisticsRecord,
+      PrefetchHooks Function()
+    >;
 
 class $DatabaseManager {
   final _$Database _db;
@@ -9440,6 +10649,8 @@ class $DatabaseManager {
       $$IpQualitiesTableTableManager(_db, _db.ipQualities);
   $$MitmModulesTableTableManager get mitmModules =>
       $$MitmModulesTableTableManager(_db, _db.mitmModules);
+  $$TrafficStatisticsTableTableManager get trafficStatistics =>
+      $$TrafficStatisticsTableTableManager(_db, _db.trafficStatistics);
 }
 
 mixin _$ProfilesDaoMixin on DatabaseAccessor<Database> {
@@ -9590,4 +10801,20 @@ class MitmModulesDaoManager {
   MitmModulesDaoManager(this._db);
   $$MitmModulesTableTableManager get mitmModules =>
       $$MitmModulesTableTableManager(_db.attachedDatabase, _db.mitmModules);
+}
+
+mixin _$TrafficStatisticsDaoMixin on DatabaseAccessor<Database> {
+  $TrafficStatisticsTable get trafficStatistics =>
+      attachedDatabase.trafficStatistics;
+  TrafficStatisticsDaoManager get managers => TrafficStatisticsDaoManager(this);
+}
+
+class TrafficStatisticsDaoManager {
+  final _$TrafficStatisticsDaoMixin _db;
+  TrafficStatisticsDaoManager(this._db);
+  $$TrafficStatisticsTableTableManager get trafficStatistics =>
+      $$TrafficStatisticsTableTableManager(
+        _db.attachedDatabase,
+        _db.trafficStatistics,
+      );
 }

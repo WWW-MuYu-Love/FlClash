@@ -141,6 +141,7 @@ const List<DashboardWidget> defaultDashboardWidgets = [
   DashboardWidget.profiles,
   DashboardWidget.proxyGroups,
   DashboardWidget.connectionStats,
+  DashboardWidget.trafficStatistics,
   DashboardWidget.zashboard,
 ];
 

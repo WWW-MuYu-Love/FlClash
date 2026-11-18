@@ -22,6 +22,7 @@ part 'mitm_modules.dart';
 part 'profiles.dart';
 part 'rules.dart';
 part 'scripts.dart';
+part 'traffic_statistics.dart';
 
 @DriftDatabase(
   tables: [
@@ -37,6 +38,7 @@ part 'scripts.dart';
     ProxyDialers,
     IpQualities,
     MitmModules,
+    TrafficStatistics,
   ],
   daos: [
     ProfilesDao,
@@ -50,13 +52,14 @@ part 'scripts.dart';
     ProxyDialersDao,
     IpQualitiesDao,
     MitmModulesDao,
+    TrafficStatisticsDao,
   ],
 )
 class Database extends _$Database {
   Database([QueryExecutor? executor]) : super(executor ?? _openConnection());
 
   @override
-  int get schemaVersion => 23;
+  int get schemaVersion => 24;
 
   static LazyDatabase _openConnection() {
     return LazyDatabase(() async {
@@ -125,6 +128,9 @@ class Database extends _$Database {
         }
         if (from < 23) {
           await m.alterTable(TableMigration(mitmModules));
+        }
+        if (from < 24) {
+          await _createTableIfMissing(m, trafficStatistics);
         }
       }),
       beforeOpen: (_) => customStatement('PRAGMA foreign_keys = ON'),

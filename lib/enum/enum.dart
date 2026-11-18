@@ -462,7 +462,8 @@ enum DashboardWidget {
   connectionStats,
   intranetIp,
   memoryInfo,
-  zashboard;
+  zashboard,
+  trafficStatistics;
 
   final List<SupportPlatform> platforms;
 
