@@ -140,6 +140,46 @@ class AppLocalizations {
     );
   }
 
+  /// `Global connections`
+  String get earthGlobe {
+    return Intl.message(
+      'Global connections',
+      name: 'earthGlobe',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Live globe of current connections`
+  String get earthGlobeDesc {
+    return Intl.message(
+      'Live globe of current connections',
+      name: 'earthGlobeDesc',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `The globe could not be loaded.`
+  String get earthGlobeLoadFailed {
+    return Intl.message(
+      'The globe could not be loaded.',
+      name: 'earthGlobeLoadFailed',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Open full Zashboard`
+  String get earthGlobeOpenFull {
+    return Intl.message(
+      'Open full Zashboard',
+      name: 'earthGlobeOpenFull',
+      desc: '',
+      args: [],
+    );
+  }
+
   /// `Day`
   String get trafficStatisticsDay {
     return Intl.message(

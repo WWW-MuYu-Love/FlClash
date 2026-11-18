@@ -911,6 +911,16 @@ class MessageLookup extends MessageLookupByLibrary {
       "Téléchargement de la mise à jour",
     ),
     "duration": MessageLookupByLibrary.simpleMessage("Durée"),
+    "earthGlobe": MessageLookupByLibrary.simpleMessage("Connexions mondiales"),
+    "earthGlobeDesc": MessageLookupByLibrary.simpleMessage(
+      "Globe en direct des connexions actuelles",
+    ),
+    "earthGlobeLoadFailed": MessageLookupByLibrary.simpleMessage(
+      "Impossible de charger le globe.",
+    ),
+    "earthGlobeOpenFull": MessageLookupByLibrary.simpleMessage(
+      "Ouvrir tout Zashboard",
+    ),
     "edit": MessageLookupByLibrary.simpleMessage("Modifier"),
     "editDashboard": MessageLookupByLibrary.simpleMessage(
       "Modifier le tableau de bord",

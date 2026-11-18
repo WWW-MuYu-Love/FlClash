@@ -143,6 +143,7 @@ const List<DashboardWidget> defaultDashboardWidgets = [
   DashboardWidget.connectionStats,
   DashboardWidget.trafficStatistics,
   DashboardWidget.zashboard,
+  DashboardWidget.earthGlobe,
 ];
 
 /// A phone starts without the VPN switch and the diagnostic cards, which stay

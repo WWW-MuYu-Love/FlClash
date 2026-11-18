@@ -26,7 +26,6 @@ Uri zashboardUrl(ExternalControllerClient client) {
 }
 
 /// webview_flutter has no Linux/Windows implementation; those keep the external browser.
-@visibleForTesting
 bool Function() zashboardInAppWebViewAvailable = () =>
     !system.isLinux && !system.isWindows;
 

@@ -601,12 +601,13 @@ void main() {
 
     expect(launchedUrls, isEmpty);
     expect(find.byType(ZashboardView), findsOneWidget);
-    expect(webViewPlatform.createdControllers.single.loadedUris, [
+    expect(webViewPlatform.createdControllers, hasLength(2));
+    expect(webViewPlatform.createdControllers.last.loadedUris, [
       Uri.parse(
         'http://127.0.0.1:9090/ui?hostname=127.0.0.1&port=9090&secret=AbC123xYz987',
       ),
     ]);
-    expect(webViewPlatform.createdControllers.single.javaScriptModes, [
+    expect(webViewPlatform.createdControllers.last.javaScriptModes, [
       JavaScriptMode.unrestricted,
     ]);
     expect(tester.takeException(), null);
@@ -692,7 +693,8 @@ void main() {
 
     expect(launchedUrls, isEmpty);
     expect(find.byType(ZashboardView), findsOneWidget);
-    expect(webViewPlatform.createdControllers.single.loadedUris, [
+    expect(webViewPlatform.createdControllers, hasLength(2));
+    expect(webViewPlatform.createdControllers.last.loadedUris, [
       Uri.parse('http://127.0.0.1:9090/ui'),
     ]);
     expect(tester.takeException(), null);
@@ -780,13 +782,16 @@ void main() {
 
     expect(launchedUrls, isEmpty);
     expect(find.byType(ZashboardView), findsNothing);
-    expect(webViewPlatform.createdControllers, isEmpty);
+    expect(webViewPlatform.createdControllers, hasLength(1));
+    expect(webViewPlatform.createdControllers.single.loadedUris, isEmpty);
+    // The mismatch text shows twice: the earth card body blocks loading,
+    // and tapping the Zashboard card shows it as a banner.
     expect(
       find.text(
         'The controller secret is out of sync. '
         'Restart the tunnel to sync it again.',
       ),
-      findsOneWidget,
+      findsNWidgets(2),
     );
     expect(tester.takeException(), null);
   });

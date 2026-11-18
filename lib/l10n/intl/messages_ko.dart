@@ -716,6 +716,16 @@ class MessageLookup extends MessageLookupByLibrary {
     "downloadBandwidth": MessageLookupByLibrary.simpleMessage("다운로드 대역폭"),
     "downloadingUpdate": MessageLookupByLibrary.simpleMessage("업데이트 다운로드 중"),
     "duration": MessageLookupByLibrary.simpleMessage("소요 시간"),
+    "earthGlobe": MessageLookupByLibrary.simpleMessage("전역 연결"),
+    "earthGlobeDesc": MessageLookupByLibrary.simpleMessage(
+      "현재 연결을 보여주는 실시간 지구본",
+    ),
+    "earthGlobeLoadFailed": MessageLookupByLibrary.simpleMessage(
+      "지구본을 불러오지 못했습니다.",
+    ),
+    "earthGlobeOpenFull": MessageLookupByLibrary.simpleMessage(
+      "전체 Zashboard 열기",
+    ),
     "edit": MessageLookupByLibrary.simpleMessage("편집"),
     "editDashboard": MessageLookupByLibrary.simpleMessage("대시보드 편집"),
     "editGlobalRules": MessageLookupByLibrary.simpleMessage("전역 규칙 편집"),

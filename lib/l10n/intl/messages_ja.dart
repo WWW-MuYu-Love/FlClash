@@ -724,6 +724,14 @@ class MessageLookup extends MessageLookupByLibrary {
     "downloadBandwidth": MessageLookupByLibrary.simpleMessage("ダウンロード帯域幅"),
     "downloadingUpdate": MessageLookupByLibrary.simpleMessage("更新をダウンロード中"),
     "duration": MessageLookupByLibrary.simpleMessage("経過時間"),
+    "earthGlobe": MessageLookupByLibrary.simpleMessage("グローバル接続"),
+    "earthGlobeDesc": MessageLookupByLibrary.simpleMessage("現在の接続を映すライブ地球"),
+    "earthGlobeLoadFailed": MessageLookupByLibrary.simpleMessage(
+      "地球を読み込めませんでした。",
+    ),
+    "earthGlobeOpenFull": MessageLookupByLibrary.simpleMessage(
+      "Zashboard を全画面で開く",
+    ),
     "edit": MessageLookupByLibrary.simpleMessage("編集"),
     "editDashboard": MessageLookupByLibrary.simpleMessage("ダッシュボードを編集"),
     "editGlobalRules": MessageLookupByLibrary.simpleMessage("グローバルルールを編集"),
