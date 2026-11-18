@@ -575,7 +575,9 @@ class _UptimeCell extends StatelessWidget {
                   appLocalizations.trafficStatisticsUptime,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: AppTextStyle.subheadline.of(context, emphasized: true),
+                  style: AppTextStyle.subheadline
+                      .of(context)
+                      .copyWith(color: colorScheme.onSurfaceVariant),
                 ),
               ),
             ],

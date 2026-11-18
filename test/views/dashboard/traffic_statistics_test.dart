@@ -187,7 +187,12 @@ void main() {
     await pumpWidget(tester, const TrafficStatisticsView());
 
     final uptimeLabel = tester.widget<Text>(find.text('Uptime'));
-    expect(uptimeLabel.style?.fontWeight, FontWeight.w600);
+    final BuildContext uptimeContext = tester.element(find.text('Uptime'));
+    expect(uptimeLabel.style?.fontWeight, isNot(FontWeight.w600));
+    expect(
+      uptimeLabel.style?.color,
+      uptimeContext.colorScheme.onSurfaceVariant,
+    );
 
     Container splitCell(Finder label) {
       return tester.widget<Container>(
