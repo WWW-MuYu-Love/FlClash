@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:collection/collection.dart';
+import 'package:drift/drift.dart';
 import 'package:fl_clash/common/common.dart';
 import 'package:fl_clash/database/database.dart';
 import 'package:fl_clash/enum/enum.dart';
@@ -26,9 +27,9 @@ class TrafficStatisticsData {
     required this.trend,
     required this.ruleHits,
     required this.domains,
-    required this.proxies,
+    required this.policies,
+    required this.nodes,
     required this.profiles,
-    required this.rules,
   });
 
   final TrafficStatisticsRange range;
@@ -43,9 +44,9 @@ class TrafficStatisticsData {
   final List<TrafficStatisticsBucket> trend;
   final List<TrafficStatisticsRank> ruleHits;
   final List<TrafficStatisticsRank> domains;
-  final List<TrafficStatisticsRank> proxies;
+  final List<TrafficStatisticsRank> policies;
+  final List<TrafficStatisticsRank> nodes;
   final List<TrafficStatisticsRank> profiles;
-  final List<TrafficStatisticsRank> rules;
 
   int get total => upload + download;
 
@@ -332,6 +333,7 @@ class _OpenConnection {
       host: connection.title,
       process: connection.metadata.process,
       proxy: chains.isEmpty ? '' : chains.last,
+      node: Value(chains.firstOrNull),
       direct: chains.firstOrNull == 'DIRECT',
       rule: connection.rule,
       rulePayload: connection.rulePayload,
@@ -362,9 +364,9 @@ Future<TrafficStatisticsData> trafficStatistics(
     dao.trend(start, end, hourly: hourly),
     dao.ruleHits(start, end),
     dao.rankBy(TrafficStatisticsRankBy.domain, start, end),
-    dao.rankBy(TrafficStatisticsRankBy.proxy, start, end),
+    dao.rankBy(TrafficStatisticsRankBy.policy, start, end),
+    dao.rankBy(TrafficStatisticsRankBy.node, start, end),
     dao.rankBy(TrafficStatisticsRankBy.profile, start, end),
-    dao.rankBy(TrafficStatisticsRankBy.rule, start, end),
     sessionsDao.uptime(start, end),
   ]);
   final totals = results[0] as TrafficStatisticsTotals;
@@ -382,9 +384,9 @@ Future<TrafficStatisticsData> trafficStatistics(
     trend: _fillTrend(range, start, hourly, buckets),
     ruleHits: results[2] as List<TrafficStatisticsRank>,
     domains: results[3] as List<TrafficStatisticsRank>,
-    proxies: results[4] as List<TrafficStatisticsRank>,
-    profiles: results[5] as List<TrafficStatisticsRank>,
-    rules: results[6] as List<TrafficStatisticsRank>,
+    policies: results[4] as List<TrafficStatisticsRank>,
+    nodes: results[5] as List<TrafficStatisticsRank>,
+    profiles: results[6] as List<TrafficStatisticsRank>,
   );
 }
 

@@ -54,7 +54,7 @@ final class TrafficStatisticsRecorderProvider
 }
 
 String _$trafficStatisticsRecorderHash() =>
-    r'7edd7db8d6b440a68e1c1fd9093d5eb2180f42df';
+    r'0e33f57e709a27383f31b155b7d02b9de7c191d7';
 
 /// Records closed connections while the tunnel is up: opens and traffic
 /// updates arrive as core events, and the live snapshot says which ones
@@ -136,7 +136,7 @@ final class TrafficStatisticsProvider
   }
 }
 
-String _$trafficStatisticsHash() => r'7dfce724cf98712d6cdda684f992ae95de79fcff';
+String _$trafficStatisticsHash() => r'e4287bf846dfbe800eae8d8c02f3676cd0540575';
 
 final class TrafficStatisticsFamily extends $Family
     with

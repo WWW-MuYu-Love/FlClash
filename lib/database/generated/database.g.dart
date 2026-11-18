@@ -5300,6 +5300,15 @@ class $TrafficStatisticsTable extends TrafficStatistics
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _nodeMeta = const VerificationMeta('node');
+  @override
+  late final GeneratedColumn<String> node = GeneratedColumn<String>(
+    'node',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _directMeta = const VerificationMeta('direct');
   @override
   late final GeneratedColumn<bool> direct = GeneratedColumn<bool>(
@@ -5403,6 +5412,7 @@ class $TrafficStatisticsTable extends TrafficStatistics
     host,
     process,
     proxy,
+    node,
     direct,
     rule,
     rulePayload,
@@ -5462,6 +5472,12 @@ class $TrafficStatisticsTable extends TrafficStatistics
       );
     } else if (isInserting) {
       context.missing(_proxyMeta);
+    }
+    if (data.containsKey('node')) {
+      context.handle(
+        _nodeMeta,
+        node.isAcceptableOrUnknown(data['node']!, _nodeMeta),
+      );
     }
     if (data.containsKey('direct')) {
       context.handle(
@@ -5573,6 +5589,10 @@ class $TrafficStatisticsTable extends TrafficStatistics
         DriftSqlType.string,
         data['${effectivePrefix}proxy'],
       )!,
+      node: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}node'],
+      ),
       direct: attachedDatabase.typeMapping.read(
         DriftSqlType.bool,
         data['${effectivePrefix}direct'],
@@ -5625,6 +5645,12 @@ class TrafficStatisticsRecord extends DataClass
   final String host;
   final String process;
   final String proxy;
+
+  /// The egress node the connection actually left through: the first
+  /// entry of the core's chain. The `proxy` column holds the outermost
+  /// group instead, so rows recorded before this column existed have no
+  /// node and stay out of the node ranking.
+  final String? node;
   final bool direct;
   final String rule;
   final String rulePayload;
@@ -5640,6 +5666,7 @@ class TrafficStatisticsRecord extends DataClass
     required this.host,
     required this.process,
     required this.proxy,
+    this.node,
     required this.direct,
     required this.rule,
     required this.rulePayload,
@@ -5658,6 +5685,9 @@ class TrafficStatisticsRecord extends DataClass
     map['host'] = Variable<String>(host);
     map['process'] = Variable<String>(process);
     map['proxy'] = Variable<String>(proxy);
+    if (!nullToAbsent || node != null) {
+      map['node'] = Variable<String>(node);
+    }
     map['direct'] = Variable<bool>(direct);
     map['rule'] = Variable<String>(rule);
     map['rule_payload'] = Variable<String>(rulePayload);
@@ -5677,6 +5707,7 @@ class TrafficStatisticsRecord extends DataClass
       host: Value(host),
       process: Value(process),
       proxy: Value(proxy),
+      node: node == null && nullToAbsent ? const Value.absent() : Value(node),
       direct: Value(direct),
       rule: Value(rule),
       rulePayload: Value(rulePayload),
@@ -5700,6 +5731,7 @@ class TrafficStatisticsRecord extends DataClass
       host: serializer.fromJson<String>(json['host']),
       process: serializer.fromJson<String>(json['process']),
       proxy: serializer.fromJson<String>(json['proxy']),
+      node: serializer.fromJson<String?>(json['node']),
       direct: serializer.fromJson<bool>(json['direct']),
       rule: serializer.fromJson<String>(json['rule']),
       rulePayload: serializer.fromJson<String>(json['rulePayload']),
@@ -5720,6 +5752,7 @@ class TrafficStatisticsRecord extends DataClass
       'host': serializer.toJson<String>(host),
       'process': serializer.toJson<String>(process),
       'proxy': serializer.toJson<String>(proxy),
+      'node': serializer.toJson<String?>(node),
       'direct': serializer.toJson<bool>(direct),
       'rule': serializer.toJson<String>(rule),
       'rulePayload': serializer.toJson<String>(rulePayload),
@@ -5738,6 +5771,7 @@ class TrafficStatisticsRecord extends DataClass
     String? host,
     String? process,
     String? proxy,
+    Value<String?> node = const Value.absent(),
     bool? direct,
     String? rule,
     String? rulePayload,
@@ -5753,6 +5787,7 @@ class TrafficStatisticsRecord extends DataClass
     host: host ?? this.host,
     process: process ?? this.process,
     proxy: proxy ?? this.proxy,
+    node: node.present ? node.value : this.node,
     direct: direct ?? this.direct,
     rule: rule ?? this.rule,
     rulePayload: rulePayload ?? this.rulePayload,
@@ -5772,6 +5807,7 @@ class TrafficStatisticsRecord extends DataClass
       host: data.host.present ? data.host.value : this.host,
       process: data.process.present ? data.process.value : this.process,
       proxy: data.proxy.present ? data.proxy.value : this.proxy,
+      node: data.node.present ? data.node.value : this.node,
       direct: data.direct.present ? data.direct.value : this.direct,
       rule: data.rule.present ? data.rule.value : this.rule,
       rulePayload: data.rulePayload.present
@@ -5796,6 +5832,7 @@ class TrafficStatisticsRecord extends DataClass
           ..write('host: $host, ')
           ..write('process: $process, ')
           ..write('proxy: $proxy, ')
+          ..write('node: $node, ')
           ..write('direct: $direct, ')
           ..write('rule: $rule, ')
           ..write('rulePayload: $rulePayload, ')
@@ -5816,6 +5853,7 @@ class TrafficStatisticsRecord extends DataClass
     host,
     process,
     proxy,
+    node,
     direct,
     rule,
     rulePayload,
@@ -5835,6 +5873,7 @@ class TrafficStatisticsRecord extends DataClass
           other.host == this.host &&
           other.process == this.process &&
           other.proxy == this.proxy &&
+          other.node == this.node &&
           other.direct == this.direct &&
           other.rule == this.rule &&
           other.rulePayload == this.rulePayload &&
@@ -5853,6 +5892,7 @@ class TrafficStatisticsCompanion
   final Value<String> host;
   final Value<String> process;
   final Value<String> proxy;
+  final Value<String?> node;
   final Value<bool> direct;
   final Value<String> rule;
   final Value<String> rulePayload;
@@ -5868,6 +5908,7 @@ class TrafficStatisticsCompanion
     this.host = const Value.absent(),
     this.process = const Value.absent(),
     this.proxy = const Value.absent(),
+    this.node = const Value.absent(),
     this.direct = const Value.absent(),
     this.rule = const Value.absent(),
     this.rulePayload = const Value.absent(),
@@ -5884,6 +5925,7 @@ class TrafficStatisticsCompanion
     required String host,
     required String process,
     required String proxy,
+    this.node = const Value.absent(),
     required bool direct,
     required String rule,
     required String rulePayload,
@@ -5912,6 +5954,7 @@ class TrafficStatisticsCompanion
     Expression<String>? host,
     Expression<String>? process,
     Expression<String>? proxy,
+    Expression<String>? node,
     Expression<bool>? direct,
     Expression<String>? rule,
     Expression<String>? rulePayload,
@@ -5928,6 +5971,7 @@ class TrafficStatisticsCompanion
       if (host != null) 'host': host,
       if (process != null) 'process': process,
       if (proxy != null) 'proxy': proxy,
+      if (node != null) 'node': node,
       if (direct != null) 'direct': direct,
       if (rule != null) 'rule': rule,
       if (rulePayload != null) 'rule_payload': rulePayload,
@@ -5946,6 +5990,7 @@ class TrafficStatisticsCompanion
     Value<String>? host,
     Value<String>? process,
     Value<String>? proxy,
+    Value<String?>? node,
     Value<bool>? direct,
     Value<String>? rule,
     Value<String>? rulePayload,
@@ -5962,6 +6007,7 @@ class TrafficStatisticsCompanion
       host: host ?? this.host,
       process: process ?? this.process,
       proxy: proxy ?? this.proxy,
+      node: node ?? this.node,
       direct: direct ?? this.direct,
       rule: rule ?? this.rule,
       rulePayload: rulePayload ?? this.rulePayload,
@@ -5991,6 +6037,9 @@ class TrafficStatisticsCompanion
     }
     if (proxy.present) {
       map['proxy'] = Variable<String>(proxy.value);
+    }
+    if (node.present) {
+      map['node'] = Variable<String>(node.value);
     }
     if (direct.present) {
       map['direct'] = Variable<bool>(direct.value);
@@ -6030,6 +6079,7 @@ class TrafficStatisticsCompanion
           ..write('host: $host, ')
           ..write('process: $process, ')
           ..write('proxy: $proxy, ')
+          ..write('node: $node, ')
           ..write('direct: $direct, ')
           ..write('rule: $rule, ')
           ..write('rulePayload: $rulePayload, ')
@@ -10494,6 +10544,7 @@ typedef $$TrafficStatisticsTableCreateCompanionBuilder =
       required String host,
       required String process,
       required String proxy,
+      Value<String?> node,
       required bool direct,
       required String rule,
       required String rulePayload,
@@ -10511,6 +10562,7 @@ typedef $$TrafficStatisticsTableUpdateCompanionBuilder =
       Value<String> host,
       Value<String> process,
       Value<String> proxy,
+      Value<String?> node,
       Value<bool> direct,
       Value<String> rule,
       Value<String> rulePayload,
@@ -10553,6 +10605,11 @@ class $$TrafficStatisticsTableFilterComposer
 
   ColumnFilters<String> get proxy => $composableBuilder(
     column: $table.proxy,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get node => $composableBuilder(
+    column: $table.node,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -10636,6 +10693,11 @@ class $$TrafficStatisticsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get node => $composableBuilder(
+    column: $table.node,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<bool> get direct => $composableBuilder(
     column: $table.direct,
     builder: (column) => ColumnOrderings(column),
@@ -10707,6 +10769,9 @@ class $$TrafficStatisticsTableAnnotationComposer
 
   GeneratedColumn<String> get proxy =>
       $composableBuilder(column: $table.proxy, builder: (column) => column);
+
+  GeneratedColumn<String> get node =>
+      $composableBuilder(column: $table.node, builder: (column) => column);
 
   GeneratedColumn<bool> get direct =>
       $composableBuilder(column: $table.direct, builder: (column) => column);
@@ -10785,6 +10850,7 @@ class $$TrafficStatisticsTableTableManager
                 Value<String> host = const Value.absent(),
                 Value<String> process = const Value.absent(),
                 Value<String> proxy = const Value.absent(),
+                Value<String?> node = const Value.absent(),
                 Value<bool> direct = const Value.absent(),
                 Value<String> rule = const Value.absent(),
                 Value<String> rulePayload = const Value.absent(),
@@ -10800,6 +10866,7 @@ class $$TrafficStatisticsTableTableManager
                 host: host,
                 process: process,
                 proxy: proxy,
+                node: node,
                 direct: direct,
                 rule: rule,
                 rulePayload: rulePayload,
@@ -10817,6 +10884,7 @@ class $$TrafficStatisticsTableTableManager
                 required String host,
                 required String process,
                 required String proxy,
+                Value<String?> node = const Value.absent(),
                 required bool direct,
                 required String rule,
                 required String rulePayload,
@@ -10832,6 +10900,7 @@ class $$TrafficStatisticsTableTableManager
                 host: host,
                 process: process,
                 proxy: proxy,
+                node: node,
                 direct: direct,
                 rule: rule,
                 rulePayload: rulePayload,

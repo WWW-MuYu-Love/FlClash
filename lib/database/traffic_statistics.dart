@@ -21,6 +21,12 @@ class TrafficStatistics extends Table {
 
   TextColumn get proxy => text()();
 
+  /// The egress node the connection actually left through: the first
+  /// entry of the core's chain. The `proxy` column holds the outermost
+  /// group instead, so rows recorded before this column existed have no
+  /// node and stay out of the node ranking.
+  TextColumn get node => text().nullable()();
+
   BoolColumn get direct => boolean()();
 
   TextColumn get rule => text()();
@@ -55,7 +61,7 @@ class TunnelSessions extends Table {
   DateTimeColumn get endedAt => dateTime().nullable()();
 }
 
-enum TrafficStatisticsRankBy { domain, process, proxy, profile, rule }
+enum TrafficStatisticsRankBy { domain, process, policy, node, profile }
 
 class TrafficStatisticsTotals {
   const TrafficStatisticsTotals({
@@ -261,15 +267,15 @@ class TrafficStatisticsDao extends DatabaseAccessor<Database>
     final (groupBy, exclusion) = switch (by) {
       TrafficStatisticsRankBy.domain => ('host', ''),
       TrafficStatisticsRankBy.process => ('process', ''),
-      TrafficStatisticsRankBy.proxy => (
+      TrafficStatisticsRankBy.policy => (
         'proxy',
         " AND proxy NOT IN ('DIRECT', 'REJECT')",
       ),
-      TrafficStatisticsRankBy.profile => ('profile_label', ''),
-      TrafficStatisticsRankBy.rule => (
-        "CASE WHEN rule_payload != '' THEN rule_payload ELSE rule END",
-        '',
+      TrafficStatisticsRankBy.node => (
+        'node',
+        " AND node NOT IN ('DIRECT', 'REJECT')",
       ),
+      TrafficStatisticsRankBy.profile => ('profile_label', ''),
     };
     final rows = await customSelect(
       'SELECT $groupBy AS label, '

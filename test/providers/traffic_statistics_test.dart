@@ -1,3 +1,4 @@
+import 'package:drift/drift.dart' hide isNull, isNotNull;
 import 'package:drift/native.dart';
 import 'package:fl_clash/database/database.dart' as db;
 import 'package:fl_clash/models/models.dart';
@@ -17,7 +18,7 @@ void main() {
     required String id,
     String host = 'example.com',
     String process = 'Safari',
-    List<String> chains = const ['Proxy', 'Node-A'],
+    List<String> chains = const ['Node-A', 'Proxy'],
     String rule = 'RULE-SET',
     String rulePayload = 'ads',
     int upload = 0,
@@ -68,7 +69,8 @@ void main() {
     expect(recorded.single.download, 40);
     expect(recorded.single.host, 'example.com');
     expect(recorded.single.process, 'Safari');
-    expect(recorded.single.proxy, 'Node-A');
+    expect(recorded.single.proxy, 'Proxy');
+    expect(recorded.single.node, 'Node-A');
     expect(recorded.single.direct, isFalse);
     expect(recorded.single.rule, 'RULE-SET');
     expect(recorded.single.rulePayload, 'ads');
@@ -115,6 +117,7 @@ void main() {
     final recorded = await rows();
     expect(recorded.single.direct, isTrue);
     expect(recorded.single.proxy, 'DIRECT');
+    expect(recorded.single.node, 'DIRECT');
   });
 
   test('stopping the tunnel flushes the open connections', () async {
@@ -139,6 +142,7 @@ void main() {
         host: 'example.com',
         process: 'Safari',
         proxy: 'Node-A',
+        node: const Value('HK-01'),
         direct: false,
         rule: 'RULE-SET',
         rulePayload: 'ads',
@@ -154,6 +158,7 @@ void main() {
         host: '203.0.113.9',
         process: '',
         proxy: 'DIRECT',
+        node: const Value('DIRECT'),
         direct: true,
         rule: 'DIRECT',
         rulePayload: '',
@@ -193,12 +198,10 @@ void main() {
     expect(data.domains.first.bytes, 1000);
     expect(data.domains.first.upload, 100);
     expect(data.domains.first.download, 900);
-    expect(data.proxies.single.label, 'Node-A');
+    expect(data.policies.single.label, 'Node-A');
+    expect(data.nodes.single.label, 'HK-01');
+    expect(data.nodes.single.bytes, 1000);
     expect(data.profiles.single.label, 'Home');
-    expect(data.rules.map((rule) => (rule.label, rule.bytes)), [
-      ('ads', 1000),
-      ('DIRECT', 50),
-    ]);
   });
 
   test('the statistics provider reads an earlier day with an offset', () async {

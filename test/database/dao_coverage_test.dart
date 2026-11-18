@@ -1173,6 +1173,7 @@ void main() {
         required String host,
         String process = '',
         required String proxy,
+        String? node,
         bool direct = false,
         required String rule,
         String rulePayload = '',
@@ -1186,6 +1187,7 @@ void main() {
           host: host,
           process: process,
           proxy: proxy,
+          node: Value(node),
           direct: direct,
           rule: rule,
           rulePayload: rulePayload,
@@ -1204,6 +1206,7 @@ void main() {
           host: 'example.com',
           process: 'Safari',
           proxy: 'Node-A',
+          node: 'HK-01',
           rule: 'RULE-SET',
           rulePayload: 'ads',
           upload: 100,
@@ -1215,6 +1218,7 @@ void main() {
           host: 'example.com',
           process: 'Safari',
           proxy: 'Node-A',
+          node: 'HK-01',
           rule: 'RULE-SET',
           rulePayload: 'ads',
           upload: 50,
@@ -1225,6 +1229,7 @@ void main() {
           id: 'c',
           host: '203.0.113.9',
           proxy: 'DIRECT',
+          node: 'DIRECT',
           direct: true,
           rule: 'DIRECT',
           upload: 10,
@@ -1236,6 +1241,7 @@ void main() {
           host: 'other.example',
           process: 'Mail',
           proxy: 'Node-B',
+          node: 'JP-02',
           rule: 'GEOIP',
           rulePayload: 'CN',
           upload: 200,
@@ -1261,14 +1267,6 @@ void main() {
       expect(hits.first.bytes, 1200);
       expect(hits.first.ruleType, 'RULE-SET');
 
-      final rules = await dao.rankBy(TrafficStatisticsRankBy.rule, start, end);
-      expect(rules.map((rank) => (rank.label, rank.bytes)), [
-        ('ads', 1200),
-        ('DIRECT', 50),
-      ]);
-      expect(rules.first.upload, 150);
-      expect(rules.first.download, 1050);
-
       final domains = await dao.rankBy(
         TrafficStatisticsRankBy.domain,
         start,
@@ -1284,12 +1282,16 @@ void main() {
         end,
       );
       expect(processes.map((rank) => rank.label), ['Safari']);
-      final proxies = await dao.rankBy(
-        TrafficStatisticsRankBy.proxy,
+      final policies = await dao.rankBy(
+        TrafficStatisticsRankBy.policy,
         start,
         end,
       );
-      expect(proxies.map((rank) => rank.label), ['Node-A']);
+      expect(policies.map((rank) => rank.label), ['Node-A']);
+      final nodes = await dao.rankBy(TrafficStatisticsRankBy.node, start, end);
+      expect(nodes.map((rank) => (rank.label, rank.bytes)), [
+        ('HK-01', 1200),
+      ]);
       final profiles = await dao.rankBy(
         TrafficStatisticsRankBy.profile,
         start,
@@ -1309,6 +1311,15 @@ void main() {
         hourly: false,
       );
       expect(daily.map((bucket) => bucket.download), [1090, 800]);
+      final twoDayNodes = await dao.rankBy(
+        TrafficStatisticsRankBy.node,
+        start,
+        end.add(const Duration(days: 1)),
+      );
+      expect(twoDayNodes.map((rank) => (rank.label, rank.bytes)), [
+        ('HK-01', 1200),
+        ('JP-02', 1000),
+      ]);
     },
   );
 

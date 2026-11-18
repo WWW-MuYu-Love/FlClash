@@ -55,13 +55,13 @@ TrafficStatisticsData _data({
       TrafficStatisticsRank(label: 'example.com', bytes: 3000, hits: 2),
       TrafficStatisticsRank(label: 'other.test', bytes: 1000, hits: 1),
     ],
-    proxies: const [
-      TrafficStatisticsRank(label: 'Node-A', bytes: 3000, hits: 2),
+    policies: const [
+      TrafficStatisticsRank(label: 'YouTube', bytes: 3000, hits: 2),
     ],
+    nodes: const [TrafficStatisticsRank(label: 'HK-01', bytes: 3000, hits: 2)],
     profiles: const [
       TrafficStatisticsRank(label: 'Default', bytes: 4000, hits: 3),
     ],
-    rules: const [TrafficStatisticsRank(label: 'ads', bytes: 1000, hits: 1)],
   );
 }
 
@@ -265,21 +265,21 @@ void main() {
       findsOneWidget,
     );
     expect(find.text('RULE-SET'), findsOneWidget);
-    expect(find.text('example.com'), findsOneWidget);
-    expect(find.text('Node-A'), findsNothing);
-    expect(find.text('ads'), findsNothing);
+    expect(find.text('YouTube'), findsOneWidget);
+    expect(find.text('HK-01'), findsNothing);
+    expect(find.text('example.com'), findsNothing);
 
     await tester.ensureVisible(find.text('Nodes'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Nodes'));
     await tester.pump();
-    expect(find.text('Node-A'), findsOneWidget);
+    expect(find.text('HK-01'), findsOneWidget);
 
-    await tester.ensureVisible(find.text('Rule').last);
+    await tester.ensureVisible(find.text('Domain'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Rule').last);
+    await tester.tap(find.text('Domain'));
     await tester.pump();
-    expect(find.text('ads'), findsOneWidget);
+    expect(find.text('example.com'), findsOneWidget);
 
     await tester.tap(find.byTooltip('Refresh'));
     await tester.pump();

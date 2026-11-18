@@ -12,7 +12,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-enum _RankingTab { domain, rule, proxy, profile }
+enum _RankingTab { policy, node, domain, profile }
 
 Future<void> showTrafficStatisticsSheet(BuildContext context) {
   return showSheet<void>(
@@ -32,7 +32,7 @@ class TrafficStatisticsView extends ConsumerStatefulWidget {
 class _TrafficStatisticsViewState extends ConsumerState<TrafficStatisticsView> {
   var _range = TrafficStatisticsRange.day;
   var _offset = 0;
-  var _rankingTab = _RankingTab.domain;
+  var _rankingTab = _RankingTab.policy;
 
   Future<void> _handleClear() async {
     final appLocalizations = context.appLocalizations;
@@ -174,15 +174,15 @@ class _TrafficStatisticsViewState extends ConsumerState<TrafficStatisticsView> {
       );
     }
     final rankings = switch (_rankingTab) {
+      _RankingTab.policy => data.policies,
+      _RankingTab.node => data.nodes,
       _RankingTab.domain => data.domains,
-      _RankingTab.rule => data.rules,
-      _RankingTab.proxy => data.proxies,
       _RankingTab.profile => data.profiles,
     };
     final glyph = switch (_rankingTab) {
+      _RankingTab.policy => AppGlyphs.proxies,
+      _RankingTab.node => AppGlyphs.devices,
       _RankingTab.domain => AppGlyphs.link,
-      _RankingTab.rule => AppGlyphs.rules,
-      _RankingTab.proxy => AppGlyphs.proxies,
       _RankingTab.profile => AppGlyphs.profiles,
     };
     return SingleChildScrollView(
@@ -236,9 +236,9 @@ class _TrafficStatisticsViewState extends ConsumerState<TrafficStatisticsView> {
             padding: const EdgeInsets.only(top: 8, bottom: 12),
             child: SegmentedControl<_RankingTab>(
               segments: [
+                (_RankingTab.policy, appLocalizations.strategy),
+                (_RankingTab.node, appLocalizations.nodes),
                 (_RankingTab.domain, appLocalizations.domain),
-                (_RankingTab.rule, appLocalizations.rule),
-                (_RankingTab.proxy, appLocalizations.nodes),
                 (_RankingTab.profile, appLocalizations.profile),
               ],
               value: _rankingTab,
