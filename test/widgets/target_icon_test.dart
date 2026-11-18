@@ -5,6 +5,7 @@ import 'dart:ui' as ui;
 import 'package:fl_clash/ui/icons/icons.dart';
 import 'package:fl_clash/widgets/widgets.dart';
 import 'package:flutter/widgets.dart';
+import 'package:flutter_svg/svg.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../helpers/glyph_finders.dart';
@@ -183,6 +184,38 @@ void main() {
       await tester.pump();
 
       expect(find.text('P'), findsOne);
+    });
+  });
+
+  group('a group brand icon', () {
+    testWidgets('a group icon URL wins over the built-in brand table', (
+      tester,
+    ) async {
+      readRemoteIcon = (src) {
+        return Stream.value(_onePixelPng);
+      };
+      const src = 'https://example.com/qure.png';
+      await _pump(tester, const GroupBrandIcon(src: src, name: 'YouTube'));
+      await tester.pump();
+
+      expect(find.byType(Image), findsOne);
+      expect(find.byType(SvgPicture), findsNothing);
+    });
+
+    testWidgets('a group without an icon URL falls back to the built-in '
+        'brand table', (tester) async {
+      await _pump(tester, const GroupBrandIcon(src: '', name: 'YouTube'));
+      await tester.pump();
+
+      expect(find.byType(SvgPicture), findsOne);
+    });
+
+    testWidgets('a group with neither falls back to its monogram', (
+      tester,
+    ) async {
+      await _pump(tester, const GroupBrandIcon(src: '', name: 'My Nodes'));
+
+      expect(find.text('M'), findsOne);
     });
   });
 }

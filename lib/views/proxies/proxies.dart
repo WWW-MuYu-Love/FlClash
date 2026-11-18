@@ -100,6 +100,16 @@ class _ProxiesViewState extends ConsumerState<ProxiesView> {
           onSelected: (iconStyle) =>
               _updateStyle((state) => state.copyWith(iconStyle: iconStyle)),
         ),
+      if (style.type == ProxiesType.list)
+        _optionsMenuItem(
+          glyph: AppGlyphs.dashboard,
+          label: appLocalizations.groupStyle,
+          options: ProxiesGroupStyle.values,
+          value: style.groupStyle,
+          textOf: (groupStyle) => groupStyle.label,
+          onSelected: (groupStyle) =>
+              _updateStyle((state) => state.copyWith(groupStyle: groupStyle)),
+        ),
       PopupMenuItem(
         glyph: AppGlyphs.eyeOff,
         label: appLocalizations.hideTimeoutProxies,

@@ -54,6 +54,16 @@ extension ProxiesTypeL10n on ProxiesType {
   }
 }
 
+extension ProxiesGroupStyleL10n on ProxiesGroupStyle {
+  String get label {
+    final appLocalizations = currentAppLocalizations;
+    return switch (this) {
+      ProxiesGroupStyle.list => appLocalizations.list,
+      ProxiesGroupStyle.icons => appLocalizations.groupStyleIcons,
+    };
+  }
+}
+
 extension ProxyCardTypeL10n on ProxyCardType {
   String get label {
     final appLocalizations = currentAppLocalizations;

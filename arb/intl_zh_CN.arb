@@ -365,6 +365,8 @@
   "iconStyleFilled": "色块",
   "iconStylePlain": "纯图标",
   "iconStyleHidden": "隐藏",
+  "groupStyle": "分组样式",
+  "groupStyleIcons": "图标",
   "filter": "筛选",
   "groupBy": "分类",
   "hideTimeoutProxies": "隐藏超时代理",

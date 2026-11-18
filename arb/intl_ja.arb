@@ -365,6 +365,8 @@
   "iconStyleFilled": "背景あり",
   "iconStylePlain": "背景なし",
   "iconStyleHidden": "非表示",
+  "groupStyle": "グループスタイル",
+  "groupStyleIcons": "アイコン",
   "filter": "フィルター",
   "groupBy": "分類",
   "hideTimeoutProxies": "タイムアウトしたプロキシを隠す",

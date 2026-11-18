@@ -168,6 +168,7 @@ void main() {
     test('default values', () {
       final value = container.read(proxiesStyleSettingProvider);
       expect(value.type, ProxiesType.list);
+      expect(value.groupStyle, ProxiesGroupStyle.list);
     });
 
     test('can update state', () {
@@ -179,6 +180,18 @@ void main() {
       expect(
         container.read(proxiesStyleSettingProvider).sortType,
         ProxiesSortType.delay,
+      );
+    });
+
+    test('can switch the group style to icons', () {
+      container
+          .read(proxiesStyleSettingProvider.notifier)
+          .update(
+            (state) => state.copyWith(groupStyle: ProxiesGroupStyle.icons),
+          );
+      expect(
+        container.read(proxiesStyleSettingProvider).groupStyle,
+        ProxiesGroupStyle.icons,
       );
     });
   });

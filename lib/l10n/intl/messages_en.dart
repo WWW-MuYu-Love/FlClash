@@ -1030,6 +1030,8 @@ class MessageLookup extends MessageLookupByLibrary {
     "groupBy": MessageLookupByLibrary.simpleMessage("Group by"),
     "groupCount": m39,
     "groupCountUnit": MessageLookupByLibrary.simpleMessage("groups"),
+    "groupStyle": MessageLookupByLibrary.simpleMessage("Group style"),
+    "groupStyleIcons": MessageLookupByLibrary.simpleMessage("Icons"),
     "groupTimeoutCount": m40,
     "hasCacheChange": MessageLookupByLibrary.simpleMessage(
       "Cache the changes?",

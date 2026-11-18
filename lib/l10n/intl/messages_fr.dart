@@ -1093,6 +1093,8 @@ class MessageLookup extends MessageLookupByLibrary {
     "groupBy": MessageLookupByLibrary.simpleMessage("Regrouper par"),
     "groupCount": m39,
     "groupCountUnit": MessageLookupByLibrary.simpleMessage("groupes"),
+    "groupStyle": MessageLookupByLibrary.simpleMessage("Style des groupes"),
+    "groupStyleIcons": MessageLookupByLibrary.simpleMessage("Icônes"),
     "groupTimeoutCount": m40,
     "hasCacheChange": MessageLookupByLibrary.simpleMessage(
       "Mettre les modifications en cache ?",

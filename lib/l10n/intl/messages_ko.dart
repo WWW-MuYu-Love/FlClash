@@ -858,6 +858,8 @@ class MessageLookup extends MessageLookupByLibrary {
     "groupBy": MessageLookupByLibrary.simpleMessage("분류"),
     "groupCount": m39,
     "groupCountUnit": MessageLookupByLibrary.simpleMessage("개"),
+    "groupStyle": MessageLookupByLibrary.simpleMessage("그룹 스타일"),
+    "groupStyleIcons": MessageLookupByLibrary.simpleMessage("아이콘"),
     "groupTimeoutCount": m40,
     "hasCacheChange": MessageLookupByLibrary.simpleMessage("변경 사항을 캐시하시겠습니까?"),
     "hashByInUser": MessageLookupByLibrary.simpleMessage("인바운드 사용자별 해시"),

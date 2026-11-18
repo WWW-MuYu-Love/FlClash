@@ -1502,4 +1502,24 @@ void main() {
       }
     });
   });
+
+  group('ProxiesStyleProps JSON', () {
+    test('defaults to the list group style', () {
+      expect(const ProxiesStyleProps().groupStyle, ProxiesGroupStyle.list);
+      expect(
+        ProxiesStyleProps.fromJson(const {}).groupStyle,
+        ProxiesGroupStyle.list,
+      );
+    });
+
+    test('round-trips the icons group style', () {
+      final props = roundTrip(
+        () => const ProxiesStyleProps(
+          groupStyle: ProxiesGroupStyle.icons,
+        ).toJson(),
+        ProxiesStyleProps.fromJson,
+      );
+      expect(props.groupStyle, ProxiesGroupStyle.icons);
+    });
+  });
 }

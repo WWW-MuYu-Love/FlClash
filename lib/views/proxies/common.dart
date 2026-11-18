@@ -2,9 +2,13 @@ import 'package:fl_clash/enum/enum.dart';
 import 'package:fl_clash/models/models.dart';
 import 'package:fl_clash/state.dart';
 import 'package:flutter/widgets.dart';
+import 'package:prism_ui/theme_data.dart';
 import 'package:prism_ui/typography.dart';
 
 const proxyGridSpacing = 8.0;
+
+/// The inset between a group header's outer shape and its inner card.
+const groupHeaderButtonInset = 4.0;
 
 double get listHeaderHeight {
   final measure = globalState.measure;
@@ -34,6 +38,22 @@ double getItemHeight(ProxyCardType proxyCardType) {
 
 double getRowExtent(ProxyCardType proxyCardType) =>
     getItemHeight(proxyCardType) + proxyGridSpacing;
+
+List<BoxShadow> floatingShadows(ColorScheme colorScheme, double lift) {
+  final strength = colorScheme.brightness == Brightness.dark ? 3.0 : 1.0;
+  return [
+    BoxShadow(
+      color: colorScheme.shadow.withValues(alpha: 0.08 * strength * lift),
+      blurRadius: 16,
+      offset: const Offset(0, 4),
+    ),
+    BoxShadow(
+      color: colorScheme.shadow.withValues(alpha: 0.04 * strength * lift),
+      blurRadius: 3,
+      offset: const Offset(0, 1),
+    ),
+  ];
+}
 
 class GroupOffsets {
   const GroupOffsets(this.groups, this.offsets);

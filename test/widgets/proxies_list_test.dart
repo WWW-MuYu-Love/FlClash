@@ -3,18 +3,23 @@ import 'package:fl_clash/enum/enum.dart';
 import 'package:fl_clash/models/models.dart';
 import 'package:fl_clash/providers/providers.dart';
 import 'package:fl_clash/state.dart';
+import 'package:fl_clash/ui/icons/icons.dart';
 import 'package:fl_clash/views/proxies/card.dart';
+import 'package:fl_clash/views/proxies/icon_card.dart';
 import 'package:fl_clash/views/proxies/list.dart';
 import 'package:fl_clash/widgets/widgets.dart' hide ListHeader;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_svg/svg.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import '../helpers/glyph_finders.dart';
 import '../helpers/test_app.dart';
 import '../helpers/test_profiles.dart';
 import '../helpers/host_scaffold.dart';
-import 'package:prism_ui/prism_ui.dart' hide ListHeader;
+
+const _testUrl = 'https://example.com/generate_204';
 
 class _RecordingProxiesAction extends ProxiesAction {
   static final List<String> tested = [];
@@ -28,9 +33,10 @@ class _RecordingProxiesAction extends ProxiesAction {
   }
 }
 
-Group _group(String name, int count) => Group(
+Group _group(String name, int count, {String? testUrl}) => Group(
   type: GroupType.Selector,
   name: name,
+  testUrl: testUrl,
   all: [for (var i = 0; i < count; i++) Proxy(name: '$name-$i', type: 'ss')],
 );
 
@@ -44,6 +50,8 @@ void main() {
     List<Group>? groups,
     Set<String> unfoldSet = const {'G0', 'G1', 'G2'},
     ValueListenable<Brightness>? brightness,
+    ProxiesGroupStyle groupStyle = ProxiesGroupStyle.list,
+    Map<String, Map<String, int>>? delays,
   }) async {
     tester.view.physicalSize = const Size(900, 700);
     tester.view.devicePixelRatio = 1;
@@ -64,6 +72,11 @@ void main() {
           GroupsState(value: groups),
         ),
         proxiesActionProvider.overrideWith(_RecordingProxiesAction.new),
+        proxiesStyleSettingProvider.overrideWithBuild(
+          (_, _) => ProxiesStyleProps(groupStyle: groupStyle),
+        ),
+        if (delays != null)
+          delayDataSourceProvider.overrideWithBuild((_, _) => delays),
       ],
     );
     addTearDown(container.dispose);
@@ -369,5 +382,160 @@ void main() {
     await tester.pump();
 
     expect(find.byType(ActivityIndicator), findsNothing);
+  });
+
+  Finder groupCardOf(String groupName) => find.ancestor(
+    of: find.text(groupName, findRichText: true),
+    matching: find.byType(GroupIconCard),
+  );
+
+  testWidgets('the icons group style lays the groups out as a two-column '
+      'grid', (tester) async {
+    await pumpList(
+      tester,
+      groupStyle: ProxiesGroupStyle.icons,
+      unfoldSet: const {},
+    );
+
+    final first = tester.getRect(groupCardOf('G0'));
+    final second = tester.getRect(groupCardOf('G1'));
+    final third = tester.getRect(groupCardOf('G2'));
+
+    expect(second.top, first.top);
+    expect(second.left, greaterThan(first.right));
+    expect(third.left, first.left);
+    expect(third.top, greaterThan(first.bottom));
+  });
+
+  testWidgets('a grid card shows the type, the node count and the selected '
+      'node', (tester) async {
+    await pumpList(
+      tester,
+      groupStyle: ProxiesGroupStyle.icons,
+      selectedMap: {'G0': 'G0-3'},
+      unfoldSet: const {},
+    );
+
+    expect(
+      find.descendant(
+        of: groupCardOf('G0'),
+        matching: find.text('SELECT · 40'),
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(
+        of: groupCardOf('G0'),
+        matching: find.text('G0-3', findRichText: true),
+      ),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('a grid card shows the built-in brand icon for a known name '
+      'and a monogram otherwise', (tester) async {
+    await pumpList(
+      tester,
+      groupStyle: ProxiesGroupStyle.icons,
+      groups: [_group('YouTube', 2), _group('My Nodes', 2)],
+      unfoldSet: const {},
+    );
+
+    expect(
+      find.descendant(
+        of: groupCardOf('YouTube'),
+        matching: find.byType(SvgPicture),
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(
+        of: groupCardOf('My Nodes'),
+        matching: find.byType(GroupMonogram),
+      ),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('a grid card shows the selected node delay as a pill', (
+    tester,
+  ) async {
+    await pumpList(
+      tester,
+      groupStyle: ProxiesGroupStyle.icons,
+      selectedMap: {'G0': 'G0-0'},
+      groups: [_group('G0', 3, testUrl: _testUrl)],
+      delays: {
+        _testUrl: {'G0-0': 123},
+      },
+      unfoldSet: const {},
+    );
+
+    expect(
+      find.descendant(of: groupCardOf('G0'), matching: find.text('123 ms')),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('tapping a grid card folds and unfolds its group', (
+    tester,
+  ) async {
+    await pumpList(
+      tester,
+      groupStyle: ProxiesGroupStyle.icons,
+      unfoldSet: const {},
+    );
+
+    final card = find.byWidgetPredicate(
+      (widget) =>
+          widget is ProxyCard && widget.key == const ValueKey('G0.G0-0'),
+    );
+    expect(card, findsNothing);
+
+    await tester.tap(find.text('G0', findRichText: true).first);
+    await tester.pumpAndSettle();
+    expect(card, findsOneWidget);
+
+    await tester.tap(find.text('G0', findRichText: true).first);
+    await tester.pumpAndSettle();
+    expect(card, findsNothing);
+  });
+
+  testWidgets('tapping the delay pill tests its group without folding it', (
+    tester,
+  ) async {
+    await pumpList(
+      tester,
+      groupStyle: ProxiesGroupStyle.icons,
+      selectedMap: {'G0': 'G0-0'},
+      unfoldSet: const {},
+    );
+
+    await tester.tap(
+      find.descendant(
+        of: groupCardOf('G0'),
+        matching: find.byGlyph(AppGlyphs.bolt),
+      ),
+    );
+    await tester.pump();
+
+    expect(_RecordingProxiesAction.tested, ['G0']);
+    expect(find.byKey(const ValueKey('G0.G0-0')), findsNothing);
+  });
+
+  testWidgets('switching the group style swaps the grid cards for list '
+      'headers', (tester) async {
+    await pumpList(tester, groupStyle: ProxiesGroupStyle.icons);
+
+    expect(find.byType(GroupIconCard), findsWidgets);
+    expect(find.byType(ListHeader), findsNothing);
+
+    container
+        .read(proxiesStyleSettingProvider.notifier)
+        .update((state) => state.copyWith(groupStyle: ProxiesGroupStyle.list));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(GroupIconCard), findsNothing);
+    expect(find.byType(ListHeader), findsWidgets);
   });
 }

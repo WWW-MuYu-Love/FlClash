@@ -792,6 +792,8 @@ class MessageLookup extends MessageLookupByLibrary {
     "groupBy": MessageLookupByLibrary.simpleMessage("分类"),
     "groupCount": m39,
     "groupCountUnit": MessageLookupByLibrary.simpleMessage("个"),
+    "groupStyle": MessageLookupByLibrary.simpleMessage("分组样式"),
+    "groupStyleIcons": MessageLookupByLibrary.simpleMessage("图标"),
     "groupTimeoutCount": m40,
     "hasCacheChange": MessageLookupByLibrary.simpleMessage("是否缓存修改"),
     "hashByInUser": MessageLookupByLibrary.simpleMessage("按入站用户哈希"),

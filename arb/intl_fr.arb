@@ -365,6 +365,8 @@
   "iconStyleFilled": "Pleines",
   "iconStylePlain": "Simples",
   "iconStyleHidden": "Masquées",
+  "groupStyle": "Style des groupes",
+  "groupStyleIcons": "Icônes",
   "filter": "Filtrer",
   "groupBy": "Regrouper par",
   "hideTimeoutProxies": "Masquer les proxys expirés",

@@ -130,6 +130,58 @@ class _ImagePlaceholder extends StatelessWidget {
   }
 }
 
+const groupBrandIconSize = 40.0;
+
+class GroupBrandIcon extends StatelessWidget {
+  const GroupBrandIcon({
+    super.key,
+    required this.src,
+    required this.name,
+    this.size = groupBrandIconSize,
+  });
+
+  /// The icon URL from the proxy group itself; it wins over the built-in
+  /// table below.
+  final String src;
+
+  final String name;
+
+  final double size;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = context.colorScheme.onSurfaceVariant;
+    final iconTheme = IconThemeData(size: size, color: color);
+    if (src.isNotEmpty) {
+      return SizedBox.square(
+        dimension: size,
+        child: IconTheme.merge(
+          data: iconTheme,
+          child: CommonTargetIcon(src: src, fallback: GroupMonogram(name)),
+        ),
+      );
+    }
+    final brand = brandIconFor(name);
+    final asset = brand?.asset;
+    if (asset != null) {
+      return SvgPicture.asset(
+        asset,
+        width: size,
+        height: size,
+        theme: SvgTheme(currentColor: color),
+      );
+    }
+    final glyph = brand?.glyph;
+    if (glyph != null) {
+      return GlyphIcon(glyph, size: size, color: color);
+    }
+    return SizedBox.square(
+      dimension: size,
+      child: IconTheme.merge(data: iconTheme, child: GroupMonogram(name)),
+    );
+  }
+}
+
 /// Stands for a proxy group without an icon: the first letter or digit of
 /// its name, past any leading emoji the name already shows.
 class GroupMonogram extends StatelessWidget {

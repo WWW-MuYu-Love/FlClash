@@ -11,9 +11,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'card.dart';
 import 'common.dart';
+import 'icon_card.dart';
 
 const _headerInset = 10.0;
-const _headerButtonInset = 4.0;
 const _groupInset = 16.0;
 const _liftDistance = 16.0;
 const _groupMinWidth = 360.0;
@@ -32,6 +32,7 @@ class _ProxiesListViewState extends ConsumerState<ProxiesListView> {
   int _columns = 1;
   int _groupColumns = 1;
   double _gap = 0;
+  double _headerHeight = 0;
 
   @override
   void initState() {
@@ -64,7 +65,7 @@ class _ProxiesListViewState extends ConsumerState<ProxiesListView> {
     for (final (index, group) in state.groups.indexed) {
       final column = index % _groupColumns;
       offsets.add(columnOffsets[column]);
-      columnOffsets[column] += listHeaderHeight + _gap;
+      columnOffsets[column] += _headerHeight + _gap;
       if (state.currentUnfoldSet.contains(group.name)) {
         final rowCount = (group.all.length + _columns - 1) ~/ _columns;
         columnOffsets[column] += _rowsExtent(rowCount, rowExtent);
@@ -129,7 +130,7 @@ class _ProxiesListViewState extends ConsumerState<ProxiesListView> {
       ),
       pixels: pixels,
       start: offset,
-      end: offset + listHeaderHeight,
+      end: offset + _headerHeight,
     );
   }
 
@@ -171,6 +172,11 @@ class _ProxiesListViewState extends ConsumerState<ProxiesListView> {
         final proxiesLayout = ref.watch(
           proxiesStyleSettingProvider.select((state) => state.layout),
         );
+        final iconMode = ref.watch(
+          proxiesStyleSettingProvider.select(
+            (state) => state.groupStyle == ProxiesGroupStyle.icons,
+          ),
+        );
         final isSearching = ref.watch(
           queryProvider(
             QueryTag.proxies,
@@ -187,7 +193,9 @@ class _ProxiesListViewState extends ConsumerState<ProxiesListView> {
             builder: (_, maxWidth) {
               final gap = cardSpacingOf(context, viewMode);
               final width = max(maxWidth - _groupInset * 2, 0.0);
-              final groupColumns = viewMode == ViewMode.mobile
+              final groupColumns = iconMode
+                  ? 2
+                  : viewMode == ViewMode.mobile
                   ? 1
                   : ((width + gap) / (_groupMinWidth + gap)).floor().clamp(
                       1,
@@ -202,12 +210,15 @@ class _ProxiesListViewState extends ConsumerState<ProxiesListView> {
               _columns = columns;
               _groupColumns = groupColumns;
               _gap = gap;
+              _headerHeight = iconMode ? groupIconCardHeight : listHeaderHeight;
               Widget buildGroup(Group group) => _GroupSliver(
                 key: _GroupSliverKey(group.name),
                 group: group,
                 columns: columns,
                 cardType: cardType,
                 gap: gap,
+                iconMode: iconMode,
+                headerHeight: _headerHeight,
                 onChange: _handleChange,
                 onScrollToSelected: _scrollToGroupSelected,
               );
@@ -289,6 +300,8 @@ class _GroupSliver extends ConsumerStatefulWidget {
     required this.columns,
     required this.cardType,
     required this.gap,
+    required this.iconMode,
+    required this.headerHeight,
     required this.onChange,
     required this.onScrollToSelected,
   });
@@ -297,6 +310,11 @@ class _GroupSliver extends ConsumerStatefulWidget {
   final int columns;
   final ProxyCardType cardType;
   final double gap;
+
+  /// Whether the header is a grid card instead of the list header.
+  final bool iconMode;
+
+  final double headerHeight;
   final void Function(String groupName) onChange;
   final void Function(String groupName) onScrollToSelected;
 
@@ -343,7 +361,9 @@ class _GroupSliverState extends ConsumerState<_GroupSliver>
     super.didUpdateWidget(oldWidget);
     if (widget.group != oldWidget.group ||
         widget.columns != oldWidget.columns ||
-        widget.cardType != oldWidget.cardType) {
+        widget.cardType != oldWidget.cardType ||
+        widget.iconMode != oldWidget.iconMode ||
+        widget.headerHeight != oldWidget.headerHeight) {
       _rows = null;
     }
   }
@@ -478,18 +498,31 @@ class _GroupSliverState extends ConsumerState<_GroupSliver>
       _rows = null;
     }
     Widget buildHeader({double floating = 0, double lift = 0}) => SizedBox(
-      height: listHeaderHeight,
-      child: ListHeader(
-        enterAnimated: false,
-        floating: floating,
-        lift: lift,
-        onScrollToSelected: widget.onScrollToSelected,
-        key: ValueKey(groupName),
-        isExpand: isExpand,
-        unfolded: unfolded,
-        group: widget.group,
-        onChange: widget.onChange,
-      ),
+      height: widget.headerHeight,
+      child: widget.iconMode
+          ? GroupIconCard(
+              key: ValueKey(groupName),
+              group: widget.group,
+              isExpand: isExpand,
+              unfolded: unfolded,
+              floating: floating,
+              lift: lift,
+              onChange: () => widget.onChange(groupName),
+              onDelayTest: () => ref
+                  .read(proxiesActionProvider.notifier)
+                  .delayTestPageGroup(groupName),
+            )
+          : ListHeader(
+              enterAnimated: false,
+              floating: floating,
+              lift: lift,
+              onScrollToSelected: widget.onScrollToSelected,
+              key: ValueKey(groupName),
+              isExpand: isExpand,
+              unfolded: unfolded,
+              group: widget.group,
+              onChange: widget.onChange,
+            ),
     );
     return SliverPadding(
       padding: EdgeInsets.only(bottom: widget.gap),
@@ -512,7 +545,7 @@ class _GroupSliverState extends ConsumerState<_GroupSliver>
     final rowCount = (widget.group.all.length + columns - 1) ~/ columns;
     final rowsExtent = isExpand ? _rowsExtent(rowCount, _rowExtent) : 0.0;
     final groupExtent =
-        listHeaderHeight +
+        widget.headerHeight +
         (_controller.isDismissed
             ? 0.0
             : _rowsExtent(rowCount, getRowExtent(widget.cardType)));
@@ -543,7 +576,7 @@ class _GroupSliverState extends ConsumerState<_GroupSliver>
         headerState = state;
         if (state == null) {
           return header = PinnedHeaderSliver(
-            child: SizedBox(height: listHeaderHeight),
+            child: SizedBox(height: widget.headerHeight),
           );
         }
         final (floating, lift, cover, pageColor) = state;
@@ -556,7 +589,7 @@ class _GroupSliverState extends ConsumerState<_GroupSliver>
                   top: -cover,
                   left: 0,
                   right: 0,
-                  height: cover + listHeaderHeight / 2,
+                  height: cover + widget.headerHeight / 2,
                   child: ColoredBox(color: pageColor),
                 ),
                 buildHeader(floating: floating, lift: lift),
@@ -615,9 +648,9 @@ class ListHeader extends ConsumerWidget {
       enterActionsOnRight: true,
       enterAnimated: enterAnimated,
       key: key,
-      radius: radius - _headerButtonInset,
+      radius: radius - groupHeaderButtonInset,
       child: Padding(
-        padding: const EdgeInsets.all(_headerInset - _headerButtonInset),
+        padding: const EdgeInsets.all(_headerInset - groupHeaderButtonInset),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
@@ -659,10 +692,10 @@ class ListHeader extends ConsumerWidget {
           top: radius,
           bottom: unfolded ? radius * floating : radius,
         ),
-        shadows: lift == 0 ? null : _floatingShadows(colorScheme, lift),
+        shadows: lift == 0 ? null : floatingShadows(colorScheme, lift),
       ),
       child: Padding(
-        padding: const EdgeInsets.all(_headerButtonInset),
+        padding: const EdgeInsets.all(groupHeaderButtonInset),
         child: SurfaceScope(
           // Card fills one level above its scope.
           level: SurfaceLevel.values[level.index - 1],
@@ -671,22 +704,6 @@ class ListHeader extends ConsumerWidget {
       ),
     );
   }
-}
-
-List<BoxShadow> _floatingShadows(ColorScheme colorScheme, double lift) {
-  final strength = colorScheme.brightness == Brightness.dark ? 3.0 : 1.0;
-  return [
-    BoxShadow(
-      color: colorScheme.shadow.withValues(alpha: 0.08 * strength * lift),
-      blurRadius: 16,
-      offset: const Offset(0, 4),
-    ),
-    BoxShadow(
-      color: colorScheme.shadow.withValues(alpha: 0.04 * strength * lift),
-      blurRadius: 3,
-      offset: const Offset(0, 1),
-    ),
-  ];
 }
 
 class _GroupIcon extends ConsumerWidget {

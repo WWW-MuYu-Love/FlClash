@@ -868,6 +868,8 @@ class MessageLookup extends MessageLookupByLibrary {
     "groupBy": MessageLookupByLibrary.simpleMessage("分類"),
     "groupCount": m39,
     "groupCountUnit": MessageLookupByLibrary.simpleMessage("個"),
+    "groupStyle": MessageLookupByLibrary.simpleMessage("グループスタイル"),
+    "groupStyleIcons": MessageLookupByLibrary.simpleMessage("アイコン"),
     "groupTimeoutCount": m40,
     "hasCacheChange": MessageLookupByLibrary.simpleMessage("変更をキャッシュしますか？"),
     "hashByInUser": MessageLookupByLibrary.simpleMessage("インバウンドユーザーでハッシュ"),

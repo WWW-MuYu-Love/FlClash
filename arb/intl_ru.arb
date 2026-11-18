@@ -365,6 +365,8 @@
   "iconStyleFilled": "С подложкой",
   "iconStylePlain": "Без подложки",
   "iconStyleHidden": "Скрыто",
+  "groupStyle": "Стиль групп",
+  "groupStyleIcons": "Значки",
   "filter": "Фильтр",
   "groupBy": "Группировка",
   "hideTimeoutProxies": "Скрывать прокси с таймаутом",

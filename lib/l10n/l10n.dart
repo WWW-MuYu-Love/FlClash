@@ -2968,6 +2968,16 @@ class AppLocalizations {
     return Intl.message('Hidden', name: 'iconStyleHidden', desc: '', args: []);
   }
 
+  /// `Group style`
+  String get groupStyle {
+    return Intl.message('Group style', name: 'groupStyle', desc: '', args: []);
+  }
+
+  /// `Icons`
+  String get groupStyleIcons {
+    return Intl.message('Icons', name: 'groupStyleIcons', desc: '', args: []);
+  }
+
   /// `Filter`
   String get filter {
     return Intl.message('Filter', name: 'filter', desc: '', args: []);
