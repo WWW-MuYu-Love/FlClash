@@ -830,6 +830,7 @@
   "endpointIndependentNat": "NAT, независимый от конечной точки",
   "recvMsgX": "Пакетный приём",
   "sendMsgX": "Пакетная отправка",
+  "loopbackDevice": "Петлевой адрес 10.7.0.1",
   "disableIcmpForwardingDesc": "При отключённой пересылке ICMP TUN сам отвечает на ping, поэтому ping больше не показывает реальную задержку.",
   "excludeInterface": "Исключённые интерфейсы",
   "includeAllNetworks": "Включать все сети",

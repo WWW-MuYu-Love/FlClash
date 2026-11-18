@@ -1136,6 +1136,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "logsAndDiagnostics": MessageLookupByLibrary.simpleMessage("ログと診断"),
     "logsTest": MessageLookupByLibrary.simpleMessage("ログテスト"),
     "loopback": MessageLookupByLibrary.simpleMessage("UWP ループバック解除"),
+    "loopbackDevice": MessageLookupByLibrary.simpleMessage("ループバック 10.7.0.1"),
     "loose": MessageLookupByLibrary.simpleMessage("ゆったり"),
     "mapLocal": MessageLookupByLibrary.simpleMessage("ローカルマップ"),
     "matchCase": MessageLookupByLibrary.simpleMessage("大文字と小文字を区別"),

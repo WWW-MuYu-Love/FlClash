@@ -1425,6 +1425,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "loopback": MessageLookupByLibrary.simpleMessage(
       "Exemption de bouclage UWP",
     ),
+    "loopbackDevice": MessageLookupByLibrary.simpleMessage("Bouclage 10.7.0.1"),
     "loose": MessageLookupByLibrary.simpleMessage("Aérée"),
     "mapLocal": MessageLookupByLibrary.simpleMessage("Mappage local"),
     "matchCase": MessageLookupByLibrary.simpleMessage("Respecter la casse"),

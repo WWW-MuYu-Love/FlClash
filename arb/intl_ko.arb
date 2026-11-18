@@ -830,6 +830,7 @@
   "endpointIndependentNat": "엔드포인트 독립 NAT",
   "recvMsgX": "일괄 수신",
   "sendMsgX": "일괄 송신",
+  "loopbackDevice": "루프백 10.7.0.1",
   "disableIcmpForwardingDesc": "ICMP 전달을 끄면 TUN이 ping에 직접 응답하므로 ping에 실제 지연 시간이 표시되지 않습니다.",
   "excludeInterface": "제외할 인터페이스",
   "includeAllNetworks": "모든 네트워크 포함",

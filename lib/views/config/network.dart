@@ -278,6 +278,23 @@ class DisableIcmpForwardingItem extends ConsumerWidget {
   }
 }
 
+class LoopbackDeviceItem extends ConsumerWidget {
+  const LoopbackDeviceItem({super.key});
+
+  @override
+  Widget build(BuildContext context, ref) {
+    return ConfigToggleItem(
+      title: (l) => l.loopbackDevice,
+      selector: patchClashConfigProvider.select(
+        (state) => state.tun.loopbackDevice,
+      ),
+      onChanged: _tunWriter(
+        (state, value) => state.copyWith.tun(loopbackDevice: value),
+      ),
+    );
+  }
+}
+
 class EndpointIndependentNatItem extends ConsumerWidget {
   const EndpointIndependentNatItem({super.key});
 
@@ -538,6 +555,7 @@ List<Widget> tunItems({required bool isMipsStack}) {
     ),
     const BypassPrivateRouteItem(),
     const RouteAddressItem(),
+    if (system.isIOS) const LoopbackDeviceItem(),
     ConfigListEditItem(
       title: (l) => l.routeExcludeAddress,
       itemMaxLength: TextInputLimits.cidr,

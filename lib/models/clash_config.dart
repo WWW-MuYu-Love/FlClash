@@ -1161,6 +1161,7 @@ abstract class Tun with _$Tun {
     @Default(false) bool sendMsgX,
     @Default(defaultTunUdpTimeout) int udpTimeout,
     @Default([]) List<String> dnsHijack,
+    @Default(false) bool loopbackDevice,
   }) = _Tun;
 
   factory Tun.fromJson(Map<String, Object?> json) => _$TunFromJson(json);

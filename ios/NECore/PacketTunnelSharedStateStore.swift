@@ -384,6 +384,7 @@ struct PacketTunnelVPNOptions: Decodable {
   let stack: String
   let mtu: Int
   let routeAddress: [String]
+  let loopbackDevice: Bool
   let disableIcmpForwarding: Bool
   let endpointIndependentNat: Bool
   let congestionController: String
@@ -407,6 +408,7 @@ struct PacketTunnelVPNOptions: Decodable {
     case stack
     case mtu
     case routeAddress
+    case loopbackDevice
     case disableIcmpForwarding
     case endpointIndependentNat
     case congestionController
@@ -450,6 +452,10 @@ struct PacketTunnelVPNOptions: Decodable {
       [String].self,
       forKey: .routeAddress
     ) ?? []
+    loopbackDevice = try container.decodeIfPresent(
+      Bool.self,
+      forKey: .loopbackDevice
+    ) ?? false
     disableIcmpForwarding = try container.decodeIfPresent(
       Bool.self,
       forKey: .disableIcmpForwarding

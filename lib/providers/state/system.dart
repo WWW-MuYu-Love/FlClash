@@ -318,6 +318,7 @@ Future<VpnOptions> vpnOptions(Ref ref) async {
     sendMsgX: tun.sendMsgX,
     udpTimeout: tun.udpTimeout,
     dnsHijack: tun.dnsHijack,
+    loopbackDevice: tun.loopbackDevice,
   );
 }
 

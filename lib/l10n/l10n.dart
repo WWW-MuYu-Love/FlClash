@@ -6849,6 +6849,16 @@ class AppLocalizations {
     return Intl.message('Batch send', name: 'sendMsgX', desc: '', args: []);
   }
 
+  /// `Loopback 10.7.0.1`
+  String get loopbackDevice {
+    return Intl.message(
+      'Loopback 10.7.0.1',
+      name: 'loopbackDevice',
+      desc: '',
+      args: [],
+    );
+  }
+
   /// `With ICMP forwarding disabled, TUN answers ping itself, so ping no longer shows the real latency.`
   String get disableIcmpForwardingDesc {
     return Intl.message(

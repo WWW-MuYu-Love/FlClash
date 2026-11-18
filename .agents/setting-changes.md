@@ -123,6 +123,7 @@ asks for nothing. The tap runs `SetupAction.restartVpn`: a stop, then a start, a
 | `port`                 | `PatchClashConfig.mixedPort`                                  | with `systemProxy`                     |
 | `bypassDomain`         | `NetworkProps.bypassDomain`                                   | with `systemProxy`                     |
 | `routeAddress`         | `Tun.routeAddress` and `bypassPrivateRoute`                   | with the VPN                           |
+| `loopbackDevice`       | `Tun.loopbackDevice`                                          | with the VPN                           |
 | `mtu`                  | `Tun`                                                         | with the VPN                           |
 | `congestionController` | `Tun`                                                         | with the VPN                           |
 | `disableIcmpForwarding` | `Tun`                                                        | with the VPN                           |
@@ -137,7 +138,9 @@ the table does not mark as read, so changing them does not ask for a restart.
 
 To add a VPN option:
 
-1. Add it to Dart and Kotlin `VpnOptions` and to `vpnOptionsProvider`.
+1. Add it to Dart and Kotlin `VpnOptions` and to `vpnOptionsProvider`. An
+   iOS-only field skips Kotlin: the NE flags and `loopbackDevice` are not in
+   the Kotlin class, and Gson ignores the unknown field on Android.
 2. If the service reads it only under a condition, put that condition in `VpnOptions.effective`, which mirrors
    `ServiceController.start` and `VpnService.handleStart`.
 

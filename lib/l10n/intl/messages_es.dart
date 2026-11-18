@@ -1424,6 +1424,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "loopback": MessageLookupByLibrary.simpleMessage(
       "Exención de loopback de UWP",
     ),
+    "loopbackDevice": MessageLookupByLibrary.simpleMessage("Loopback 10.7.0.1"),
     "loose": MessageLookupByLibrary.simpleMessage("Amplio"),
     "mapLocal": MessageLookupByLibrary.simpleMessage("Mapeo local"),
     "matchCase": MessageLookupByLibrary.simpleMessage(

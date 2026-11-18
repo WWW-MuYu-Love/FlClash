@@ -1024,6 +1024,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "logsAndDiagnostics": MessageLookupByLibrary.simpleMessage("日志与诊断"),
     "logsTest": MessageLookupByLibrary.simpleMessage("日志测试"),
     "loopback": MessageLookupByLibrary.simpleMessage("UWP 回环解锁"),
+    "loopbackDevice": MessageLookupByLibrary.simpleMessage("回环 10.7.0.1"),
     "loose": MessageLookupByLibrary.simpleMessage("宽松"),
     "mapLocal": MessageLookupByLibrary.simpleMessage("本地映射"),
     "matchCase": MessageLookupByLibrary.simpleMessage("区分大小写"),

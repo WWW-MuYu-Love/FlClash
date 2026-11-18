@@ -830,6 +830,7 @@
   "endpointIndependentNat": "NAT indépendant du point de terminaison",
   "recvMsgX": "Réception par lots",
   "sendMsgX": "Envoi par lots",
+  "loopbackDevice": "Bouclage 10.7.0.1",
   "disableIcmpForwardingDesc": "Avec le transfert ICMP désactivé, TUN répond lui-même au ping, qui n’indique donc plus la latence réelle.",
   "excludeInterface": "Interfaces exclues",
   "includeAllNetworks": "Inclure tous les réseaux",

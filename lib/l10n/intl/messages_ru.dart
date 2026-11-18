@@ -1380,6 +1380,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "loopback": MessageLookupByLibrary.simpleMessage(
       "Снятие ограничения loopback для UWP",
     ),
+    "loopbackDevice": MessageLookupByLibrary.simpleMessage(
+      "Петлевой адрес 10.7.0.1",
+    ),
     "loose": MessageLookupByLibrary.simpleMessage("Свободный"),
     "mapLocal": MessageLookupByLibrary.simpleMessage("Локальная подмена"),
     "matchCase": MessageLookupByLibrary.simpleMessage("Учитывать регистр"),

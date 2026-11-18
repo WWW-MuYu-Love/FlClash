@@ -6,6 +6,9 @@ final class PacketTunnelNetworkConfiguration {
   private let ipv4Address = "198.18.0.1"
   private let ipv4AddressPrefix = "198.18.0.1/30"
   private let ipv4SubnetMask = "255.255.255.252"
+  private let loopbackPeerAddress = "10.7.0.1"
+  private let loopbackTunnelAddress = "10.7.0.2"
+  private let loopbackTunnelSubnetMask = "255.255.255.0"
   private let ipv4DNS = "198.18.0.2"
   private let ipv6Address = "fdfe:dcba:9876::1"
   private let ipv6AddressPrefix = "fdfe:dcba:9876::1/126"
@@ -25,10 +28,14 @@ final class PacketTunnelNetworkConfiguration {
     settings.mtu = NSNumber(value: options.mtu)
 
     let ipv4Settings = NEIPv4Settings(
-      addresses: [ipv4Address],
-      subnetMasks: [ipv4SubnetMask]
+      addresses: options.loopbackDevice
+        ? [ipv4Address, loopbackTunnelAddress]
+        : [ipv4Address],
+      subnetMasks: options.loopbackDevice
+        ? [ipv4SubnetMask, loopbackTunnelSubnetMask]
+        : [ipv4SubnetMask]
     )
-    let ipv4Routes = options.routeAddress.compactMap {
+    var ipv4Routes = options.routeAddress.compactMap {
       route -> NEIPv4Route? in
       guard route.contains("."),
         let cidr = CIDR(route),
@@ -41,6 +48,15 @@ final class PacketTunnelNetworkConfiguration {
       return NEIPv4Route(
         destinationAddress: cidr.address,
         subnetMask: subnetMask
+      )
+    }
+    // Without its own route and tunnel address, the installer sees a full-tunnel VPN.
+    if options.loopbackDevice {
+      ipv4Routes.append(
+        NEIPv4Route(
+          destinationAddress: loopbackPeerAddress,
+          subnetMask: "255.255.255.255"
+        )
       )
     }
     ipv4Settings.includedRoutes = ipv4Routes.isEmpty
@@ -108,6 +124,10 @@ final class PacketTunnelNetworkConfiguration {
     options.ipv6
       ? "\(ipv4AddressPrefix),\(ipv6AddressPrefix)"
       : ipv4AddressPrefix
+  }
+
+  func tunLoopbackAddress(for options: PacketTunnelVPNOptions) -> String {
+    options.loopbackDevice ? loopbackPeerAddress : ""
   }
 
   func tunDNS(for options: PacketTunnelVPNOptions) -> String {

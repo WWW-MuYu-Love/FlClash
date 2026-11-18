@@ -830,6 +830,7 @@
   "endpointIndependentNat": "Endpoint-independent NAT",
   "recvMsgX": "Batch receive",
   "sendMsgX": "Batch send",
+  "loopbackDevice": "Loopback 10.7.0.1",
   "disableIcmpForwardingDesc": "With ICMP forwarding disabled, TUN answers ping itself, so ping no longer shows the real latency.",
   "excludeInterface": "Excluded interfaces",
   "includeAllNetworks": "Include All Networks",

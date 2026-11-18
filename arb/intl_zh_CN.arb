@@ -830,6 +830,7 @@
   "endpointIndependentNat": "端点无关 NAT",
   "recvMsgX": "批量接收",
   "sendMsgX": "批量发送",
+  "loopbackDevice": "回环 10.7.0.1",
   "disableIcmpForwardingDesc": "禁用 ICMP 转发后由虚拟网卡直接应答 ping，ping 将不再显示真实延迟。",
   "excludeInterface": "排除网卡",
   "includeAllNetworks": "包含所有网络",

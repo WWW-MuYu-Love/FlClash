@@ -150,7 +150,10 @@ final class PacketTunnelProvider: NEPacketTunnelProvider {
           udpTimeout: vpnOptions.udpTimeout,
           dnsHijack: vpnOptions.dnsHijack,
           recvMsgX: vpnOptions.recvMsgX,
-          sendMsgX: vpnOptions.sendMsgX
+          sendMsgX: vpnOptions.sendMsgX,
+          loopbackAddress: self.networkConfiguration.tunLoopbackAddress(
+            for: vpnOptions
+          )
         )
         guard let coreTunOptionsData = try? JSONEncoder().encode(coreTunOptions)
         else {
@@ -317,6 +320,22 @@ private struct CoreTunOptions: Encodable {
   let dnsHijack: [String]
   let recvMsgX: Bool
   let sendMsgX: Bool
+  let loopbackAddress: String
+
+  enum CodingKeys: String, CodingKey {
+    case stack
+    case address
+    case dns
+    case mtu
+    case disableIcmpForwarding
+    case endpointIndependentNat
+    case congestionController
+    case udpTimeout
+    case dnsHijack
+    case recvMsgX
+    case sendMsgX
+    case loopbackAddress = "loopback-address"
+  }
 }
 
 private enum PacketTunnelProviderError: LocalizedError {

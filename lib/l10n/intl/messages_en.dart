@@ -1327,6 +1327,7 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "logsTest": MessageLookupByLibrary.simpleMessage("Logs test"),
     "loopback": MessageLookupByLibrary.simpleMessage("UWP loopback exemption"),
+    "loopbackDevice": MessageLookupByLibrary.simpleMessage("Loopback 10.7.0.1"),
     "loose": MessageLookupByLibrary.simpleMessage("Loose"),
     "mapLocal": MessageLookupByLibrary.simpleMessage("Map local"),
     "matchCase": MessageLookupByLibrary.simpleMessage("Match case"),

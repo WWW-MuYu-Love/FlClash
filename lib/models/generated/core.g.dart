@@ -363,6 +363,7 @@ _VpnOptions _$VpnOptionsFromJson(Map<String, dynamic> json) => _VpnOptions(
   dnsHijack:
       (json['dnsHijack'] as List<dynamic>?)?.map((e) => e as String).toList() ??
       const [],
+  loopbackDevice: json['loopbackDevice'] as bool? ?? false,
 );
 
 Map<String, dynamic> _$VpnOptionsToJson(_VpnOptions instance) =>
@@ -391,6 +392,7 @@ Map<String, dynamic> _$VpnOptionsToJson(_VpnOptions instance) =>
       'sendMsgX': instance.sendMsgX,
       'udpTimeout': instance.udpTimeout,
       'dnsHijack': instance.dnsHijack,
+      'loopbackDevice': instance.loopbackDevice,
     };
 
 _InitParams _$InitParamsFromJson(Map<String, dynamic> json) => _InitParams(

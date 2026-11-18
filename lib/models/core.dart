@@ -244,6 +244,7 @@ abstract class VpnOptions with _$VpnOptions {
     @Default(false) bool sendMsgX,
     @Default(defaultTunUdpTimeout) int udpTimeout,
     @Default([]) List<String> dnsHijack,
+    @Default(false) bool loopbackDevice,
   }) = _VpnOptions;
 
   factory VpnOptions.fromJson(Map<String, Object?> json) =>

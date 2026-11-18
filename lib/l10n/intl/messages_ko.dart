@@ -1118,6 +1118,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "logsAndDiagnostics": MessageLookupByLibrary.simpleMessage("로그 및 진단"),
     "logsTest": MessageLookupByLibrary.simpleMessage("로그 테스트"),
     "loopback": MessageLookupByLibrary.simpleMessage("UWP 루프백 예외"),
+    "loopbackDevice": MessageLookupByLibrary.simpleMessage("루프백 10.7.0.1"),
     "loose": MessageLookupByLibrary.simpleMessage("넓게"),
     "mapLocal": MessageLookupByLibrary.simpleMessage("로컬 매핑"),
     "matchCase": MessageLookupByLibrary.simpleMessage("대/소문자 구분"),
