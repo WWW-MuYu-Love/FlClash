@@ -1891,6 +1891,10 @@ class MessageLookup extends MessageLookupByLibrary {
     "traffic": MessageLookupByLibrary.simpleMessage("通信量"),
     "trafficPeak": m102,
     "trafficStatistics": MessageLookupByLibrary.simpleMessage("トラフィック統計"),
+    "trafficStatisticsClear": MessageLookupByLibrary.simpleMessage("統計をクリア"),
+    "trafficStatisticsClearConfirm": MessageLookupByLibrary.simpleMessage(
+      "クリアすると、過去90日間のトラフィック記録と累計稼働時間が削除され、元に戻せません。",
+    ),
     "trafficStatisticsDay": MessageLookupByLibrary.simpleMessage("日"),
     "trafficStatisticsDesc": MessageLookupByLibrary.simpleMessage(
       "ルール、ドメイン、プロキシ別の日次・週次・月次トラフィック",

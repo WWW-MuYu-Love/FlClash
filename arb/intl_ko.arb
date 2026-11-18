@@ -24,6 +24,8 @@
   "trafficStatisticsNoData": "아직 기록된 트래픽이 없습니다. 터널을 켠 상태로 두고 연결이 종료된 뒤 다시 확인하세요.",
   "trafficStatisticsUptime": "누적 실행 시간",
   "trafficStatisticsRefresh": "새로고침",
+  "trafficStatisticsClear": "통계 지우기",
+  "trafficStatisticsClearConfirm": "지우면 지난 90일간의 트래픽 기록과 누적 가동 시간이 삭제되며, 되돌릴 수 없습니다.",
   "trafficStatisticsPrevious": "이전",
   "trafficStatisticsNext": "다음",
   "trafficStatisticsHits": "{count}회",

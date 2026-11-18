@@ -250,6 +250,26 @@ class AppLocalizations {
     );
   }
 
+  /// `Clear statistics`
+  String get trafficStatisticsClear {
+    return Intl.message(
+      'Clear statistics',
+      name: 'trafficStatisticsClear',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Clearing removes the last 90 days of traffic records and the total uptime. This can't be undone.`
+  String get trafficStatisticsClearConfirm {
+    return Intl.message(
+      'Clearing removes the last 90 days of traffic records and the total uptime. This can\'t be undone.',
+      name: 'trafficStatisticsClearConfirm',
+      desc: '',
+      args: [],
+    );
+  }
+
   /// `Previous`
   String get trafficStatisticsPrevious {
     return Intl.message(
@@ -7995,8 +8015,7 @@ class AppLocalizations {
   String customImportDroppedSubRules(num count, Object label) {
     return Intl.plural(
       count,
-      one:
-          '1 SUB-RULE rule was dropped, since custom profiles do not support sub-rules',
+      one: '1 SUB-RULE rule was dropped, since custom profiles do not support sub-rules',
       other:
           '$label SUB-RULE rules were dropped, since custom profiles do not support sub-rules',
       name: 'customImportDroppedSubRules',

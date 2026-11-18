@@ -23,8 +23,7 @@ class TrafficStatisticsCard extends ConsumerWidget {
     );
     return DashboardCard(
       semanticLabel: appLocalizations.trafficStatistics,
-      onTap: () =>
-          unawaited(BaseNavigator.push(context, const TrafficStatisticsView())),
+      onTap: () => unawaited(showTrafficStatisticsSheet(context)),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

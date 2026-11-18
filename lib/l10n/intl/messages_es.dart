@@ -2381,6 +2381,12 @@ class MessageLookup extends MessageLookupByLibrary {
     "trafficStatistics": MessageLookupByLibrary.simpleMessage(
       "Estadísticas de tráfico",
     ),
+    "trafficStatisticsClear": MessageLookupByLibrary.simpleMessage(
+      "Borrar estadísticas",
+    ),
+    "trafficStatisticsClearConfirm": MessageLookupByLibrary.simpleMessage(
+      "Al borrar se eliminarán los registros de tráfico de los últimos 90 días y el tiempo total de actividad. Esta acción no se puede deshacer.",
+    ),
     "trafficStatisticsDay": MessageLookupByLibrary.simpleMessage("Día"),
     "trafficStatisticsDesc": MessageLookupByLibrary.simpleMessage(
       "Tráfico diario, semanal y mensual por regla, dominio y proxy",

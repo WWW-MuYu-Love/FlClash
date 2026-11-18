@@ -1699,6 +1699,10 @@ class MessageLookup extends MessageLookupByLibrary {
     "traffic": MessageLookupByLibrary.simpleMessage("流量"),
     "trafficPeak": m102,
     "trafficStatistics": MessageLookupByLibrary.simpleMessage("流量统计"),
+    "trafficStatisticsClear": MessageLookupByLibrary.simpleMessage("清除统计数据"),
+    "trafficStatisticsClearConfirm": MessageLookupByLibrary.simpleMessage(
+      "清除后，过去 90 天的流量记录和累计运行时间将被删除，且无法恢复。",
+    ),
     "trafficStatisticsDay": MessageLookupByLibrary.simpleMessage("日"),
     "trafficStatisticsDesc": MessageLookupByLibrary.simpleMessage(
       "按日、周、月查看规则、域名和节点的流量",

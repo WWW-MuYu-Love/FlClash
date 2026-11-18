@@ -24,6 +24,8 @@
   "trafficStatisticsNoData": "No traffic recorded yet. Keep the tunnel on and come back after some connections close.",
   "trafficStatisticsUptime": "Uptime",
   "trafficStatisticsRefresh": "Refresh",
+  "trafficStatisticsClear": "Clear statistics",
+  "trafficStatisticsClearConfirm": "Clearing removes the last 90 days of traffic records and the total uptime. This can't be undone.",
   "trafficStatisticsPrevious": "Previous",
   "trafficStatisticsNext": "Next",
   "trafficStatisticsHits": "{count, plural, =1{1 hit} other{{count} hits}}",

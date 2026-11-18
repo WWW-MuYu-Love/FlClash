@@ -249,6 +249,31 @@ class TrafficStatisticsRecorder extends _$TrafficStatisticsRecorder {
     return run;
   }
 
+  /// Reopens a live session after the wipe, or uptime stalls on a deleted row.
+  Future<void> clear() {
+    final run = _writes.then((_) async {
+      _open.clear();
+      _openSessionId = null;
+      try {
+        await database.trafficStatisticsDao.clear();
+        await database.tunnelSessionsDao.clear();
+        if (_tunnelUp) {
+          _openSessionId = await database.tunnelSessionsDao.openSession(
+            DateTime.now(),
+          );
+        }
+      } catch (error) {
+        commonPrint.log(
+          'Traffic statistics clear failed: ${compactError(error)}',
+          logLevel: LogLevel.warning,
+        );
+      }
+      ref.invalidate(trafficStatisticsProvider);
+    });
+    _writes = run.then<void>((_) {}, onError: (_) {});
+    return run;
+  }
+
   Future<void> _pruneIfDue(DateTime now) async {
     final lastPruneAt = _lastPruneAt;
     if (lastPruneAt != null &&

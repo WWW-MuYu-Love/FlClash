@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:fl_clash/common/common.dart';
@@ -13,6 +14,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 enum _RankingTab { domain, rule, proxy, profile }
 
+Future<void> showTrafficStatisticsSheet(BuildContext context) {
+  return showSheet<void>(
+    context: context,
+    builder: (_) => const TrafficStatisticsView(),
+  );
+}
+
 class TrafficStatisticsView extends ConsumerStatefulWidget {
   const TrafficStatisticsView({super.key});
 
@@ -26,6 +34,26 @@ class _TrafficStatisticsViewState extends ConsumerState<TrafficStatisticsView> {
   var _offset = 0;
   var _rankingTab = _RankingTab.domain;
 
+  Future<void> _handleClear() async {
+    final appLocalizations = context.appLocalizations;
+    final confirmed = await dialogs.showMessage(
+      title: appLocalizations.trafficStatisticsClear,
+      message: TextSpan(text: appLocalizations.trafficStatisticsClearConfirm),
+      confirmText: appLocalizations.delete,
+      destructive: true,
+    );
+    if (confirmed != true || !mounted) {
+      return;
+    }
+    await ref.read(trafficStatisticsRecorderProvider.notifier).clear();
+    if (!mounted) {
+      return;
+    }
+    setState(() {
+      _offset = 0;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final appLocalizations = context.appLocalizations;
@@ -33,6 +61,11 @@ class _TrafficStatisticsViewState extends ConsumerState<TrafficStatisticsView> {
     return Scaffold(
       title: appLocalizations.trafficStatistics,
       iconActions: [
+        IconButtonData(
+          glyph: AppGlyphs.delete,
+          tooltip: appLocalizations.trafficStatisticsClear,
+          onPressed: () => unawaited(_handleClear()),
+        ),
         IconButtonData(
           glyph: AppGlyphs.refresh,
           tooltip: appLocalizations.trafficStatisticsRefresh,
@@ -330,6 +363,16 @@ class _Overview extends StatelessWidget {
     final total = data.total;
     final proxyBytes = data.proxyUpload + data.proxyDownload;
     final proxyRatio = total == 0 ? 0.0 : proxyBytes / total;
+    final textScaler = MediaQuery.textScalerOf(context);
+    final leftHeight =
+        textScaler.scale(AppTextStyle.subheadline.leading) +
+        4 +
+        textScaler.scale(AppTextStyle.title1.leading) +
+        8 +
+        (8 + textScaler.scale(AppTextStyle.footnote.leading));
+    final rowHeight = math.max(leftHeight, _ProxyGauge.size);
+    final slotHeight = rowHeight + 12 + 8;
+    final gaugeOffset = (slotHeight - _ProxyGauge.size) / 2 - 12;
     return Column(
       children: [
         _SectionHeader(
@@ -374,17 +417,8 @@ class _Overview extends StatelessWidget {
                 ],
               ),
             ),
-            // Gauge center sits on the total figure line, not the whole block.
             Transform.translate(
-              offset: Offset(
-                0,
-                MediaQuery.textScalerOf(context).scale(
-                      AppTextStyle.subheadline.leading +
-                          AppTextStyle.title1.leading / 2,
-                    ) +
-                    4 -
-                    _ProxyGauge.size / 2,
-              ),
+              offset: Offset(0, gaugeOffset),
               child: _ProxyGauge(ratio: proxyRatio),
             ),
           ],

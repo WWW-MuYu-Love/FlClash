@@ -1,3 +1,4 @@
+import 'package:drift/native.dart';
 import 'package:fl_clash/common/common.dart';
 import 'package:fl_clash/database/database.dart';
 import 'package:fl_clash/models/models.dart';
@@ -121,13 +122,119 @@ void main() {
     await teardownWidget(tester);
   });
 
-  testWidgets('card tap opens the statistics page', (tester) async {
+  testWidgets('card tap opens the statistics sheet', (tester) async {
     await pumpWidget(tester, const TrafficStatisticsCard());
 
     await tester.tap(find.byType(TrafficStatisticsCard));
     await tester.pumpAndSettle();
 
     expect(find.byType(TrafficStatisticsView), findsOneWidget);
+    expect(find.byType(SheetDragHandle), findsOneWidget);
+    expect(find.byTooltip('Close'), findsOneWidget);
+    expect(find.byTooltip('Refresh'), findsOneWidget);
+    expect(find.byTooltip('Clear statistics'), findsOneWidget);
+    expect(
+      tester.getCenter(find.byTooltip('Clear statistics')).dx,
+      lessThan(tester.getCenter(find.byTooltip('Refresh')).dx),
+    );
+    final titleCenter = tester.getCenter(find.text('Traffic statistics').last);
+    expect(titleCenter.dx, moreOrLessEquals(_size.width / 2, epsilon: 16));
+    final overview = find.ancestor(
+      of: find.text('Traffic summary'),
+      matching: find.byType(Card),
+    );
+    expect(
+      tester.getBottomLeft(overview.first).dy,
+      lessThanOrEqualTo(_size.height),
+    );
+
+    await teardownWidget(tester);
+  });
+
+  Future<Database> pumpDatabaseBackedSheet(WidgetTester tester) async {
+    final testDatabase = Database(NativeDatabase.memory());
+    addTearDown(testDatabase.close);
+    container.dispose();
+    container = ProviderContainer();
+    globalState.container = container;
+    database = testDatabase;
+    final now = DateTime.now();
+    await testDatabase.trafficStatisticsDao.recordClosed([
+      TrafficStatisticsCompanion.insert(
+        connectionId: 'a',
+        host: 'example.com',
+        process: 'Safari',
+        proxy: 'Node-A',
+        direct: false,
+        rule: 'RULE-SET',
+        rulePayload: 'ads',
+        upload: 100,
+        download: 900,
+        startedAt: now.subtract(const Duration(minutes: 5)),
+        endedAt: now.subtract(const Duration(minutes: 1)),
+        profileId: 1,
+        profileLabel: 'Home',
+      ),
+    ]);
+    await pumpWidget(tester, const TrafficStatisticsCard());
+    await tester.tap(find.byType(TrafficStatisticsCard));
+    await tester.pumpAndSettle();
+    expect(find.text('Traffic summary'), findsOneWidget);
+    return testDatabase;
+  }
+
+  Future<List<TrafficStatisticsRecord>> storedRows(Database testDatabase) {
+    return testDatabase.select(testDatabase.trafficStatistics).get();
+  }
+
+  testWidgets('clear asks first and empties the page on confirm', (
+    tester,
+  ) async {
+    final testDatabase = await pumpDatabaseBackedSheet(tester);
+
+    await tester.tap(find.byTooltip('Clear statistics'));
+    await tester.pumpAndSettle();
+    expect(find.text('Clear statistics'), findsOneWidget);
+    expect(
+      find.text(
+        "Clearing removes the last 90 days of traffic records and the total uptime. This can't be undone.",
+      ),
+      findsOneWidget,
+    );
+    expect(find.text('Delete'), findsOneWidget);
+    expect(find.text('Cancel'), findsOneWidget);
+
+    await tester.tap(find.text('Delete'));
+    await tester.pumpAndSettle();
+    expect(find.text('Clear statistics'), findsNothing);
+    expect(find.text('Traffic summary'), findsNothing);
+    expect(
+      find.text(
+        'No traffic recorded yet. Keep the tunnel on and come back after some connections close.',
+      ),
+      findsOneWidget,
+    );
+    expect(await storedRows(testDatabase), isEmpty);
+    expect(
+      await testDatabase.select(testDatabase.tunnelSessions).get(),
+      isEmpty,
+    );
+
+    await teardownWidget(tester);
+  });
+
+  testWidgets('clear cancelled keeps the data', (tester) async {
+    final testDatabase = await pumpDatabaseBackedSheet(tester);
+
+    await tester.tap(find.byTooltip('Clear statistics'));
+    await tester.pumpAndSettle();
+    expect(find.text('Clear statistics'), findsOneWidget);
+
+    await tester.tap(find.text('Cancel'));
+    await tester.pumpAndSettle();
+    expect(find.text('Clear statistics'), findsNothing);
+    expect(find.text('Traffic summary'), findsOneWidget);
+    expect(await storedRows(testDatabase), hasLength(1));
 
     await teardownWidget(tester);
   });
@@ -205,14 +312,26 @@ void main() {
     await teardownWidget(tester);
   });
 
-  testWidgets('overview gauge centers on the total figure', (tester) async {
+  testWidgets('overview gauge sits below the header with equal gaps', (
+    tester,
+  ) async {
     await pumpWidget(tester, const TrafficStatisticsView());
 
-    final gaugeCenter = tester.getCenter(find.byType(TrafficGaugeTicks));
-    final figureCenter = tester.getCenter(
-      find.textContaining('3.9 KB', findRichText: true),
-    );
-    expect(gaugeCenter.dy, moreOrLessEquals(figureCenter.dy, epsilon: 1.0));
+    final headerRow = find
+        .ancestor(of: find.text('Traffic summary'), matching: find.byType(Row))
+        .first;
+    final labelRow = find
+        .ancestor(of: find.text('Uptime'), matching: find.byType(Row))
+        .first;
+    final cellsRow = find
+        .ancestor(of: labelRow, matching: find.byType(Row))
+        .first;
+    final gaugeRect = tester.getRect(find.byType(TrafficGaugeTicks));
+
+    final gapAbove = gaugeRect.top - tester.getBottomLeft(headerRow).dy;
+    final gapBelow = tester.getTopLeft(cellsRow).dy - gaugeRect.bottom;
+    expect(gapAbove, moreOrLessEquals(10.0, epsilon: 1.0));
+    expect(gapBelow, moreOrLessEquals(gapAbove, epsilon: 1.0));
 
     await teardownWidget(tester);
   });

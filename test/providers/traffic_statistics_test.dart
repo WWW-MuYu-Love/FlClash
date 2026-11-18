@@ -272,6 +272,56 @@ void main() {
     expect(data.trend.every((bucket) => bucket.download == 0), isTrue);
   });
 
+  test(
+    'clearing removes every record and session and empties the page',
+    () async {
+      recorder.onRequest(connection(id: 'a', upload: 10, download: 20));
+      await recorder.flush();
+      container.read(runTimeProvider.notifier).value = null;
+      await Future<void>.delayed(Duration.zero);
+      await recorder.flush();
+
+      await recorder.clear();
+
+      expect(await rows(), isEmpty);
+      expect(
+        await testDatabase.select(testDatabase.tunnelSessions).get(),
+        isEmpty,
+      );
+      final data = await container.read(
+        trafficStatisticsProvider(TrafficStatisticsRange.day, 0).future,
+      );
+      expect(data.count, 0);
+      expect(data.total, 0);
+      expect(data.uptime, Duration.zero);
+    },
+  );
+
+  test('clearing while the tunnel is up reopens a session and drops open '
+      'connections', () async {
+    recorder.onRequest(connection(id: 'a', upload: 10, download: 20));
+    await recorder.flush();
+    recorder.onRequest(connection(id: 'b', upload: 5, download: 6));
+
+    await recorder.clear();
+
+    expect(await rows(), isEmpty);
+    final sessions = await testDatabase
+        .select(testDatabase.tunnelSessions)
+        .get();
+    expect(sessions, hasLength(1));
+    expect(sessions.single.endedAt, isNull);
+
+    await recorder.flush();
+    expect(await rows(), isEmpty);
+
+    final data = await container.read(
+      trafficStatisticsProvider(TrafficStatisticsRange.day, 0).future,
+    );
+    expect(data.count, 0);
+    expect(data.uptime, lessThanOrEqualTo(const Duration(seconds: 1)));
+  });
+
   test('the statistics provider returns empty data without rows', () async {
     final now = DateTime.now();
     final data = await container.read(

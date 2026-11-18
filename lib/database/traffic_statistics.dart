@@ -145,6 +145,10 @@ class TunnelSessionsDao extends DatabaseAccessor<Database>
         ))
         .go();
   }
+
+  Future<int> clear() {
+    return delete(tunnelSessions).go();
+  }
 }
 
 @DriftAccessor(tables: [TrafficStatistics])
@@ -165,6 +169,10 @@ class TrafficStatisticsDao extends DatabaseAccessor<Database>
     return trafficStatistics.remove(
       (t) => t.endedAt.isSmallerThanValue(cutoff),
     );
+  }
+
+  Future<int> clear() {
+    return delete(trafficStatistics).go();
   }
 
   Future<TrafficStatisticsTotals> totals(DateTime start, DateTime end) async {

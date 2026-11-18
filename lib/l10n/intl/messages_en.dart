@@ -2207,6 +2207,12 @@ class MessageLookup extends MessageLookupByLibrary {
     "trafficStatistics": MessageLookupByLibrary.simpleMessage(
       "Traffic statistics",
     ),
+    "trafficStatisticsClear": MessageLookupByLibrary.simpleMessage(
+      "Clear statistics",
+    ),
+    "trafficStatisticsClearConfirm": MessageLookupByLibrary.simpleMessage(
+      "Clearing removes the last 90 days of traffic records and the total uptime. This can\'t be undone.",
+    ),
     "trafficStatisticsDay": MessageLookupByLibrary.simpleMessage("Day"),
     "trafficStatisticsDesc": MessageLookupByLibrary.simpleMessage(
       "Daily, weekly and monthly traffic by rule, domain and proxy",

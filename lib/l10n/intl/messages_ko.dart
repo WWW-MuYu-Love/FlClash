@@ -1861,6 +1861,10 @@ class MessageLookup extends MessageLookupByLibrary {
     "traffic": MessageLookupByLibrary.simpleMessage("트래픽"),
     "trafficPeak": m102,
     "trafficStatistics": MessageLookupByLibrary.simpleMessage("트래픽 통계"),
+    "trafficStatisticsClear": MessageLookupByLibrary.simpleMessage("통계 지우기"),
+    "trafficStatisticsClearConfirm": MessageLookupByLibrary.simpleMessage(
+      "지우면 지난 90일간의 트래픽 기록과 누적 가동 시간이 삭제되며, 되돌릴 수 없습니다.",
+    ),
     "trafficStatisticsDay": MessageLookupByLibrary.simpleMessage("일"),
     "trafficStatisticsDesc": MessageLookupByLibrary.simpleMessage(
       "규칙, 도메인, 프록시별 일간, 주간, 월간 트래픽",

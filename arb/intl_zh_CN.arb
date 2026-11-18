@@ -24,6 +24,8 @@
   "trafficStatisticsNoData": "还没有记录到流量。保持隧道开启，等一些连接结束后再来看。",
   "trafficStatisticsUptime": "累计运行",
   "trafficStatisticsRefresh": "刷新",
+  "trafficStatisticsClear": "清除统计数据",
+  "trafficStatisticsClearConfirm": "清除后，过去 90 天的流量记录和累计运行时间将被删除，且无法恢复。",
   "trafficStatisticsPrevious": "上一个",
   "trafficStatisticsNext": "下一个",
   "trafficStatisticsHits": "{count} 次",

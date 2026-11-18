@@ -24,6 +24,8 @@
   "trafficStatisticsNoData": "まだトラフィックが記録されていません。トンネルをオンにしたまま、接続が終了してから再度ご確認ください。",
   "trafficStatisticsUptime": "累計稼働時間",
   "trafficStatisticsRefresh": "更新",
+  "trafficStatisticsClear": "統計をクリア",
+  "trafficStatisticsClearConfirm": "クリアすると、過去90日間のトラフィック記録と累計稼働時間が削除され、元に戻せません。",
   "trafficStatisticsPrevious": "前へ",
   "trafficStatisticsNext": "次へ",
   "trafficStatisticsHits": "{count} 回",

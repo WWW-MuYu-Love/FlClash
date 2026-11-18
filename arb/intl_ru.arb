@@ -24,6 +24,8 @@
   "trafficStatisticsNoData": "Трафик пока не записан. Оставьте туннель включённым и вернитесь, когда завершатся соединения.",
   "trafficStatisticsUptime": "Время работы",
   "trafficStatisticsRefresh": "Обновить",
+  "trafficStatisticsClear": "Очистить статистику",
+  "trafficStatisticsClearConfirm": "Очистка удалит записи трафика за последние 90 дней и общее время работы. Это действие нельзя отменить.",
   "trafficStatisticsPrevious": "Назад",
   "trafficStatisticsNext": "Вперёд",
   "trafficStatisticsHits": "{count} совпадений",

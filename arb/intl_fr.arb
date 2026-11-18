@@ -24,6 +24,8 @@
   "trafficStatisticsNoData": "Aucun trafic enregistré pour le moment. Laissez le tunnel activé et revenez une fois des connexions terminées.",
   "trafficStatisticsUptime": "Temps d'activité",
   "trafficStatisticsRefresh": "Actualiser",
+  "trafficStatisticsClear": "Effacer les statistiques",
+  "trafficStatisticsClearConfirm": "Effacer supprimera les 90 derniers jours d'enregistrements de trafic ainsi que le temps de fonctionnement total. Cette action est irréversible.",
   "trafficStatisticsPrevious": "Précédent",
   "trafficStatisticsNext": "Suivant",
   "trafficStatisticsHits": "{count} occurrences",

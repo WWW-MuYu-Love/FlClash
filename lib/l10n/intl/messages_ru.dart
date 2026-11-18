@@ -1208,9 +1208,10 @@ class MessageLookup extends MessageLookupByLibrary {
     "installCertificateSuccess": MessageLookupByLibrary.simpleMessage(
       "Сертификат установлен",
     ),
-    "installedAppsPermissionDeniedMessage": MessageLookupByLibrary.simpleMessage(
-      "Разрешение на список приложений отклонено, поэтому установленные приложения недоступны. Предоставьте его вручную в системных настройках.",
-    ),
+    "installedAppsPermissionDeniedMessage":
+        MessageLookupByLibrary.simpleMessage(
+          "Разрешение на список приложений отклонено, поэтому установленные приложения недоступны. Предоставьте его вручную в системных настройках.",
+        ),
     "installedAppsPermissionDesc": MessageLookupByLibrary.simpleMessage(
       "Эта система не выдаёт список установленных приложений без разрешения. Предоставьте его, чтобы настроить прокси для отдельных приложений.",
     ),
@@ -2315,6 +2316,12 @@ class MessageLookup extends MessageLookupByLibrary {
     "trafficPeak": m102,
     "trafficStatistics": MessageLookupByLibrary.simpleMessage(
       "Статистика трафика",
+    ),
+    "trafficStatisticsClear": MessageLookupByLibrary.simpleMessage(
+      "Очистить статистику",
+    ),
+    "trafficStatisticsClearConfirm": MessageLookupByLibrary.simpleMessage(
+      "Очистка удалит записи трафика за последние 90 дней и общее время работы. Это действие нельзя отменить.",
     ),
     "trafficStatisticsDay": MessageLookupByLibrary.simpleMessage("День"),
     "trafficStatisticsDesc": MessageLookupByLibrary.simpleMessage(

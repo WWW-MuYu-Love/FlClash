@@ -24,6 +24,8 @@
   "trafficStatisticsNoData": "Aún no hay tráfico registrado. Mantén el túnel activado y vuelve cuando se cierren algunas conexiones.",
   "trafficStatisticsUptime": "Tiempo activo",
   "trafficStatisticsRefresh": "Actualizar",
+  "trafficStatisticsClear": "Borrar estadísticas",
+  "trafficStatisticsClearConfirm": "Al borrar se eliminarán los registros de tráfico de los últimos 90 días y el tiempo total de actividad. Esta acción no se puede deshacer.",
   "trafficStatisticsPrevious": "Anterior",
   "trafficStatisticsNext": "Siguiente",
   "trafficStatisticsHits": "{count} aciertos",
