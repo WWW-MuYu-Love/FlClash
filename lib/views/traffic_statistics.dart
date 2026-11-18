@@ -948,7 +948,7 @@ List<double> trafficTrendGridFractions(
   final double step = switch (range) {
     TrafficStatisticsRange.day => 6,
     TrafficStatisticsRange.week => 7 / 4,
-    TrafficStatisticsRange.month => 7,
+    TrafficStatisticsRange.month => bucketCount / 4,
   };
   return [for (var i = 0.0; i < bucketCount; i += step) i / bucketCount, 1.0];
 }

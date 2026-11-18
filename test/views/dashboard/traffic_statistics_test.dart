@@ -266,16 +266,27 @@ void main() {
       0.75,
       1.0,
     ]);
-    final month30 = trafficTrendGridFractions(TrafficStatisticsRange.month, 30);
-    expect(month30, hasLength(6));
-    expect(month30.first, 0.0);
-    expect(month30.last, 1.0);
-    expect(month30[1], moreOrLessEquals(7 / 30));
-    expect(month30[4], moreOrLessEquals(28 / 30));
-    expect(
-      trafficTrendGridFractions(TrafficStatisticsRange.month, 31),
-      hasLength(6),
-    );
+    expect(trafficTrendGridFractions(TrafficStatisticsRange.month, 29), [
+      0.0,
+      0.25,
+      0.5,
+      0.75,
+      1.0,
+    ]);
+    expect(trafficTrendGridFractions(TrafficStatisticsRange.month, 30), [
+      0.0,
+      0.25,
+      0.5,
+      0.75,
+      1.0,
+    ]);
+    expect(trafficTrendGridFractions(TrafficStatisticsRange.month, 31), [
+      0.0,
+      0.25,
+      0.5,
+      0.75,
+      1.0,
+    ]);
   });
 
   Finder findTrendGrid() {
