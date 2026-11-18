@@ -1009,6 +1009,18 @@ class _AxisLabel extends StatelessWidget {
   }
 }
 
+(Color, Color) _ruleTypePillColors(BuildContext context, String? ruleType) {
+  final colorScheme = context.colorScheme;
+  final colors = DashboardColors.of(context);
+  switch (ruleType?.toLowerCase().replaceAll('-', '')) {
+    case 'ruleset':
+    case 'match':
+      return (colorScheme.primaryContainer, colorScheme.onPrimaryContainer);
+    default:
+      return (colors.warnContainer, colors.onWarnContainer);
+  }
+}
+
 class _RuleHitCard extends StatelessWidget {
   const _RuleHitCard({required this.rank, required this.ratio});
 
@@ -1020,6 +1032,7 @@ class _RuleHitCard extends StatelessWidget {
     final appLocalizations = context.appLocalizations;
     final colorScheme = context.colorScheme;
     final ruleType = rank.ruleType;
+    final (pillColor, pillTextColor) = _ruleTypePillColors(context, ruleType);
     return Card(
       inert: true,
       padding: const EdgeInsets.all(12),
@@ -1061,7 +1074,7 @@ class _RuleHitCard extends StatelessWidget {
                     vertical: 3,
                   ),
                   decoration: ShapeDecoration(
-                    color: DashboardColors.of(context).card,
+                    color: pillColor,
                     shape: AppShape.full,
                   ),
                   child: Text(
@@ -1069,7 +1082,7 @@ class _RuleHitCard extends StatelessWidget {
                     maxLines: 1,
                     style: AppTextStyle.caption1
                         .of(context)
-                        .copyWith(color: colorScheme.onSurfaceVariant),
+                        .copyWith(color: pillTextColor),
                   ),
                 ),
               const Spacer(),

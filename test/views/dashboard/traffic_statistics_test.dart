@@ -251,7 +251,7 @@ void main() {
     await teardownWidget(tester);
   });
 
-  testWidgets('rule hit cards use an unfilled type tag and show full counts', (
+  testWidgets('rule hit cards tint type tags and show full counts', (
     tester,
   ) async {
     container.dispose();
@@ -285,15 +285,52 @@ void main() {
       expect(tag, findsOneWidget);
       final tagText = tester.widget<Text>(tag);
       final BuildContext tagContext = tester.element(tag);
-      expect(tagText.style?.color, tagContext.colorScheme.onSurfaceVariant);
+      expect(tagText.style?.color, tagContext.colorScheme.onPrimaryContainer);
       final pill = tester.widget<Container>(
         find.ancestor(of: tag, matching: find.byType(Container)).first,
       );
       expect(
         (pill.decoration as ShapeDecoration?)?.color,
-        DashboardColors.of(tester.element(tag)).card,
+        tagContext.colorScheme.primaryContainer,
       );
     }
+
+    await teardownWidget(tester);
+  });
+
+  testWidgets('rule hit cards tint other types with the warning color', (
+    tester,
+  ) async {
+    container.dispose();
+    container = createContainer(
+      _data(
+        ruleHits: const [
+          TrafficStatisticsRank(
+            label: 'geo',
+            bytes: 100,
+            hits: 1,
+            ruleType: 'GeoIP',
+          ),
+        ],
+      ),
+    );
+    globalState.container = container;
+
+    await pumpWidget(tester, const TrafficStatisticsView());
+
+    final otherTag = find.text('GeoIP');
+    expect(otherTag, findsOneWidget);
+    final otherText = tester.widget<Text>(otherTag);
+    final BuildContext otherContext = tester.element(otherTag);
+    final otherColors = DashboardColors.of(otherContext);
+    expect(otherText.style?.color, otherColors.onWarnContainer);
+    final otherPill = tester.widget<Container>(
+      find.ancestor(of: otherTag, matching: find.byType(Container)).first,
+    );
+    expect(
+      (otherPill.decoration as ShapeDecoration?)?.color,
+      otherColors.warnContainer,
+    );
 
     await teardownWidget(tester);
   });
