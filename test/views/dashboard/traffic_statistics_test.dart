@@ -238,8 +238,8 @@ void main() {
   });
 
   test('trend bars stay thin in wide slots and scale with narrow ones', () {
-    expect(trafficTrendBarWidth(42.0), 16.0);
-    expect(trafficTrendBarWidth(30.0), 16.0);
+    expect(trafficTrendBarWidth(42.0), 6.0);
+    expect(trafficTrendBarWidth(30.0), 6.0);
     expect(trafficTrendBarWidth(10.0), 6.0);
     expect(trafficTrendBarWidth(8.0), moreOrLessEquals(4.8));
   });

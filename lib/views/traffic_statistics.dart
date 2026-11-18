@@ -936,8 +936,7 @@ class _TrendSegment extends StatelessWidget {
   }
 }
 
-double trafficTrendBarWidth(double slotWidth) =>
-    math.min(slotWidth * 0.6, 16.0);
+double trafficTrendBarWidth(double slotWidth) => math.min(slotWidth * 0.6, 6.0);
 
 List<double> trafficTrendGridFractions(
   TrafficStatisticsRange range,
