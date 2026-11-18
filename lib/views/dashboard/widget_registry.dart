@@ -19,7 +19,6 @@ extension DashboardWidgetView on DashboardWidget {
     DashboardWidget.memoryInfo => const MemoryInfo(),
     DashboardWidget.zashboard => const ZashboardCard(),
     DashboardWidget.trafficStatistics => const TrafficStatisticsCard(),
-    DashboardWidget.earthGlobe => const EarthGlobeCard(),
   };
 
   Glyph get glyph => switch (this) {
@@ -36,7 +35,6 @@ extension DashboardWidgetView on DashboardWidget {
     DashboardWidget.memoryInfo => AppGlyphs.memory,
     DashboardWidget.zashboard => AppGlyphs.dashboard,
     DashboardWidget.trafficStatistics => AppGlyphs.dataUsage,
-    DashboardWidget.earthGlobe => AppGlyphs.locate,
   };
 
   String label(BuildContext context) {
@@ -55,7 +53,6 @@ extension DashboardWidgetView on DashboardWidget {
       DashboardWidget.memoryInfo => appLocalizations.memoryInfo,
       DashboardWidget.zashboard => 'Zashboard',
       DashboardWidget.trafficStatistics => appLocalizations.trafficStatistics,
-      DashboardWidget.earthGlobe => appLocalizations.earthGlobe,
     };
   }
 
@@ -67,7 +64,6 @@ extension DashboardWidgetView on DashboardWidget {
       DashboardWidget.memoryInfo => appLocalizations.memoryInfoDesc,
       DashboardWidget.trafficStatistics =>
         appLocalizations.trafficStatisticsDesc,
-      DashboardWidget.earthGlobe => appLocalizations.earthGlobeDesc,
       _ => null,
     };
   }

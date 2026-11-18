@@ -1166,6 +1166,19 @@ void main() {
       expect(props.hideIp, true);
     });
 
+    test('drops a saved earthGlobe card and keeps the rest', () {
+      final props = AppSettingProps.safeFromJson({
+        'dashboardWidgets': ['currentOutbound', 'earthGlobe', 'proxyGroups'],
+        'hideIp': true,
+      });
+
+      expect(props.dashboardWidgets, [
+        DashboardWidget.currentOutbound,
+        DashboardWidget.proxyGroups,
+      ]);
+      expect(props.hideIp, true);
+    });
+
     test('restores the default dashboard when it knows none of the cards', () {
       final props = AppSettingProps.safeFromJson({
         'dashboardWidgets': ['futureCard', 'otherFutureCard'],

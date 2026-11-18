@@ -6,7 +6,6 @@ import 'package:webview_flutter_platform_interface/webview_flutter_platform_inte
 /// pumping a page that builds a [WebViewWidget].
 class TestWebViewPlatform extends WebViewPlatform {
   final createdControllers = <TestPlatformWebViewController>[];
-  final createdDelegates = <TestPlatformNavigationDelegate>[];
 
   @override
   PlatformWebViewCookieManager createPlatformCookieManager(
@@ -28,9 +27,7 @@ class TestWebViewPlatform extends WebViewPlatform {
   PlatformNavigationDelegate createPlatformNavigationDelegate(
     PlatformNavigationDelegateCreationParams params,
   ) {
-    final delegate = TestPlatformNavigationDelegate(params);
-    createdDelegates.add(delegate);
-    return delegate;
+    return TestPlatformNavigationDelegate(params);
   }
 
   @override
@@ -46,13 +43,6 @@ class TestPlatformWebViewController extends PlatformWebViewController {
 
   final loadedUris = <Uri>[];
   final javaScriptModes = <JavaScriptMode>[];
-  final ranJavaScripts = <String>[];
-
-  /// What [runJavaScriptReturningResult] answers with; `false` by default so
-  /// a page that never isolates times out like the real one would.
-  Object? javaScriptResult = false;
-
-  PlatformNavigationDelegate? navigationDelegate;
 
   @override
   Future<void> loadRequest(LoadRequestParams params) {
@@ -65,45 +55,10 @@ class TestPlatformWebViewController extends PlatformWebViewController {
     javaScriptModes.add(javaScriptMode);
     return Future.value();
   }
-
-  @override
-  Future<void> setPlatformNavigationDelegate(
-    PlatformNavigationDelegate delegate,
-  ) {
-    navigationDelegate = delegate;
-    return Future.value();
-  }
-
-  @override
-  Future<Object> runJavaScriptReturningResult(String javaScript) {
-    ranJavaScripts.add(javaScript);
-    return Future.value(javaScriptResult ?? false);
-  }
 }
 
 class TestPlatformNavigationDelegate extends PlatformNavigationDelegate {
   TestPlatformNavigationDelegate(super.params) : super.implementation();
-
-  PageEventCallback? onPageFinished;
-  WebResourceErrorCallback? onWebResourceError;
-
-  @override
-  Future<void> setOnPageFinished(PageEventCallback onPageFinished) {
-    this.onPageFinished = onPageFinished;
-    return Future.value();
-  }
-
-  @override
-  Future<void> setOnWebResourceError(
-    WebResourceErrorCallback onWebResourceError,
-  ) {
-    this.onWebResourceError = onWebResourceError;
-    return Future.value();
-  }
-
-  void finishPage(String url) => onPageFinished?.call(url);
-
-  void failResource(WebResourceError error) => onWebResourceError?.call(error);
 }
 
 class TestPlatformWebViewWidget extends PlatformWebViewWidget {

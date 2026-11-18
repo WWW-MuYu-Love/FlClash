@@ -662,12 +662,6 @@ class MessageLookup extends MessageLookupByLibrary {
     "downloadBandwidth": MessageLookupByLibrary.simpleMessage("下行带宽"),
     "downloadingUpdate": MessageLookupByLibrary.simpleMessage("正在下载更新"),
     "duration": MessageLookupByLibrary.simpleMessage("时长"),
-    "earthGlobe": MessageLookupByLibrary.simpleMessage("全球连接"),
-    "earthGlobeDesc": MessageLookupByLibrary.simpleMessage("当前连接的实时地球"),
-    "earthGlobeLoadFailed": MessageLookupByLibrary.simpleMessage("地球加载失败。"),
-    "earthGlobeOpenFull": MessageLookupByLibrary.simpleMessage(
-      "打开完整 Zashboard",
-    ),
     "edit": MessageLookupByLibrary.simpleMessage("编辑"),
     "editDashboard": MessageLookupByLibrary.simpleMessage("编辑仪表盘"),
     "editGlobalRules": MessageLookupByLibrary.simpleMessage("编辑全局规则"),

@@ -912,16 +912,6 @@ class MessageLookup extends MessageLookupByLibrary {
       "Descargando actualización",
     ),
     "duration": MessageLookupByLibrary.simpleMessage("Duración"),
-    "earthGlobe": MessageLookupByLibrary.simpleMessage("Conexiones globales"),
-    "earthGlobeDesc": MessageLookupByLibrary.simpleMessage(
-      "Globo en vivo de las conexiones actuales",
-    ),
-    "earthGlobeLoadFailed": MessageLookupByLibrary.simpleMessage(
-      "No se pudo cargar el globo.",
-    ),
-    "earthGlobeOpenFull": MessageLookupByLibrary.simpleMessage(
-      "Abrir Zashboard completo",
-    ),
     "edit": MessageLookupByLibrary.simpleMessage("Editar"),
     "editDashboard": MessageLookupByLibrary.simpleMessage("Editar panel"),
     "editGlobalRules": MessageLookupByLibrary.simpleMessage(

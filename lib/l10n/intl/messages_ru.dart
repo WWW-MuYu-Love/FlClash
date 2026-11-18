@@ -888,18 +888,6 @@ class MessageLookup extends MessageLookupByLibrary {
       "Загрузка обновления",
     ),
     "duration": MessageLookupByLibrary.simpleMessage("Длительность"),
-    "earthGlobe": MessageLookupByLibrary.simpleMessage(
-      "Глобальные подключения",
-    ),
-    "earthGlobeDesc": MessageLookupByLibrary.simpleMessage(
-      "Живой глобус текущих подключений",
-    ),
-    "earthGlobeLoadFailed": MessageLookupByLibrary.simpleMessage(
-      "Не удалось загрузить глобус.",
-    ),
-    "earthGlobeOpenFull": MessageLookupByLibrary.simpleMessage(
-      "Открыть полный Zashboard",
-    ),
     "edit": MessageLookupByLibrary.simpleMessage("Редактировать"),
     "editDashboard": MessageLookupByLibrary.simpleMessage("Изменить панель"),
     "editGlobalRules": MessageLookupByLibrary.simpleMessage(
@@ -1220,10 +1208,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "installCertificateSuccess": MessageLookupByLibrary.simpleMessage(
       "Сертификат установлен",
     ),
-    "installedAppsPermissionDeniedMessage":
-        MessageLookupByLibrary.simpleMessage(
-          "Разрешение на список приложений отклонено, поэтому установленные приложения недоступны. Предоставьте его вручную в системных настройках.",
-        ),
+    "installedAppsPermissionDeniedMessage": MessageLookupByLibrary.simpleMessage(
+      "Разрешение на список приложений отклонено, поэтому установленные приложения недоступны. Предоставьте его вручную в системных настройках.",
+    ),
     "installedAppsPermissionDesc": MessageLookupByLibrary.simpleMessage(
       "Эта система не выдаёт список установленных приложений без разрешения. Предоставьте его, чтобы настроить прокси для отдельных приложений.",
     ),

@@ -463,8 +463,7 @@ enum DashboardWidget {
   intranetIp,
   memoryInfo,
   zashboard,
-  trafficStatistics,
-  earthGlobe;
+  trafficStatistics;
 
   final List<SupportPlatform> platforms;
 

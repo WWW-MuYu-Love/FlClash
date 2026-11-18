@@ -911,16 +911,6 @@ class MessageLookup extends MessageLookupByLibrary {
       "Téléchargement de la mise à jour",
     ),
     "duration": MessageLookupByLibrary.simpleMessage("Durée"),
-    "earthGlobe": MessageLookupByLibrary.simpleMessage("Connexions mondiales"),
-    "earthGlobeDesc": MessageLookupByLibrary.simpleMessage(
-      "Globe en direct des connexions actuelles",
-    ),
-    "earthGlobeLoadFailed": MessageLookupByLibrary.simpleMessage(
-      "Impossible de charger le globe.",
-    ),
-    "earthGlobeOpenFull": MessageLookupByLibrary.simpleMessage(
-      "Ouvrir tout Zashboard",
-    ),
     "edit": MessageLookupByLibrary.simpleMessage("Modifier"),
     "editDashboard": MessageLookupByLibrary.simpleMessage(
       "Modifier le tableau de bord",
@@ -1253,10 +1243,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "installCertificateSuccess": MessageLookupByLibrary.simpleMessage(
       "Certificat installé",
     ),
-    "installedAppsPermissionDeniedMessage":
-        MessageLookupByLibrary.simpleMessage(
-          "L’autorisation de la liste des apps a été refusée ; les apps installées ne peuvent donc pas être listées. Veuillez l’accorder manuellement dans les réglages du système.",
-        ),
+    "installedAppsPermissionDeniedMessage": MessageLookupByLibrary.simpleMessage(
+      "L’autorisation de la liste des apps a été refusée ; les apps installées ne peuvent donc pas être listées. Veuillez l’accorder manuellement dans les réglages du système.",
+    ),
     "installedAppsPermissionDesc": MessageLookupByLibrary.simpleMessage(
       "Ce système masque la liste des apps installées tant que l’autorisation n’est pas accordée. Accordez-la pour configurer le proxy par app.",
     ),
