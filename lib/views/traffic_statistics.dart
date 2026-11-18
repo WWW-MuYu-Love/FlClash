@@ -176,7 +176,7 @@ class _TrafficStatisticsViewState extends ConsumerState<TrafficStatisticsView> {
             Padding(
               padding: const EdgeInsets.only(top: 8),
               child: SizedBox(
-                height: 132,
+                height: 116,
                 child: ListView.separated(
                   scrollDirection: Axis.horizontal,
                   separatorBuilder: (_, _) => const SizedBox(width: 12),
@@ -1104,26 +1104,15 @@ class _RuleHitCard extends StatelessWidget {
                         .copyWith(color: pillTextColor),
                   ),
                 ),
-              const Spacer(),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                spacing: 2,
-                children: [
-                  Text(
-                    appLocalizations.trafficStatisticsHits(rank.hits),
-                    maxLines: 1,
-                    style: AppTextStyle.caption1
-                        .of(context)
-                        .copyWith(color: colorScheme.onSurfaceVariant),
-                  ),
-                  Text(
-                    rank.bytes.traffic.show,
-                    maxLines: 1,
-                    style: AppTextStyle.caption1
-                        .of(context)
-                        .copyWith(color: colorScheme.onSurfaceVariant),
-                  ),
-                ],
+              Expanded(
+                child: Text(
+                  '${appLocalizations.trafficStatisticsHits(rank.hits)} · ${rank.bytes.traffic.show}',
+                  maxLines: 1,
+                  textAlign: TextAlign.end,
+                  style: AppTextStyle.caption2
+                      .of(context)
+                      .copyWith(color: colorScheme.onSurfaceVariant),
+                ),
               ),
             ],
           ),

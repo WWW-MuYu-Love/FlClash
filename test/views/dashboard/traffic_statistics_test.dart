@@ -298,9 +298,9 @@ void main() {
 
     await pumpWidget(tester, const TrafficStatisticsView());
 
-    expect(find.text('1404 hits'), findsOneWidget);
-    expect(find.text((10485760).traffic.show), findsOneWidget);
-    expect(find.text('1404 hits · ${(10485760).traffic.show}'), findsNothing);
+    expect(find.text('1404 hits · ${(10485760).traffic.show}'), findsOneWidget);
+    expect(find.text('1404 hits'), findsNothing);
+    expect(find.text((10485760).traffic.show), findsNothing);
     for (final ruleType in ['Match', 'RuleSet']) {
       final tag = find.text(ruleType);
       expect(tag, findsOneWidget);
