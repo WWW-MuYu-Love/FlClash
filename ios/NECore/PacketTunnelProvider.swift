@@ -321,21 +321,6 @@ private struct CoreTunOptions: Encodable {
   let recvMsgX: Bool
   let sendMsgX: Bool
   let loopbackAddress: String
-
-  enum CodingKeys: String, CodingKey {
-    case stack
-    case address
-    case dns
-    case mtu
-    case disableIcmpForwarding
-    case endpointIndependentNat
-    case congestionController = "congestion-controller"
-    case udpTimeout = "udp-timeout"
-    case dnsHijack = "dns-hijack"
-    case recvMsgX
-    case sendMsgX
-    case loopbackAddress = "loopback-address"
-  }
 }
 
 private enum PacketTunnelProviderError: LocalizedError {

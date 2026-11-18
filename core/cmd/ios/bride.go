@@ -40,6 +40,7 @@ type tunOptions struct {
 	CongestionController   string   `json:"congestionController"`
 	UDPTimeout             uint32   `json:"udpTimeout"`
 	DNSHijack              []string `json:"dnsHijack"`
+	LoopbackAddress        string   `json:"loopbackAddress"`
 }
 
 // coreTunOptions is what core.StartTun's tun layer parses. Its keys match
@@ -143,7 +144,7 @@ func startTUN(callback unsafe.Pointer, fd C.int, optionsChar *C.char) bool {
 		EndpointIndependentNAT: options.EndpointIndependentNAT,
 		UDPTimeout:             options.UDPTimeout,
 		DNSHijack:              options.DNSHijack,
-		LoopbackAddress:        "10.7.0.1",
+		LoopbackAddress:        options.LoopbackAddress,
 	})
 	if err != nil {
 		return false
