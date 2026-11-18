@@ -329,9 +329,9 @@ private struct CoreTunOptions: Encodable {
     case mtu
     case disableIcmpForwarding
     case endpointIndependentNat
-    case congestionController
-    case udpTimeout
-    case dnsHijack
+    case congestionController = "congestion-controller"
+    case udpTimeout = "udp-timeout"
+    case dnsHijack = "dns-hijack"
     case recvMsgX
     case sendMsgX
     case loopbackAddress = "loopback-address"
