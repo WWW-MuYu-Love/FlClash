@@ -10,7 +10,7 @@ import 'package:fl_clash/widgets/widgets.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-enum _RankingTab { domain, proxy, profile, rule }
+enum _RankingTab { domain, rule, proxy, profile }
 
 class TrafficStatisticsView extends ConsumerStatefulWidget {
   const TrafficStatisticsView({super.key});
@@ -66,31 +66,38 @@ class _TrafficStatisticsViewState extends ConsumerState<TrafficStatisticsView> {
             ),
           ),
           Padding(
-            padding: const EdgeInsets.fromLTRB(8, 8, 8, 0),
-            child: Row(
-              children: [
-                IconButton(
-                  onPressed: _offset >= maxTrafficStatisticsOffset(_range)
-                      ? null
-                      : () => setState(() => _offset++),
-                  icon: const GlyphIcon(AppGlyphs.chevronBack, size: 20),
-                  tooltip: appLocalizations.trafficStatisticsPrevious,
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+            child: Card(
+              inert: true,
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              child: SizedBox(
+                height: 48,
+                child: Row(
+                  children: [
+                    IconButton(
+                      onPressed: _offset >= maxTrafficStatisticsOffset(_range)
+                          ? null
+                          : () => setState(() => _offset++),
+                      icon: const GlyphIcon(AppGlyphs.chevronBack, size: 20),
+                      tooltip: appLocalizations.trafficStatisticsPrevious,
+                    ),
+                    Expanded(
+                      child: Text(
+                        trafficStatisticsRangeLabel(_range, _offset),
+                        textAlign: TextAlign.center,
+                        style: AppTextStyle.subheadline.of(context),
+                      ),
+                    ),
+                    IconButton(
+                      onPressed: _offset == 0
+                          ? null
+                          : () => setState(() => _offset--),
+                      icon: const GlyphIcon(AppGlyphs.chevronForward, size: 20),
+                      tooltip: appLocalizations.trafficStatisticsNext,
+                    ),
+                  ],
                 ),
-                Expanded(
-                  child: Text(
-                    trafficStatisticsRangeLabel(_range, _offset),
-                    textAlign: TextAlign.center,
-                    style: AppTextStyle.subheadline.of(context),
-                  ),
-                ),
-                IconButton(
-                  onPressed: _offset == 0
-                      ? null
-                      : () => setState(() => _offset--),
-                  icon: const GlyphIcon(AppGlyphs.chevronForward, size: 20),
-                  tooltip: appLocalizations.trafficStatisticsNext,
-                ),
-              ],
+              ),
             ),
           ),
           Expanded(
@@ -134,44 +141,35 @@ class _TrafficStatisticsViewState extends ConsumerState<TrafficStatisticsView> {
     }
     final rankings = switch (_rankingTab) {
       _RankingTab.domain => data.domains,
+      _RankingTab.rule => data.rules,
       _RankingTab.proxy => data.proxies,
       _RankingTab.profile => data.profiles,
-      _RankingTab.rule => data.rules,
     };
     final glyph = switch (_rankingTab) {
-      _RankingTab.domain => AppGlyphs.requests,
+      _RankingTab.domain => AppGlyphs.link,
+      _RankingTab.rule => AppGlyphs.rules,
       _RankingTab.proxy => AppGlyphs.proxies,
       _RankingTab.profile => AppGlyphs.profiles,
-      _RankingTab.rule => AppGlyphs.rules,
     };
     return SingleChildScrollView(
       padding: EdgeInsets.only(
         left: 16,
         right: 16,
-        top: 16,
+        top: 12,
         bottom: 20 + context.bottomInset,
       ),
       child: Column(
         children: [
-          generateSection(
-            title: appLocalizations.overview,
-            items: [
-              Card(
-                inert: true,
-                padding: const EdgeInsets.all(16),
-                child: _Overview(data: data),
-              ),
-            ],
+          Card(
+            inert: true,
+            padding: const EdgeInsets.all(16),
+            child: _Overview(data: data),
           ),
-          generateSection(
-            title: appLocalizations.trafficStatisticsTrend,
-            items: [
-              Card(
-                inert: true,
-                padding: const EdgeInsets.all(16),
-                child: _TrendChart(data: data),
-              ),
-            ],
+          const SizedBox(height: 12),
+          Card(
+            inert: true,
+            padding: const EdgeInsets.all(16),
+            child: _TrendChart(data: data),
           ),
           if (data.ruleHits.isNotEmpty) ...[
             ListHeader(title: appLocalizations.trafficStatisticsRuleHits),
@@ -205,9 +203,9 @@ class _TrafficStatisticsViewState extends ConsumerState<TrafficStatisticsView> {
             child: SegmentedControl<_RankingTab>(
               segments: [
                 (_RankingTab.domain, appLocalizations.domain),
-                (_RankingTab.proxy, appLocalizations.trafficStatisticsProxy),
-                (_RankingTab.profile, appLocalizations.profile),
                 (_RankingTab.rule, appLocalizations.rule),
+                (_RankingTab.proxy, appLocalizations.nodes),
+                (_RankingTab.profile, appLocalizations.profile),
               ],
               value: _rankingTab,
               onChanged: (tab) => setState(() => _rankingTab = tab),
@@ -254,6 +252,71 @@ class _TrafficStatisticsViewState extends ConsumerState<TrafficStatisticsView> {
   }
 }
 
+class _SectionHeader extends StatelessWidget {
+  const _SectionHeader({
+    required this.glyph,
+    required this.title,
+    this.trailing,
+  });
+
+  final Glyph glyph;
+  final String title;
+  final Widget? trailing;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = context.colorScheme;
+    return Row(
+      children: [
+        Container(
+          width: 28,
+          height: 28,
+          decoration: ShapeDecoration(
+            color: colorScheme.primaryContainer,
+            shape: AppShape.all(8),
+          ),
+          alignment: Alignment.center,
+          child: GlyphIcon(glyph, size: 16, color: colorScheme.primary),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text(
+            title,
+            style: AppTextStyle.headline.of(context, emphasized: true),
+          ),
+        ),
+        ?trailing,
+      ],
+    );
+  }
+}
+
+class _ValueUnitText extends StatelessWidget {
+  const _ValueUnitText({
+    required this.show,
+    required this.valueStyle,
+    required this.unitStyle,
+  });
+
+  final TrafficShow show;
+  final TextStyle valueStyle;
+  final TextStyle unitStyle;
+
+  @override
+  Widget build(BuildContext context) {
+    return RichText(
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+      text: TextSpan(
+        children: [
+          TextSpan(text: show.value, style: valueStyle),
+          TextSpan(text: ' ${show.unit}', style: unitStyle),
+        ],
+      ),
+    );
+  }
+}
+
 class _Overview extends StatelessWidget {
   const _Overview({required this.data});
 
@@ -268,6 +331,11 @@ class _Overview extends StatelessWidget {
     final proxyRatio = total == 0 ? 0.0 : proxyBytes / total;
     return Column(
       children: [
+        _SectionHeader(
+          glyph: AppGlyphs.dataUsage,
+          title: appLocalizations.overview,
+        ),
+        const SizedBox(height: 12),
         Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -276,15 +344,19 @@ class _Overview extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    appLocalizations.total,
+                    appLocalizations.totalTraffic,
                     style: AppTextStyle.subheadline
                         .of(context)
                         .copyWith(color: colorScheme.onSurfaceVariant),
                   ),
                   const SizedBox(height: 4),
-                  Text(
-                    total.traffic.show,
-                    style: AppTextStyle.title1.of(context, emphasized: true),
+                  _ValueUnitText(
+                    show: total.traffic,
+                    valueStyle: AppTextStyle.title1.of(
+                      context,
+                      emphasized: true,
+                    ),
+                    unitStyle: AppTextStyle.subheadline.of(context),
                   ),
                   const SizedBox(height: 8),
                   Wrap(
@@ -349,10 +421,9 @@ class _ProxyGauge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = context.colorScheme;
-    return ProxyRatioRing(
+    return TrafficGaugeTicks(
       ratio: ratio,
       size: 96,
-      strokeWidth: 8,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -370,6 +441,78 @@ class _ProxyGauge extends StatelessWidget {
       ),
     );
   }
+}
+
+class TrafficGaugeTicks extends StatelessWidget {
+  const TrafficGaugeTicks({
+    super.key,
+    required this.ratio,
+    required this.size,
+    required this.child,
+  });
+
+  final double ratio;
+  final double size;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = context.colorScheme;
+    return SizedBox(
+      width: size,
+      height: size,
+      child: CustomPaint(
+        painter: _TrafficGaugeTicksPainter(
+          ratio: ratio,
+          proxyColor: colorScheme.primary,
+          directColor: DashboardColors.of(context).series2,
+        ),
+        child: Center(child: child),
+      ),
+    );
+  }
+}
+
+class _TrafficGaugeTicksPainter extends CustomPainter {
+  _TrafficGaugeTicksPainter({
+    required this.ratio,
+    required this.proxyColor,
+    required this.directColor,
+  });
+
+  final double ratio;
+  final Color proxyColor;
+  final Color directColor;
+
+  static const _tickCount = 30;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = Offset(size.width / 2, size.height / 2);
+    final outer = size.shortestSide / 2 - 2;
+    final inner = outer - 9;
+    final directTicks = ((1 - ratio.clamp(0, 1)) * _tickCount).round();
+    final paint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 3.5
+      ..strokeCap = StrokeCap.round;
+    for (var i = 0; i < _tickCount; i++) {
+      final angle = -math.pi / 2 + i * 2 * math.pi / _tickCount;
+      final direction = Offset(math.cos(angle), math.sin(angle));
+      paint.color = i < directTicks ? directColor : proxyColor;
+      canvas.drawLine(
+        center + direction * inner,
+        center + direction * outer,
+        paint,
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(_TrafficGaugeTicksPainter old) =>
+      old.ratio != ratio ||
+      old.proxyColor != proxyColor ||
+      old.directColor != directColor;
 }
 
 class _UptimeCell extends StatelessWidget {
@@ -411,17 +554,46 @@ class _UptimeCell extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 6),
-          Text(
-            trafficStatisticsUptimeText(
-              appLocalizations.hours,
-              appLocalizations.minutes,
-              uptime,
-            ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: AppTextStyle.title3.of(context, emphasized: true),
-          ),
+          _UptimeText(uptime: uptime),
         ],
+      ),
+    );
+  }
+}
+
+class _UptimeText extends StatelessWidget {
+  const _UptimeText({required this.uptime});
+
+  final Duration uptime;
+
+  @override
+  Widget build(BuildContext context) {
+    final appLocalizations = context.appLocalizations;
+    final hours = uptime.inHours;
+    final minutes = uptime.inMinutes.remainder(60);
+    final unitStyle = AppTextStyle.subheadline.of(context);
+    final spans = <InlineSpan>[];
+    void addPart(int number, String label) {
+      if (spans.isNotEmpty) {
+        spans.add(TextSpan(text: ' $number'));
+      } else {
+        spans.add(TextSpan(text: '$number'));
+      }
+      spans.add(TextSpan(text: ' $label', style: unitStyle));
+    }
+
+    if (hours > 0) {
+      addPart(hours, appLocalizations.hours);
+    }
+    if (minutes > 0 || hours == 0) {
+      addPart(minutes, appLocalizations.minutes);
+    }
+    return RichText(
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+      text: TextSpan(
+        style: AppTextStyle.title3.of(context, emphasized: true),
+        children: spans,
       ),
     );
   }
@@ -462,13 +634,13 @@ class _SplitCell extends StatelessWidget {
           _SplitRow(
             color: colorScheme.primary,
             label: appLocalizations.trafficStatisticsProxy,
-            value: (data.proxyUpload + data.proxyDownload).traffic.show,
+            show: (data.proxyUpload + data.proxyDownload).traffic,
           ),
           const SizedBox(height: 8),
           _SplitRow(
             color: colors.series2,
             label: appLocalizations.direct,
-            value: (data.directUpload + data.directDownload).traffic.show,
+            show: (data.directUpload + data.directDownload).traffic,
           ),
         ],
       ),
@@ -480,12 +652,12 @@ class _SplitRow extends StatelessWidget {
   const _SplitRow({
     required this.color,
     required this.label,
-    required this.value,
+    required this.show,
   });
 
   final Color color;
   final String label;
-  final String value;
+  final TrafficShow show;
 
   @override
   Widget build(BuildContext context) {
@@ -506,10 +678,10 @@ class _SplitRow extends StatelessWidget {
           ),
         ),
         const SizedBox(width: 8),
-        Text(
-          value,
-          maxLines: 1,
-          style: AppTextStyle.subheadline.of(context, emphasized: true),
+        _ValueUnitText(
+          show: show,
+          valueStyle: AppTextStyle.subheadline.of(context, emphasized: true),
+          unitStyle: AppTextStyle.footnote.of(context),
         ),
       ],
     );
@@ -535,18 +707,22 @@ class _TrendChart extends StatelessWidget {
     );
     return Column(
       children: [
-        Row(
-          children: [
-            const Spacer(),
-            _LegendDot(
-              color: colorScheme.primary,
-              label: appLocalizations.download,
-            ),
-            const SizedBox(width: 12),
-            _LegendDot(color: colors.series2, label: appLocalizations.upload),
-          ],
+        _SectionHeader(
+          glyph: AppGlyphs.status,
+          title: appLocalizations.trafficStatisticsTrend,
+          trailing: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _LegendDot(
+                color: colorScheme.primary,
+                label: appLocalizations.download,
+              ),
+              const SizedBox(width: 12),
+              _LegendDot(color: colors.series2, label: appLocalizations.upload),
+            ],
+          ),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 12),
         SizedBox(
           height: _height,
           child: Row(
@@ -567,6 +743,14 @@ class _TrendChart extends StatelessWidget {
                         ],
                       ),
                     ),
+                    if (data.range == TrafficStatisticsRange.day)
+                      Positioned.fill(
+                        child: CustomPaint(
+                          painter: _TrendGridPainter(
+                            color: Divider.colorOf(context),
+                          ),
+                        ),
+                      ),
                     Positioned.fill(
                       child: Row(
                         crossAxisAlignment: CrossAxisAlignment.end,
@@ -607,18 +791,35 @@ class _TrendChart extends StatelessWidget {
         Row(
           children: [
             Expanded(
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  for (final label in _xLabels(data))
-                    Text(
-                      label,
-                      style: AppTextStyle.footnote
-                          .of(context)
-                          .copyWith(color: colorScheme.onSurfaceVariant),
+              child: data.range == TrafficStatisticsRange.day
+                  ? Row(
+                      spacing: 2,
+                      children: [
+                        for (var hour = 0; hour < 24; hour++)
+                          Expanded(
+                            child: Text(
+                              hour % 6 == 0 ? '$hour' : '',
+                              style: AppTextStyle.footnote
+                                  .of(context)
+                                  .copyWith(
+                                    color: colorScheme.onSurfaceVariant,
+                                  ),
+                            ),
+                          ),
+                      ],
+                    )
+                  : Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        for (final label in _xLabels(data))
+                          Text(
+                            label,
+                            style: AppTextStyle.footnote
+                                .of(context)
+                                .copyWith(color: colorScheme.onSurfaceVariant),
+                          ),
+                      ],
                     ),
-                ],
-              ),
             ),
             const SizedBox(width: 60),
           ],
@@ -626,6 +827,39 @@ class _TrendChart extends StatelessWidget {
       ],
     );
   }
+}
+
+class _TrendGridPainter extends CustomPainter {
+  _TrendGridPainter({required this.color});
+
+  final Color color;
+
+  static const _fractions = [0.0, 0.25, 0.5, 0.75];
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1;
+    const dash = 4.0;
+    const gap = 4.0;
+    for (final fraction in _fractions) {
+      final x = fraction * size.width;
+      var y = 0.0;
+      while (y < size.height) {
+        canvas.drawLine(
+          Offset(x, y),
+          Offset(x, math.min(y + dash, size.height)),
+          paint,
+        );
+        y += dash + gap;
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(_TrendGridPainter old) => old.color != color;
 }
 
 class _TrendBar extends StatelessWidget {
@@ -668,7 +902,7 @@ class _TrendSegment extends StatelessWidget {
     }
     return Container(
       height: height,
-      decoration: ShapeDecoration(color: color, shape: AppShape.all(3)),
+      decoration: ShapeDecoration(color: color, shape: AppShape.all(5)),
     );
   }
 }
@@ -698,9 +932,6 @@ List<String> _xLabels(TrafficStatisticsData data) {
   final buckets = data.trend;
   if (buckets.isEmpty) {
     return const [];
-  }
-  if (data.range == TrafficStatisticsRange.day) {
-    return const ['0', '6', '12', '18'];
   }
   String label(DateTime date) =>
       '${date.month.toString().padLeft(2, '0')}-'
@@ -761,6 +992,19 @@ class _AxisLabel extends StatelessWidget {
   }
 }
 
+(Color, Color) _ruleTypePillColors(BuildContext context, String? ruleType) {
+  final colorScheme = context.colorScheme;
+  final colors = DashboardColors.of(context);
+  switch (ruleType?.toLowerCase().replaceAll('-', '')) {
+    case 'ruleset':
+      return (colorScheme.primaryContainer, colorScheme.onPrimaryContainer);
+    case 'match':
+      return (colors.okContainer, colors.onOkContainer);
+    default:
+      return (colors.warnContainer, colors.onWarnContainer);
+  }
+}
+
 class _RuleHitCard extends StatelessWidget {
   const _RuleHitCard({required this.rank, required this.ratio});
 
@@ -771,8 +1015,8 @@ class _RuleHitCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final appLocalizations = context.appLocalizations;
     final colorScheme = context.colorScheme;
-    final colors = DashboardColors.of(context);
     final ruleType = rank.ruleType;
+    final (pillColor, pillTextColor) = _ruleTypePillColors(context, ruleType);
     return Card(
       inert: true,
       padding: const EdgeInsets.all(12),
@@ -814,7 +1058,7 @@ class _RuleHitCard extends StatelessWidget {
                     vertical: 3,
                   ),
                   decoration: ShapeDecoration(
-                    color: colors.tone,
+                    color: pillColor,
                     shape: AppShape.full,
                   ),
                   child: Text(
@@ -822,7 +1066,7 @@ class _RuleHitCard extends StatelessWidget {
                     maxLines: 1,
                     style: AppTextStyle.caption1
                         .of(context)
-                        .copyWith(color: colorScheme.onSurfaceVariant),
+                        .copyWith(color: pillTextColor),
                   ),
                 ),
               const Spacer(),
@@ -949,15 +1193,11 @@ class _RankRow extends StatelessWidget {
             width: 36,
             height: 36,
             decoration: ShapeDecoration(
-              color: colors.tone,
+              color: colorScheme.primaryContainer,
               shape: AppShape.all(10),
             ),
             alignment: Alignment.center,
-            child: GlyphIcon(
-              glyph,
-              size: 20,
-              color: colorScheme.onSurfaceVariant,
-            ),
+            child: GlyphIcon(glyph, size: 20, color: colorScheme.primary),
           ),
           const SizedBox(width: 12),
           Expanded(

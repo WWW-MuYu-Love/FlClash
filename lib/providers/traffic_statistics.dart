@@ -354,7 +354,7 @@ Future<TrafficStatisticsData> trafficStatistics(
     directUpload: totals.directUpload,
     directDownload: totals.directDownload,
     uptime: results[7] as Duration,
-    trend: _fillTrend(start, end, hourly, buckets),
+    trend: _fillTrend(range, start, hourly, buckets),
     ruleHits: results[2] as List<TrafficStatisticsRank>,
     domains: results[3] as List<TrafficStatisticsRank>,
     proxies: results[4] as List<TrafficStatisticsRank>,
@@ -397,19 +397,25 @@ Future<TrafficStatisticsData> trafficStatistics(
 }
 
 List<TrafficStatisticsBucket> _fillTrend(
+  TrafficStatisticsRange range,
   DateTime start,
-  DateTime end,
   bool hourly,
   List<TrafficStatisticsBucket> buckets,
 ) {
   final byStart = {for (final bucket in buckets) bucket.start: bucket};
   final trend = <TrafficStatisticsBucket>[];
-  var cursor = hourly
-      ? DateTime(start.year, start.month, start.day, start.hour)
-      : DateTime(start.year, start.month, start.day);
-  final last = hourly
-      ? DateTime(end.year, end.month, end.day, end.hour)
-      : DateTime(end.year, end.month, end.day);
+  var cursor = DateTime(start.year, start.month, start.day);
+  final DateTime last;
+  if (hourly) {
+    last = DateTime(start.year, start.month, start.day, 23);
+  } else if (range == TrafficStatisticsRange.week) {
+    last = start.add(const Duration(days: 6));
+  } else {
+    last = DateTime(
+      start.year,
+      start.month + 1,
+    ).subtract(const Duration(days: 1));
+  }
   while (!cursor.isAfter(last)) {
     trend.add(
       byStart[cursor] ??

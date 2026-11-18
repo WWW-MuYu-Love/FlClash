@@ -179,7 +179,7 @@ void main() {
     expect(data.proxyUpload, 100);
     expect(data.uptime, Duration.zero);
     expect(data.start, dayStart);
-    expect(data.trend.length, now.hour + 1);
+    expect(data.trend.length, 24);
     expect(
       data.trend.fold<int>(0, (sum, bucket) => sum + bucket.download),
       940,
@@ -262,6 +262,16 @@ void main() {
     },
   );
 
+  test('the statistics provider fills the whole week', () async {
+    final data = await container.read(
+      trafficStatisticsProvider(TrafficStatisticsRange.week, 0).future,
+    );
+
+    expect(data.count, 0);
+    expect(data.trend.length, 7);
+    expect(data.trend.every((bucket) => bucket.download == 0), isTrue);
+  });
+
   test('the statistics provider returns empty data without rows', () async {
     final now = DateTime.now();
     final data = await container.read(
@@ -273,7 +283,7 @@ void main() {
     expect(data.uptime, Duration.zero);
     expect(data.ruleHits, isEmpty);
     expect(data.domains, isEmpty);
-    expect(data.trend.length, now.day);
+    expect(data.trend.length, DateTime(now.year, now.month + 1, 0).day);
     expect(data.trend.every((bucket) => bucket.download == 0), isTrue);
   });
 }

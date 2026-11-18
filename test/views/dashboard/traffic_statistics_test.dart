@@ -132,9 +132,12 @@ void main() {
     expect(find.text('Trend'), findsOneWidget);
     expect(find.text('Rule hits'), findsOneWidget);
     expect(find.text('Rankings'), findsOneWidget);
-    expect(find.text((4000).traffic.show), findsOneWidget);
+    expect(find.textContaining('3.9 KB', findRichText: true), findsOneWidget);
     expect(find.text('75%'), findsOneWidget);
-    expect(find.text('17 hours 26 minutes'), findsOneWidget);
+    expect(
+      find.text('17 hours 26 minutes', findRichText: true),
+      findsOneWidget,
+    );
     final now = DateTime.now();
     expect(
       find.text(
@@ -148,9 +151,9 @@ void main() {
     expect(find.text('Node-A'), findsNothing);
     expect(find.text('ads'), findsNothing);
 
-    await tester.ensureVisible(find.text('Proxy').last);
+    await tester.ensureVisible(find.text('Nodes'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Proxy').last);
+    await tester.tap(find.text('Nodes'));
     await tester.pump();
     expect(find.text('Node-A'), findsOneWidget);
 
@@ -162,7 +165,7 @@ void main() {
 
     await tester.tap(find.byTooltip('Refresh'));
     await tester.pump();
-    expect(find.text((4000).traffic.show), findsOneWidget);
+    expect(find.textContaining('3.9 KB', findRichText: true), findsOneWidget);
 
     await teardownWidget(tester);
   });
