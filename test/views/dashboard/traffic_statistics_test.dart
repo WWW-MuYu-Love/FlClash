@@ -252,11 +252,13 @@ void main() {
       0.75,
       1.0,
     ]);
-    final week = trafficTrendGridFractions(TrafficStatisticsRange.week, 7);
-    expect(week, hasLength(8));
-    expect(week.first, 0.0);
-    expect(week.last, 1.0);
-    expect(week[3], moreOrLessEquals(3 / 7));
+    expect(trafficTrendGridFractions(TrafficStatisticsRange.week, 7), [
+      0.0,
+      0.25,
+      0.5,
+      0.75,
+      1.0,
+    ]);
     expect(trafficTrendGridFractions(TrafficStatisticsRange.month, 28), [
       0.0,
       0.25,
@@ -385,6 +387,37 @@ void main() {
       expect(text.softWrap, isFalse);
       expect(text.maxLines, 1);
     }
+
+    await teardownWidget(tester);
+  });
+
+  testWidgets('week middle gridline aligns with the middle date label', (
+    tester,
+  ) async {
+    container.dispose();
+    container = createContainer(
+      _data(
+        range: TrafficStatisticsRange.week,
+        trend: [
+          for (var i = 0; i < 7; i++)
+            TrafficStatisticsBucket(
+              start: DateTime(2026, 11, 16).add(Duration(days: i)),
+              upload: 100,
+              download: 200,
+            ),
+        ],
+      ),
+    );
+    globalState.container = container;
+
+    await pumpWidget(tester, const TrafficStatisticsView());
+    await tester.tap(find.text('Week'));
+    await tester.pump();
+    await tester.pump();
+
+    final gridCenter = tester.getCenter(findTrendGrid());
+    final labelCenter = tester.getCenter(find.text('11-19'));
+    expect(labelCenter.dx, moreOrLessEquals(gridCenter.dx, epsilon: 1.0));
 
     await teardownWidget(tester);
   });

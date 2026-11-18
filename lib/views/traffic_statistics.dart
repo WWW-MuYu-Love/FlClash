@@ -945,12 +945,12 @@ List<double> trafficTrendGridFractions(
   if (bucketCount <= 0) {
     return const [0.0, 1.0];
   }
-  final step = switch (range) {
+  final double step = switch (range) {
     TrafficStatisticsRange.day => 6,
-    TrafficStatisticsRange.week => 1,
+    TrafficStatisticsRange.week => 7 / 4,
     TrafficStatisticsRange.month => 7,
   };
-  return [for (var i = 0; i < bucketCount; i += step) i / bucketCount, 1.0];
+  return [for (var i = 0.0; i < bucketCount; i += step) i / bucketCount, 1.0];
 }
 
 (double, double) _stackedHeights(TrafficStatisticsBucket bucket, int max) {
