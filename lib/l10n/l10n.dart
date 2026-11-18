@@ -322,6 +322,16 @@ class AppLocalizations {
     );
   }
 
+  /// `Traffic summary`
+  String get trafficStatisticsOverview {
+    return Intl.message(
+      'Traffic summary',
+      name: 'trafficStatisticsOverview',
+      desc: '',
+      args: [],
+    );
+  }
+
   /// `Network speed`
   String get networkSpeed {
     return Intl.message(

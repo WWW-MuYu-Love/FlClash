@@ -2400,6 +2400,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "trafficStatisticsNoData": MessageLookupByLibrary.simpleMessage(
       "Aucun trafic enregistré pour le moment. Laissez le tunnel activé et revenez une fois des connexions terminées.",
     ),
+    "trafficStatisticsOverview": MessageLookupByLibrary.simpleMessage(
+      "Résumé du trafic",
+    ),
     "trafficStatisticsPrevious": MessageLookupByLibrary.simpleMessage(
       "Précédent",
     ),

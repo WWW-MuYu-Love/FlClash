@@ -31,6 +31,7 @@
   "trafficStatisticsPrevious": "上一个",
   "trafficStatisticsNext": "下一个",
   "trafficStatisticsHits": "{count} 次",
+  "trafficStatisticsOverview": "流量概括",
   "networkSpeed": "网络速度",
   "outboundMode": "出站模式",
   "serviceStatus": "服务状态",

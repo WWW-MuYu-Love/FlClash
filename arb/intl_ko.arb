@@ -31,6 +31,7 @@
   "trafficStatisticsPrevious": "이전",
   "trafficStatisticsNext": "다음",
   "trafficStatisticsHits": "{count}회",
+  "trafficStatisticsOverview": "트래픽 요약",
   "networkSpeed": "네트워크 속도",
   "outboundMode": "아웃바운드 모드",
   "serviceStatus": "서비스 상태",

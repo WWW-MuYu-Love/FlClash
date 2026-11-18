@@ -1909,6 +1909,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "trafficStatisticsNoData": MessageLookupByLibrary.simpleMessage(
       "まだトラフィックが記録されていません。トンネルをオンにしたまま、接続が終了してから再度ご確認ください。",
     ),
+    "trafficStatisticsOverview": MessageLookupByLibrary.simpleMessage(
+      "トラフィック概要",
+    ),
     "trafficStatisticsPrevious": MessageLookupByLibrary.simpleMessage("前へ"),
     "trafficStatisticsProxy": MessageLookupByLibrary.simpleMessage("プロキシ"),
     "trafficStatisticsRankings": MessageLookupByLibrary.simpleMessage("ランキング"),

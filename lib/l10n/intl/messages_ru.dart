@@ -2339,6 +2339,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "trafficStatisticsNoData": MessageLookupByLibrary.simpleMessage(
       "Трафик пока не записан. Оставьте туннель включённым и вернитесь, когда завершатся соединения.",
     ),
+    "trafficStatisticsOverview": MessageLookupByLibrary.simpleMessage(
+      "Сводка трафика",
+    ),
     "trafficStatisticsPrevious": MessageLookupByLibrary.simpleMessage("Назад"),
     "trafficStatisticsProxy": MessageLookupByLibrary.simpleMessage("Прокси"),
     "trafficStatisticsRankings": MessageLookupByLibrary.simpleMessage(

@@ -31,6 +31,7 @@
   "trafficStatisticsPrevious": "Anterior",
   "trafficStatisticsNext": "Siguiente",
   "trafficStatisticsHits": "{count} aciertos",
+  "trafficStatisticsOverview": "Resumen de tráfico",
   "networkSpeed": "Velocidad de red",
   "outboundMode": "Modo de salida",
   "serviceStatus": "Estado del servicio",

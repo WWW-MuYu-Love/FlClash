@@ -31,6 +31,7 @@
   "trafficStatisticsPrevious": "前へ",
   "trafficStatisticsNext": "次へ",
   "trafficStatisticsHits": "{count} 回",
+  "trafficStatisticsOverview": "トラフィック概要",
   "networkSpeed": "ネットワーク速度",
   "outboundMode": "アウトバウンドモード",
   "serviceStatus": "サービスの状態",

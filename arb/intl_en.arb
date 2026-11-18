@@ -31,6 +31,7 @@
   "trafficStatisticsPrevious": "Previous",
   "trafficStatisticsNext": "Next",
   "trafficStatisticsHits": "{count, plural, =1{1 hit} other{{count} hits}}",
+  "trafficStatisticsOverview": "Traffic summary",
   "networkSpeed": "Network speed",
   "outboundMode": "Outbound mode",
   "serviceStatus": "Service status",

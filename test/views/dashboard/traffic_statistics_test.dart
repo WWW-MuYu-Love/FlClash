@@ -139,7 +139,7 @@ void main() {
     expect(find.text('Day'), findsOneWidget);
     expect(find.text('Week'), findsOneWidget);
     expect(find.text('Month'), findsOneWidget);
-    expect(find.text('Overview'), findsOneWidget);
+    expect(find.text('Traffic summary'), findsOneWidget);
     expect(find.text('Trend'), findsOneWidget);
     expect(find.text('Rule hits'), findsOneWidget);
     expect(find.text('Rankings'), findsOneWidget);
@@ -177,6 +177,27 @@ void main() {
     await tester.tap(find.byTooltip('Refresh'));
     await tester.pump();
     expect(find.textContaining('3.9 KB', findRichText: true), findsOneWidget);
+
+    await teardownWidget(tester);
+  });
+
+  testWidgets('overview splits proxy and direct into separate cells', (
+    tester,
+  ) async {
+    await pumpWidget(tester, const TrafficStatisticsView());
+
+    final uptimeLabel = tester.widget<Text>(find.text('Uptime'));
+    expect(uptimeLabel.style?.fontWeight, FontWeight.w600);
+
+    Container splitCell(Finder label) {
+      return tester.widget<Container>(
+        find.ancestor(of: label, matching: find.byType(Container)).first,
+      );
+    }
+
+    final proxyCell = splitCell(find.text('Proxy').last);
+    final directCell = splitCell(find.text('Direct'));
+    expect(identical(proxyCell, directCell), isFalse);
 
     await teardownWidget(tester);
   });

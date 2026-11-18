@@ -1715,6 +1715,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "trafficStatisticsNoData": MessageLookupByLibrary.simpleMessage(
       "还没有记录到流量。保持隧道开启，等一些连接结束后再来看。",
     ),
+    "trafficStatisticsOverview": MessageLookupByLibrary.simpleMessage("流量概括"),
     "trafficStatisticsPrevious": MessageLookupByLibrary.simpleMessage("上一个"),
     "trafficStatisticsProxy": MessageLookupByLibrary.simpleMessage("代理"),
     "trafficStatisticsRankings": MessageLookupByLibrary.simpleMessage("流量排行"),

@@ -1881,6 +1881,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "trafficStatisticsNoData": MessageLookupByLibrary.simpleMessage(
       "아직 기록된 트래픽이 없습니다. 터널을 켠 상태로 두고 연결이 종료된 뒤 다시 확인하세요.",
     ),
+    "trafficStatisticsOverview": MessageLookupByLibrary.simpleMessage("트래픽 요약"),
     "trafficStatisticsPrevious": MessageLookupByLibrary.simpleMessage("이전"),
     "trafficStatisticsProxy": MessageLookupByLibrary.simpleMessage("프록시"),
     "trafficStatisticsRankings": MessageLookupByLibrary.simpleMessage("순위"),
