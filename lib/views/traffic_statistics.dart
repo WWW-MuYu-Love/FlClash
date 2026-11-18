@@ -338,7 +338,7 @@ class _Overview extends StatelessWidget {
         ),
         const SizedBox(height: 12),
         Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Expanded(
               child: Column(
@@ -374,40 +374,28 @@ class _Overview extends StatelessWidget {
                 ],
               ),
             ),
-            _ProxyGauge(ratio: proxyRatio),
+            // Gauge center sits on the total figure line, not the whole block.
+            Transform.translate(
+              offset: Offset(
+                0,
+                MediaQuery.textScalerOf(context).scale(
+                      AppTextStyle.subheadline.leading +
+                          AppTextStyle.title1.leading / 2,
+                    ) +
+                    4 -
+                    _ProxyGauge.size / 2,
+              ),
+              child: _ProxyGauge(ratio: proxyRatio),
+            ),
           ],
         ),
         const SizedBox(height: 8),
-        IntrinsicHeight(
-          child: Row(
-            spacing: 16,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Expanded(child: _UptimeCell(uptime: data.uptime)),
-              Expanded(
-                child: Column(
-                  spacing: 12,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Expanded(
-                      child: _SplitCell(
-                        color: colorScheme.primary,
-                        label: appLocalizations.trafficStatisticsProxy,
-                        show: (data.proxyUpload + data.proxyDownload).traffic,
-                      ),
-                    ),
-                    Expanded(
-                      child: _SplitCell(
-                        color: DashboardColors.of(context).series2,
-                        label: appLocalizations.direct,
-                        show: (data.directUpload + data.directDownload).traffic,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
+        Row(
+          spacing: 16,
+          children: [
+            Expanded(child: _UptimeCell(uptime: data.uptime)),
+            Expanded(child: _SplitCell(data: data)),
+          ],
         ),
       ],
     );
@@ -438,6 +426,8 @@ class TrafficStatisticsPill extends StatelessWidget {
 class _ProxyGauge extends StatelessWidget {
   const _ProxyGauge({required this.ratio});
 
+  static const size = 96.0;
+
   final double ratio;
 
   @override
@@ -445,7 +435,7 @@ class _ProxyGauge extends StatelessWidget {
     final colorScheme = context.colorScheme;
     return TrafficGaugeTicks(
       ratio: ratio,
-      size: 96,
+      size: size,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -488,7 +478,6 @@ class TrafficGaugeTicks extends StatelessWidget {
           ratio: ratio,
           proxyColor: colorScheme.primary,
           directColor: DashboardColors.of(context).series2,
-          innerColor: colorScheme.primaryContainer,
         ),
         child: Center(child: child),
       ),
@@ -501,13 +490,11 @@ class _TrafficGaugeTicksPainter extends CustomPainter {
     required this.ratio,
     required this.proxyColor,
     required this.directColor,
-    required this.innerColor,
   });
 
   final double ratio;
   final Color proxyColor;
   final Color directColor;
-  final Color innerColor;
 
   static const _tickCount = 30;
 
@@ -517,10 +504,6 @@ class _TrafficGaugeTicksPainter extends CustomPainter {
     final outer = size.shortestSide / 2 - 2;
     final inner = outer - 9;
     final directTicks = ((1 - ratio.clamp(0, 1)) * _tickCount).round();
-    final disc = Paint()
-      ..color = innerColor
-      ..style = PaintingStyle.fill;
-    canvas.drawCircle(center, inner - 2, disc);
     final paint = Paint()
       ..style = PaintingStyle.stroke
       ..strokeWidth = 3.5
@@ -541,8 +524,7 @@ class _TrafficGaugeTicksPainter extends CustomPainter {
   bool shouldRepaint(_TrafficGaugeTicksPainter old) =>
       old.ratio != ratio ||
       old.proxyColor != proxyColor ||
-      old.directColor != directColor ||
-      old.innerColor != innerColor;
+      old.directColor != directColor;
 }
 
 class _UptimeCell extends StatelessWidget {
@@ -646,25 +628,33 @@ String trafficStatisticsUptimeText(
 }
 
 class _SplitCell extends StatelessWidget {
-  const _SplitCell({
-    required this.color,
-    required this.label,
-    required this.show,
-  });
+  const _SplitCell({required this.data});
 
-  final Color color;
-  final String label;
-  final TrafficShow show;
+  final TrafficStatisticsData data;
 
   @override
   Widget build(BuildContext context) {
+    final appLocalizations = context.appLocalizations;
+    final colorScheme = context.colorScheme;
     final colors = DashboardColors.of(context);
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: ShapeDecoration(color: colors.tone, shape: AppShape.all(12)),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
-        children: [_SplitRow(color: color, label: label, show: show)],
+        children: [
+          _SplitRow(
+            color: colorScheme.primary,
+            label: appLocalizations.trafficStatisticsProxy,
+            show: (data.proxyUpload + data.proxyDownload).traffic,
+          ),
+          const SizedBox(height: 8),
+          _SplitRow(
+            color: colors.series2,
+            label: appLocalizations.direct,
+            show: (data.directUpload + data.directDownload).traffic,
+          ),
+        ],
       ),
     );
   }

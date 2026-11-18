@@ -181,9 +181,7 @@ void main() {
     await teardownWidget(tester);
   });
 
-  testWidgets('overview splits proxy and direct into separate cells', (
-    tester,
-  ) async {
+  testWidgets('overview keeps proxy and direct in one cell', (tester) async {
     await pumpWidget(tester, const TrafficStatisticsView());
 
     final uptimeLabel = tester.widget<Text>(find.text('Uptime'));
@@ -202,7 +200,19 @@ void main() {
 
     final proxyCell = splitCell(find.text('Proxy').last);
     final directCell = splitCell(find.text('Direct'));
-    expect(identical(proxyCell, directCell), isFalse);
+    expect(identical(proxyCell, directCell), isTrue);
+
+    await teardownWidget(tester);
+  });
+
+  testWidgets('overview gauge centers on the total figure', (tester) async {
+    await pumpWidget(tester, const TrafficStatisticsView());
+
+    final gaugeCenter = tester.getCenter(find.byType(TrafficGaugeTicks));
+    final figureCenter = tester.getCenter(
+      find.textContaining('3.9 KB', findRichText: true),
+    );
+    expect(gaugeCenter.dy, moreOrLessEquals(figureCenter.dy, epsilon: 1.0));
 
     await teardownWidget(tester);
   });
