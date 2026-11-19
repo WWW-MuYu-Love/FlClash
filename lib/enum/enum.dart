@@ -56,6 +56,15 @@ enum GroupType {
 
   const GroupType(this.value);
 
+  /// The type word the core API and zashboard show, uppercased on the card.
+  String get displayName => switch (this) {
+    Selector => 'Selector',
+    URLTest => 'URLTest',
+    Fallback => 'Fallback',
+    LoadBalance => 'LoadBalance',
+    Relay => 'Relay',
+  };
+
   static GroupType parse(String type) {
     return switch (type.toLowerCase()) {
       'url-test' || 'urltest' => URLTest,
@@ -208,9 +217,11 @@ enum InterfaceNameMode { clear, follow, custom }
 
 enum RestoreOption { all, onlyProfiles }
 
-enum ProxiesType { tab, list }
+enum ProxiesType { tab, list, icons }
 
-enum ProxiesGroupStyle { list, icons }
+/// The zashboard folder a proxy group falls in: one whose members are all
+/// plain nodes, or one that contains another group.
+enum ProxyFolder { all, strategy, nodes }
 
 enum ProxiesLayout { loose, standard, tight }
 

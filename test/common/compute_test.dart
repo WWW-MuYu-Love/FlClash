@@ -295,6 +295,86 @@ void main() {
     });
   });
 
+  group('sortIconGroups', () {
+    late List<Group> groups;
+    late DelayMap delayMap;
+    late Map<String, String> selectedMap;
+
+    setUp(() {
+      groups = [
+        const Group(
+          name: 'G-slow',
+          type: GroupType.Selector,
+          testUrl: 'http://test.com',
+          all: [Proxy(name: 'G-slow-0', type: 'ss')],
+        ),
+        const Group(
+          name: 'G-untested',
+          type: GroupType.Selector,
+          testUrl: 'http://test.com',
+          all: [Proxy(name: 'G-untested-0', type: 'ss')],
+        ),
+        const Group(
+          name: 'G-timeout',
+          type: GroupType.Selector,
+          testUrl: 'http://test.com',
+          all: [Proxy(name: 'G-timeout-0', type: 'ss')],
+        ),
+        const Group(
+          name: 'G-fast',
+          type: GroupType.Selector,
+          testUrl: 'http://test.com',
+          all: [Proxy(name: 'G-fast-0', type: 'ss')],
+        ),
+      ];
+      delayMap = <String, Map<String, int?>>{
+        'http://test.com': {'G-slow-0': 200, 'G-timeout-0': -1, 'G-fast-0': 50},
+      };
+      selectedMap = {
+        'G-slow': 'G-slow-0',
+        'G-untested': 'G-untested-0',
+        'G-timeout': 'G-timeout-0',
+        'G-fast': 'G-fast-0',
+      };
+    });
+
+    List<String> namesOf(List<Group> groups) =>
+        groups.map((group) => group.name).toList();
+
+    test('ProxiesSortType.none preserves original order', () {
+      final result = sortIconGroups(
+        groups: groups,
+        sortType: ProxiesSortType.none,
+        delayMap: delayMap,
+        selectedMap: selectedMap,
+        defaultTestUrl: 'http://test.com',
+      );
+      expect(namesOf(result), ['G-slow', 'G-untested', 'G-timeout', 'G-fast']);
+    });
+
+    test('ProxiesSortType.name sorts alphabetically', () {
+      final result = sortIconGroups(
+        groups: groups,
+        sortType: ProxiesSortType.name,
+        delayMap: delayMap,
+        selectedMap: selectedMap,
+        defaultTestUrl: 'http://test.com',
+      );
+      expect(namesOf(result), ['G-fast', 'G-slow', 'G-timeout', 'G-untested']);
+    });
+
+    test('ProxiesSortType.delay sorts by the selected node delay', () {
+      final result = sortIconGroups(
+        groups: groups,
+        sortType: ProxiesSortType.delay,
+        delayMap: delayMap,
+        selectedMap: selectedMap,
+        defaultTestUrl: 'http://test.com',
+      );
+      expect(namesOf(result), ['G-fast', 'G-slow', 'G-untested', 'G-timeout']);
+    });
+  });
+
   group('Group.getCurrentSelectedName', () {
     test('URLTest group returns realNow when non-empty', () {
       const group = Group(

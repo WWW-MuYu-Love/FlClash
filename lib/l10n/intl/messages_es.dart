@@ -1098,8 +1098,6 @@ class MessageLookup extends MessageLookupByLibrary {
     "groupBy": MessageLookupByLibrary.simpleMessage("Agrupar por"),
     "groupCount": m39,
     "groupCountUnit": MessageLookupByLibrary.simpleMessage("grupos"),
-    "groupStyle": MessageLookupByLibrary.simpleMessage("Estilo de grupo"),
-    "groupStyleIcons": MessageLookupByLibrary.simpleMessage("Iconos"),
     "groupTimeoutCount": m40,
     "hasCacheChange": MessageLookupByLibrary.simpleMessage(
       "¿Guardar los cambios en la caché?",
@@ -1195,6 +1193,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "iconStyleHidden": MessageLookupByLibrary.simpleMessage("Oculto"),
     "iconStylePlain": MessageLookupByLibrary.simpleMessage("Simple"),
     "iconUrl": MessageLookupByLibrary.simpleMessage("URL del icono"),
+    "icons": MessageLookupByLibrary.simpleMessage("Iconos"),
     "ignoreBatteryOptimization": MessageLookupByLibrary.simpleMessage(
       "Ignorar optimización de batería",
     ),
@@ -1394,6 +1393,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "liveConnections": MessageLookupByLibrary.simpleMessage(
       "Conexiones activas",
     ),
+    "loadBalance": MessageLookupByLibrary.simpleMessage("Balanceo de carga"),
     "loading": MessageLookupByLibrary.simpleMessage("Cargando…"),
     "local": MessageLookupByLibrary.simpleMessage("Local"),
     "localImage": MessageLookupByLibrary.simpleMessage("Imagen local"),
@@ -1847,6 +1847,11 @@ class MessageLookup extends MessageLookupByLibrary {
     "proxiesRemovedTip": m89,
     "proxiesReplacedTip": m90,
     "proxyChains": MessageLookupByLibrary.simpleMessage("Cadena de proxies"),
+    "proxyFolderAll": MessageLookupByLibrary.simpleMessage("Todo"),
+    "proxyFolderNodes": MessageLookupByLibrary.simpleMessage("Grupos de nodos"),
+    "proxyFolderStrategy": MessageLookupByLibrary.simpleMessage(
+      "Grupos de estrategia",
+    ),
     "proxyGroup": MessageLookupByLibrary.simpleMessage("Grupo de proxies"),
     "proxyGroupEmpty": MessageLookupByLibrary.simpleMessage(
       "El grupo de proxies está vacío",

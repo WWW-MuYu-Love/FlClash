@@ -1070,8 +1070,6 @@ class MessageLookup extends MessageLookupByLibrary {
     "groupBy": MessageLookupByLibrary.simpleMessage("Группировка"),
     "groupCount": m39,
     "groupCountUnit": MessageLookupByLibrary.simpleMessage("групп"),
-    "groupStyle": MessageLookupByLibrary.simpleMessage("Стиль групп"),
-    "groupStyleIcons": MessageLookupByLibrary.simpleMessage("Значки"),
     "groupTimeoutCount": m40,
     "hasCacheChange": MessageLookupByLibrary.simpleMessage(
       "Кэшировать изменения?",
@@ -1163,6 +1161,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "iconStyleHidden": MessageLookupByLibrary.simpleMessage("Скрыто"),
     "iconStylePlain": MessageLookupByLibrary.simpleMessage("Без подложки"),
     "iconUrl": MessageLookupByLibrary.simpleMessage("URL значка"),
+    "icons": MessageLookupByLibrary.simpleMessage("Значки"),
     "ignoreBatteryOptimization": MessageLookupByLibrary.simpleMessage(
       "Игнорировать оптимизацию батареи",
     ),
@@ -1349,6 +1348,9 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "liveConnections": MessageLookupByLibrary.simpleMessage(
       "Активные соединения",
+    ),
+    "loadBalance": MessageLookupByLibrary.simpleMessage(
+      "Балансировка нагрузки",
     ),
     "loading": MessageLookupByLibrary.simpleMessage("Загрузка…"),
     "local": MessageLookupByLibrary.simpleMessage("Локально"),
@@ -1799,6 +1801,11 @@ class MessageLookup extends MessageLookupByLibrary {
     "proxiesRemovedTip": m89,
     "proxiesReplacedTip": m90,
     "proxyChains": MessageLookupByLibrary.simpleMessage("Цепочка прокси"),
+    "proxyFolderAll": MessageLookupByLibrary.simpleMessage("Все"),
+    "proxyFolderNodes": MessageLookupByLibrary.simpleMessage("Группы узлов"),
+    "proxyFolderStrategy": MessageLookupByLibrary.simpleMessage(
+      "Стратегические группы",
+    ),
     "proxyGroup": MessageLookupByLibrary.simpleMessage("Группа прокси"),
     "proxyGroupEmpty": MessageLookupByLibrary.simpleMessage(
       "Группа прокси пуста",

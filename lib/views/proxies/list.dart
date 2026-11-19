@@ -18,6 +18,11 @@ const _groupInset = 16.0;
 const _liftDistance = 16.0;
 const _groupMinWidth = 360.0;
 const _groupMaxColumns = 3;
+const _folderBarHeight = 40.0;
+const _folderPillPadding = EdgeInsets.symmetric(horizontal: 10, vertical: 6);
+const _folderPillIconGap = 6.0;
+const _folderPillCountGap = 4.0;
+const _folderPillIconSize = 16.0;
 const _lastRowGrowth = _headerInset - proxyGridSpacing;
 
 class ProxiesListView extends ConsumerStatefulWidget {
@@ -31,8 +36,13 @@ class _ProxiesListViewState extends ConsumerState<ProxiesListView> {
   late final ScrollController _controller;
   int _columns = 1;
   int _groupColumns = 1;
+  int _fullColumns = 2;
+  bool _iconMode = false;
   double _gap = 0;
   double _headerHeight = 0;
+  double _folderBarExtent = 0;
+  ProxyFolder _folder = ProxyFolder.all;
+  List<Group> _shownGroups = const [];
 
   @override
   void initState() {
@@ -59,10 +69,36 @@ class _ProxiesListViewState extends ConsumerState<ProxiesListView> {
 
   GroupOffsets _getGroupOffsets() {
     final state = ref.read(proxiesListStateProvider);
+    final groups = _shownGroups;
     final offsets = <double>[];
     final rowExtent = getRowExtent(state.proxyCardType);
+    if (_iconMode) {
+      var cursor = 0.0;
+      var index = 0;
+      while (index < groups.length) {
+        final group = groups[index];
+        final start = cursor;
+        offsets.add(start);
+        cursor += _headerHeight + _gap;
+        if (state.currentUnfoldSet.contains(group.name)) {
+          final rowCount =
+              (group.all.length + _fullColumns - 1) ~/ _fullColumns;
+          cursor += _rowsExtent(rowCount, rowExtent);
+          index++;
+          continue;
+        }
+        final next = index + 1 < groups.length ? groups[index + 1] : null;
+        if (next != null && !state.currentUnfoldSet.contains(next.name)) {
+          offsets.add(start);
+          index += 2;
+          continue;
+        }
+        index++;
+      }
+      return GroupOffsets(groups, offsets);
+    }
     final columnOffsets = List.filled(_groupColumns, 0.0);
-    for (final (index, group) in state.groups.indexed) {
+    for (final (index, group) in groups.indexed) {
       final column = index % _groupColumns;
       offsets.add(columnOffsets[column]);
       columnOffsets[column] += _headerHeight + _gap;
@@ -71,7 +107,7 @@ class _ProxiesListViewState extends ConsumerState<ProxiesListView> {
         columnOffsets[column] += _rowsExtent(rowCount, rowExtent);
       }
     }
-    return GroupOffsets(state.groups, offsets);
+    return GroupOffsets(groups, offsets);
   }
 
   double _getGroupOffset(String groupName) {
@@ -125,7 +161,9 @@ class _ProxiesListViewState extends ConsumerState<ProxiesListView> {
     final offset = _getGroupOffset(groupName);
     _scrollToMakeVisibleWithPadding(
       containerHeight: max(
-        _controller.position.viewportDimension - context.contentTopPadding,
+        _controller.position.viewportDimension -
+            context.contentTopPadding -
+            _folderBarExtent,
         0,
       ),
       pixels: pixels,
@@ -144,16 +182,69 @@ class _ProxiesListViewState extends ConsumerState<ProxiesListView> {
     if (proxies == null) {
       return;
     }
+    final isExpanded = ref
+        .read(proxiesListStateProvider)
+        .currentUnfoldSet
+        .contains(groupName);
     final rowOffset = selectedRowOffset(
       proxies: proxies,
       selectedProxyName: ref.read(selectedProxyNameProvider(groupName)),
-      columns: _columns,
+      columns: _iconMode && isExpanded ? _fullColumns : _columns,
       rowExtent: getRowExtent(cardType),
     );
     if (rowOffset == null) {
       return;
     }
     animateScrollTo(_controller, _getGroupOffset(groupName) + rowOffset);
+  }
+
+  List<Widget> _buildIconSegments(
+    List<Group> shownGroups,
+    Set<String> unfoldSet,
+    Widget Function(Group group, int columns) buildGroup,
+    int halfColumns,
+    int fullColumns,
+    double gap,
+  ) {
+    final slivers = <Widget>[];
+    var index = 0;
+    while (index < shownGroups.length) {
+      final group = shownGroups[index];
+      if (unfoldSet.contains(group.name)) {
+        slivers.add(buildGroup(group, fullColumns));
+        index++;
+        continue;
+      }
+      final next = index + 1 < shownGroups.length
+          ? shownGroups[index + 1]
+          : null;
+      final pair = next != null && !unfoldSet.contains(next.name)
+          ? [group, next]
+          : [group];
+      slivers.add(
+        SliverCrossAxisGroup(
+          slivers: [
+            for (var column = 0; column < 2; column++) ...[
+              if (column > 0)
+                SliverConstrainedCrossAxis(
+                  maxExtent: gap,
+                  sliver: const SliverToBoxAdapter(),
+                ),
+              SliverCrossAxisExpanded(
+                flex: 1,
+                sliver: column < pair.length
+                    ? SliverMainAxisGroup(
+                        slivers: [buildGroup(pair[column], halfColumns)],
+                      )
+                    : const SliverToBoxAdapter(),
+              ),
+            ],
+          ],
+        ),
+      );
+      index += pair.length;
+    }
+    return slivers;
   }
 
   @override
@@ -167,6 +258,10 @@ class _ProxiesListViewState extends ConsumerState<ProxiesListView> {
         final cardType = ref.watch(
           proxiesListStateProvider.select((state) => state.proxyCardType),
         );
+        final unfoldSet = ref.watch(
+          proxiesListStateProvider.select((state) => state.currentUnfoldSet),
+        );
+        final allGroups = ref.watch(groupsProvider);
         ref.watch(themeSettingProvider.select((state) => state.textScale));
         final viewMode = ref.watch(viewModeProvider);
         final proxiesLayout = ref.watch(
@@ -174,9 +269,18 @@ class _ProxiesListViewState extends ConsumerState<ProxiesListView> {
         );
         final iconMode = ref.watch(
           proxiesStyleSettingProvider.select(
-            (state) => state.groupStyle == ProxiesGroupStyle.icons,
+            (state) => state.type == ProxiesType.icons,
           ),
         );
+        final sortType = ref.watch(
+          proxiesStyleSettingProvider.select((state) => state.sortType),
+        );
+        final iconStyle = ref.watch(
+          proxiesStyleSettingProvider.select((state) => state.iconStyle),
+        );
+        final delayMap = ref.watch(delayDataSourceProvider);
+        final selectedMap = ref.watch(selectedMapProvider);
+        final defaultTestUrl = ref.watch(realTestUrlProvider());
         final isSearching = ref.watch(
           queryProvider(
             QueryTag.proxies,
@@ -207,20 +311,59 @@ class _ProxiesListViewState extends ConsumerState<ProxiesListView> {
                 max(groupWidth - _headerInset * 2, 0),
                 proxiesLayout,
               );
+              final fullColumns = getProxiesColumns(
+                max(width - _headerInset * 2, 0),
+                proxiesLayout,
+              );
+              final groupNames = {for (final group in allGroups) group.name};
+              final sortedGroups = iconMode
+                  ? sortIconGroups(
+                      groups: groups,
+                      sortType: sortType,
+                      delayMap: delayMap,
+                      selectedMap: selectedMap,
+                      defaultTestUrl: defaultTestUrl,
+                    )
+                  : groups;
+              final shownGroups = filterGroupsByFolder(
+                sortedGroups,
+                _folder,
+                groupNames,
+              );
               _columns = columns;
               _groupColumns = groupColumns;
+              _fullColumns = fullColumns;
+              _iconMode = iconMode;
               _gap = gap;
-              _headerHeight = iconMode ? groupIconCardHeight : listHeaderHeight;
-              Widget buildGroup(Group group) => _GroupSliver(
-                key: _GroupSliverKey(group.name),
-                group: group,
-                columns: columns,
-                cardType: cardType,
-                gap: gap,
-                iconMode: iconMode,
-                headerHeight: _headerHeight,
-                onChange: _handleChange,
-                onScrollToSelected: _scrollToGroupSelected,
+              _headerHeight = iconMode
+                  ? groupIconCardHeightOf(cardType, iconStyle)
+                  : listHeaderHeight;
+              _folderBarExtent = _folderBarHeight + gap;
+              _shownGroups = shownGroups;
+              Widget buildGroup(Group group, int groupColumnsCount) =>
+                  _GroupSliver(
+                    key: iconMode
+                        ? GlobalObjectKey(group.name)
+                        : _GroupSliverKey(group.name),
+                    group: group,
+                    columns: groupColumnsCount,
+                    cardType: cardType,
+                    gap: gap,
+                    iconMode: iconMode,
+                    headerHeight: _headerHeight,
+                    iconStyle: iconStyle,
+                    pinnedAbove: context.contentTopPadding + _folderBarExtent,
+                    onChange: _handleChange,
+                    onScrollToSelected: _scrollToGroupSelected,
+                  );
+              final folderCounts = (
+                all: allGroups.length,
+                strategy: allGroups
+                    .where((group) => !groupIsNodeOnly(group, groupNames))
+                    .length,
+                nodes: allGroups
+                    .where((group) => groupIsNodeOnly(group, groupNames))
+                    .length,
               );
               return Scrollbar(
                 controller: _controller,
@@ -232,13 +375,37 @@ class _ProxiesListViewState extends ConsumerState<ProxiesListView> {
                     PinnedHeaderSliver(
                       child: SizedBox(height: context.contentTopPadding),
                     ),
+                    PinnedHeaderSliver(
+                      child: SizedBox(
+                        height: _folderBarExtent,
+                        child: _FolderBar(
+                          folder: _folder,
+                          counts: folderCounts,
+                          onChange: (folder) =>
+                              setState(() => _folder = folder),
+                        ),
+                      ),
+                    ),
                     SliverPadding(
                       padding: const EdgeInsets.symmetric(
                         horizontal: _groupInset,
                       ),
-                      sliver: groupColumns == 1
+                      sliver: iconMode
                           ? SliverMainAxisGroup(
-                              slivers: groups.map(buildGroup).toList(),
+                              slivers: _buildIconSegments(
+                                shownGroups,
+                                unfoldSet,
+                                buildGroup,
+                                columns,
+                                fullColumns,
+                                gap,
+                              ),
+                            )
+                          : groupColumns == 1
+                          ? SliverMainAxisGroup(
+                              slivers: shownGroups
+                                  .map((group) => buildGroup(group, columns))
+                                  .toList(),
                             )
                           : SliverCrossAxisGroup(
                               slivers: [
@@ -258,10 +425,13 @@ class _ProxiesListViewState extends ConsumerState<ProxiesListView> {
                                       slivers: [
                                         for (
                                           var index = column;
-                                          index < groups.length;
+                                          index < shownGroups.length;
                                           index += groupColumns
                                         )
-                                          buildGroup(groups[index]),
+                                          buildGroup(
+                                            shownGroups[index],
+                                            columns,
+                                          ),
                                       ],
                                     ),
                                   ),
@@ -302,6 +472,8 @@ class _GroupSliver extends ConsumerStatefulWidget {
     required this.gap,
     required this.iconMode,
     required this.headerHeight,
+    required this.iconStyle,
+    required this.pinnedAbove,
     required this.onChange,
     required this.onScrollToSelected,
   });
@@ -315,6 +487,13 @@ class _GroupSliver extends ConsumerStatefulWidget {
   final bool iconMode;
 
   final double headerHeight;
+
+  final ProxiesIconStyle iconStyle;
+
+  /// The pinned extent above this group; the header's cover stops there,
+  /// because the opaque folder bar already hides the rows above it.
+  final double pinnedAbove;
+
   final void Function(String groupName) onChange;
   final void Function(String groupName) onScrollToSelected;
 
@@ -503,7 +682,8 @@ class _GroupSliverState extends ConsumerState<_GroupSliver>
           ? GroupIconCard(
               key: ValueKey(groupName),
               group: widget.group,
-              isExpand: isExpand,
+              cardType: widget.cardType,
+              iconStyle: widget.iconStyle,
               unfolded: unfolded,
               floating: floating,
               lift: lift,
@@ -535,7 +715,8 @@ class _GroupSliverState extends ConsumerState<_GroupSliver>
   /// Rounds the header and lifts it as its own rows scroll under it, and lets
   /// the shadow go before the end of the group pushes it out. The page color
   /// behind its upper half hides the rows that went under it, which would
-  /// otherwise show around its top corners and above it. Every header is laid
+  /// otherwise show around its top corners; the pinned bar above hides what
+  /// is further up, so the cover stops at the bar. Every header is laid
   /// out on every pass, so one beyond the cache area builds nothing.
   Widget _buildPinnedHeader(
     bool isExpand,
@@ -567,7 +748,9 @@ class _GroupSliverState extends ConsumerState<_GroupSliver>
                   0.0,
                   1.0,
                 ),
-                isExpand ? constraints.overlap : 0.0,
+                isExpand
+                    ? max(0.0, constraints.overlap - widget.pinnedAbove)
+                    : 0.0,
                 context.surfaceLevel.colorOf(context.colorScheme),
               );
         if (header != null && state == headerState) {
@@ -878,6 +1061,135 @@ class _GroupActions extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _FolderBar extends StatelessWidget {
+  const _FolderBar({
+    required this.folder,
+    required this.counts,
+    required this.onChange,
+  });
+
+  final ProxyFolder folder;
+  final ({int all, int strategy, int nodes}) counts;
+  final ValueChanged<ProxyFolder> onChange;
+
+  @override
+  Widget build(BuildContext context) {
+    final appLocalizations = context.appLocalizations;
+    return ColoredBox(
+      color: context.surfaceLevel.colorOf(context.colorScheme),
+      child: Column(
+        children: [
+          SizedBox(
+            height: _folderBarHeight,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: _groupInset),
+              child: Row(
+                children: [
+                  Flexible(
+                    child: _FolderPill(
+                      label: appLocalizations.proxyFolderAll,
+                      count: counts.all,
+                      glyph: AppGlyphs.dashboard,
+                      selected: folder == ProxyFolder.all,
+                      onTap: () => onChange(ProxyFolder.all),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Flexible(
+                    child: _FolderPill(
+                      label: appLocalizations.proxyFolderStrategy,
+                      count: counts.strategy,
+                      glyph: AppGlyphs.folder,
+                      selected: folder == ProxyFolder.strategy,
+                      onTap: () => onChange(ProxyFolder.strategy),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Flexible(
+                    child: _FolderPill(
+                      label: appLocalizations.proxyFolderNodes,
+                      count: counts.nodes,
+                      glyph: AppGlyphs.folder,
+                      selected: folder == ProxyFolder.nodes,
+                      onTap: () => onChange(ProxyFolder.nodes),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const Spacer(),
+        ],
+      ),
+    );
+  }
+}
+
+class _FolderPill extends StatelessWidget {
+  const _FolderPill({
+    required this.label,
+    required this.count,
+    required this.glyph,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String label;
+  final int count;
+  final Glyph glyph;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = context.colorScheme;
+    final foreground = selected
+        ? colorScheme.primary
+        : colorScheme.onSurfaceVariant;
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: onTap,
+      child: DecoratedBox(
+        decoration: ShapeDecoration(
+          color: selected ? colorScheme.primary.opacity15 : null,
+          shape: RoundedSuperellipseBorder(
+            borderRadius: BorderRadius.all(
+              Radius.circular(AppCorner.sm.ap(context)),
+            ),
+          ),
+        ),
+        child: Padding(
+          padding: _folderPillPadding,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              GlyphIcon(glyph, size: _folderPillIconSize, color: foreground),
+              const SizedBox(width: _folderPillIconGap),
+              Flexible(
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTextStyle.subheadline
+                      .of(context, emphasized: selected)
+                      .copyWith(color: foreground),
+                ),
+              ),
+              const SizedBox(width: _folderPillCountGap),
+              Text(
+                '$count',
+                style: AppTextStyle.caption1
+                    .of(context)
+                    .copyWith(color: foreground),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

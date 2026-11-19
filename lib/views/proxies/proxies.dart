@@ -86,7 +86,7 @@ class _ProxiesViewState extends ConsumerState<ProxiesView> {
         onSelected: (type) =>
             _updateStyle((state) => state.copyWith(cardType: type)),
       ),
-      if (style.type == ProxiesType.list)
+      if (style.type != ProxiesType.tab)
         _optionsMenuItem(
           glyph: AppGlyphs.iconTile,
           label: appLocalizations.iconStyle,
@@ -99,16 +99,6 @@ class _ProxiesViewState extends ConsumerState<ProxiesView> {
           },
           onSelected: (iconStyle) =>
               _updateStyle((state) => state.copyWith(iconStyle: iconStyle)),
-        ),
-      if (style.type == ProxiesType.list)
-        _optionsMenuItem(
-          glyph: AppGlyphs.dashboard,
-          label: appLocalizations.groupStyle,
-          options: ProxiesGroupStyle.values,
-          value: style.groupStyle,
-          textOf: (groupStyle) => groupStyle.label,
-          onSelected: (groupStyle) =>
-              _updateStyle((state) => state.copyWith(groupStyle: groupStyle)),
         ),
       PopupMenuItem(
         glyph: AppGlyphs.eyeOff,
@@ -186,7 +176,7 @@ class _ProxiesViewState extends ConsumerState<ProxiesView> {
       searchState: AppBarSearchState(onSearch: _onSearch),
       body: switch (style.type) {
         ProxiesType.tab => _tabView,
-        ProxiesType.list => const ProxiesListView(),
+        ProxiesType.list || ProxiesType.icons => const ProxiesListView(),
       },
     );
   }

@@ -51,6 +51,52 @@ List<Group> computeSort({
   }).toList();
 }
 
+/// Sort the groups themselves (the grid's items) by the same rule as nodes:
+/// name alphabetically, delay by the group's selected node.
+List<Group> sortIconGroups({
+  required List<Group> groups,
+  required ProxiesSortType sortType,
+  required DelayMap delayMap,
+  required Map<String, String> selectedMap,
+  required String defaultTestUrl,
+}) {
+  if (sortType == ProxiesSortType.none) return groups;
+  if (sortType == ProxiesSortType.name) {
+    return List.of(groups)..sort((a, b) => a.name.compareTo(b.name));
+  }
+  final delayStates = {
+    for (final group in groups)
+      group.name: _groupDelay(
+        group,
+        groups: groups,
+        delayMap: delayMap,
+        selectedMap: selectedMap,
+        defaultTestUrl: defaultTestUrl,
+      ),
+  };
+  return List.of(groups)..sort((a, b) {
+    final byDelay = delayStates[a.name]!.compareTo(delayStates[b.name]!);
+    return byDelay != 0 ? byDelay : a.name.compareTo(b.name);
+  });
+}
+
+DelayState _groupDelay(
+  Group group, {
+  required List<Group> groups,
+  required DelayMap delayMap,
+  required Map<String, String> selectedMap,
+  required String defaultTestUrl,
+}) {
+  final selected = group.getCurrentSelectedName(selectedMap[group.name] ?? '');
+  return computeProxyDelayState(
+    proxyName: selected,
+    testUrl: group.testUrl.takeFirstValid([defaultTestUrl]),
+    groups: groups,
+    selectedMap: selectedMap,
+    delayMap: delayMap,
+  );
+}
+
 /// Built-in adapters whose delay probe always fails, so a timeout says nothing.
 const _unprobeableProxyTypes = {
   'Reject',
@@ -160,4 +206,48 @@ DelayState computeProxyDelayState({
       delayMap[state.testUrl.takeFirstValid([testUrl])] ?? {};
   final delay = currentDelayMap[state.proxyName];
   return DelayState(delay: delay ?? 0, group: state.group);
+}
+
+/// Zashboard folder rule: a node group holds only plain nodes; an empty
+/// group counts as a strategy group because it holds no node at all.
+bool groupIsNodeOnly(Group group, Set<String> groupNames) {
+  if (group.all.isEmpty) return false;
+  return group.all.every((proxy) => !groupNames.contains(proxy.name));
+}
+
+List<Group> filterGroupsByFolder(
+  List<Group> groups,
+  ProxyFolder folder,
+  Set<String> groupNames,
+) {
+  return switch (folder) {
+    ProxyFolder.all => groups,
+    ProxyFolder.strategy =>
+      groups.where((group) => !groupIsNodeOnly(group, groupNames)).toList(),
+    ProxyFolder.nodes =>
+      groups.where((group) => groupIsNodeOnly(group, groupNames)).toList(),
+  };
+}
+
+int countAvailableProxies({
+  required Group group,
+  required List<Group> groups,
+  required Map<String, String> selectedMap,
+  required DelayMap delayMap,
+  required String defaultTestUrl,
+}) {
+  var available = 0;
+  for (final proxy in group.all) {
+    final delay = computeProxyDelayState(
+      proxyName: proxy.name,
+      testUrl: group.testUrl.takeFirstValid([defaultTestUrl]),
+      groups: groups,
+      selectedMap: selectedMap,
+      delayMap: delayMap,
+    ).delay;
+    if (delay > 0) {
+      available++;
+    }
+  }
+  return available;
 }

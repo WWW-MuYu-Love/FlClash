@@ -2968,14 +2968,39 @@ class AppLocalizations {
     return Intl.message('Hidden', name: 'iconStyleHidden', desc: '', args: []);
   }
 
-  /// `Group style`
-  String get groupStyle {
-    return Intl.message('Group style', name: 'groupStyle', desc: '', args: []);
+  /// `Icons`
+  String get icons {
+    return Intl.message('Icons', name: 'icons', desc: '', args: []);
   }
 
-  /// `Icons`
-  String get groupStyleIcons {
-    return Intl.message('Icons', name: 'groupStyleIcons', desc: '', args: []);
+  /// `All`
+  String get proxyFolderAll {
+    return Intl.message('All', name: 'proxyFolderAll', desc: '', args: []);
+  }
+
+  /// `Strategy`
+  String get proxyFolderStrategy {
+    return Intl.message(
+      'Strategy',
+      name: 'proxyFolderStrategy',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Nodes`
+  String get proxyFolderNodes {
+    return Intl.message('Nodes', name: 'proxyFolderNodes', desc: '', args: []);
+  }
+
+  /// `Load Balance`
+  String get loadBalance {
+    return Intl.message(
+      'Load Balance',
+      name: 'loadBalance',
+      desc: '',
+      args: [],
+    );
   }
 
   /// `Filter`

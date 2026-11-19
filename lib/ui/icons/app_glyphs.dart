@@ -169,6 +169,29 @@ abstract final class AppGlyphs {
     ], role: GlyphRole.line),
   ]);
 
+  static const arrowRightCircle = Glyph([
+    GlyphCircle(12, 12, 8.8, role: GlyphRole.line),
+    GlyphPolyline([
+      GlyphVertex(8.25, 12),
+      GlyphVertex(15.75, 12),
+    ], role: GlyphRole.line),
+    GlyphPolyline([
+      GlyphVertex(12.75, 15),
+      GlyphVertex(15.75, 12, 0.4),
+      GlyphVertex(12.75, 9),
+    ], role: GlyphRole.line),
+  ]);
+
+  static const folder = Glyph([
+    GlyphBox(3, 9, 21, 20, 2),
+    GlyphPolyline([
+      GlyphVertex(3, 9.5),
+      GlyphVertex(3, 6.5, 0.4),
+      GlyphVertex(8.5, 6.5, 0.4),
+      GlyphVertex(11, 9),
+    ], role: GlyphRole.line),
+  ]);
+
   static const openExternal = Glyph([
     GlyphBox(3, 3, 21, 21, 3),
     GlyphPolyline([

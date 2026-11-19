@@ -50,16 +50,18 @@ extension ProxiesTypeL10n on ProxiesType {
     return switch (this) {
       ProxiesType.tab => appLocalizations.tab,
       ProxiesType.list => appLocalizations.list,
+      ProxiesType.icons => appLocalizations.icons,
     };
   }
 }
 
-extension ProxiesGroupStyleL10n on ProxiesGroupStyle {
+extension ProxyFolderL10n on ProxyFolder {
   String get label {
     final appLocalizations = currentAppLocalizations;
     return switch (this) {
-      ProxiesGroupStyle.list => appLocalizations.list,
-      ProxiesGroupStyle.icons => appLocalizations.groupStyleIcons,
+      ProxyFolder.all => appLocalizations.proxyFolderAll,
+      ProxyFolder.strategy => appLocalizations.proxyFolderStrategy,
+      ProxyFolder.nodes => appLocalizations.proxyFolderNodes,
     };
   }
 }

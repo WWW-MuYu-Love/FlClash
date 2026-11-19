@@ -1093,8 +1093,6 @@ class MessageLookup extends MessageLookupByLibrary {
     "groupBy": MessageLookupByLibrary.simpleMessage("Regrouper par"),
     "groupCount": m39,
     "groupCountUnit": MessageLookupByLibrary.simpleMessage("groupes"),
-    "groupStyle": MessageLookupByLibrary.simpleMessage("Style des groupes"),
-    "groupStyleIcons": MessageLookupByLibrary.simpleMessage("Icônes"),
     "groupTimeoutCount": m40,
     "hasCacheChange": MessageLookupByLibrary.simpleMessage(
       "Mettre les modifications en cache ?",
@@ -1194,6 +1192,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "iconStyleHidden": MessageLookupByLibrary.simpleMessage("Masquées"),
     "iconStylePlain": MessageLookupByLibrary.simpleMessage("Simples"),
     "iconUrl": MessageLookupByLibrary.simpleMessage("URL de l’icône"),
+    "icons": MessageLookupByLibrary.simpleMessage("Icônes"),
     "ignoreBatteryOptimization": MessageLookupByLibrary.simpleMessage(
       "Ignorer l’optimisation de la batterie",
     ),
@@ -1392,6 +1391,9 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "liveConnections": MessageLookupByLibrary.simpleMessage(
       "Connexions en direct",
+    ),
+    "loadBalance": MessageLookupByLibrary.simpleMessage(
+      "Équilibrage de charge",
     ),
     "loading": MessageLookupByLibrary.simpleMessage("Chargement…"),
     "local": MessageLookupByLibrary.simpleMessage("Local"),
@@ -1850,6 +1852,13 @@ class MessageLookup extends MessageLookupByLibrary {
     "proxiesRemovedTip": m89,
     "proxiesReplacedTip": m90,
     "proxyChains": MessageLookupByLibrary.simpleMessage("Chaîne de proxys"),
+    "proxyFolderAll": MessageLookupByLibrary.simpleMessage("Tout"),
+    "proxyFolderNodes": MessageLookupByLibrary.simpleMessage(
+      "Groupes de nœuds",
+    ),
+    "proxyFolderStrategy": MessageLookupByLibrary.simpleMessage(
+      "Groupes de stratégie",
+    ),
     "proxyGroup": MessageLookupByLibrary.simpleMessage("Groupe de proxys"),
     "proxyGroupEmpty": MessageLookupByLibrary.simpleMessage(
       "Le groupe de proxys est vide",

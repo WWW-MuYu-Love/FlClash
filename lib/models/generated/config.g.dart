@@ -319,9 +319,6 @@ _ProxiesStyleProps _$ProxiesStylePropsFromJson(Map<String, dynamic> json) =>
       type:
           $enumDecodeNullable(_$ProxiesTypeEnumMap, json['type']) ??
           ProxiesType.list,
-      groupStyle:
-          $enumDecodeNullable(_$ProxiesGroupStyleEnumMap, json['groupStyle']) ??
-          ProxiesGroupStyle.list,
       sortType:
           $enumDecodeNullable(_$ProxiesSortTypeEnumMap, json['sortType']) ??
           ProxiesSortType.none,
@@ -340,7 +337,6 @@ _ProxiesStyleProps _$ProxiesStylePropsFromJson(Map<String, dynamic> json) =>
 Map<String, dynamic> _$ProxiesStylePropsToJson(_ProxiesStyleProps instance) =>
     <String, dynamic>{
       'type': _$ProxiesTypeEnumMap[instance.type]!,
-      'groupStyle': _$ProxiesGroupStyleEnumMap[instance.groupStyle]!,
       'sortType': _$ProxiesSortTypeEnumMap[instance.sortType]!,
       'layout': _$ProxiesLayoutEnumMap[instance.layout]!,
       'iconStyle': _$ProxiesIconStyleEnumMap[instance.iconStyle]!,
@@ -348,11 +344,10 @@ Map<String, dynamic> _$ProxiesStylePropsToJson(_ProxiesStyleProps instance) =>
       'hideTimeoutProxies': instance.hideTimeoutProxies,
     };
 
-const _$ProxiesTypeEnumMap = {ProxiesType.tab: 'tab', ProxiesType.list: 'list'};
-
-const _$ProxiesGroupStyleEnumMap = {
-  ProxiesGroupStyle.list: 'list',
-  ProxiesGroupStyle.icons: 'icons',
+const _$ProxiesTypeEnumMap = {
+  ProxiesType.tab: 'tab',
+  ProxiesType.list: 'list',
+  ProxiesType.icons: 'icons',
 };
 
 const _$ProxiesSortTypeEnumMap = {

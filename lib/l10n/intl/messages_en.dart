@@ -1030,8 +1030,6 @@ class MessageLookup extends MessageLookupByLibrary {
     "groupBy": MessageLookupByLibrary.simpleMessage("Group by"),
     "groupCount": m39,
     "groupCountUnit": MessageLookupByLibrary.simpleMessage("groups"),
-    "groupStyle": MessageLookupByLibrary.simpleMessage("Group style"),
-    "groupStyleIcons": MessageLookupByLibrary.simpleMessage("Icons"),
     "groupTimeoutCount": m40,
     "hasCacheChange": MessageLookupByLibrary.simpleMessage(
       "Cache the changes?",
@@ -1119,6 +1117,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "iconStyleHidden": MessageLookupByLibrary.simpleMessage("Hidden"),
     "iconStylePlain": MessageLookupByLibrary.simpleMessage("Plain"),
     "iconUrl": MessageLookupByLibrary.simpleMessage("Icon URL"),
+    "icons": MessageLookupByLibrary.simpleMessage("Icons"),
     "ignoreBatteryOptimization": MessageLookupByLibrary.simpleMessage(
       "Ignore battery optimization",
     ),
@@ -1300,6 +1299,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "Listen routing mark works only on Linux.",
     ),
     "liveConnections": MessageLookupByLibrary.simpleMessage("Live connections"),
+    "loadBalance": MessageLookupByLibrary.simpleMessage("Load Balance"),
     "loading": MessageLookupByLibrary.simpleMessage("Loading…"),
     "local": MessageLookupByLibrary.simpleMessage("Local"),
     "localImage": MessageLookupByLibrary.simpleMessage("Local image"),
@@ -1717,6 +1717,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "proxiesRemovedTip": m89,
     "proxiesReplacedTip": m90,
     "proxyChains": MessageLookupByLibrary.simpleMessage("Proxy chain"),
+    "proxyFolderAll": MessageLookupByLibrary.simpleMessage("All"),
+    "proxyFolderNodes": MessageLookupByLibrary.simpleMessage("Nodes"),
+    "proxyFolderStrategy": MessageLookupByLibrary.simpleMessage("Strategy"),
     "proxyGroup": MessageLookupByLibrary.simpleMessage("Proxy group"),
     "proxyGroupEmpty": MessageLookupByLibrary.simpleMessage(
       "Proxy group is empty",

@@ -1,4 +1,5 @@
 import 'package:fl_clash/common/common.dart';
+import 'package:fl_clash/enum/enum.dart';
 import 'package:fl_clash/models/models.dart';
 import 'package:fl_clash/providers/providers.dart';
 import 'package:fl_clash/state.dart';
@@ -9,29 +10,69 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'common.dart';
 
-const _cardInset = 12.0;
-const _nameIconGap = 8.0;
-const _metaGap = 6.0;
-const _bottomGap = 8.0;
-const _expandIconSize = 24.0;
+const _bottomRowHeight = 24.0;
+const _nowIconSize = 14.0;
+const _nodeIconSize = 16.0;
+const _nowGap = 4.0;
+const _brandIconTilePadding = 6.0;
+const _brandIconTileShrink = 12.0;
+
+({
+  double inset,
+  double nameIconGap,
+  double metaGap,
+  double bottomGap,
+  double brandIconSize,
+})
+_cardMetrics(ProxyCardType cardType) => switch (cardType) {
+  ProxyCardType.compact => (
+    inset: 8.0,
+    nameIconGap: 6.0,
+    metaGap: 4.0,
+    bottomGap: 8.0,
+    brandIconSize: 32.0,
+  ),
+  ProxyCardType.standard => (
+    inset: 12.0,
+    nameIconGap: 8.0,
+    metaGap: 6.0,
+    bottomGap: 8.0,
+    brandIconSize: groupBrandIconSize,
+  ),
+  ProxyCardType.loose => (
+    inset: 16.0,
+    nameIconGap: 8.0,
+    metaGap: 8.0,
+    bottomGap: 10.0,
+    brandIconSize: 48.0,
+  ),
+};
 
 /// The header height the grid's sliver offsets are measured with; it has to
 /// match the card below.
-double get groupIconCardHeight {
+double groupIconCardHeightOf(
+  ProxyCardType cardType,
+  ProxiesIconStyle iconStyle,
+) {
   final measure = globalState.measure;
-  return _cardInset * 2 +
-      groupBrandIconSize +
-      _metaGap +
+  final metrics = _cardMetrics(cardType);
+  final rowHeight = iconStyle == ProxiesIconStyle.hidden
+      ? measure.textHeight(AppTextStyle.callout)
+      : metrics.brandIconSize;
+  return metrics.inset * 2 +
+      rowHeight +
+      metrics.metaGap +
       measure.textHeight(AppTextStyle.caption1) +
-      _bottomGap +
-      _expandIconSize;
+      metrics.bottomGap +
+      _bottomRowHeight;
 }
 
 class GroupIconCard extends ConsumerWidget {
   const GroupIconCard({
     super.key,
     required this.group,
-    required this.isExpand,
+    required this.cardType,
+    required this.iconStyle,
     required this.unfolded,
     this.floating = 0,
     this.lift = 0,
@@ -40,7 +81,8 @@ class GroupIconCard extends ConsumerWidget {
   });
 
   final Group group;
-  final bool isExpand;
+  final ProxyCardType cardType;
+  final ProxiesIconStyle iconStyle;
   final bool unfolded;
   final double floating;
   final double lift;
@@ -55,6 +97,7 @@ class GroupIconCard extends ConsumerWidget {
         ? SurfaceLevel.floatingOf(colorScheme)
         : context.raisedSurfaceLevel;
     final radius = AppCorner.xl.ap(context);
+    final metrics = _cardMetrics(cardType);
     return DecoratedBox(
       decoration: ShapeDecoration(
         color: level.colorOf(colorScheme),
@@ -75,7 +118,7 @@ class GroupIconCard extends ConsumerWidget {
             radius: radius - groupHeaderButtonInset,
             onPressed: onChange,
             child: Padding(
-              padding: const EdgeInsets.all(_cardInset),
+              padding: EdgeInsets.all(metrics.inset),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -92,30 +135,24 @@ class GroupIconCard extends ConsumerWidget {
                           ),
                         ),
                       ),
-                      const SizedBox(width: _nameIconGap),
-                      GroupBrandIcon(src: group.icon, name: groupName),
+                      if (iconStyle != ProxiesIconStyle.hidden) ...[
+                        SizedBox(width: metrics.nameIconGap),
+                        _GroupBrandIcon(
+                          src: group.icon,
+                          name: groupName,
+                          size: metrics.brandIconSize,
+                          iconStyle: iconStyle,
+                        ),
+                      ],
                     ],
                   ),
-                  const SizedBox(height: _metaGap),
-                  Text(
-                    '${group.type.value.toUpperCase()} · ${group.all.length}',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: AppTextStyle.caption1.of(context).toLight,
-                  ),
+                  SizedBox(height: metrics.metaGap),
+                  _GroupAvailability(group: group),
                   const Spacer(),
                   Row(
                     children: [
-                      Flexible(child: _SelectedProxyName(groupName: groupName)),
+                      Flexible(child: _SelectedProxy(group: group)),
                       _SelectedDelay(group: group, onDelayTest: onDelayTest),
-                      const SizedBox(width: 6),
-                      SizedBox.square(
-                        dimension: _expandIconSize,
-                        child: IconTheme.merge(
-                          data: const IconThemeData(size: _expandIconSize),
-                          child: ExpandIcon(expand: isExpand),
-                        ),
-                      ),
                     ],
                   ),
                 ],
@@ -128,24 +165,144 @@ class GroupIconCard extends ConsumerWidget {
   }
 }
 
-class _SelectedProxyName extends ConsumerWidget {
-  const _SelectedProxyName({required this.groupName});
+/// The group brand icon as the icon style renders it: a raised tile, the
+/// bare icon, or nothing. The selected node's icon in the row below is the
+/// group's current pick, not the group icon, so the style leaves it alone.
+class _GroupBrandIcon extends StatelessWidget {
+  const _GroupBrandIcon({
+    required this.src,
+    required this.name,
+    required this.size,
+    required this.iconStyle,
+  });
 
-  final String groupName;
+  final String src;
+  final String name;
+  final double size;
+  final ProxiesIconStyle iconStyle;
+
+  @override
+  Widget build(BuildContext context) {
+    return switch (iconStyle) {
+      ProxiesIconStyle.filled => SizedBox.square(
+        dimension: size,
+        child: DecoratedBox(
+          decoration: ShapeDecoration(
+            color: context.raisedSurfaceLevel.colorOf(context.colorScheme),
+            shape: RoundedSuperellipseBorder(
+              borderRadius: BorderRadius.all(
+                Radius.circular(
+                  AppCorner.xl.ap(context) - _brandIconTileShrink,
+                ),
+              ),
+            ),
+          ),
+          child: Padding(
+            padding: EdgeInsets.all(_brandIconTilePadding.ap(context)),
+            child: GroupBrandIcon(
+              src: src,
+              name: name,
+              size: size - _brandIconTileShrink.ap(context),
+            ),
+          ),
+        ),
+      ),
+      ProxiesIconStyle.plain => GroupBrandIcon(
+        src: src,
+        name: name,
+        size: size,
+      ),
+      ProxiesIconStyle.hidden => const SizedBox.shrink(),
+    };
+  }
+}
+
+/// The type word and the share of members with a live delay, as zashboard
+/// counts them: a member counts when its latest recorded delay is above
+/// zero, against the group's full size.
+class _GroupAvailability extends ConsumerWidget {
+  const _GroupAvailability({required this.group});
+
+  final Group group;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final delayMap = ref.watch(delayDataSourceProvider);
+    final groups = ref.watch(groupsProvider);
+    final selectedMap = ref.watch(selectedMapProvider);
+    final defaultTestUrl = ref.watch(realTestUrlProvider());
+    final available = countAvailableProxies(
+      group: group,
+      groups: groups,
+      selectedMap: selectedMap,
+      delayMap: delayMap,
+      defaultTestUrl: defaultTestUrl,
+    );
+    final total = groups.getGroup(group.name)?.all.length ?? group.all.length;
+    return Text(
+      '${group.type.displayName.toUpperCase()} · $available/$total',
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+      style: AppTextStyle.caption1.of(context).toLight,
+    );
+  }
+}
+
+/// The selected node, with the arrow and icon zashboard puts before its
+/// name; a load-balance group has no pick, so it shows its state instead.
+class _SelectedProxy extends ConsumerWidget {
+  const _SelectedProxy({required this.group});
+
+  final Group group;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final proxyName = ref
-        .watch(selectedProxyNameProvider(groupName))
+        .watch(selectedProxyNameProvider(group.name))
         .takeFirstValid([]);
+    final colorScheme = context.colorScheme;
+    final muted = colorScheme.onSurfaceVariant;
     if (proxyName.isEmpty) {
-      return const SizedBox.shrink();
+      if (group.type != GroupType.LoadBalance) {
+        return const SizedBox.shrink();
+      }
+      return Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          GlyphIcon(AppGlyphs.checkCircle, size: _nowIconSize, color: muted),
+          const SizedBox(width: _nowGap),
+          Flexible(
+            child: Text(
+              context.appLocalizations.loadBalance,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: AppTextStyle.caption1
+                  .of(context, emphasized: true)
+                  .toLight,
+            ),
+          ),
+        ],
+      );
     }
-    return EmojiText(
-      proxyName,
-      maxLines: 1,
-      overflow: TextOverflow.ellipsis,
-      style: AppTextStyle.caption1.of(context, emphasized: true).toLight,
+    final icon = ref.watch(
+      groupsProvider.select((groups) => groups.getGroup(proxyName)?.icon ?? ''),
+    );
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        GlyphIcon(AppGlyphs.arrowRightCircle, size: _nowIconSize, color: muted),
+        const SizedBox(width: _nowGap),
+        GroupBrandIcon(src: icon, name: proxyName, size: _nodeIconSize),
+        const SizedBox(width: _nowGap),
+        Flexible(
+          child: EmojiText(
+            proxyName,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: AppTextStyle.caption1.of(context, emphasized: true).toLight,
+          ),
+        ),
+      ],
     );
   }
 }
@@ -191,7 +348,7 @@ class _SelectedDelay extends ConsumerWidget {
               ? GlyphIcon(AppGlyphs.bolt, size: 14, color: color)
               : Text(
                   delay > 0
-                      ? '$delay ms'
+                      ? '$delay'
                       : delayFailureText(delay, context.appLocalizations),
                   maxLines: 1,
                   style: AppTextStyle.caption2

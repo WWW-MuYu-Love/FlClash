@@ -1504,22 +1504,44 @@ void main() {
   });
 
   group('ProxiesStyleProps JSON', () {
-    test('defaults to the list group style', () {
-      expect(const ProxiesStyleProps().groupStyle, ProxiesGroupStyle.list);
+    test('defaults to the list style type', () {
+      expect(const ProxiesStyleProps().type, ProxiesType.list);
+      expect(ProxiesStyleProps.fromJson(const {}).type, ProxiesType.list);
+    });
+
+    test('round-trips the icons style type', () {
+      final props = roundTrip(
+        () => const ProxiesStyleProps(type: ProxiesType.icons).toJson(),
+        ProxiesStyleProps.fromJson,
+      );
+      expect(props.type, ProxiesType.icons);
+    });
+
+    test('migrates a saved icons group style to the icons style type', () {
       expect(
-        ProxiesStyleProps.fromJson(const {}).groupStyle,
-        ProxiesGroupStyle.list,
+        ProxiesStyleProps.fromJson(const {'groupStyle': 'icons'}).type,
+        ProxiesType.icons,
+      );
+      expect(
+        ProxiesStyleProps.fromJson(const {
+          'groupStyle': 'icons',
+          'type': 'list',
+        }).type,
+        ProxiesType.icons,
+      );
+      expect(
+        ProxiesStyleProps.fromJson(const {
+          'groupStyle': 'icons',
+          'type': 'tab',
+        }).type,
+        ProxiesType.tab,
       );
     });
 
-    test('round-trips the icons group style', () {
-      final props = roundTrip(
-        () => const ProxiesStyleProps(
-          groupStyle: ProxiesGroupStyle.icons,
-        ).toJson(),
-        ProxiesStyleProps.fromJson,
-      );
-      expect(props.groupStyle, ProxiesGroupStyle.icons);
+    test('drops the group style key when saving migrated props', () {
+      final props = ProxiesStyleProps.fromJson(const {'groupStyle': 'icons'});
+      expect(props.toJson().containsKey('groupStyle'), isFalse);
+      expect(props.toJson()['type'], 'icons');
     });
   });
 }

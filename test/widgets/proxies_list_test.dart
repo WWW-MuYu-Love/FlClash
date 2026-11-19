@@ -9,6 +9,7 @@ import 'package:fl_clash/views/proxies/icon_card.dart';
 import 'package:fl_clash/views/proxies/list.dart';
 import 'package:fl_clash/widgets/widgets.dart' hide ListHeader;
 import 'package:flutter/foundation.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/svg.dart';
@@ -33,11 +34,21 @@ class _RecordingProxiesAction extends ProxiesAction {
   }
 }
 
-Group _group(String name, int count, {String? testUrl}) => Group(
-  type: GroupType.Selector,
+Group _group(
+  String name,
+  int count, {
+  String? testUrl,
+  GroupType groupType = GroupType.Selector,
+  String icon = '',
+  List<String>? memberNames,
+}) => Group(
+  type: groupType,
   name: name,
+  icon: icon,
   testUrl: testUrl,
-  all: [for (var i = 0; i < count; i++) Proxy(name: '$name-$i', type: 'ss')],
+  all: memberNames != null
+      ? [for (final member in memberNames) Proxy(name: member, type: 'ss')]
+      : [for (var i = 0; i < count; i++) Proxy(name: '$name-$i', type: 'ss')],
 );
 
 void main() {
@@ -50,10 +61,14 @@ void main() {
     List<Group>? groups,
     Set<String> unfoldSet = const {'G0', 'G1', 'G2'},
     ValueListenable<Brightness>? brightness,
-    ProxiesGroupStyle groupStyle = ProxiesGroupStyle.list,
+    ProxiesType type = ProxiesType.list,
+    ProxiesSortType sortType = ProxiesSortType.none,
+    ProxyCardType cardType = ProxyCardType.standard,
+    ProxiesIconStyle iconStyle = ProxiesIconStyle.filled,
     Map<String, Map<String, int>>? delays,
+    Size physicalSize = const Size(900, 700),
   }) async {
-    tester.view.physicalSize = const Size(900, 700);
+    tester.view.physicalSize = physicalSize;
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
@@ -73,7 +88,12 @@ void main() {
         ),
         proxiesActionProvider.overrideWith(_RecordingProxiesAction.new),
         proxiesStyleSettingProvider.overrideWithBuild(
-          (_, _) => ProxiesStyleProps(groupStyle: groupStyle),
+          (_, _) => ProxiesStyleProps(
+            type: type,
+            sortType: sortType,
+            cardType: cardType,
+            iconStyle: iconStyle,
+          ),
         ),
         if (delays != null)
           delayDataSourceProvider.overrideWithBuild((_, _) => delays),
@@ -389,13 +409,19 @@ void main() {
     matching: find.byType(GroupIconCard),
   );
 
-  testWidgets('the icons group style lays the groups out as a two-column '
-      'grid', (tester) async {
-    await pumpList(
-      tester,
-      groupStyle: ProxiesGroupStyle.icons,
-      unfoldSet: const {},
+  int iconTilesOf(WidgetTester tester, Finder card, double size) {
+    final boxes = tester.widgetList(
+      find.descendant(of: card, matching: find.byType(DecoratedBox)),
     );
+    return boxes
+        .map((box) => tester.getRect(find.byWidget(box)))
+        .where((rect) => rect.width == size && rect.height == size)
+        .length;
+  }
+
+  testWidgets('the icons style lays the groups out as a two-column '
+      'grid', (tester) async {
+    await pumpList(tester, type: ProxiesType.icons, unfoldSet: const {});
 
     final first = tester.getRect(groupCardOf('G0'));
     final second = tester.getRect(groupCardOf('G1'));
@@ -407,11 +433,12 @@ void main() {
     expect(third.top, greaterThan(first.bottom));
   });
 
-  testWidgets('a grid card shows the type, the node count and the selected '
-      'node', (tester) async {
+  testWidgets('a grid card shows the type and the available share', (
+    tester,
+  ) async {
     await pumpList(
       tester,
-      groupStyle: ProxiesGroupStyle.icons,
+      type: ProxiesType.icons,
       selectedMap: {'G0': 'G0-3'},
       unfoldSet: const {},
     );
@@ -419,7 +446,7 @@ void main() {
     expect(
       find.descendant(
         of: groupCardOf('G0'),
-        matching: find.text('SELECT · 40'),
+        matching: find.text('SELECTOR · 0/40'),
       ),
       findsOneWidget,
     );
@@ -436,7 +463,7 @@ void main() {
       'and a monogram otherwise', (tester) async {
     await pumpList(
       tester,
-      groupStyle: ProxiesGroupStyle.icons,
+      type: ProxiesType.icons,
       groups: [_group('YouTube', 2), _group('My Nodes', 2)],
       unfoldSet: const {},
     );
@@ -462,7 +489,7 @@ void main() {
   ) async {
     await pumpList(
       tester,
-      groupStyle: ProxiesGroupStyle.icons,
+      type: ProxiesType.icons,
       selectedMap: {'G0': 'G0-0'},
       groups: [_group('G0', 3, testUrl: _testUrl)],
       delays: {
@@ -472,19 +499,19 @@ void main() {
     );
 
     expect(
-      find.descendant(of: groupCardOf('G0'), matching: find.text('123 ms')),
+      find.descendant(of: groupCardOf('G0'), matching: find.text('123')),
       findsOneWidget,
+    );
+    expect(
+      find.descendant(of: groupCardOf('G0'), matching: find.text('123 ms')),
+      findsNothing,
     );
   });
 
   testWidgets('tapping a grid card folds and unfolds its group', (
     tester,
   ) async {
-    await pumpList(
-      tester,
-      groupStyle: ProxiesGroupStyle.icons,
-      unfoldSet: const {},
-    );
+    await pumpList(tester, type: ProxiesType.icons, unfoldSet: const {});
 
     final card = find.byWidgetPredicate(
       (widget) =>
@@ -506,7 +533,7 @@ void main() {
   ) async {
     await pumpList(
       tester,
-      groupStyle: ProxiesGroupStyle.icons,
+      type: ProxiesType.icons,
       selectedMap: {'G0': 'G0-0'},
       unfoldSet: const {},
     );
@@ -523,19 +550,396 @@ void main() {
     expect(find.byKey(const ValueKey('G0.G0-0')), findsNothing);
   });
 
-  testWidgets('switching the group style swaps the grid cards for list '
+  testWidgets('switching the style type swaps the grid cards for list '
       'headers', (tester) async {
-    await pumpList(tester, groupStyle: ProxiesGroupStyle.icons);
+    await pumpList(tester, type: ProxiesType.icons);
 
     expect(find.byType(GroupIconCard), findsWidgets);
     expect(find.byType(ListHeader), findsNothing);
 
     container
         .read(proxiesStyleSettingProvider.notifier)
-        .update((state) => state.copyWith(groupStyle: ProxiesGroupStyle.list));
+        .update((state) => state.copyWith(type: ProxiesType.list));
     await tester.pumpAndSettle();
 
     expect(find.byType(GroupIconCard), findsNothing);
     expect(find.byType(ListHeader), findsWidgets);
+  });
+
+  testWidgets('an expanded grid card spans both columns at phone width', (
+    tester,
+  ) async {
+    await pumpList(
+      tester,
+      type: ProxiesType.icons,
+      groups: [_group('G0', 4), _group('G1', 2), _group('G2', 2)],
+      unfoldSet: const {'G0'},
+      physicalSize: const Size(390, 844),
+    );
+
+    final expanded = tester.getRect(groupCardOf('G0'));
+    final first = tester.getRect(groupCardOf('G1'));
+    final second = tester.getRect(groupCardOf('G2'));
+
+    expect(expanded.left, moreOrLessEquals(16, epsilon: 1));
+    expect(expanded.width, moreOrLessEquals(358, epsilon: 1));
+    expect(first.top, greaterThan(expanded.bottom));
+    expect(second.top, first.top);
+    expect(second.left, greaterThan(first.right));
+    expect(first.width, moreOrLessEquals(175, epsilon: 1));
+  });
+
+  testWidgets('an expanded grid card shows node names and types in full '
+      'at phone width', (tester) async {
+    await pumpList(
+      tester,
+      type: ProxiesType.icons,
+      groups: [
+        const Group(
+          type: GroupType.Selector,
+          name: 'G0',
+          all: [
+            Proxy(name: '中国自动', type: 'urltest'),
+            Proxy(name: '中国手动', type: 'selector'),
+            Proxy(name: '美国自动', type: 'fallback'),
+            Proxy(name: '日本手动', type: 'hysteria2'),
+          ],
+        ),
+        _group('G1', 2),
+      ],
+      unfoldSet: const {'G0'},
+      physicalSize: const Size(390, 844),
+    );
+
+    for (final name in ['中国自动', '中国手动', '美国自动', '日本手动']) {
+      final paragraph = tester.renderObject<RenderParagraph>(
+        find.text(name, findRichText: true),
+      );
+      expect(paragraph.didExceedMaxLines, isFalse);
+    }
+    for (final type in ['urltest', 'selector', 'fallback', 'hysteria2']) {
+      final paragraph = tester.renderObject<RenderParagraph>(find.text(type));
+      expect(paragraph.didExceedMaxLines, isFalse);
+    }
+    final nodeCard = tester.getRect(
+      find.byWidgetPredicate(
+        (widget) =>
+            widget is ProxyCard && widget.key == const ValueKey('G0.中国自动'),
+      ),
+    );
+    expect(nodeCard.width, moreOrLessEquals(165, epsilon: 2));
+  });
+
+  testWidgets('collapsing an expanded grid card restores the two-column '
+      'grid', (tester) async {
+    await pumpList(
+      tester,
+      type: ProxiesType.icons,
+      groups: [_group('G0', 4), _group('G1', 2), _group('G2', 2)],
+      unfoldSet: const {'G0'},
+      physicalSize: const Size(390, 844),
+    );
+
+    expect(
+      tester.getRect(groupCardOf('G0')).width,
+      moreOrLessEquals(358, epsilon: 1),
+    );
+
+    await tester.tap(find.text('G0', findRichText: true).first);
+    await tester.pumpAndSettle();
+
+    final first = tester.getRect(groupCardOf('G0'));
+    final second = tester.getRect(groupCardOf('G1'));
+    expect(first.width, moreOrLessEquals(175, epsilon: 1));
+    expect(second.top, first.top);
+    expect(second.left, greaterThan(first.right));
+  });
+
+  testWidgets('a grid card counts the available share the way zashboard '
+      'does', (tester) async {
+    await pumpList(
+      tester,
+      type: ProxiesType.icons,
+      groups: [
+        _group('U', 3, groupType: GroupType.URLTest, testUrl: _testUrl),
+        _group('F', 2, groupType: GroupType.Fallback),
+        _group('L', 2, groupType: GroupType.LoadBalance),
+      ],
+      delays: {
+        _testUrl: {'U-0': 123, 'U-1': -1},
+      },
+      unfoldSet: const {},
+    );
+
+    expect(find.text('URLTEST · 1/3'), findsOneWidget);
+    expect(find.text('FALLBACK · 0/2'), findsOneWidget);
+    expect(find.text('LOADBALANCE · 0/2'), findsOneWidget);
+  });
+
+  testWidgets('a grid card shows the selected node icon', (tester) async {
+    await pumpList(
+      tester,
+      type: ProxiesType.icons,
+      groups: [
+        _group('G0', 3),
+        _group('G0-0', 2, icon: 'https://example.com/China.png'),
+      ],
+      selectedMap: {'G0': 'G0-0'},
+      unfoldSet: const {},
+    );
+
+    expect(
+      find.descendant(
+        of: groupCardOf('G0'),
+        matching: find.byWidgetPredicate(
+          (widget) =>
+              widget is GroupBrandIcon &&
+              widget.src == 'https://example.com/China.png' &&
+              widget.name == 'G0-0' &&
+              widget.size == 16,
+        ),
+      ),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('a grid card shows the brand icon of a selected node with '
+      'no icon of its own', (tester) async {
+    await pumpList(
+      tester,
+      type: ProxiesType.icons,
+      groups: [
+        _group('G0', 0, memberNames: ['YouTube', 'x']),
+        _group('YouTube', 2),
+      ],
+      selectedMap: {'G0': 'YouTube'},
+      unfoldSet: const {},
+    );
+
+    expect(
+      find.descendant(of: groupCardOf('G0'), matching: find.byType(SvgPicture)),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('a grid card shows no expand triangle', (tester) async {
+    await pumpList(tester, type: ProxiesType.icons, unfoldSet: const {});
+
+    expect(find.byType(ExpandIcon), findsNothing);
+  });
+
+  testWidgets('the folder bar shows the group counts', (tester) async {
+    await pumpList(
+      tester,
+      type: ProxiesType.icons,
+      groups: [
+        _group('S1', 0, memberNames: ['S2']),
+        _group('S2', 0, memberNames: []),
+        _group('N1', 0, memberNames: ['x', 'y']),
+        _group('N2', 0, memberNames: ['z']),
+      ],
+      unfoldSet: const {},
+    );
+
+    expect(find.text('All'), findsOneWidget);
+    expect(find.text('4'), findsOneWidget);
+    expect(find.text('Strategy'), findsOneWidget);
+    expect(find.text('Nodes'), findsOneWidget);
+    expect(find.text('2'), findsNWidgets(2));
+  });
+
+  testWidgets('sorting by name orders the grid cards alphabetically in '
+      'icons style', (tester) async {
+    await pumpList(
+      tester,
+      type: ProxiesType.icons,
+      groups: [_group('G2', 2), _group('G0', 2), _group('G1', 2)],
+      sortType: ProxiesSortType.name,
+      unfoldSet: const {},
+    );
+
+    final first = tester.getRect(groupCardOf('G0'));
+    final second = tester.getRect(groupCardOf('G1'));
+    final third = tester.getRect(groupCardOf('G2'));
+    expect(second.top, first.top);
+    expect(second.left, greaterThan(first.right));
+    expect(third.top, greaterThan(first.bottom));
+    expect(third.left, first.left);
+  });
+
+  testWidgets('sorting by delay orders the grid cards by the selected '
+      'node delay in icons style', (tester) async {
+    await pumpList(
+      tester,
+      type: ProxiesType.icons,
+      groups: [
+        _group('G-slow', 2, testUrl: _testUrl),
+        _group('G-untested', 2, testUrl: _testUrl),
+        _group('G-timeout', 2, testUrl: _testUrl),
+        _group('G-fast', 2, testUrl: _testUrl),
+      ],
+      selectedMap: {
+        'G-slow': 'G-slow-0',
+        'G-untested': 'G-untested-0',
+        'G-timeout': 'G-timeout-0',
+        'G-fast': 'G-fast-0',
+      },
+      delays: {
+        _testUrl: {'G-slow-0': 200, 'G-timeout-0': -1, 'G-fast-0': 50},
+      },
+      sortType: ProxiesSortType.delay,
+      unfoldSet: const {},
+    );
+
+    final fast = tester.getRect(groupCardOf('G-fast'));
+    final slow = tester.getRect(groupCardOf('G-slow'));
+    final untested = tester.getRect(groupCardOf('G-untested'));
+    final timeout = tester.getRect(groupCardOf('G-timeout'));
+    expect(slow.top, fast.top);
+    expect(slow.left, greaterThan(fast.right));
+    expect(untested.top, greaterThan(fast.bottom));
+    expect(untested.left, fast.left);
+    expect(timeout.top, untested.top);
+    expect(timeout.left, greaterThan(untested.right));
+  });
+
+  testWidgets('the card size changes the grid card height and brand icon '
+      'size in icons style', (tester) async {
+    await pumpList(
+      tester,
+      type: ProxiesType.icons,
+      iconStyle: ProxiesIconStyle.plain,
+      unfoldSet: const {},
+    );
+
+    Finder brandIcon() => find.descendant(
+      of: groupCardOf('G0'),
+      matching: find.byWidgetPredicate((widget) => widget is GroupBrandIcon),
+    );
+    double cardHeight() => tester.getRect(groupCardOf('G0')).height;
+    double iconSize() => tester.widget<GroupBrandIcon>(brandIcon()).size;
+
+    final standardHeight = cardHeight();
+    expect(iconSize(), 40);
+
+    container
+        .read(proxiesStyleSettingProvider.notifier)
+        .update((state) => state.copyWith(cardType: ProxyCardType.compact));
+    await tester.pumpAndSettle();
+    expect(cardHeight(), lessThan(standardHeight));
+    expect(iconSize(), 32);
+
+    container
+        .read(proxiesStyleSettingProvider.notifier)
+        .update((state) => state.copyWith(cardType: ProxyCardType.loose));
+    await tester.pumpAndSettle();
+    expect(cardHeight(), greaterThan(standardHeight));
+    expect(iconSize(), 48);
+  });
+
+  testWidgets('the filled icon style wraps the brand icon in a tile in '
+      'icons style', (tester) async {
+    await pumpList(tester, type: ProxiesType.icons, unfoldSet: const {});
+
+    expect(iconTilesOf(tester, groupCardOf('G0'), 40), 1);
+  });
+
+  testWidgets('the plain icon style shows the bare brand icon in icons '
+      'style', (tester) async {
+    await pumpList(
+      tester,
+      type: ProxiesType.icons,
+      iconStyle: ProxiesIconStyle.plain,
+      unfoldSet: const {},
+    );
+
+    expect(
+      find.descendant(
+        of: groupCardOf('G0'),
+        matching: find.byWidgetPredicate((widget) => widget is GroupBrandIcon),
+      ),
+      findsOneWidget,
+    );
+    expect(iconTilesOf(tester, groupCardOf('G0'), 40), 0);
+  });
+
+  testWidgets('the hidden icon style hides the group brand icon but keeps '
+      'the selected node icon in icons style', (tester) async {
+    await pumpList(
+      tester,
+      type: ProxiesType.icons,
+      iconStyle: ProxiesIconStyle.hidden,
+      groups: [
+        _group('G0', 3),
+        _group('G0-0', 2, icon: 'https://example.com/China.png'),
+      ],
+      selectedMap: {'G0': 'G0-0'},
+      unfoldSet: const {},
+    );
+
+    expect(
+      find.descendant(
+        of: groupCardOf('G0'),
+        matching: find.byWidgetPredicate(
+          (widget) => widget is GroupBrandIcon && widget.size == 40,
+        ),
+      ),
+      findsNothing,
+    );
+    expect(
+      find.descendant(
+        of: groupCardOf('G0'),
+        matching: find.byWidgetPredicate(
+          (widget) =>
+              widget is GroupBrandIcon &&
+              widget.src == 'https://example.com/China.png' &&
+              widget.size == 16,
+        ),
+      ),
+      findsOneWidget,
+    );
+
+    final hiddenHeight = tester.getRect(groupCardOf('G0')).height;
+    container
+        .read(proxiesStyleSettingProvider.notifier)
+        .update((state) => state.copyWith(iconStyle: ProxiesIconStyle.plain));
+    await tester.pumpAndSettle();
+    expect(tester.getRect(groupCardOf('G0')).height, greaterThan(hiddenHeight));
+  });
+
+  testWidgets('tapping a folder tab filters the groups, tapping all '
+      'restores them', (tester) async {
+    await pumpList(
+      tester,
+      type: ProxiesType.icons,
+      groups: [
+        _group('S1', 0, memberNames: ['S2']),
+        _group('S2', 0, memberNames: []),
+        _group('N1', 0, memberNames: ['x', 'y']),
+        _group('N2', 0, memberNames: ['z']),
+      ],
+      unfoldSet: const {},
+    );
+
+    await tester.tap(find.text('Strategy'));
+    await tester.pumpAndSettle();
+    expect(find.text('S1', findRichText: true), findsOneWidget);
+    expect(find.text('S2', findRichText: true), findsOneWidget);
+    expect(find.text('N1', findRichText: true), findsNothing);
+    expect(find.text('N2', findRichText: true), findsNothing);
+
+    await tester.tap(find.text('Nodes'));
+    await tester.pumpAndSettle();
+    expect(find.text('S1', findRichText: true), findsNothing);
+    expect(find.text('S2', findRichText: true), findsNothing);
+    expect(find.text('N1', findRichText: true), findsOneWidget);
+    expect(find.text('N2', findRichText: true), findsOneWidget);
+
+    await tester.tap(find.text('All'));
+    await tester.pumpAndSettle();
+    expect(find.text('S1', findRichText: true), findsOneWidget);
+    expect(find.text('S2', findRichText: true), findsOneWidget);
+    expect(find.text('N1', findRichText: true), findsOneWidget);
+    expect(find.text('N2', findRichText: true), findsOneWidget);
   });
 }

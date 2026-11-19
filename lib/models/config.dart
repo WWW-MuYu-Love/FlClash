@@ -453,11 +453,21 @@ ProxyCardType proxyCardTypeSafeFromJson(Object? cardType) {
   };
 }
 
+/// Saved props from before the icon grid became a style carry the removed
+/// `groupStyle` instead of `type`, so they migrate here instead of
+/// dropping back to the list.
+Map<String, Object?> _migrateProxiesStylePropsJson(Map<String, Object?> json) {
+  final migrated = Map<String, Object?>.of(json)..remove('groupStyle');
+  if (json['groupStyle'] == 'icons' && json['type'] != 'tab') {
+    migrated['type'] = 'icons';
+  }
+  return migrated;
+}
+
 @freezed
 abstract class ProxiesStyleProps with _$ProxiesStyleProps {
   const factory ProxiesStyleProps({
     @Default(ProxiesType.list) ProxiesType type,
-    @Default(ProxiesGroupStyle.list) ProxiesGroupStyle groupStyle,
     @Default(ProxiesSortType.none) ProxiesSortType sortType,
     @Default(ProxiesLayout.standard) ProxiesLayout layout,
     @Default(ProxiesIconStyle.filled)
@@ -471,7 +481,7 @@ abstract class ProxiesStyleProps with _$ProxiesStyleProps {
 
   factory ProxiesStyleProps.fromJson(Map<String, Object?>? json) => json == null
       ? defaultProxiesStyleProps
-      : _$ProxiesStylePropsFromJson(json);
+      : _$ProxiesStylePropsFromJson(_migrateProxiesStylePropsJson(json));
 }
 
 @freezed
