@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:fl_clash/common/common.dart';
 import 'package:fl_clash/enum/enum.dart';
 import 'package:fl_clash/plugins/wifi_ssid.dart';
+import 'package:fl_clash/providers/action.dart';
 import 'package:fl_clash/providers/app.dart';
 import 'package:fl_clash/providers/config.dart';
 import 'package:fl_clash/providers/on_demand.dart';
@@ -13,10 +14,13 @@ import 'package:rust_api/rust_api.dart' show NetworkState, networkChanges;
 
 typedef SsidReader = Future<String?> Function();
 
+typedef LocalIpRefresher = Future<void> Function();
+
 class ConnectivityManager extends ConsumerStatefulWidget {
   final Function(NetworkState state)? onConnectivityChanged;
   final Stream<NetworkState>? connectivityStream;
   final SsidReader? readSsid;
+  final LocalIpRefresher? refreshLocalIp;
   final Widget child;
 
   const ConnectivityManager({
@@ -24,6 +28,7 @@ class ConnectivityManager extends ConsumerStatefulWidget {
     this.onConnectivityChanged,
     this.connectivityStream,
     this.readSsid,
+    this.refreshLocalIp,
     required this.child,
   });
 
@@ -39,6 +44,7 @@ class _ConnectivityManagerState extends ConsumerState<ConnectivityManager>
 
   int _ssidRequestId = 0;
   bool _onWifi = false;
+  bool _streamSeen = false;
 
   @override
   void initState() {
@@ -68,8 +74,11 @@ class _ConnectivityManagerState extends ConsumerState<ConnectivityManager>
     );
     // Cold start emits no connectivity event, so read the current network
     // once up front; otherwise an already-connected excluded SSID stays
-    // unpublished until the next resume or network change.
-    unawaited(_refreshOnResume());
+    // unpublished until the next resume or network change. Deferred past
+    // initState: the refresh writes providers, which initState may not do.
+    // A stream result arriving first sets _streamSeen, so the deferred
+    // refresh skips itself instead of re-reading after the stream.
+    unawaited(Future(_refreshOnResume));
   }
 
   @override
@@ -84,12 +93,28 @@ class _ConnectivityManagerState extends ConsumerState<ConnectivityManager>
   // current network and SSID when coming back to the foreground. This is
   // what lets the direct/disconnect action restore the previous mode.
   // The rust_api network watcher covers desktop and Android only, so on
-  // iOS the stream never fires and resume probes the SSID directly.
+  // iOS the stream never fires and resume probes the SSID directly. The
+  // local IP has the same gap: it is only refreshed from the stream
+  // callback, so refresh it here too or the intranet card never leaves
+  // its loading state on iOS.
   Future<void> _refreshOnResume() async {
+    // A stream result that landed before this ran already refreshed the
+    // network state; do not read it a second time.
+    if (_streamSeen) return;
     await _updateSsid(probeWifi: true);
+    if (_streamSeen) return;
+    await _refreshLocalIp();
+  }
+
+  Future<void> _refreshLocalIp() async {
+    final refresh =
+        widget.refreshLocalIp ??
+        ref.read(systemActionProvider.notifier).updateLocalIp;
+    await refresh();
   }
 
   void _handleResults(NetworkState state) {
+    _streamSeen = true;
     _onWifi = state.wifi;
     unawaited(_updateSsid());
     widget.onConnectivityChanged?.call(state);
