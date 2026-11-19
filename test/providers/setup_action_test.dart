@@ -636,10 +636,12 @@ void main() {
       container
           .read(vpnSettingProvider.notifier)
           .update((state) => state.copyWith(ipv6: !state.ipv6));
+      final appliedBeforeRestart = action.applyProfileCalls;
 
       await setup.restartVpn();
 
       expect(action.coreRunningCalls, [true, false, true]);
+      expect(action.applyProfileCalls, appliedBeforeRestart + 1);
       expect(container.read(isStartProvider), isTrue);
       expect(
         container.read(runningVpnOptionsProvider),

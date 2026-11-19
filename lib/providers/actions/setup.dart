@@ -379,12 +379,15 @@ class SetupAction extends _$SetupAction {
     });
   }
 
+  /// Restarts the run and re-applies the profile, so a setting the banner
+  /// was raised for reaches the extension. A plain stop/start only flips
+  /// the listeners and leaves the extension on the old config.
   Future<void> restartVpn() async {
     if (!ref.read(isStartProvider)) {
       return;
     }
     await setRunning(false);
-    await setRunning(true);
+    await setRunning(true, initialize: true);
   }
 
   @visibleForTesting
