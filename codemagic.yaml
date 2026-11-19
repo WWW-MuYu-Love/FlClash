@@ -93,7 +93,15 @@ workflows:
           # Bundle ID comes from the Xcode project in the repo; pass
           # --ios-bundle-id <id> here only if the first build complains
           # about a missing/placeholder bundle ID.
-          dart setup.dart ios --no-codesign
+          dart setup.dart ios --no-codesign --verbose > build-ios.log 2>&1 || true
+          if ! find dist -name '*.ipa' 2>/dev/null | grep -q .; then
+            echo "--- Xcode errors ---"
+            grep -n -E "error:|\*\* BUILD FAILED|fatal error|Command .* failed" build-ios.log | tail -80
+            echo "--- last 120 lines ---"
+            tail -120 build-ios.log
+            exit 1
+          fi
+          tail -40 build-ios.log
           echo "--- dist/ contents ---"
           find dist -type f | head -50
       - name: Stage IPA artifact
@@ -111,6 +119,7 @@ workflows:
           bash .github/publish_codemagic.sh
     artifacts:
       - FlClash-unsigned.ipa
+      - build-ios.log
 
   # ---------------------------------------------------------------------------
   # STAGED TEMPLATE — SIGNED WORKFLOW. DO NOT UNCOMMENT UNTIL THE
