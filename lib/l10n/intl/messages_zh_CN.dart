@@ -863,7 +863,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "iconStyleHidden": MessageLookupByLibrary.simpleMessage("隐藏"),
     "iconStylePlain": MessageLookupByLibrary.simpleMessage("纯图标"),
     "iconUrl": MessageLookupByLibrary.simpleMessage("图标链接"),
-    "icons": MessageLookupByLibrary.simpleMessage("图标"),
+    "icons": MessageLookupByLibrary.simpleMessage("卡片"),
     "ignoreBatteryOptimization": MessageLookupByLibrary.simpleMessage("忽略电池优化"),
     "import": MessageLookupByLibrary.simpleMessage("导入"),
     "importConfigInvalid": MessageLookupByLibrary.simpleMessage("此文件不是可导入的配置"),

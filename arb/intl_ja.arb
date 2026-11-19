@@ -365,7 +365,7 @@
   "iconStyleFilled": "背景あり",
   "iconStylePlain": "背景なし",
   "iconStyleHidden": "非表示",
-  "icons": "アイコン",
+  "icons": "カード",
   "proxyFolderAll": "すべて",
   "proxyFolderStrategy": "ストラテジーグループ",
   "proxyFolderNodes": "ノードグループ",

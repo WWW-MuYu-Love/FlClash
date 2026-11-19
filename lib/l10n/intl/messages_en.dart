@@ -1117,7 +1117,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "iconStyleHidden": MessageLookupByLibrary.simpleMessage("Hidden"),
     "iconStylePlain": MessageLookupByLibrary.simpleMessage("Plain"),
     "iconUrl": MessageLookupByLibrary.simpleMessage("Icon URL"),
-    "icons": MessageLookupByLibrary.simpleMessage("Icons"),
+    "icons": MessageLookupByLibrary.simpleMessage("Cards"),
     "ignoreBatteryOptimization": MessageLookupByLibrary.simpleMessage(
       "Ignore battery optimization",
     ),

@@ -2968,9 +2968,9 @@ class AppLocalizations {
     return Intl.message('Hidden', name: 'iconStyleHidden', desc: '', args: []);
   }
 
-  /// `Icons`
+  /// `Cards`
   String get icons {
-    return Intl.message('Icons', name: 'icons', desc: '', args: []);
+    return Intl.message('Cards', name: 'icons', desc: '', args: []);
   }
 
   /// `All`

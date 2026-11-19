@@ -937,7 +937,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "iconStyleHidden": MessageLookupByLibrary.simpleMessage("숨김"),
     "iconStylePlain": MessageLookupByLibrary.simpleMessage("기본"),
     "iconUrl": MessageLookupByLibrary.simpleMessage("아이콘 URL"),
-    "icons": MessageLookupByLibrary.simpleMessage("아이콘"),
+    "icons": MessageLookupByLibrary.simpleMessage("카드"),
     "ignoreBatteryOptimization": MessageLookupByLibrary.simpleMessage(
       "배터리 최적화 무시",
     ),

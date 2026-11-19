@@ -1193,7 +1193,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "iconStyleHidden": MessageLookupByLibrary.simpleMessage("Oculto"),
     "iconStylePlain": MessageLookupByLibrary.simpleMessage("Simple"),
     "iconUrl": MessageLookupByLibrary.simpleMessage("URL del icono"),
-    "icons": MessageLookupByLibrary.simpleMessage("Iconos"),
+    "icons": MessageLookupByLibrary.simpleMessage("Tarjetas"),
     "ignoreBatteryOptimization": MessageLookupByLibrary.simpleMessage(
       "Ignorar optimización de batería",
     ),
