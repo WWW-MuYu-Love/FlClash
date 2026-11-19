@@ -153,6 +153,21 @@ void main() {
       expect(stateOf(container).proxied, isFalse);
     });
 
+    test(
+      'proxied follows the run the app shows even when the Core reports its listeners down',
+      () async {
+        final container = build(running: true);
+        final tracker = trackerOf(container)..attach();
+        await pumpEventQueue();
+        expect(stateOf(container).proxied, isTrue);
+
+        tracker.applySnapshot(
+          const RouteSnapshot(coreEpoch: 4, routeVersion: 2),
+        );
+        expect(stateOf(container).proxied, isTrue);
+      },
+    );
+
     test('in safe mode proxied follows the run the app shows', () async {
       final container = build(running: false, safeMode: true);
       expect(stateOf(container).proxied, isFalse);

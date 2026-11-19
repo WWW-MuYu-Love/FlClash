@@ -184,7 +184,8 @@ class RouteTracker extends _$RouteTracker {
     return RouteState(proxied: safeMode && _hostProxied);
   }
 
-  /// Followed only in safe mode, where the Core never starts its listeners.
+  /// The run the app shows: true while the host is up, even when the Core's
+  /// listeners are down.
   bool get _hostProxied =>
       ref.read(isStartProvider) && !ref.read(suspendProvider);
 
@@ -217,7 +218,12 @@ class RouteTracker extends _$RouteTracker {
     state = state.copyWith(
       coreEpoch: snapshot.coreEpoch,
       routeVersion: snapshot.routeVersion,
-      proxied: ref.read(safeModeProvider) ? null : snapshot.running,
+      // The host run counts too: on iOS the App Core's listeners stop while
+      // the extension carries the traffic, so the Core alone would report
+      // not proxied and every probe would pin to DIRECT.
+      proxied: ref.read(safeModeProvider)
+          ? null
+          : _hostProxied || snapshot.running,
       hostEpoch: state.synced ? state.hostEpoch : state.hostEpoch + 1,
       synced: true,
       live: true,
