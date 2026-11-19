@@ -316,7 +316,7 @@ void main() {
     await teardownWidget(tester);
   });
 
-  testWidgets('overview gauge rises to the title row', (tester) async {
+  testWidgets('overview gauge sits 12 dp below the title row', (tester) async {
     await pumpWidget(
       tester,
       const TrafficStatisticsView(),
@@ -336,10 +336,10 @@ void main() {
 
     expect(
       gaugeRect.top,
-      moreOrLessEquals(tester.getRect(headerRow).top, epsilon: 1.0),
+      moreOrLessEquals(tester.getRect(headerRow).top + 12.0, epsilon: 1.0),
     );
     final bottomGap = tester.getTopLeft(cellsRow).dy - gaugeRect.bottom;
-    expect(bottomGap, moreOrLessEquals(48.0, epsilon: 1.0));
+    expect(bottomGap, moreOrLessEquals(36.0, epsilon: 1.0));
 
     await teardownWidget(tester);
   });

@@ -368,9 +368,7 @@ class _Overview extends StatelessWidget {
       28,
       textScaler.scale(AppTextStyle.headline.leading),
     );
-    // Top-aligned with the title row: the gauge fills the empty space
-    // beside the title.
-    final gaugeOffset = -(headerHeight + 12).toDouble();
+    final gaugeOffset = -headerHeight.toDouble();
     return Column(
       children: [
         _SectionHeader(
