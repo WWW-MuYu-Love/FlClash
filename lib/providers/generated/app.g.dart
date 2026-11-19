@@ -661,6 +661,76 @@ abstract class _$Traffics extends $Notifier<FixedList<Traffic>> {
   }
 }
 
+/// Live up/down per proxy and group name, from the same snapshots as the
+/// dashboard speeds. A reader takes the selected node's entry, or zero
+/// when nothing flows through it; the map keeps its last values while the
+/// tunnel is down, so a reader checks `isStartProvider` itself.
+
+@ProviderFor(NodeSpeeds)
+final nodeSpeedsProvider = NodeSpeedsProvider._();
+
+/// Live up/down per proxy and group name, from the same snapshots as the
+/// dashboard speeds. A reader takes the selected node's entry, or zero
+/// when nothing flows through it; the map keeps its last values while the
+/// tunnel is down, so a reader checks `isStartProvider` itself.
+final class NodeSpeedsProvider
+    extends $NotifierProvider<NodeSpeeds, Map<String, Traffic>> {
+  /// Live up/down per proxy and group name, from the same snapshots as the
+  /// dashboard speeds. A reader takes the selected node's entry, or zero
+  /// when nothing flows through it; the map keeps its last values while the
+  /// tunnel is down, so a reader checks `isStartProvider` itself.
+  NodeSpeedsProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'nodeSpeedsProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$nodeSpeedsHash();
+
+  @$internal
+  @override
+  NodeSpeeds create() => NodeSpeeds();
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(Map<String, Traffic> value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<Map<String, Traffic>>(value),
+    );
+  }
+}
+
+String _$nodeSpeedsHash() => r'e0c6e6191b0ed5bbbc223c98a02e3131763b47cc';
+
+/// Live up/down per proxy and group name, from the same snapshots as the
+/// dashboard speeds. A reader takes the selected node's entry, or zero
+/// when nothing flows through it; the map keeps its last values while the
+/// tunnel is down, so a reader checks `isStartProvider` itself.
+
+abstract class _$NodeSpeeds extends $Notifier<Map<String, Traffic>> {
+  Map<String, Traffic> build();
+  @$mustCallSuper
+  @override
+  WhenComplete runBuild() {
+    final ref = this.ref as $Ref<Map<String, Traffic>, Map<String, Traffic>>;
+    final element =
+        ref.element
+            as $ClassProviderElement<
+              AnyNotifier<Map<String, Traffic>, Map<String, Traffic>>,
+              Map<String, Traffic>,
+              Object?,
+              Object?
+            >;
+    return element.handleCreate(ref, build);
+  }
+}
+
 @ProviderFor(TotalTraffic)
 final totalTrafficProvider = TotalTrafficProvider._();
 

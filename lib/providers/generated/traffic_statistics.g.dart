@@ -136,7 +136,7 @@ final class TrafficStatisticsProvider
   }
 }
 
-String _$trafficStatisticsHash() => r'e4287bf846dfbe800eae8d8c02f3676cd0540575';
+String _$trafficStatisticsHash() => r'30978c0199f78160909078c60ccbfdab13b625ba';
 
 final class TrafficStatisticsFamily extends $Family
     with

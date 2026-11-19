@@ -8,6 +8,10 @@ import 'package:fl_clash/widgets/widgets.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+/// The member icon's size, matching the selected node's icon in the group
+/// header's bottom row.
+const _memberIconSize = 16.0;
+
 void selectGroupProxy(
   WidgetRef ref, {
   required String groupName,
@@ -212,6 +216,17 @@ class ProxyCard extends ConsumerWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   spacing: 4,
                   children: [
+                    if (proxy.icon.isNotEmpty)
+                      SizedBox(
+                        height: measure.textHeight(AppTextStyle.subheadline),
+                        child: Center(
+                          child: GroupBrandIcon(
+                            src: proxy.icon,
+                            name: proxy.name,
+                            size: _memberIconSize,
+                          ),
+                        ),
+                      ),
                     Expanded(child: proxyNameText),
                     if (pinned)
                       SelectionBadge(glyph: Glyphs.pin, tonal: !inUse)

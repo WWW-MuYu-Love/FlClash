@@ -45,7 +45,55 @@ class ExternalTrafficSampler {
   Traffic? _previousProxyTotal;
   DateTime? _previousProxyAt;
 
+  // A connection first seen here is only a baseline; its bytes so far
+  // would otherwise read as one second's spike.
+  final Map<String, ({int upload, int download})> _nodeSeen = {};
+  DateTime? _nodeSeenAt;
+  Map<String, Traffic> _nodeSpeeds = {};
+
+  Map<String, Traffic> get nodeSpeeds => _nodeSpeeds;
+
+  void _updateNodeSpeeds(ExternalControllerSnapshot snapshot, DateTime now) {
+    final previousAt = _nodeSeenAt;
+    _nodeSeenAt = now;
+    final elapsed = previousAt == null
+        ? 0.0
+        : now.difference(previousAt).inMicroseconds / 1e6;
+    final speeds = <String, Traffic>{};
+    final currentIds = <String>{};
+    for (final connection in snapshot.connections) {
+      currentIds.add(connection.id);
+      final previous = _nodeSeen[connection.id];
+      _nodeSeen[connection.id] = (
+        upload: connection.upload,
+        download: connection.download,
+      );
+      if (elapsed <= 0 || previous == null) {
+        continue;
+      }
+      final upDelta = connection.upload - previous.upload;
+      final downDelta = connection.download - previous.download;
+      if (upDelta <= 0 && downDelta <= 0) {
+        continue;
+      }
+      final up = upDelta > 0 ? upDelta / elapsed : 0.0;
+      final down = downDelta > 0 ? downDelta / elapsed : 0.0;
+      for (final name in connection.chains.toSet()) {
+        final current = speeds[name];
+        speeds[name] = Traffic(
+          up: (current?.up ?? 0) + up,
+          down: (current?.down ?? 0) + down,
+        );
+      }
+    }
+    _nodeSeen.removeWhere((id, _) => !currentIds.contains(id));
+    if (elapsed > 0) {
+      _nodeSpeeds = speeds;
+    }
+  }
+
   Traffic? sample(ExternalControllerSnapshot snapshot, DateTime now) {
+    _updateNodeSpeeds(snapshot, now);
     final previous = _previous;
     final previousAt = _previousAt;
     _previous = snapshot;
@@ -74,6 +122,7 @@ class ExternalTrafficSampler {
     ExternalControllerSnapshot snapshot,
     DateTime now,
   ) {
+    _updateNodeSpeeds(snapshot, now);
     final currentIds = <String>{};
     for (final connection in snapshot.connections) {
       if (connection.chains.firstOrNull == 'DIRECT') {

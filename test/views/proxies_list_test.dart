@@ -2,15 +2,16 @@ import 'package:fl_clash/enum/enum.dart';
 import 'package:fl_clash/models/models.dart';
 import 'package:fl_clash/providers/providers.dart';
 import 'package:fl_clash/state.dart';
+import 'package:fl_clash/ui/icons/icons.dart';
+import 'package:fl_clash/ui/ui.dart' hide ListHeader;
 import 'package:fl_clash/views/proxies/card.dart';
 import 'package:fl_clash/views/proxies/list.dart';
 import 'package:fl_clash/views/views.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:prism_ui/context.dart';
-import 'package:prism_ui/scaffold.dart';
 
+import '../helpers/glyph_finders.dart';
 import '../helpers/test_app.dart';
 import '../helpers/test_profiles.dart';
 
@@ -154,6 +155,110 @@ void main() {
     );
     expect(tester.getRect(far).top, tester.element(far).contentTopPadding);
     expect(find.text('G0', skipOffstage: false), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('the folder bar renders the group-tab capsules and filters '
+      'the list', (tester) async {
+    tester.view.physicalSize = const Size(500, 1000);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final profile = Profile.normal();
+    const groups = [
+      Group(
+        name: 'Outer',
+        type: GroupType.Selector,
+        hidden: false,
+        all: [Proxy(name: 'Inner', type: 'Selector')],
+      ),
+      Group(
+        name: 'Inner',
+        type: GroupType.Selector,
+        hidden: false,
+        all: [Proxy(name: 'Proxy 1', type: 'Direct')],
+      ),
+    ];
+    final container = ProviderContainer(
+      overrides: [
+        profilesProvider.overrideWith(() => TestProfiles([profile])),
+        currentProfileIdProvider.overrideWithBuild((_, _) => profile.id),
+        currentGroupsStateProvider.overrideWithValue(
+          const GroupsState(value: groups),
+        ),
+        groupsProvider.overrideWithValue(groups),
+      ],
+    );
+    addTearDown(container.dispose);
+    globalState.container = container;
+    container
+        .read(viewSizeProvider.notifier)
+        .update((_) => const Size(500, 1000));
+
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: const TestApp(child: ProxiesView()),
+      ),
+    );
+    container
+        .read(proxiesStyleSettingProvider.notifier)
+        .update((state) => state.copyWith(type: ProxiesType.list));
+    await tester.pump();
+
+    Finder folderPillOf(String label) =>
+        find.ancestor(of: find.text(label), matching: find.byType(Card));
+
+    for (final label in ['All', 'Strategy', 'Nodes']) {
+      final pill = tester.widget<Card>(folderPillOf(label));
+      expect(pill.fillsSelection, isTrue, reason: label);
+      expect(pill.shape, AppShape.full, reason: label);
+    }
+    expect(tester.widget<Card>(folderPillOf('All')).isSelected, isTrue);
+    expect(tester.widget<Card>(folderPillOf('Strategy')).isSelected, isFalse);
+    expect(tester.widget<Card>(folderPillOf('Nodes')).isSelected, isFalse);
+
+    expect(
+      find.descendant(
+        of: folderPillOf('All'),
+        matching: find.byGlyph(AppGlyphs.dashboard),
+      ),
+      findsOneWidget,
+    );
+    for (final label in ['Strategy', 'Nodes']) {
+      expect(
+        find.descendant(
+          of: folderPillOf(label),
+          matching: find.byGlyph(AppGlyphs.folder),
+        ),
+        findsOneWidget,
+      );
+    }
+    expect(
+      find.descendant(of: folderPillOf('All'), matching: find.text('2')),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(of: folderPillOf('Strategy'), matching: find.text('1')),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(of: folderPillOf('Nodes'), matching: find.text('1')),
+      findsOneWidget,
+    );
+
+    await tester.tap(find.text('Nodes'));
+    await tester.pump();
+    expect(find.text('Outer'), findsNothing);
+    expect(find.text('Inner'), findsOneWidget);
+    expect(tester.widget<Card>(folderPillOf('Nodes')).isSelected, isTrue);
+
+    await tester.tap(find.text('All'));
+    await tester.pump();
+    expect(find.text('Outer'), findsOneWidget);
+    expect(find.text('Inner'), findsOneWidget);
+    expect(tester.widget<Card>(folderPillOf('All')).isSelected, isTrue);
     expect(tester.takeException(), isNull);
   });
 }

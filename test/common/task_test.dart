@@ -71,6 +71,38 @@ void main() {
     expect(groups.single.all.map((proxy) => proxy.name), ['Beta', 'Zulu']);
   });
 
+  test('toGroupsTask keeps a member group icon the core reports', () async {
+    final proxies = <String, dynamic>{
+      '一键代理': {
+        'name': '一键代理',
+        'type': 'Selector',
+        'icon': 'https://example.com/rocket.svg',
+        'all': ['中国自动', '台湾01'],
+      },
+      '中国自动': {
+        'name': '中国自动',
+        'type': 'url-test',
+        'icon': 'https://example.com/cn.svg',
+      },
+      '台湾01': {'name': '台湾01', 'type': 'ss'},
+    };
+    final groups = await toGroupsTask(
+      ComputeGroupsState(
+        proxiesData: ProxiesData(all: const ['一键代理'], proxies: proxies),
+        sortType: ProxiesSortType.none,
+        delayMap: const {},
+        selectedMap: const {},
+        defaultTestUrl: '',
+      ),
+    );
+
+    expect(groups, hasLength(1));
+    expect(groups.single.icon, 'https://example.com/rocket.svg');
+    expect(groups.single.all.map((proxy) => proxy.name), ['中国自动', '台湾01']);
+    expect(groups.single.all.first.icon, 'https://example.com/cn.svg');
+    expect(groups.single.all.last.icon, isEmpty);
+  });
+
   test(
     'clashConfigTask parses core config data off the main isolate',
     () async {

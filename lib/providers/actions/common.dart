@@ -64,6 +64,9 @@ class CommonAction extends _$CommonAction {
         if (instant != null) {
           ref.read(trafficsProvider.notifier).addTraffic(instant);
         }
+        ref
+            .read(nodeSpeedsProvider.notifier)
+            .setSpeeds(_externalTrafficSampler.nodeSpeeds);
         ref.read(totalTrafficProvider.notifier).value = total;
         return;
       }

@@ -299,6 +299,7 @@ void main() {
     late List<Group> groups;
     late DelayMap delayMap;
     late Map<String, String> selectedMap;
+    late Set<String> groupNames;
 
     setUp(() {
       groups = [
@@ -330,6 +331,7 @@ void main() {
       delayMap = <String, Map<String, int?>>{
         'http://test.com': {'G-slow-0': 200, 'G-timeout-0': -1, 'G-fast-0': 50},
       };
+      groupNames = {for (final group in groups) group.name};
       selectedMap = {
         'G-slow': 'G-slow-0',
         'G-untested': 'G-untested-0',
@@ -348,6 +350,7 @@ void main() {
         delayMap: delayMap,
         selectedMap: selectedMap,
         defaultTestUrl: 'http://test.com',
+        groupNames: groupNames,
       );
       expect(namesOf(result), ['G-slow', 'G-untested', 'G-timeout', 'G-fast']);
     });
@@ -359,6 +362,7 @@ void main() {
         delayMap: delayMap,
         selectedMap: selectedMap,
         defaultTestUrl: 'http://test.com',
+        groupNames: groupNames,
       );
       expect(namesOf(result), ['G-fast', 'G-slow', 'G-timeout', 'G-untested']);
     });
@@ -370,8 +374,133 @@ void main() {
         delayMap: delayMap,
         selectedMap: selectedMap,
         defaultTestUrl: 'http://test.com',
+        groupNames: groupNames,
       );
       expect(namesOf(result), ['G-fast', 'G-slow', 'G-untested', 'G-timeout']);
+    });
+
+    test('name sorts only the node groups, strategy groups stay put', () {
+      final mixed = [
+        const Group(
+          name: 'S-outer',
+          type: GroupType.Selector,
+          testUrl: 'http://test.com',
+          all: [Proxy(name: 'N-zebra', type: 'Selector')],
+        ),
+        const Group(
+          name: 'N-zebra',
+          type: GroupType.Selector,
+          testUrl: 'http://test.com',
+          all: [Proxy(name: 'N-zebra-0', type: 'ss')],
+        ),
+        const Group(
+          name: 'S-mid',
+          type: GroupType.Selector,
+          testUrl: 'http://test.com',
+          all: [Proxy(name: 'N-apple', type: 'Selector')],
+        ),
+        const Group(
+          name: 'N-apple',
+          type: GroupType.Selector,
+          testUrl: 'http://test.com',
+          all: [Proxy(name: 'N-apple-0', type: 'ss')],
+        ),
+        const Group(
+          name: 'E-empty',
+          type: GroupType.Selector,
+          testUrl: 'http://test.com',
+          all: [],
+        ),
+        const Group(
+          name: 'N-mango',
+          type: GroupType.Selector,
+          testUrl: 'http://test.com',
+          all: [Proxy(name: 'N-mango-0', type: 'ss')],
+        ),
+      ];
+      final result = sortIconGroups(
+        groups: mixed,
+        sortType: ProxiesSortType.name,
+        delayMap: delayMap,
+        selectedMap: selectedMap,
+        defaultTestUrl: 'http://test.com',
+        groupNames: {for (final group in mixed) group.name},
+      );
+      expect(namesOf(result), [
+        'S-outer',
+        'N-apple',
+        'S-mid',
+        'N-mango',
+        'E-empty',
+        'N-zebra',
+      ]);
+    });
+
+    test('delay sorts only the node groups, strategy groups stay put', () {
+      final mixed = [
+        const Group(
+          name: 'S-outer',
+          type: GroupType.Selector,
+          testUrl: 'http://test.com',
+          all: [Proxy(name: 'N-zebra', type: 'Selector')],
+        ),
+        const Group(
+          name: 'N-zebra',
+          type: GroupType.Selector,
+          testUrl: 'http://test.com',
+          all: [Proxy(name: 'N-zebra-0', type: 'ss')],
+        ),
+        const Group(
+          name: 'S-mid',
+          type: GroupType.Selector,
+          testUrl: 'http://test.com',
+          all: [Proxy(name: 'N-apple', type: 'Selector')],
+        ),
+        const Group(
+          name: 'N-apple',
+          type: GroupType.Selector,
+          testUrl: 'http://test.com',
+          all: [Proxy(name: 'N-apple-0', type: 'ss')],
+        ),
+        const Group(
+          name: 'E-empty',
+          type: GroupType.Selector,
+          testUrl: 'http://test.com',
+          all: [],
+        ),
+        const Group(
+          name: 'N-mango',
+          type: GroupType.Selector,
+          testUrl: 'http://test.com',
+          all: [Proxy(name: 'N-mango-0', type: 'ss')],
+        ),
+      ];
+      final result = sortIconGroups(
+        groups: mixed,
+        sortType: ProxiesSortType.delay,
+        delayMap: <String, Map<String, int?>>{
+          'http://test.com': {
+            'N-zebra-0': 200,
+            'N-apple-0': 50,
+            'N-mango-0': 100,
+          },
+        },
+        selectedMap: {
+          'N-zebra': 'N-zebra-0',
+          'N-apple': 'N-apple-0',
+          'N-mango': 'N-mango-0',
+        },
+        defaultTestUrl: 'http://test.com',
+        groupNames: {for (final group in mixed) group.name},
+      );
+      expect(namesOf(result), [
+        'S-outer',
+        'N-apple',
+        'S-mid',
+        'N-mango',
+        'E-empty',
+        'N-zebra',
+      ]);
     });
   });
 

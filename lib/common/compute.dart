@@ -51,33 +51,42 @@ List<Group> computeSort({
   }).toList();
 }
 
-/// Sort the groups themselves (the grid's items) by the same rule as nodes:
-/// name alphabetically, delay by the group's selected node.
+/// Sort only the node groups; strategy groups keep their slots.
 List<Group> sortIconGroups({
   required List<Group> groups,
   required ProxiesSortType sortType,
   required DelayMap delayMap,
   required Map<String, String> selectedMap,
   required String defaultTestUrl,
+  required Set<String> groupNames,
 }) {
   if (sortType == ProxiesSortType.none) return groups;
+  final nodeGroups = groups
+      .where((group) => groupIsNodeOnly(group, groupNames))
+      .toList();
   if (sortType == ProxiesSortType.name) {
-    return List.of(groups)..sort((a, b) => a.name.compareTo(b.name));
+    nodeGroups.sort((a, b) => a.name.compareTo(b.name));
+  } else {
+    final delayStates = {
+      for (final group in nodeGroups)
+        group.name: _groupDelay(
+          group,
+          groups: groups,
+          delayMap: delayMap,
+          selectedMap: selectedMap,
+          defaultTestUrl: defaultTestUrl,
+        ),
+    };
+    nodeGroups.sort((a, b) {
+      final byDelay = delayStates[a.name]!.compareTo(delayStates[b.name]!);
+      return byDelay != 0 ? byDelay : a.name.compareTo(b.name);
+    });
   }
-  final delayStates = {
-    for (final group in groups)
-      group.name: _groupDelay(
-        group,
-        groups: groups,
-        delayMap: delayMap,
-        selectedMap: selectedMap,
-        defaultTestUrl: defaultTestUrl,
-      ),
-  };
-  return List.of(groups)..sort((a, b) {
-    final byDelay = delayStates[a.name]!.compareTo(delayStates[b.name]!);
-    return byDelay != 0 ? byDelay : a.name.compareTo(b.name);
-  });
+  var nextNode = 0;
+  return groups.map((group) {
+    if (!groupIsNodeOnly(group, groupNames)) return group;
+    return nodeGroups[nextNode++];
+  }).toList();
 }
 
 DelayState _groupDelay(

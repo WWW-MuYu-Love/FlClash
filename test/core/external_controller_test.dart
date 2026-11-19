@@ -232,6 +232,293 @@ void main() {
       expect(instant, const Traffic(up: 0, down: 0));
       expect(total, const Traffic(up: 300, down: 400));
     });
+
+    test('nodeSpeeds is empty before the second snapshot', () {
+      final sampler = ExternalTrafficSampler();
+      sampler.sample(
+        ExternalControllerSnapshot(
+          uploadTotal: 1000,
+          downloadTotal: 2000,
+          connections: [
+            _sampleConnection(
+              '1',
+              upload: 1000,
+              download: 2000,
+              chains: const ['台湾01', '台湾自动', '一键代理'],
+            ),
+          ],
+        ),
+        DateTime.utc(2026, 11, 10, 10, 0, 0),
+      );
+      expect(sampler.nodeSpeeds, isEmpty);
+    });
+
+    test('nodeSpeeds attributes a connection delta to every chain name', () {
+      final sampler = ExternalTrafficSampler();
+      final start = DateTime.utc(2026, 11, 10, 10, 0, 0);
+      sampler.sample(
+        ExternalControllerSnapshot(
+          uploadTotal: 1100,
+          downloadTotal: 2200,
+          connections: [
+            _sampleConnection(
+              '1',
+              upload: 1000,
+              download: 2000,
+              chains: const ['台湾01', '台湾自动', '一键代理'],
+            ),
+            _sampleConnection(
+              '2',
+              upload: 100,
+              download: 200,
+              chains: const ['DIRECT'],
+            ),
+          ],
+        ),
+        start,
+      );
+      sampler.sample(
+        ExternalControllerSnapshot(
+          uploadTotal: 1800,
+          downloadTotal: 3200,
+          connections: [
+            _sampleConnection(
+              '1',
+              upload: 1500,
+              download: 2800,
+              chains: const ['台湾01', '台湾自动', '一键代理'],
+            ),
+            _sampleConnection(
+              '2',
+              upload: 300,
+              download: 400,
+              chains: const ['DIRECT'],
+            ),
+          ],
+        ),
+        start.add(const Duration(seconds: 1)),
+      );
+      expect(sampler.nodeSpeeds, hasLength(4));
+      expect(sampler.nodeSpeeds['台湾01'], const Traffic(up: 500, down: 800));
+      expect(sampler.nodeSpeeds['台湾自动'], const Traffic(up: 500, down: 800));
+      expect(sampler.nodeSpeeds['一键代理'], const Traffic(up: 500, down: 800));
+      expect(sampler.nodeSpeeds['DIRECT'], const Traffic(up: 200, down: 200));
+    });
+
+    test(
+      'nodeSpeeds counts a new connection only from its second sighting',
+      () {
+        final sampler = ExternalTrafficSampler();
+        final start = DateTime.utc(2026, 11, 10, 10, 0, 0);
+        sampler.sample(
+          ExternalControllerSnapshot(
+            uploadTotal: 1000,
+            downloadTotal: 2000,
+            connections: [
+              _sampleConnection(
+                '1',
+                upload: 1000,
+                download: 2000,
+                chains: const ['台湾01', '台湾自动', '一键代理'],
+              ),
+            ],
+          ),
+          start,
+        );
+        sampler.sample(
+          ExternalControllerSnapshot(
+            uploadTotal: 7500,
+            downloadTotal: 13800,
+            connections: [
+              _sampleConnection(
+                '1',
+                upload: 1500,
+                download: 2800,
+                chains: const ['台湾01', '台湾自动', '一键代理'],
+              ),
+              _sampleConnection(
+                '2',
+                upload: 5000,
+                download: 9000,
+                chains: const ['香港01', '香港自动', '一键代理'],
+              ),
+            ],
+          ),
+          start.add(const Duration(seconds: 1)),
+        );
+        expect(sampler.nodeSpeeds['台湾01'], const Traffic(up: 500, down: 800));
+        expect(sampler.nodeSpeeds['一键代理'], const Traffic(up: 500, down: 800));
+        expect(sampler.nodeSpeeds.containsKey('香港01'), isFalse);
+        sampler.sample(
+          ExternalControllerSnapshot(
+            uploadTotal: 7600,
+            downloadTotal: 14000,
+            connections: [
+              _sampleConnection(
+                '1',
+                upload: 1500,
+                download: 2800,
+                chains: const ['台湾01', '台湾自动', '一键代理'],
+              ),
+              _sampleConnection(
+                '2',
+                upload: 5100,
+                download: 9200,
+                chains: const ['香港01', '香港自动', '一键代理'],
+              ),
+            ],
+          ),
+          start.add(const Duration(seconds: 2)),
+        );
+        expect(sampler.nodeSpeeds['香港01'], const Traffic(up: 100, down: 200));
+      },
+    );
+
+    test('nodeSpeeds drops a closed connection without a tail', () {
+      final sampler = ExternalTrafficSampler();
+      final start = DateTime.utc(2026, 11, 10, 10, 0, 0);
+      sampler.sample(
+        ExternalControllerSnapshot(
+          uploadTotal: 1000,
+          downloadTotal: 2000,
+          connections: [
+            _sampleConnection(
+              '1',
+              upload: 1000,
+              download: 2000,
+              chains: const ['台湾01', '台湾自动', '一键代理'],
+            ),
+          ],
+        ),
+        start,
+      );
+      sampler.sample(
+        ExternalControllerSnapshot(
+          uploadTotal: 1500,
+          downloadTotal: 2800,
+          connections: [
+            _sampleConnection(
+              '1',
+              upload: 1500,
+              download: 2800,
+              chains: const ['台湾01', '台湾自动', '一键代理'],
+            ),
+          ],
+        ),
+        start.add(const Duration(seconds: 1)),
+      );
+      expect(sampler.nodeSpeeds['台湾01'], const Traffic(up: 500, down: 800));
+      sampler.sample(
+        const ExternalControllerSnapshot(
+          uploadTotal: 1500,
+          downloadTotal: 2800,
+          connections: [],
+        ),
+        start.add(const Duration(seconds: 2)),
+      );
+      expect(sampler.nodeSpeeds, isEmpty);
+    });
+
+    test('nodeSpeeds ignores a reused id with smaller counters', () {
+      final sampler = ExternalTrafficSampler();
+      final start = DateTime.utc(2026, 11, 10, 10, 0, 0);
+      sampler.sample(
+        ExternalControllerSnapshot(
+          uploadTotal: 1000,
+          downloadTotal: 2000,
+          connections: [
+            _sampleConnection(
+              '1',
+              upload: 1000,
+              download: 2000,
+              chains: const ['台湾01', '台湾自动', '一键代理'],
+            ),
+          ],
+        ),
+        start,
+      );
+      sampler.sample(
+        ExternalControllerSnapshot(
+          uploadTotal: 110,
+          downloadTotal: 260,
+          connections: [
+            _sampleConnection(
+              '1',
+              upload: 50,
+              download: 60,
+              chains: const ['台湾01', '台湾自动', '一键代理'],
+            ),
+          ],
+        ),
+        start.add(const Duration(seconds: 1)),
+      );
+      expect(sampler.nodeSpeeds, isEmpty);
+      sampler.sample(
+        ExternalControllerSnapshot(
+          uploadTotal: 210,
+          downloadTotal: 460,
+          connections: [
+            _sampleConnection(
+              '1',
+              upload: 150,
+              download: 260,
+              chains: const ['台湾01', '台湾自动', '一键代理'],
+            ),
+          ],
+        ),
+        start.add(const Duration(seconds: 2)),
+      );
+      expect(sampler.nodeSpeeds['台湾01'], const Traffic(up: 100, down: 200));
+    });
+
+    test('sampleProxyOnly feeds nodeSpeeds the same way', () {
+      final sampler = ExternalTrafficSampler();
+      final start = DateTime.utc(2026, 11, 10, 10, 0, 0);
+      sampler.sampleProxyOnly(
+        ExternalControllerSnapshot(
+          uploadTotal: 1100,
+          downloadTotal: 2200,
+          connections: [
+            _sampleConnection(
+              '1',
+              upload: 1000,
+              download: 2000,
+              chains: const ['台湾01', '台湾自动', '一键代理'],
+            ),
+            _sampleConnection(
+              '2',
+              upload: 100,
+              download: 200,
+              chains: const ['DIRECT'],
+            ),
+          ],
+        ),
+        start,
+      );
+      sampler.sampleProxyOnly(
+        ExternalControllerSnapshot(
+          uploadTotal: 1800,
+          downloadTotal: 3200,
+          connections: [
+            _sampleConnection(
+              '1',
+              upload: 1500,
+              download: 2800,
+              chains: const ['台湾01', '台湾自动', '一键代理'],
+            ),
+            _sampleConnection(
+              '2',
+              upload: 300,
+              download: 400,
+              chains: const ['DIRECT'],
+            ),
+          ],
+        ),
+        start.add(const Duration(seconds: 1)),
+      );
+      expect(sampler.nodeSpeeds['台湾自动'], const Traffic(up: 500, down: 800));
+      expect(sampler.nodeSpeeds['DIRECT'], const Traffic(up: 200, down: 200));
+    });
   });
 
   group('ExternalControllerClient.fetchConnections', () {

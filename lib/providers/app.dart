@@ -212,6 +212,25 @@ class Traffics extends _$Traffics with AutoDisposeNotifierMixin {
   }
 }
 
+/// Live up/down per proxy and group name, from the same snapshots as the
+/// dashboard speeds. A reader takes the selected node's entry, or zero
+/// when nothing flows through it; the map keeps its last values while the
+/// tunnel is down, so a reader checks `isStartProvider` itself.
+@Riverpod(keepAlive: true)
+class NodeSpeeds extends _$NodeSpeeds with AutoDisposeNotifierMixin {
+  @override
+  Map<String, Traffic> build() {
+    return const {};
+  }
+
+  void setSpeeds(Map<String, Traffic> speeds) {
+    if (!ref.mounted) {
+      return;
+    }
+    state = speeds;
+  }
+}
+
 @Riverpod(keepAlive: true)
 class TotalTraffic extends _$TotalTraffic with AutoDisposeNotifierMixin {
   @override

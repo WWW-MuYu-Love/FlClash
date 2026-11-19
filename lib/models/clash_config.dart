@@ -229,6 +229,7 @@ abstract class Proxy with _$Proxy {
     required String type,
     String? now,
     @JsonKey(name: 'provider-name') String? providerName,
+    @Default('') String icon,
   }) = _Proxy;
 
   factory Proxy.fromJson(Map<String, Object?> json) => _$ProxyFromJson(json);

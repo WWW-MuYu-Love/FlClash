@@ -19,7 +19,6 @@ const _liftDistance = 16.0;
 const _groupMinWidth = 360.0;
 const _groupMaxColumns = 3;
 const _folderBarHeight = 40.0;
-const _folderPillPadding = EdgeInsets.symmetric(horizontal: 10, vertical: 6);
 const _folderPillIconGap = 6.0;
 const _folderPillCountGap = 4.0;
 const _folderPillIconSize = 16.0;
@@ -43,6 +42,44 @@ class _ProxiesListViewState extends ConsumerState<ProxiesListView> {
   double _folderBarExtent = 0;
   ProxyFolder _folder = ProxyFolder.all;
   List<Group> _shownGroups = const [];
+
+  /// In-group search keywords by group name, and the groups whose search
+  /// field is open. A keyword filters only its own group's nodes.
+  final _groupSearchKeywords = <String, String>{};
+  final _groupSearchOpen = <String>{};
+
+  String _groupSearchKeyword(String groupName) =>
+      _groupSearchKeywords[groupName] ?? '';
+
+  List<Proxy> _visibleProxies(Group group) {
+    final keyword = _groupSearchKeyword(group.name);
+    if (keyword.isEmpty) {
+      return group.all;
+    }
+    return group.all
+        .whereMatches(SearchQuery(keyword), (proxy) => proxy.searchFields)
+        .toList();
+  }
+
+  void _setGroupSearchKeyword(String groupName, String keyword) {
+    setState(() {
+      if (keyword.isEmpty) {
+        _groupSearchKeywords.remove(groupName);
+      } else {
+        _groupSearchKeywords[groupName] = keyword;
+      }
+    });
+  }
+
+  void _setGroupSearchOpen(String groupName, bool open) {
+    setState(() {
+      if (open) {
+        _groupSearchOpen.add(groupName);
+      } else {
+        _groupSearchOpen.remove(groupName);
+      }
+    });
+  }
 
   @override
   void initState() {
@@ -82,7 +119,8 @@ class _ProxiesListViewState extends ConsumerState<ProxiesListView> {
         cursor += _headerHeight + _gap;
         if (state.currentUnfoldSet.contains(group.name)) {
           final rowCount =
-              (group.all.length + _fullColumns - 1) ~/ _fullColumns;
+              (_visibleProxies(group).length + _fullColumns - 1) ~/
+              _fullColumns;
           cursor += _rowsExtent(rowCount, rowExtent);
           index++;
           continue;
@@ -103,7 +141,8 @@ class _ProxiesListViewState extends ConsumerState<ProxiesListView> {
       offsets.add(columnOffsets[column]);
       columnOffsets[column] += _headerHeight + _gap;
       if (state.currentUnfoldSet.contains(group.name)) {
-        final rowCount = (group.all.length + _columns - 1) ~/ _columns;
+        final rowCount =
+            (_visibleProxies(group).length + _columns - 1) ~/ _columns;
         columnOffsets[column] += _rowsExtent(rowCount, rowExtent);
       }
     }
@@ -174,14 +213,11 @@ class _ProxiesListViewState extends ConsumerState<ProxiesListView> {
 
   void _scrollToGroupSelected(String groupName) {
     final cardType = ref.read(proxiesListStateProvider).proxyCardType;
-    final proxies = ref
-        .read(proxiesListStateProvider)
-        .groups
-        .getGroup(groupName)
-        ?.all;
-    if (proxies == null) {
+    final group = ref.read(proxiesListStateProvider).groups.getGroup(groupName);
+    if (group == null) {
       return;
     }
+    final proxies = _visibleProxies(group);
     final isExpanded = ref
         .read(proxiesListStateProvider)
         .currentUnfoldSet
@@ -323,6 +359,7 @@ class _ProxiesListViewState extends ConsumerState<ProxiesListView> {
                       delayMap: delayMap,
                       selectedMap: selectedMap,
                       defaultTestUrl: defaultTestUrl,
+                      groupNames: groupNames,
                     )
                   : groups;
               final shownGroups = filterGroupsByFolder(
@@ -355,6 +392,10 @@ class _ProxiesListViewState extends ConsumerState<ProxiesListView> {
                     pinnedAbove: context.contentTopPadding + _folderBarExtent,
                     onChange: _handleChange,
                     onScrollToSelected: _scrollToGroupSelected,
+                    searchKeyword: _groupSearchKeyword(group.name),
+                    searchOpen: _groupSearchOpen.contains(group.name),
+                    onSearchKeyword: _setGroupSearchKeyword,
+                    onSearchOpen: _setGroupSearchOpen,
                   );
               final folderCounts = (
                 all: allGroups.length,
@@ -476,6 +517,10 @@ class _GroupSliver extends ConsumerStatefulWidget {
     required this.pinnedAbove,
     required this.onChange,
     required this.onScrollToSelected,
+    required this.searchKeyword,
+    required this.searchOpen,
+    required this.onSearchKeyword,
+    required this.onSearchOpen,
   });
 
   final Group group;
@@ -496,6 +541,13 @@ class _GroupSliver extends ConsumerStatefulWidget {
 
   final void Function(String groupName) onChange;
   final void Function(String groupName) onScrollToSelected;
+
+  /// The in-group search keyword, the field's open state, and their
+  /// callbacks. The keyword filters only this group's nodes.
+  final String searchKeyword;
+  final bool searchOpen;
+  final void Function(String groupName, String keyword) onSearchKeyword;
+  final void Function(String groupName, bool open) onSearchOpen;
 
   @override
   ConsumerState<_GroupSliver> createState() => _GroupSliverState();
@@ -542,9 +594,20 @@ class _GroupSliverState extends ConsumerState<_GroupSliver>
         widget.columns != oldWidget.columns ||
         widget.cardType != oldWidget.cardType ||
         widget.iconMode != oldWidget.iconMode ||
-        widget.headerHeight != oldWidget.headerHeight) {
+        widget.headerHeight != oldWidget.headerHeight ||
+        widget.searchKeyword != oldWidget.searchKeyword) {
       _rows = null;
     }
+  }
+
+  List<Proxy> get _visibleProxies {
+    final keyword = widget.searchKeyword;
+    if (keyword.isEmpty) {
+      return widget.group.all;
+    }
+    return widget.group.all
+        .whereMatches(SearchQuery(keyword), (proxy) => proxy.searchFields)
+        .toList();
   }
 
   Widget _buildRow(BuildContext context, List<Proxy> proxies) {
@@ -583,7 +646,7 @@ class _GroupSliverState extends ConsumerState<_GroupSliver>
   }
 
   Widget _buildRows(double extent) {
-    final rows = widget.group.all.chunks(widget.columns).toList();
+    final rows = _visibleProxies.chunks(widget.columns).toList();
     return SliverFixedExtentList(
       itemExtent: extent,
       delegate: SliverChildBuilderDelegate(
@@ -597,7 +660,7 @@ class _GroupSliverState extends ConsumerState<_GroupSliver>
   /// The card reaches up behind the header's rounded bottom corners, so the
   /// two read as one while the rows unfold or fold.
   Widget _buildUnfoldingRows(double extent, ShapeDecoration decoration) {
-    final rows = widget.group.all.chunks(widget.columns).toList();
+    final rows = _visibleProxies.chunks(widget.columns).toList();
     final visible = min(
       rows.length.toDouble(),
       MediaQuery.sizeOf(context).height / extent,
@@ -644,7 +707,7 @@ class _GroupSliverState extends ConsumerState<_GroupSliver>
     );
     final unfolded = _controller.isCompleted;
     Widget? rows;
-    if (!_controller.isDismissed && widget.group.all.isNotEmpty) {
+    if (!_controller.isDismissed && _visibleProxies.isNotEmpty) {
       final extent = getRowExtent(widget.cardType);
       final decoration = ShapeDecoration(
         color: context.raisedSurfaceLevel.colorOf(context.colorScheme),
@@ -691,6 +754,11 @@ class _GroupSliverState extends ConsumerState<_GroupSliver>
               onDelayTest: () => ref
                   .read(proxiesActionProvider.notifier)
                   .delayTestPageGroup(groupName),
+              searchKeyword: widget.searchKeyword,
+              searchOpen: widget.searchOpen,
+              onSearchKeyword: (keyword) =>
+                  widget.onSearchKeyword(groupName, keyword),
+              onSearchOpen: (open) => widget.onSearchOpen(groupName, open),
             )
           : ListHeader(
               enterAnimated: false,
@@ -702,6 +770,11 @@ class _GroupSliverState extends ConsumerState<_GroupSliver>
               unfolded: unfolded,
               group: widget.group,
               onChange: widget.onChange,
+              searchKeyword: widget.searchKeyword,
+              searchOpen: widget.searchOpen,
+              onSearchKeyword: (keyword) =>
+                  widget.onSearchKeyword(groupName, keyword),
+              onSearchOpen: (open) => widget.onSearchOpen(groupName, open),
             ),
     );
     return SliverPadding(
@@ -723,7 +796,7 @@ class _GroupSliverState extends ConsumerState<_GroupSliver>
     Widget Function({double floating, double lift}) buildHeader,
   ) {
     final columns = widget.columns;
-    final rowCount = (widget.group.all.length + columns - 1) ~/ columns;
+    final rowCount = (_visibleProxies.length + columns - 1) ~/ columns;
     final rowsExtent = isExpand ? _rowsExtent(rowCount, _rowExtent) : 0.0;
     final groupExtent =
         widget.headerHeight +
@@ -804,6 +877,13 @@ class ListHeader extends ConsumerWidget {
   /// The shadow that lifts the header off the rows under it.
   final double lift;
 
+  /// The in-group search keyword, the field's open state, and their
+  /// callbacks. The control shows only while the group is open.
+  final String searchKeyword;
+  final bool searchOpen;
+  final ValueChanged<String> onSearchKeyword;
+  final ValueChanged<bool> onSearchOpen;
+
   const ListHeader({
     super.key,
     this.enterAnimated = true,
@@ -814,6 +894,10 @@ class ListHeader extends ConsumerWidget {
     required this.onScrollToSelected,
     required this.isExpand,
     required this.unfolded,
+    required this.searchKeyword,
+    required this.searchOpen,
+    required this.onSearchKeyword,
+    required this.onSearchOpen,
   });
 
   @override
@@ -860,6 +944,10 @@ class ListHeader extends ConsumerWidget {
               onToggle: () {
                 onChange(groupName);
               },
+              searchKeyword: searchKeyword,
+              searchOpen: searchOpen,
+              onSearchKeyword: onSearchKeyword,
+              onSearchOpen: onSearchOpen,
             ),
           ],
         ),
@@ -1009,6 +1097,10 @@ class _GroupActions extends StatelessWidget {
     required this.onScrollToSelected,
     required this.onDelayTest,
     required this.onToggle,
+    required this.searchKeyword,
+    required this.searchOpen,
+    required this.onSearchKeyword,
+    required this.onSearchOpen,
   });
 
   final bool isExpand;
@@ -1017,6 +1109,10 @@ class _GroupActions extends StatelessWidget {
   final VoidCallback onScrollToSelected;
   final VoidCallback onDelayTest;
   final VoidCallback onToggle;
+  final String searchKeyword;
+  final bool searchOpen;
+  final ValueChanged<String> onSearchKeyword;
+  final ValueChanged<bool> onSearchOpen;
 
   @override
   Widget build(BuildContext context) {
@@ -1050,7 +1146,16 @@ class _GroupActions extends StatelessWidget {
                   .of(context, emphasized: true)
                   .toLight,
             ),
-          const SizedBox(width: 6),
+          if (isExpand) ...[
+            GroupSearchControl(
+              keyword: searchKeyword,
+              open: searchOpen,
+              onKeyword: onSearchKeyword,
+              onOpen: onSearchOpen,
+            ),
+            const SizedBox(width: 6),
+          ] else
+            const SizedBox(width: 6),
           ElasticPress(
             child: IconButton(
               tooltip: isExpand
@@ -1148,48 +1253,32 @@ class _FolderPill extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = context.colorScheme;
-    final foreground = selected
-        ? colorScheme.primary
-        : colorScheme.onSurfaceVariant;
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: onTap,
-      child: DecoratedBox(
-        decoration: ShapeDecoration(
-          color: selected ? colorScheme.primary.opacity15 : null,
-          shape: RoundedSuperellipseBorder(
-            borderRadius: BorderRadius.all(
-              Radius.circular(AppCorner.sm.ap(context)),
-            ),
+    return Card(
+      isSelected: selected,
+      fillsSelection: true,
+      shape: AppShape.full,
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      onPressed: onTap,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          GlyphIcon(glyph, size: _folderPillIconSize),
+          const SizedBox(width: _folderPillIconGap),
+          Flexible(
+            child: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis),
           ),
-        ),
-        child: Padding(
-          padding: _folderPillPadding,
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              GlyphIcon(glyph, size: _folderPillIconSize, color: foreground),
-              const SizedBox(width: _folderPillIconGap),
-              Flexible(
-                child: Text(
-                  label,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: AppTextStyle.subheadline
-                      .of(context, emphasized: selected)
-                      .copyWith(color: foreground),
+          const SizedBox(width: _folderPillCountGap),
+          Text(
+            '$count',
+            style: AppTextStyle.caption1
+                .of(context)
+                .copyWith(
+                  color: selected
+                      ? colorScheme.onPrimary
+                      : colorScheme.onSurfaceVariant,
                 ),
-              ),
-              const SizedBox(width: _folderPillCountGap),
-              Text(
-                '$count',
-                style: AppTextStyle.caption1
-                    .of(context)
-                    .copyWith(color: foreground),
-              ),
-            ],
           ),
-        ),
+        ],
       ),
     );
   }

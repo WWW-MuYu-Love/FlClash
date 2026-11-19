@@ -1,9 +1,11 @@
+import 'package:fl_clash/common/common.dart';
 import 'package:fl_clash/enum/enum.dart';
 import 'package:fl_clash/models/models.dart';
 import 'package:fl_clash/state.dart';
+import 'package:fl_clash/ui/icons/icons.dart';
+import 'package:fl_clash/widgets/widgets.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
-import 'package:prism_ui/theme_data.dart';
-import 'package:prism_ui/typography.dart';
 
 const proxyGridSpacing = 8.0;
 
@@ -85,6 +87,123 @@ double? selectedRowOffset({
     return null;
   }
   return (index ~/ columns) * rowExtent;
+}
+
+/// The in-group search control zashboard puts after the type line: a
+/// magnifier that opens a field filtering the group's nodes, shown only
+/// while the group is open. Typing filters live with the page search's
+/// matcher; the clear button empties the keyword and closes the field,
+/// and so does tapping away with nothing typed.
+class GroupSearchControl extends StatefulWidget {
+  const GroupSearchControl({
+    super.key,
+    required this.keyword,
+    required this.open,
+    required this.onKeyword,
+    required this.onOpen,
+  });
+
+  final String keyword;
+  final bool open;
+  final ValueChanged<String> onKeyword;
+  final ValueChanged<bool> onOpen;
+
+  @override
+  State<GroupSearchControl> createState() => _GroupSearchControlState();
+}
+
+class _GroupSearchControlState extends State<GroupSearchControl> {
+  late final TextEditingController _controller = TextEditingController(
+    text: widget.keyword,
+  );
+  late final FocusNode _focusNode = FocusNode();
+
+  @override
+  void didUpdateWidget(covariant GroupSearchControl oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.keyword != _controller.text) {
+      _controller.text = widget.keyword;
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    _focusNode.dispose();
+    super.dispose();
+  }
+
+  void _close() {
+    widget.onKeyword('');
+    widget.onOpen(false);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final appLocalizations = context.appLocalizations;
+    if (!widget.open) {
+      return HoverTooltip(
+        message: appLocalizations.search,
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: () => widget.onOpen(true),
+          child: Padding(
+            padding: const EdgeInsets.all(4),
+            child: GlyphIcon(
+              AppGlyphs.search,
+              size: 14,
+              color: context.colorScheme.onSurfaceVariant,
+            ),
+          ),
+        ),
+      );
+    }
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        SizedBox(
+          width: 128,
+          child: TextField(
+            controller: _controller,
+            focusNode: _focusNode,
+            autofocus: true,
+            autocorrect: false,
+            textInputAction: TextInputAction.search,
+            style: AppTextStyle.caption1.of(context),
+            textAlignVertical: TextAlignVertical.center,
+            decoration: InputDecoration.collapsed(
+              hintText: appLocalizations.search,
+            ),
+            onChanged: widget.onKeyword,
+            onSubmitted: (_) => _focusNode.unfocus(),
+            onTapOutside: (_) {
+              if (_controller.text.isEmpty) {
+                _close();
+              } else {
+                _focusNode.unfocus();
+              }
+            },
+          ),
+        ),
+        HoverTooltip(
+          message: appLocalizations.clearSearch,
+          child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: _close,
+            child: Padding(
+              padding: const EdgeInsets.all(4),
+              child: GlyphIcon(
+                Glyphs.clearField,
+                size: 14,
+                fill: 1,
+                color: context.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
 }
 
 void animateScrollTo(ScrollController controller, double offset) {

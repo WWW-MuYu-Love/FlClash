@@ -78,6 +78,10 @@ class GroupIconCard extends ConsumerWidget {
     this.lift = 0,
     required this.onChange,
     required this.onDelayTest,
+    required this.searchKeyword,
+    required this.searchOpen,
+    required this.onSearchKeyword,
+    required this.onSearchOpen,
   });
 
   final Group group;
@@ -88,6 +92,11 @@ class GroupIconCard extends ConsumerWidget {
   final double lift;
   final VoidCallback onChange;
   final VoidCallback onDelayTest;
+
+  final String searchKeyword;
+  final bool searchOpen;
+  final ValueChanged<String> onSearchKeyword;
+  final ValueChanged<bool> onSearchOpen;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -147,13 +156,27 @@ class GroupIconCard extends ConsumerWidget {
                     ],
                   ),
                   SizedBox(height: metrics.metaGap),
-                  _GroupAvailability(group: group),
-                  const Spacer(),
                   Row(
                     children: [
-                      Flexible(child: _SelectedProxy(group: group)),
-                      _SelectedDelay(group: group, onDelayTest: onDelayTest),
+                      Flexible(child: _GroupAvailability(group: group)),
+                      if (unfolded) ...[
+                        const SizedBox(width: 8),
+                        GroupSearchControl(
+                          keyword: searchKeyword,
+                          open: searchOpen,
+                          onKeyword: onSearchKeyword,
+                          onOpen: onSearchOpen,
+                        ),
+                      ],
                     ],
+                  ),
+                  const Spacer(),
+                  _GroupBottomRow(
+                    group: group,
+                    cardType: cardType,
+                    iconStyle: iconStyle,
+                    unfolded: unfolded,
+                    onDelayTest: onDelayTest,
                   ),
                 ],
               ),
@@ -244,6 +267,104 @@ class _GroupAvailability extends ConsumerWidget {
       maxLines: 1,
       overflow: TextOverflow.ellipsis,
       style: AppTextStyle.caption1.of(context).toLight,
+    );
+  }
+}
+
+/// The pill sits at the row's end, its right edge on the brand icon's; the
+/// trailing inset matches the filled tile's padding, none otherwise.
+class _GroupBottomRow extends ConsumerWidget {
+  const _GroupBottomRow({
+    required this.group,
+    required this.cardType,
+    required this.iconStyle,
+    required this.unfolded,
+    required this.onDelayTest,
+  });
+
+  final Group group;
+  final ProxyCardType cardType;
+  final ProxiesIconStyle iconStyle;
+  final bool unfolded;
+  final VoidCallback onDelayTest;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final metrics = _cardMetrics(cardType);
+    final proxyName = ref
+        .watch(selectedProxyNameProvider(group.name))
+        .takeFirstValid([]);
+    return Row(
+      children: [
+        Expanded(child: _SelectedProxy(group: group)),
+        SizedBox(width: metrics.nameIconGap),
+        if (unfolded && proxyName.isNotEmpty) ...[
+          _SelectedSpeeds(proxyName: proxyName),
+          const SizedBox(width: _nowGap),
+        ],
+        _SelectedDelay(group: group, onDelayTest: onDelayTest),
+        if (iconStyle == ProxiesIconStyle.filled)
+          SizedBox(width: _brandIconTilePadding.ap(context)),
+      ],
+    );
+  }
+}
+
+String _rateText(num bytes) {
+  final show = bytes.traffic;
+  return '${show.value} ${show.unit}/s';
+}
+
+class _SelectedSpeeds extends ConsumerWidget {
+  const _SelectedSpeeds({required this.proxyName});
+
+  final String proxyName;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final running = ref.watch(isStartProvider);
+    final speed = ref.watch(
+      nodeSpeedsProvider.select(
+        (speeds) => speeds[proxyName] ?? const Traffic(),
+      ),
+    );
+    final shown = running ? speed : const Traffic();
+    final style = AppTextStyle.caption2.of(context, emphasized: true).toLight;
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      spacing: _nowGap,
+      children: [
+        _SpeedFigure(glyph: AppGlyphs.arrowUp, bytes: shown.up, style: style),
+        _SpeedFigure(
+          glyph: AppGlyphs.arrowDown,
+          bytes: shown.down,
+          style: style,
+        ),
+      ],
+    );
+  }
+}
+
+class _SpeedFigure extends StatelessWidget {
+  const _SpeedFigure({
+    required this.glyph,
+    required this.bytes,
+    required this.style,
+  });
+
+  final Glyph glyph;
+  final num bytes;
+  final TextStyle style;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      spacing: 2,
+      children: [
+        GlyphIcon(glyph, size: 12, color: style.color),
+        Text(_rateText(bytes), maxLines: 1, style: style),
+      ],
     );
   }
 }

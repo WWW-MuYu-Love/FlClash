@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:fl_clash/common/common.dart';
 import 'package:fl_clash/enum/enum.dart';
 import 'package:fl_clash/models/models.dart';
@@ -41,14 +43,22 @@ Group _group(
   GroupType groupType = GroupType.Selector,
   String icon = '',
   List<String>? memberNames,
+  Map<String, String> memberIcons = const {},
 }) => Group(
   type: groupType,
   name: name,
   icon: icon,
   testUrl: testUrl,
   all: memberNames != null
-      ? [for (final member in memberNames) Proxy(name: member, type: 'ss')]
+      ? [
+          for (final member in memberNames)
+            Proxy(name: member, type: 'ss', icon: memberIcons[member] ?? ''),
+        ]
       : [for (var i = 0; i < count; i++) Proxy(name: '$name-$i', type: 'ss')],
+);
+
+final _onePixelPng = base64Decode(
+  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==',
 );
 
 void main() {
@@ -941,5 +951,398 @@ void main() {
     expect(find.text('S2', findRichText: true), findsOneWidget);
     expect(find.text('N1', findRichText: true), findsOneWidget);
     expect(find.text('N2', findRichText: true), findsOneWidget);
+  });
+
+  testWidgets(
+    'a member card shows the member group icon, and none without one',
+    (tester) async {
+      readRemoteIcon = (_) => Stream.value(_onePixelPng);
+      addTearDown(() => readRemoteIcon = null);
+      await pumpList(
+        tester,
+        groups: [
+          _group(
+            'G0',
+            0,
+            memberNames: ['中国自动', '台湾01'],
+            memberIcons: {'中国自动': 'https://example.com/cn.png'},
+          ),
+        ],
+        unfoldSet: const {'G0'},
+      );
+
+      final withIcon = find.byWidgetPredicate(
+        (widget) =>
+            widget is ProxyCard && widget.key == const ValueKey('G0.中国自动'),
+      );
+      expect(withIcon, findsOneWidget);
+      expect(
+        tester
+            .widget<GroupBrandIcon>(
+              find.descendant(
+                of: withIcon,
+                matching: find.byType(GroupBrandIcon),
+              ),
+            )
+            .src,
+        'https://example.com/cn.png',
+      );
+      expect(
+        find.descendant(of: withIcon, matching: find.byType(Image)),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(
+          of: find.byWidgetPredicate(
+            (widget) =>
+                widget is ProxyCard && widget.key == const ValueKey('G0.台湾01'),
+          ),
+          matching: find.byType(GroupBrandIcon),
+        ),
+        findsNothing,
+      );
+    },
+  );
+
+  testWidgets(
+    'the collapsed bottom row pins the delay pill to the brand icon',
+    (tester) async {
+      await pumpList(
+        tester,
+        type: ProxiesType.icons,
+        iconStyle: ProxiesIconStyle.filled,
+        physicalSize: const Size(390, 844),
+        selectedMap: const {'G0': 'G0-0'},
+        groups: [_group('G0', 3, testUrl: _testUrl)],
+        delays: {
+          _testUrl: {'G0-0': 123},
+        },
+        unfoldSet: const {},
+      );
+
+      final card = groupCardOf('G0');
+      final brand = tester.getRect(
+        find.descendant(of: card, matching: find.byType(GroupBrandIcon)).first,
+      );
+      final pill = tester.getRect(
+        find.ancestor(
+          of: find.descendant(of: card, matching: find.text('123')),
+          matching: find.byWidgetPredicate(
+            (widget) =>
+                widget is DecoratedBox &&
+                widget.decoration is ShapeDecoration &&
+                (widget.decoration as ShapeDecoration).shape == AppShape.full,
+          ),
+        ),
+      );
+      expect(pill.right, brand.right);
+    },
+  );
+
+  testWidgets('a long selected name leaves one gap before the delay pill', (
+    tester,
+  ) async {
+    const longName = '中国自动节点名字很长很长很长很长';
+    await pumpList(
+      tester,
+      type: ProxiesType.icons,
+      iconStyle: ProxiesIconStyle.filled,
+      physicalSize: const Size(390, 844),
+      selectedMap: const {'G0': longName},
+      groups: [
+        _group('G0', 0, memberNames: [longName], testUrl: _testUrl),
+      ],
+      delays: {
+        _testUrl: {longName: 123},
+      },
+      unfoldSet: const {},
+    );
+
+    final card = groupCardOf('G0');
+    final name = tester.getRect(
+      find.descendant(
+        of: card,
+        matching: find.text(longName, findRichText: true),
+      ),
+    );
+    final pill = tester.getRect(
+      find.ancestor(
+        of: find.descendant(of: card, matching: find.text('123')),
+        matching: find.byWidgetPredicate(
+          (widget) =>
+              widget is DecoratedBox &&
+              widget.decoration is ShapeDecoration &&
+              (widget.decoration as ShapeDecoration).shape == AppShape.full,
+        ),
+      ),
+    );
+    expect(pill.left - name.right, 8);
+  });
+
+  testWidgets(
+    'an expanded group shows the selected node speeds left of the delay pill',
+    (tester) async {
+      await pumpList(
+        tester,
+        type: ProxiesType.icons,
+        selectedMap: const {'G0': 'G0-0'},
+        groups: [_group('G0', 3, testUrl: _testUrl)],
+        delays: {
+          _testUrl: {'G0-0': 123},
+        },
+        unfoldSet: const {'G0'},
+      );
+      container.read(nodeSpeedsProvider.notifier).setSpeeds({
+        'G0-0': const Traffic(up: 1536, down: 2560),
+      });
+      container.read(runTimeProvider.notifier).value = 60000;
+      await tester.pump();
+
+      expect(find.text('1.5 KB/s'), findsOneWidget);
+      expect(find.text('2.5 KB/s'), findsOneWidget);
+      final card = groupCardOf('G0');
+      final up = tester.getRect(find.text('1.5 KB/s'));
+      final down = tester.getRect(find.text('2.5 KB/s'));
+      final pill = tester.getRect(
+        find.ancestor(
+          of: find.descendant(of: card, matching: find.text('123')),
+          matching: find.byWidgetPredicate(
+            (widget) =>
+                widget is DecoratedBox &&
+                widget.decoration is ShapeDecoration &&
+                (widget.decoration as ShapeDecoration).shape == AppShape.full,
+          ),
+        ),
+      );
+      expect(up.right, lessThan(down.left));
+      expect(down.right, lessThan(pill.left));
+    },
+  );
+
+  testWidgets('an expanded bottom row centers the speeds, name and pill', (
+    tester,
+  ) async {
+    await pumpList(
+      tester,
+      type: ProxiesType.icons,
+      selectedMap: const {'G0': 'G0-0'},
+      groups: [_group('G0', 3, testUrl: _testUrl)],
+      delays: {
+        _testUrl: {'G0-0': 123},
+      },
+      unfoldSet: const {'G0'},
+    );
+    container.read(nodeSpeedsProvider.notifier).setSpeeds({
+      'G0-0': const Traffic(up: 1536, down: 2560),
+    });
+    container.read(runTimeProvider.notifier).value = 60000;
+    await tester.pump();
+
+    final card = groupCardOf('G0');
+    final centers = [
+      tester.getRect(find.text('1.5 KB/s')).center.dy,
+      tester.getRect(find.text('2.5 KB/s')).center.dy,
+      tester
+          .getRect(
+            find
+                .descendant(of: card, matching: find.byType(GroupBrandIcon))
+                .at(1),
+          )
+          .center
+          .dy,
+      tester
+          .getRect(
+            find.descendant(
+              of: card,
+              matching: find.text('G0-0', findRichText: true),
+            ),
+          )
+          .center
+          .dy,
+      tester
+          .getRect(
+            find.descendant(
+              of: card,
+              matching: find.byGlyph(AppGlyphs.arrowRightCircle),
+            ),
+          )
+          .center
+          .dy,
+      tester
+          .getRect(
+            find.ancestor(
+              of: find.descendant(of: card, matching: find.text('123')),
+              matching: find.byWidgetPredicate(
+                (widget) =>
+                    widget is DecoratedBox &&
+                    widget.decoration is ShapeDecoration &&
+                    (widget.decoration as ShapeDecoration).shape ==
+                        AppShape.full,
+              ),
+            ),
+          )
+          .center
+          .dy,
+    ];
+    for (final center in centers) {
+      expect(center, closeTo(centers.first, 1));
+    }
+  });
+
+  testWidgets('an expanded group with no traffic reads 0 B/s', (tester) async {
+    await pumpList(
+      tester,
+      type: ProxiesType.icons,
+      selectedMap: const {'G0': 'G0-0'},
+      groups: [_group('G0', 3, testUrl: _testUrl)],
+      delays: {
+        _testUrl: {'G0-0': 123},
+      },
+      unfoldSet: const {'G0'},
+    );
+    container.read(runTimeProvider.notifier).value = 60000;
+    await tester.pump();
+
+    expect(find.text('0 B/s'), findsNWidgets(2));
+  });
+
+  testWidgets('speeds read 0 B/s while the tunnel is down', (tester) async {
+    await pumpList(
+      tester,
+      type: ProxiesType.icons,
+      selectedMap: const {'G0': 'G0-0'},
+      groups: [_group('G0', 3, testUrl: _testUrl)],
+      delays: {
+        _testUrl: {'G0-0': 123},
+      },
+      unfoldSet: const {'G0'},
+    );
+    container.read(nodeSpeedsProvider.notifier).setSpeeds({
+      'G0-0': const Traffic(up: 1536, down: 2560),
+    });
+    await tester.pump();
+
+    expect(find.text('0 B/s'), findsNWidgets(2));
+  });
+
+  testWidgets('a collapsed group shows no speeds', (tester) async {
+    await pumpList(
+      tester,
+      type: ProxiesType.icons,
+      selectedMap: const {'G0': 'G0-0'},
+      groups: [_group('G0', 3, testUrl: _testUrl)],
+      delays: {
+        _testUrl: {'G0-0': 123},
+      },
+      unfoldSet: const {},
+    );
+    container.read(nodeSpeedsProvider.notifier).setSpeeds({
+      'G0-0': const Traffic(up: 1536, down: 2560),
+    });
+    container.read(runTimeProvider.notifier).value = 60000;
+    await tester.pump();
+
+    expect(find.text('0 B/s'), findsNothing);
+    expect(find.text('1.5 KB/s'), findsNothing);
+  });
+
+  testWidgets('an expanded group filters its nodes from the magnifier', (
+    tester,
+  ) async {
+    await pumpList(
+      tester,
+      type: ProxiesType.icons,
+      groups: [
+        _group('G0', 0, memberNames: ['中国自动', '台湾自动', '香港自动']),
+      ],
+      unfoldSet: const {'G0'},
+    );
+
+    final card = groupCardOf('G0');
+    final magnifier = find.descendant(
+      of: card,
+      matching: find.byGlyph(AppGlyphs.search),
+    );
+    expect(magnifier, findsOneWidget);
+    expect(find.byType(TextField), findsNothing);
+
+    await tester.tap(magnifier);
+    await tester.pumpAndSettle();
+    expect(find.byType(TextField), findsOneWidget);
+
+    await tester.enterText(find.byType(TextField), '台湾');
+    await tester.pumpAndSettle();
+    expect(find.text('台湾自动', findRichText: true), findsOneWidget);
+    expect(find.text('中国自动', findRichText: true), findsNothing);
+    expect(find.text('香港自动', findRichText: true), findsNothing);
+
+    await tester.enterText(find.byType(TextField), '台湾 手动');
+    await tester.pumpAndSettle();
+    expect(find.text('台湾自动', findRichText: true), findsNothing);
+
+    await tester.enterText(find.byType(TextField), '');
+    await tester.pumpAndSettle();
+    expect(find.text('中国自动', findRichText: true), findsOneWidget);
+    expect(find.text('台湾自动', findRichText: true), findsOneWidget);
+    expect(find.text('香港自动', findRichText: true), findsOneWidget);
+
+    await tester.tap(find.byGlyph(Glyphs.clearField));
+    await tester.pumpAndSettle();
+    expect(find.byType(TextField), findsNothing);
+    expect(magnifier, findsOneWidget);
+  });
+
+  testWidgets('a list group filters its nodes from the magnifier', (
+    tester,
+  ) async {
+    await pumpList(
+      tester,
+      groups: [
+        _group('G0', 0, memberNames: ['中国自动', '台湾自动', '香港自动']),
+      ],
+      unfoldSet: const {'G0'},
+    );
+
+    final header = headerOf('G0');
+    final magnifier = find.descendant(
+      of: header,
+      matching: find.byGlyph(AppGlyphs.search),
+    );
+    expect(magnifier, findsOneWidget);
+
+    await tester.tap(magnifier);
+    await tester.pumpAndSettle();
+    expect(find.byType(TextField), findsOneWidget);
+
+    await tester.enterText(find.byType(TextField), '香港');
+    await tester.pumpAndSettle();
+    expect(find.text('香港自动', findRichText: true), findsOneWidget);
+    expect(find.text('中国自动', findRichText: true), findsNothing);
+    expect(find.text('台湾自动', findRichText: true), findsNothing);
+
+    await tester.tap(find.byGlyph(Glyphs.clearField));
+    await tester.pumpAndSettle();
+    expect(find.byType(TextField), findsNothing);
+    expect(find.text('中国自动', findRichText: true), findsOneWidget);
+    expect(find.text('台湾自动', findRichText: true), findsOneWidget);
+    expect(find.text('香港自动', findRichText: true), findsOneWidget);
+  });
+
+  testWidgets('a collapsed group shows no magnifier', (tester) async {
+    await pumpList(
+      tester,
+      groups: [
+        _group('G0', 0, memberNames: ['中国自动', '台湾自动']),
+      ],
+      unfoldSet: const {},
+    );
+
+    expect(
+      find.descendant(
+        of: headerOf('G0'),
+        matching: find.byGlyph(AppGlyphs.search),
+      ),
+      findsNothing,
+    );
   });
 }
