@@ -22,10 +22,6 @@ import 'package:prism_ui/shapes/shapes.dart';
 import 'card.dart';
 import 'package:prism_ui/prism_ui.dart';
 
-const _builtinOutbounds = {'DIRECT', 'REJECT', 'REJECT-DROP', 'PASS'};
-
-bool isBuiltinOutbound(String name) => _builtinOutbounds.contains(name);
-
 const _ipMask = '*****';
 
 const _decorationGrowth = 0.12;

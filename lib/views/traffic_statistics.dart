@@ -371,8 +371,22 @@ class _Overview extends StatelessWidget {
         8 +
         (8 + textScaler.scale(AppTextStyle.footnote.leading));
     final rowHeight = math.max(leftHeight, _ProxyGauge.size);
-    final slotHeight = rowHeight + 12 + 8;
-    final gaugeOffset = (slotHeight - _ProxyGauge.size) / 2 - 12;
+    final headerHeight = math.max(
+      28,
+      textScaler.scale(AppTextStyle.headline.leading),
+    );
+    final uptimeHeight =
+        24 +
+        math.max(16, textScaler.scale(AppTextStyle.subheadline.leading)) +
+        6 +
+        textScaler.scale(AppTextStyle.title3.leading);
+    final splitHeight =
+        24 + textScaler.scale(AppTextStyle.subheadline.leading) * 2 + 8;
+    final bottomHeight = math.max(uptimeHeight, splitHeight);
+    final contentHeight = headerHeight + 12 + rowHeight + 8 + bottomHeight;
+    // Centred on the whole overview, not just the total block above.
+    final gaugeOffset =
+        contentHeight / 2 - _ProxyGauge.size / 2 - (headerHeight + 12);
     return Column(
       children: [
         _SectionHeader(

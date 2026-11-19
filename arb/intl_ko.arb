@@ -369,6 +369,7 @@
   "proxyFolderAll": "전체",
   "proxyFolderStrategy": "전략 그룹",
   "proxyFolderNodes": "노드 그룹",
+  "proxyFolderLeafNodes": "노드",
   "loadBalance": "로드 밸런스",
   "filter": "필터",
   "groupBy": "분류",

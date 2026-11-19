@@ -18,7 +18,6 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'card.dart';
-import 'current_outbound.dart';
 
 /// Enough to fill the tallest card several times over; the full feed is a
 /// tap away.

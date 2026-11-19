@@ -1848,6 +1848,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "proxiesReplacedTip": m90,
     "proxyChains": MessageLookupByLibrary.simpleMessage("Cadena de proxies"),
     "proxyFolderAll": MessageLookupByLibrary.simpleMessage("Todo"),
+    "proxyFolderLeafNodes": MessageLookupByLibrary.simpleMessage("Nodos"),
     "proxyFolderNodes": MessageLookupByLibrary.simpleMessage("Grupos de nodos"),
     "proxyFolderStrategy": MessageLookupByLibrary.simpleMessage(
       "Grupos de estrategia",

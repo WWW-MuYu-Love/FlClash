@@ -1853,6 +1853,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "proxiesReplacedTip": m90,
     "proxyChains": MessageLookupByLibrary.simpleMessage("Chaîne de proxys"),
     "proxyFolderAll": MessageLookupByLibrary.simpleMessage("Tout"),
+    "proxyFolderLeafNodes": MessageLookupByLibrary.simpleMessage("Nœuds"),
     "proxyFolderNodes": MessageLookupByLibrary.simpleMessage(
       "Groupes de nœuds",
     ),

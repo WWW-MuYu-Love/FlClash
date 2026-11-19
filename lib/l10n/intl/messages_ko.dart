@@ -1448,6 +1448,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "proxiesReplacedTip": m90,
     "proxyChains": MessageLookupByLibrary.simpleMessage("프록시 체인"),
     "proxyFolderAll": MessageLookupByLibrary.simpleMessage("전체"),
+    "proxyFolderLeafNodes": MessageLookupByLibrary.simpleMessage("노드"),
     "proxyFolderNodes": MessageLookupByLibrary.simpleMessage("노드 그룹"),
     "proxyFolderStrategy": MessageLookupByLibrary.simpleMessage("전략 그룹"),
     "proxyGroup": MessageLookupByLibrary.simpleMessage("프록시 그룹"),

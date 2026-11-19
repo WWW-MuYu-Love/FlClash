@@ -857,9 +857,11 @@ void main() {
   group('ProxiesStyleProps JSON round-trip', () {
     test('default values', () {
       const props = ProxiesStyleProps();
-      expect(props.type, ProxiesType.list);
+      expect(props.type, ProxiesType.icons);
       expect(props.sortType, ProxiesSortType.none);
       expect(props.layout, ProxiesLayout.standard);
+      expect(props.iconStyle, ProxiesIconStyle.plain);
+      expect(props.cardType, ProxyCardType.compact);
     });
 
     test('round-trip with custom values', () {
@@ -877,10 +879,6 @@ void main() {
 
     test('reads the icon styles saved under their former names', () {
       expect(
-        ProxiesStyleProps.fromJson({'iconStyle': 'standard'}).iconStyle,
-        ProxiesIconStyle.filled,
-      );
-      expect(
         ProxiesStyleProps.fromJson({'iconStyle': 'icon'}).iconStyle,
         ProxiesIconStyle.plain,
       );
@@ -891,15 +889,19 @@ void main() {
     });
 
     test('falls back to the default icon style', () {
-      expect(ProxiesStyleProps.fromJson({}).iconStyle, ProxiesIconStyle.filled);
+      expect(ProxiesStyleProps.fromJson({}).iconStyle, ProxiesIconStyle.plain);
       expect(
         ProxiesStyleProps.fromJson({'iconStyle': 'nonsense'}).iconStyle,
-        ProxiesIconStyle.filled,
+        ProxiesIconStyle.plain,
       );
     });
 
     test('round-trips every icon style under its own name', () {
-      for (final style in ProxiesIconStyle.values) {
+      for (final style in [
+        ProxiesIconStyle.plain,
+        ProxiesIconStyle.hidden,
+        ProxiesIconStyle.filled,
+      ]) {
         final restored = roundTrip(
           () => ProxiesStyleProps(iconStyle: style).toJson(),
           ProxiesStyleProps.fromJson,
@@ -911,9 +913,9 @@ void main() {
     test('reads the card sizes saved under their former names', () {
       for (final (saved, cardType) in [
         ('expand', ProxyCardType.loose),
-        ('shrink', ProxyCardType.standard),
+        ('shrink', ProxyCardType.compact),
         ('min', ProxyCardType.compact),
-        ('nonsense', ProxyCardType.standard),
+        ('nonsense', ProxyCardType.compact),
       ]) {
         expect(
           ProxiesStyleProps.fromJson({'cardType': saved}).cardType,
@@ -923,7 +925,11 @@ void main() {
     });
 
     test('round-trips every card size under its own name', () {
-      for (final cardType in ProxyCardType.values) {
+      for (final cardType in [
+        ProxyCardType.compact,
+        ProxyCardType.loose,
+        ProxyCardType.standard,
+      ]) {
         final restored = roundTrip(
           () => ProxiesStyleProps(cardType: cardType).toJson(),
           ProxiesStyleProps.fromJson,
@@ -1504,17 +1510,96 @@ void main() {
   });
 
   group('ProxiesStyleProps JSON', () {
-    test('defaults to the list style type', () {
-      expect(const ProxiesStyleProps().type, ProxiesType.list);
-      expect(ProxiesStyleProps.fromJson(const {}).type, ProxiesType.list);
+    test('defaults to the icons style type', () {
+      expect(const ProxiesStyleProps().type, ProxiesType.icons);
+      expect(ProxiesStyleProps.fromJson(const {}).type, ProxiesType.icons);
     });
 
-    test('round-trips the icons style type', () {
-      final props = roundTrip(
-        () => const ProxiesStyleProps(type: ProxiesType.icons).toJson(),
-        ProxiesStyleProps.fromJson,
+    test('migrates saved old defaults to the new defaults', () {
+      expect(
+        ProxiesStyleProps.fromJson(const {'type': 'list'}).type,
+        ProxiesType.icons,
       );
-      expect(props.type, ProxiesType.icons);
+      expect(
+        ProxiesStyleProps.fromJson(const {'cardType': 'standard'}).cardType,
+        ProxyCardType.compact,
+      );
+      expect(
+        ProxiesStyleProps.fromJson(const {'cardType': 'shrink'}).cardType,
+        ProxyCardType.compact,
+      );
+      expect(
+        ProxiesStyleProps.fromJson(const {'iconStyle': 'filled'}).iconStyle,
+        ProxiesIconStyle.plain,
+      );
+      expect(
+        ProxiesStyleProps.fromJson(const {'iconStyle': 'standard'}).iconStyle,
+        ProxiesIconStyle.plain,
+      );
+    });
+
+    test('migrates saved old defaults only once', () {
+      final migrated = ProxiesStyleProps.fromJson(const {
+        'type': 'list',
+        'cardType': 'standard',
+        'iconStyle': 'filled',
+      });
+      expect(migrated.type, ProxiesType.icons);
+      expect(migrated.cardType, ProxyCardType.compact);
+      expect(migrated.iconStyle, ProxiesIconStyle.plain);
+      expect(migrated.toJson()['styleVersion'], 1);
+      expect(ProxiesStyleProps.fromJson(migrated.toJson()), migrated);
+      expect(
+        ProxiesStyleProps.fromJson(const {
+          'type': 'list',
+          'cardType': 'standard',
+          'iconStyle': 'filled',
+          'styleVersion': 1,
+        }),
+        const ProxiesStyleProps(
+          type: ProxiesType.list,
+          cardType: ProxyCardType.standard,
+          iconStyle: ProxiesIconStyle.filled,
+        ),
+      );
+    });
+
+    test('an explicit old default survives a reload', () {
+      final migrated = ProxiesStyleProps.fromJson(const {'type': 'list'});
+      final picked = migrated.copyWith(
+        type: ProxiesType.list,
+        cardType: ProxyCardType.standard,
+        iconStyle: ProxiesIconStyle.filled,
+      );
+      final reloaded = roundTrip(picked.toJson, ProxiesStyleProps.fromJson);
+      expect(reloaded.type, ProxiesType.list);
+      expect(reloaded.cardType, ProxyCardType.standard);
+      expect(reloaded.iconStyle, ProxiesIconStyle.filled);
+    });
+
+    test('leaves saved non-defaults alone', () {
+      expect(
+        ProxiesStyleProps.fromJson(const {'type': 'tab'}).type,
+        ProxiesType.tab,
+      );
+      expect(
+        ProxiesStyleProps.fromJson(const {'cardType': 'loose'}).cardType,
+        ProxyCardType.loose,
+      );
+      expect(
+        ProxiesStyleProps.fromJson(const {'iconStyle': 'hidden'}).iconStyle,
+        ProxiesIconStyle.hidden,
+      );
+    });
+
+    test('round-trips every style type under its own name', () {
+      for (final type in ProxiesType.values) {
+        final restored = roundTrip(
+          () => ProxiesStyleProps(type: type).toJson(),
+          ProxiesStyleProps.fromJson,
+        );
+        expect(restored.type, type);
+      }
     });
 
     test('migrates a saved icons group style to the icons style type', () {

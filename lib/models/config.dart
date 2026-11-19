@@ -440,7 +440,7 @@ ProxiesIconStyle proxiesIconStyleSafeFromJson(Object? iconStyle) {
     'filled' || 'standard' => ProxiesIconStyle.filled,
     'plain' || 'icon' => ProxiesIconStyle.plain,
     'hidden' || 'none' => ProxiesIconStyle.hidden,
-    _ => ProxiesIconStyle.filled,
+    _ => ProxiesIconStyle.plain,
   };
 }
 
@@ -449,17 +449,35 @@ ProxyCardType proxyCardTypeSafeFromJson(Object? cardType) {
     'loose' || 'expand' => ProxyCardType.loose,
     'standard' || 'shrink' => ProxyCardType.standard,
     'compact' || 'min' => ProxyCardType.compact,
-    _ => ProxyCardType.standard,
+    _ => ProxyCardType.compact,
   };
 }
 
-/// Saved props from before the icon grid became a style carry the removed
-/// `groupStyle` instead of `type`, so they migrate here instead of
-/// dropping back to the list.
+const _proxiesStyleMigrationVersion = 1;
+
+/// Old defaults migrate to the new ones once, stamped by `styleVersion`.
 Map<String, Object?> _migrateProxiesStylePropsJson(Map<String, Object?> json) {
   final migrated = Map<String, Object?>.of(json)..remove('groupStyle');
   if (json['groupStyle'] == 'icons' && json['type'] != 'tab') {
     migrated['type'] = 'icons';
+  }
+  final storedVersion = switch (json['styleVersion']) {
+    final int version => version,
+    _ => 0,
+  };
+  if (storedVersion >= _proxiesStyleMigrationVersion) {
+    return migrated;
+  }
+  migrated['styleVersion'] = _proxiesStyleMigrationVersion;
+  if (migrated['type'] == 'list') {
+    migrated['type'] = 'icons';
+  }
+  if (migrated['cardType'] == 'standard' || migrated['cardType'] == 'shrink') {
+    migrated['cardType'] = 'compact';
+  }
+  if (migrated['iconStyle'] == 'filled' ||
+      migrated['iconStyle'] == 'standard') {
+    migrated['iconStyle'] = 'plain';
   }
   return migrated;
 }
@@ -467,16 +485,17 @@ Map<String, Object?> _migrateProxiesStylePropsJson(Map<String, Object?> json) {
 @freezed
 abstract class ProxiesStyleProps with _$ProxiesStyleProps {
   const factory ProxiesStyleProps({
-    @Default(ProxiesType.list) ProxiesType type,
+    @Default(ProxiesType.icons) ProxiesType type,
     @Default(ProxiesSortType.none) ProxiesSortType sortType,
     @Default(ProxiesLayout.standard) ProxiesLayout layout,
-    @Default(ProxiesIconStyle.filled)
+    @Default(ProxiesIconStyle.plain)
     @JsonKey(fromJson: proxiesIconStyleSafeFromJson)
     ProxiesIconStyle iconStyle,
-    @Default(ProxyCardType.standard)
+    @Default(ProxyCardType.compact)
     @JsonKey(fromJson: proxyCardTypeSafeFromJson)
     ProxyCardType cardType,
     @Default(false) bool hideTimeoutProxies,
+    @Default(_proxiesStyleMigrationVersion) int styleVersion,
   }) = _ProxiesStyleProps;
 
   factory ProxiesStyleProps.fromJson(Map<String, Object?>? json) => json == null

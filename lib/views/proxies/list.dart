@@ -19,9 +19,11 @@ const _liftDistance = 16.0;
 const _groupMinWidth = 360.0;
 const _groupMaxColumns = 3;
 const _folderBarHeight = 40.0;
-const _folderPillIconGap = 6.0;
-const _folderPillCountGap = 4.0;
-const _folderPillIconSize = 16.0;
+const _folderBarInset = 14.0;
+const _folderPillIconGap = 4.0;
+const _folderPillCountGap = 2.0;
+const _folderPillIconSize = 14.0;
+const _flatNodeColumns = 2;
 const _lastRowGrowth = _headerInset - proxyGridSpacing;
 
 class ProxiesListView extends ConsumerStatefulWidget {
@@ -234,6 +236,60 @@ class _ProxiesListViewState extends ConsumerState<ProxiesListView> {
     animateScrollTo(_controller, _getGroupOffset(groupName) + rowOffset);
   }
 
+  Widget _buildFlatNodeRows(
+    List<({Proxy proxy, Group group})> entries,
+    ProxyCardType cardType,
+  ) {
+    final rows = entries.chunks(_flatNodeColumns).toList();
+    return SliverFixedExtentList(
+      itemExtent: getRowExtent(cardType),
+      delegate: SliverChildBuilderDelegate(
+        (context, index) => _buildFlatNodeRow(rows[index], cardType),
+        childCount: rows.length,
+        addAutomaticKeepAlives: false,
+      ),
+    );
+  }
+
+  Widget _buildFlatNodeRow(
+    List<({Proxy proxy, Group group})> entries,
+    ProxyCardType cardType,
+  ) {
+    final children = entries
+        .map<Widget>(
+          (entry) => Flexible(
+            child: SizedBox(
+              height: getItemHeight(cardType),
+              child: ProxyCard(
+                testUrl: entry.group.testUrl,
+                type: cardType,
+                groupType: entry.group.type,
+                key: ValueKey('flat.${entry.proxy.name}'),
+                proxy: entry.proxy,
+                groupName: entry.group.name,
+              ),
+            ),
+          ),
+        )
+        .fill(
+          _flatNodeColumns,
+          filler: (_) => const Flexible(child: SizedBox()),
+        )
+        .separated(const SizedBox(width: 8));
+    // No SurfaceScope here: the cards sit on the page, so their fill is one
+    // level above it (surfaceBright), a visible white card on the page.
+    // Scoping them a level up, like the rows inside an expanded group, would
+    // fill them with the page colour itself and leave flat text.
+    return Padding(
+      padding: const EdgeInsets.only(
+        left: _headerInset,
+        right: _headerInset,
+        bottom: proxyGridSpacing,
+      ),
+      child: Row(children: children.toList()),
+    );
+  }
+
   List<Widget> _buildIconSegments(
     List<Group> shownGroups,
     Set<String> unfoldSet,
@@ -322,8 +378,21 @@ class _ProxiesListViewState extends ConsumerState<ProxiesListView> {
             QueryTag.proxies,
           ).select((query) => SearchQuery(query).isNotEmpty),
         );
+        final groupNames = {for (final group in allGroups) group.name};
+        final flatNodes = _folder == ProxyFolder.leafNodes
+            ? flatLeafNodes(
+                groups: groups,
+                sortType: sortType,
+                delayMap: delayMap,
+                selectedMap: selectedMap,
+                defaultTestUrl: defaultTestUrl,
+                groupNames: groupNames,
+              )
+            : const <({Proxy proxy, Group group})>[];
         return NullStatusSwitcher(
-          isEmpty: groups.isEmpty,
+          isEmpty: _folder == ProxyFolder.leafNodes
+              ? flatNodes.isEmpty
+              : groups.isEmpty,
           isSearching: isSearching,
           nullStatus: NullStatus(
             illustration: NullStatusIllustration.proxies,
@@ -351,19 +420,8 @@ class _ProxiesListViewState extends ConsumerState<ProxiesListView> {
                 max(width - _headerInset * 2, 0),
                 proxiesLayout,
               );
-              final groupNames = {for (final group in allGroups) group.name};
-              final sortedGroups = iconMode
-                  ? sortIconGroups(
-                      groups: groups,
-                      sortType: sortType,
-                      delayMap: delayMap,
-                      selectedMap: selectedMap,
-                      defaultTestUrl: defaultTestUrl,
-                      groupNames: groupNames,
-                    )
-                  : groups;
               final shownGroups = filterGroupsByFolder(
-                sortedGroups,
+                groups,
                 _folder,
                 groupNames,
               );
@@ -414,7 +472,10 @@ class _ProxiesListViewState extends ConsumerState<ProxiesListView> {
                   controller: _controller,
                   slivers: [
                     PinnedHeaderSliver(
-                      child: SizedBox(height: context.contentTopPadding),
+                      child: ColoredBox(
+                        color: SurfaceLevel.page.colorOf(context.colorScheme),
+                        child: SizedBox(height: context.contentTopPadding),
+                      ),
                     ),
                     PinnedHeaderSliver(
                       child: SizedBox(
@@ -427,59 +488,62 @@ class _ProxiesListViewState extends ConsumerState<ProxiesListView> {
                         ),
                       ),
                     ),
-                    SliverPadding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: _groupInset,
-                      ),
-                      sliver: iconMode
-                          ? SliverMainAxisGroup(
-                              slivers: _buildIconSegments(
-                                shownGroups,
-                                unfoldSet,
-                                buildGroup,
-                                columns,
-                                fullColumns,
-                                gap,
-                              ),
-                            )
-                          : groupColumns == 1
-                          ? SliverMainAxisGroup(
-                              slivers: shownGroups
-                                  .map((group) => buildGroup(group, columns))
-                                  .toList(),
-                            )
-                          : SliverCrossAxisGroup(
-                              slivers: [
-                                for (
-                                  var column = 0;
-                                  column < groupColumns;
-                                  column++
-                                ) ...[
-                                  if (column > 0)
-                                    SliverConstrainedCrossAxis(
-                                      maxExtent: gap,
-                                      sliver: const SliverToBoxAdapter(),
+                    if (_folder == ProxyFolder.leafNodes)
+                      _buildFlatNodeRows(flatNodes, cardType)
+                    else
+                      SliverPadding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: _groupInset,
+                        ),
+                        sliver: iconMode
+                            ? SliverMainAxisGroup(
+                                slivers: _buildIconSegments(
+                                  shownGroups,
+                                  unfoldSet,
+                                  buildGroup,
+                                  columns,
+                                  fullColumns,
+                                  gap,
+                                ),
+                              )
+                            : groupColumns == 1
+                            ? SliverMainAxisGroup(
+                                slivers: shownGroups
+                                    .map((group) => buildGroup(group, columns))
+                                    .toList(),
+                              )
+                            : SliverCrossAxisGroup(
+                                slivers: [
+                                  for (
+                                    var column = 0;
+                                    column < groupColumns;
+                                    column++
+                                  ) ...[
+                                    if (column > 0)
+                                      SliverConstrainedCrossAxis(
+                                        maxExtent: gap,
+                                        sliver: const SliverToBoxAdapter(),
+                                      ),
+                                    SliverCrossAxisExpanded(
+                                      flex: 1,
+                                      sliver: SliverMainAxisGroup(
+                                        slivers: [
+                                          for (
+                                            var index = column;
+                                            index < shownGroups.length;
+                                            index += groupColumns
+                                          )
+                                            buildGroup(
+                                              shownGroups[index],
+                                              columns,
+                                            ),
+                                        ],
+                                      ),
                                     ),
-                                  SliverCrossAxisExpanded(
-                                    flex: 1,
-                                    sliver: SliverMainAxisGroup(
-                                      slivers: [
-                                        for (
-                                          var index = column;
-                                          index < shownGroups.length;
-                                          index += groupColumns
-                                        )
-                                          buildGroup(
-                                            shownGroups[index],
-                                            columns,
-                                          ),
-                                      ],
-                                    ),
-                                  ),
+                                  ],
                                 ],
-                              ],
-                            ),
-                    ),
+                              ),
+                      ),
                     SliverToBoxAdapter(
                       child: SizedBox(height: 16 + context.bottomInset),
                     ),
@@ -1192,39 +1256,44 @@ class _FolderBar extends StatelessWidget {
           SizedBox(
             height: _folderBarHeight,
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: _groupInset),
-              child: Row(
-                children: [
-                  Flexible(
-                    child: _FolderPill(
+              padding: const EdgeInsets.symmetric(horizontal: _folderBarInset),
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: [
+                    _FolderPill(
                       label: appLocalizations.proxyFolderAll,
                       count: counts.all,
                       glyph: AppGlyphs.dashboard,
                       selected: folder == ProxyFolder.all,
                       onTap: () => onChange(ProxyFolder.all),
                     ),
-                  ),
-                  const SizedBox(width: 8),
-                  Flexible(
-                    child: _FolderPill(
+                    const SizedBox(width: 8),
+                    _FolderPill(
                       label: appLocalizations.proxyFolderStrategy,
                       count: counts.strategy,
                       glyph: AppGlyphs.folder,
                       selected: folder == ProxyFolder.strategy,
                       onTap: () => onChange(ProxyFolder.strategy),
                     ),
-                  ),
-                  const SizedBox(width: 8),
-                  Flexible(
-                    child: _FolderPill(
+                    const SizedBox(width: 8),
+                    _FolderPill(
                       label: appLocalizations.proxyFolderNodes,
                       count: counts.nodes,
                       glyph: AppGlyphs.folder,
                       selected: folder == ProxyFolder.nodes,
                       onTap: () => onChange(ProxyFolder.nodes),
                     ),
-                  ),
-                ],
+                    const SizedBox(width: 8),
+                    _FolderPill(
+                      label: appLocalizations.proxyFolderLeafNodes,
+                      count: null,
+                      glyph: AppGlyphs.devices,
+                      selected: folder == ProxyFolder.leafNodes,
+                      onTap: () => onChange(ProxyFolder.leafNodes),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
@@ -1245,7 +1314,9 @@ class _FolderPill extends StatelessWidget {
   });
 
   final String label;
-  final int count;
+
+  /// Null hides the count, for the node folder.
+  final int? count;
   final Glyph glyph;
   final bool selected;
   final VoidCallback onTap;
@@ -1253,11 +1324,12 @@ class _FolderPill extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = context.colorScheme;
+    final count = this.count;
     return Card(
       isSelected: selected,
       fillsSelection: true,
       shape: AppShape.full,
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.symmetric(horizontal: 8),
       onPressed: onTap,
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -1265,19 +1337,32 @@ class _FolderPill extends StatelessWidget {
           GlyphIcon(glyph, size: _folderPillIconSize),
           const SizedBox(width: _folderPillIconGap),
           Flexible(
-            child: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis),
+            child: Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: AppTextStyle.caption1
+                  .of(context, emphasized: true)
+                  .copyWith(
+                    color: selected
+                        ? colorScheme.onPrimary
+                        : colorScheme.onSurfaceVariant,
+                  ),
+            ),
           ),
-          const SizedBox(width: _folderPillCountGap),
-          Text(
-            '$count',
-            style: AppTextStyle.caption1
-                .of(context)
-                .copyWith(
-                  color: selected
-                      ? colorScheme.onPrimary
-                      : colorScheme.onSurfaceVariant,
-                ),
-          ),
+          if (count != null) ...[
+            const SizedBox(width: _folderPillCountGap),
+            Text(
+              '$count',
+              style: AppTextStyle.caption1
+                  .of(context)
+                  .copyWith(
+                    color: selected
+                        ? colorScheme.onPrimary
+                        : colorScheme.onSurfaceVariant,
+                  ),
+            ),
+          ],
         ],
       ),
     );

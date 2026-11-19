@@ -219,9 +219,10 @@ enum RestoreOption { all, onlyProfiles }
 
 enum ProxiesType { tab, list, icons }
 
-/// The zashboard folder a proxy group falls in: one whose members are all
-/// plain nodes, or one that contains another group.
-enum ProxyFolder { all, strategy, nodes }
+/// The proxies folder bar tabs: the zashboard folders a proxy group falls
+/// in (one whose members are all plain nodes, or one that contains another
+/// group), plus the flat list of all leaf nodes.
+enum ProxyFolder { all, strategy, nodes, leafNodes }
 
 enum ProxiesLayout { loose, standard, tight }
 

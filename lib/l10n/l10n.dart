@@ -2993,6 +2993,16 @@ class AppLocalizations {
     return Intl.message('Nodes', name: 'proxyFolderNodes', desc: '', args: []);
   }
 
+  /// `Leaf Nodes`
+  String get proxyFolderLeafNodes {
+    return Intl.message(
+      'Leaf Nodes',
+      name: 'proxyFolderLeafNodes',
+      desc: '',
+      args: [],
+    );
+  }
+
   /// `Load Balance`
   String get loadBalance {
     return Intl.message(

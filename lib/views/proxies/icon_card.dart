@@ -30,7 +30,7 @@ _cardMetrics(ProxyCardType cardType) => switch (cardType) {
     nameIconGap: 6.0,
     metaGap: 4.0,
     bottomGap: 8.0,
-    brandIconSize: 32.0,
+    brandIconSize: 40.0,
   ),
   ProxyCardType.standard => (
     inset: 12.0,
@@ -44,7 +44,7 @@ _cardMetrics(ProxyCardType cardType) => switch (cardType) {
     nameIconGap: 8.0,
     metaGap: 8.0,
     bottomGap: 10.0,
-    brandIconSize: 48.0,
+    brandIconSize: 56.0,
   ),
 };
 
@@ -369,8 +369,10 @@ class _SpeedFigure extends StatelessWidget {
   }
 }
 
-/// The selected node, with the arrow and icon zashboard puts before its
-/// name; a load-balance group has no pick, so it shows its state instead.
+/// The selected node, with the arrow before its name and its icon when it
+/// has one; a node with neither a group icon nor a brand mark shows no
+/// single-character monogram. A load-balance group has no pick, so it shows
+/// its state instead.
 class _SelectedProxy extends ConsumerWidget {
   const _SelectedProxy({required this.group});
 
@@ -408,13 +410,16 @@ class _SelectedProxy extends ConsumerWidget {
     final icon = ref.watch(
       groupsProvider.select((groups) => groups.getGroup(proxyName)?.icon ?? ''),
     );
+    final hasArtwork = icon.isNotEmpty || brandIconFor(proxyName) != null;
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
         GlyphIcon(AppGlyphs.arrowRightCircle, size: _nowIconSize, color: muted),
         const SizedBox(width: _nowGap),
-        GroupBrandIcon(src: icon, name: proxyName, size: _nodeIconSize),
-        const SizedBox(width: _nowGap),
+        if (hasArtwork) ...[
+          GroupBrandIcon(src: icon, name: proxyName, size: _nodeIconSize),
+          const SizedBox(width: _nowGap),
+        ],
         Flexible(
           child: EmojiText(
             proxyName,

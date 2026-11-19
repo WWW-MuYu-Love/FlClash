@@ -9,101 +9,95 @@ List<Group> computeSort({
   required Map<String, String> selectedMap,
   required String defaultTestUrl,
 }) {
-  List<Proxy> sortOfDelay({
-    required List<Group> groups,
-    required List<Proxy> proxies,
-    required DelayMap delayMap,
-    required Map<String, String> selectedMap,
-    required String testUrl,
-  }) {
-    final delayStates = {
-      for (final proxy in proxies)
-        proxy.name: computeProxyDelayState(
-          proxyName: proxy.name,
-          testUrl: testUrl,
-          groups: groups,
-          selectedMap: selectedMap,
-          delayMap: delayMap,
-        ),
-    };
-    return List.of(proxies)
-      ..sort((a, b) => delayStates[a.name]!.compareTo(delayStates[b.name]!));
-  }
-
-  List<Proxy> sortOfName(List<Proxy> proxies) {
-    return List.of(proxies)..sort((a, b) => a.name.compareTo(b.name));
-  }
-
   return groups.map((group) {
-    final proxies = group.all;
-    final newProxies = switch (sortType) {
-      ProxiesSortType.none => proxies,
-      ProxiesSortType.delay => sortOfDelay(
-        groups: groups,
-        proxies: proxies,
-        delayMap: delayMap,
-        selectedMap: selectedMap,
-        testUrl: group.testUrl.takeFirstValid([defaultTestUrl]),
-      ),
-      ProxiesSortType.name => sortOfName(proxies),
-    };
+    final newProxies = sortProxies(
+      proxies: group.all,
+      sortType: sortType,
+      groups: groups,
+      delayMap: delayMap,
+      selectedMap: selectedMap,
+      testUrl: group.testUrl.takeFirstValid([defaultTestUrl]),
+    );
     return group.copyWith(all: newProxies);
   }).toList();
 }
 
-/// Sort only the node groups; strategy groups keep their slots.
-List<Group> sortIconGroups({
+/// Sort nodes the way [computeSort] sorts them inside a group.
+List<Proxy> sortProxies({
+  required List<Proxy> proxies,
+  required ProxiesSortType sortType,
   required List<Group> groups,
+  required DelayMap delayMap,
+  required Map<String, String> selectedMap,
+  required String testUrl,
+}) {
+  return switch (sortType) {
+    ProxiesSortType.none => proxies,
+    ProxiesSortType.name => List.of(
+      proxies,
+    )..sort((a, b) => a.name.compareTo(b.name)),
+    ProxiesSortType.delay => _sortProxiesByDelay(
+      proxies: proxies,
+      groups: groups,
+      delayMap: delayMap,
+      selectedMap: selectedMap,
+      testUrl: testUrl,
+    ),
+  };
+}
+
+List<Proxy> _sortProxiesByDelay({
+  required List<Proxy> proxies,
+  required List<Group> groups,
+  required DelayMap delayMap,
+  required Map<String, String> selectedMap,
+  required String testUrl,
+}) {
+  final delayStates = {
+    for (final proxy in proxies)
+      proxy.name: computeProxyDelayState(
+        proxyName: proxy.name,
+        testUrl: testUrl,
+        groups: groups,
+        selectedMap: selectedMap,
+        delayMap: delayMap,
+      ),
+  };
+  return List.of(proxies)
+    ..sort((a, b) => delayStates[a.name]!.compareTo(delayStates[b.name]!));
+}
+
+/// The flat leaf-node list for the node folder, deduplicated by name.
+/// The core's built-in outbounds; they are policies, not real nodes.
+const builtinOutbounds = {'DIRECT', 'REJECT', 'REJECT-DROP', 'PASS'};
+
+bool isBuiltinOutbound(String name) => builtinOutbounds.contains(name);
+
+List<({Proxy proxy, Group group})> flatLeafNodes({
+  required List<Group> groups,
+  required Set<String> groupNames,
   required ProxiesSortType sortType,
   required DelayMap delayMap,
   required Map<String, String> selectedMap,
   required String defaultTestUrl,
-  required Set<String> groupNames,
 }) {
-  if (sortType == ProxiesSortType.none) return groups;
-  final nodeGroups = groups
-      .where((group) => groupIsNodeOnly(group, groupNames))
-      .toList();
-  if (sortType == ProxiesSortType.name) {
-    nodeGroups.sort((a, b) => a.name.compareTo(b.name));
-  } else {
-    final delayStates = {
-      for (final group in nodeGroups)
-        group.name: _groupDelay(
-          group,
-          groups: groups,
-          delayMap: delayMap,
-          selectedMap: selectedMap,
-          defaultTestUrl: defaultTestUrl,
-        ),
-    };
-    nodeGroups.sort((a, b) {
-      final byDelay = delayStates[a.name]!.compareTo(delayStates[b.name]!);
-      return byDelay != 0 ? byDelay : a.name.compareTo(b.name);
-    });
+  final entries = <String, ({Proxy proxy, Group group})>{};
+  for (final group in groups) {
+    for (final proxy in group.all) {
+      if (groupNames.contains(proxy.name)) continue;
+      if (isBuiltinOutbound(proxy.name)) continue;
+      entries.putIfAbsent(proxy.name, () => (proxy: proxy, group: group));
+    }
   }
-  var nextNode = 0;
-  return groups.map((group) {
-    if (!groupIsNodeOnly(group, groupNames)) return group;
-    return nodeGroups[nextNode++];
-  }).toList();
-}
-
-DelayState _groupDelay(
-  Group group, {
-  required List<Group> groups,
-  required DelayMap delayMap,
-  required Map<String, String> selectedMap,
-  required String defaultTestUrl,
-}) {
-  final selected = group.getCurrentSelectedName(selectedMap[group.name] ?? '');
-  return computeProxyDelayState(
-    proxyName: selected,
-    testUrl: group.testUrl.takeFirstValid([defaultTestUrl]),
+  final sorted = sortProxies(
+    proxies: [for (final entry in entries.values) entry.proxy],
+    sortType: sortType,
     groups: groups,
-    selectedMap: selectedMap,
     delayMap: delayMap,
+    selectedMap: selectedMap,
+    testUrl: defaultTestUrl,
   );
+  return [for (final proxy in sorted) entries[proxy.name]!];
 }
 
 /// Built-in adapters whose delay probe always fails, so a timeout says nothing.
@@ -235,6 +229,7 @@ List<Group> filterGroupsByFolder(
       groups.where((group) => !groupIsNodeOnly(group, groupNames)).toList(),
     ProxyFolder.nodes =>
       groups.where((group) => groupIsNodeOnly(group, groupNames)).toList(),
+    ProxyFolder.leafNodes => const [],
   };
 }
 

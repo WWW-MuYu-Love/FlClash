@@ -86,9 +86,13 @@ void main() {
 
   tearDown(() => container.dispose());
 
-  Future<void> pumpWidget(WidgetTester tester, Widget child) async {
-    container.read(viewSizeProvider.notifier).value = _size;
-    tester.view.physicalSize = _size;
+  Future<void> pumpWidget(
+    WidgetTester tester,
+    Widget child, {
+    Size size = _size,
+  }) async {
+    container.read(viewSizeProvider.notifier).value = size;
+    tester.view.physicalSize = size;
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
@@ -312,10 +316,14 @@ void main() {
     await teardownWidget(tester);
   });
 
-  testWidgets('overview gauge sits below the header with equal gaps', (
+  testWidgets('overview gauge is centred on the whole overview', (
     tester,
   ) async {
-    await pumpWidget(tester, const TrafficStatisticsView());
+    await pumpWidget(
+      tester,
+      const TrafficStatisticsView(),
+      size: const Size(390, 844),
+    );
 
     final headerRow = find
         .ancestor(of: find.text('Traffic summary'), matching: find.byType(Row))
@@ -328,10 +336,10 @@ void main() {
         .first;
     final gaugeRect = tester.getRect(find.byType(TrafficGaugeTicks));
 
-    final gapAbove = gaugeRect.top - tester.getBottomLeft(headerRow).dy;
-    final gapBelow = tester.getTopLeft(cellsRow).dy - gaugeRect.bottom;
-    expect(gapAbove, moreOrLessEquals(10.0, epsilon: 1.0));
-    expect(gapBelow, moreOrLessEquals(gapAbove, epsilon: 1.0));
+    final contentCenter =
+        (tester.getTopLeft(headerRow).dy + tester.getBottomLeft(cellsRow).dy) /
+        2;
+    expect(gaugeRect.center.dy, moreOrLessEquals(contentCenter, epsilon: 1.0));
 
     await teardownWidget(tester);
   });

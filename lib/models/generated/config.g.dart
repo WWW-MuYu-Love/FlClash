@@ -318,7 +318,7 @@ _ProxiesStyleProps _$ProxiesStylePropsFromJson(Map<String, dynamic> json) =>
     _ProxiesStyleProps(
       type:
           $enumDecodeNullable(_$ProxiesTypeEnumMap, json['type']) ??
-          ProxiesType.list,
+          ProxiesType.icons,
       sortType:
           $enumDecodeNullable(_$ProxiesSortTypeEnumMap, json['sortType']) ??
           ProxiesSortType.none,
@@ -326,12 +326,15 @@ _ProxiesStyleProps _$ProxiesStylePropsFromJson(Map<String, dynamic> json) =>
           $enumDecodeNullable(_$ProxiesLayoutEnumMap, json['layout']) ??
           ProxiesLayout.standard,
       iconStyle: json['iconStyle'] == null
-          ? ProxiesIconStyle.filled
+          ? ProxiesIconStyle.plain
           : proxiesIconStyleSafeFromJson(json['iconStyle']),
       cardType: json['cardType'] == null
-          ? ProxyCardType.standard
+          ? ProxyCardType.compact
           : proxyCardTypeSafeFromJson(json['cardType']),
       hideTimeoutProxies: json['hideTimeoutProxies'] as bool? ?? false,
+      styleVersion:
+          (json['styleVersion'] as num?)?.toInt() ??
+          _proxiesStyleMigrationVersion,
     );
 
 Map<String, dynamic> _$ProxiesStylePropsToJson(_ProxiesStyleProps instance) =>
@@ -342,6 +345,7 @@ Map<String, dynamic> _$ProxiesStylePropsToJson(_ProxiesStyleProps instance) =>
       'iconStyle': _$ProxiesIconStyleEnumMap[instance.iconStyle]!,
       'cardType': _$ProxyCardTypeEnumMap[instance.cardType]!,
       'hideTimeoutProxies': instance.hideTimeoutProxies,
+      'styleVersion': instance.styleVersion,
     };
 
 const _$ProxiesTypeEnumMap = {

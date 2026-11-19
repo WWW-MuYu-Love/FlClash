@@ -1802,6 +1802,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "proxiesReplacedTip": m90,
     "proxyChains": MessageLookupByLibrary.simpleMessage("Цепочка прокси"),
     "proxyFolderAll": MessageLookupByLibrary.simpleMessage("Все"),
+    "proxyFolderLeafNodes": MessageLookupByLibrary.simpleMessage("Узлы"),
     "proxyFolderNodes": MessageLookupByLibrary.simpleMessage("Группы узлов"),
     "proxyFolderStrategy": MessageLookupByLibrary.simpleMessage(
       "Стратегические группы",

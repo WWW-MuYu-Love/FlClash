@@ -369,6 +369,7 @@
   "proxyFolderAll": "Tout",
   "proxyFolderStrategy": "Groupes de stratégie",
   "proxyFolderNodes": "Groupes de nœuds",
+  "proxyFolderLeafNodes": "Nœuds",
   "loadBalance": "Équilibrage de charge",
   "filter": "Filtrer",
   "groupBy": "Regrouper par",

@@ -62,6 +62,7 @@ extension ProxyFolderL10n on ProxyFolder {
       ProxyFolder.all => appLocalizations.proxyFolderAll,
       ProxyFolder.strategy => appLocalizations.proxyFolderStrategy,
       ProxyFolder.nodes => appLocalizations.proxyFolderNodes,
+      ProxyFolder.leafNodes => appLocalizations.proxyFolderLeafNodes,
     };
   }
 }

@@ -210,7 +210,7 @@ void main() {
     Finder folderPillOf(String label) =>
         find.ancestor(of: find.text(label), matching: find.byType(Card));
 
-    for (final label in ['All', 'Strategy', 'Nodes']) {
+    for (final label in ['All', 'Strategy', 'Nodes', 'Leaf Nodes']) {
       final pill = tester.widget<Card>(folderPillOf(label));
       expect(pill.fillsSelection, isTrue, reason: label);
       expect(pill.shape, AppShape.full, reason: label);
@@ -218,6 +218,7 @@ void main() {
     expect(tester.widget<Card>(folderPillOf('All')).isSelected, isTrue);
     expect(tester.widget<Card>(folderPillOf('Strategy')).isSelected, isFalse);
     expect(tester.widget<Card>(folderPillOf('Nodes')).isSelected, isFalse);
+    expect(tester.widget<Card>(folderPillOf('Leaf Nodes')).isSelected, isFalse);
 
     expect(
       find.descendant(
@@ -236,6 +237,13 @@ void main() {
       );
     }
     expect(
+      find.descendant(
+        of: folderPillOf('Leaf Nodes'),
+        matching: find.byGlyph(AppGlyphs.devices),
+      ),
+      findsOneWidget,
+    );
+    expect(
       find.descendant(of: folderPillOf('All'), matching: find.text('2')),
       findsOneWidget,
     );
@@ -247,12 +255,23 @@ void main() {
       find.descendant(of: folderPillOf('Nodes'), matching: find.text('1')),
       findsOneWidget,
     );
+    expect(
+      find.descendant(of: folderPillOf('Leaf Nodes'), matching: find.text('1')),
+      findsNothing,
+    );
 
     await tester.tap(find.text('Nodes'));
     await tester.pump();
     expect(find.text('Outer'), findsNothing);
     expect(find.text('Inner'), findsOneWidget);
     expect(tester.widget<Card>(folderPillOf('Nodes')).isSelected, isTrue);
+
+    await tester.tap(find.text('Leaf Nodes'));
+    await tester.pump();
+    expect(find.text('Outer'), findsNothing);
+    expect(find.text('Inner'), findsNothing);
+    expect(find.text('Proxy 1', findRichText: true), findsOneWidget);
+    expect(tester.widget<Card>(folderPillOf('Leaf Nodes')).isSelected, isTrue);
 
     await tester.tap(find.text('All'));
     await tester.pump();
@@ -261,4 +280,140 @@ void main() {
     expect(tester.widget<Card>(folderPillOf('All')).isSelected, isTrue);
     expect(tester.takeException(), isNull);
   });
+
+  testWidgets('the bar bolt tests every group in the list style', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(500, 1000);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final profile = Profile.normal();
+    const groups = [
+      Group(
+        name: 'Outer',
+        type: GroupType.Selector,
+        hidden: false,
+        all: [Proxy(name: 'Inner', type: 'Selector')],
+      ),
+      Group(
+        name: 'Inner',
+        type: GroupType.Selector,
+        hidden: false,
+        all: [Proxy(name: 'Proxy 1', type: 'Direct')],
+      ),
+    ];
+    _RecordingProxiesAction.tested.clear();
+    final container = ProviderContainer(
+      overrides: [
+        profilesProvider.overrideWith(() => TestProfiles([profile])),
+        currentProfileIdProvider.overrideWithBuild((_, _) => profile.id),
+        currentGroupsStateProvider.overrideWithValue(
+          const GroupsState(value: groups),
+        ),
+        groupsProvider.overrideWithValue(groups),
+        proxiesActionProvider.overrideWith(_RecordingProxiesAction.new),
+      ],
+    );
+    addTearDown(container.dispose);
+    globalState.container = container;
+    container
+        .read(viewSizeProvider.notifier)
+        .update((_) => const Size(500, 1000));
+
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: const TestApp(child: ProxiesView()),
+      ),
+    );
+    container
+        .read(proxiesStyleSettingProvider.notifier)
+        .update((state) => state.copyWith(type: ProxiesType.list));
+    await tester.pump();
+
+    await tester.tap(
+      find.descendant(
+        of: find.byType(AppBar),
+        matching: find.byTooltip('Delay test'),
+      ),
+    );
+    await tester.pump();
+    await tester.pump();
+    expect(_RecordingProxiesAction.tested, ['Outer', 'Inner']);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('the pinned top spacer paints an opaque page colour', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(500, 1000);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final profile = Profile.normal();
+    const groups = [
+      Group(
+        name: 'Inner',
+        type: GroupType.Selector,
+        hidden: false,
+        all: [Proxy(name: 'Proxy 1', type: 'Direct')],
+      ),
+    ];
+    final container = ProviderContainer(
+      overrides: [
+        profilesProvider.overrideWith(() => TestProfiles([profile])),
+        currentProfileIdProvider.overrideWithBuild((_, _) => profile.id),
+        currentGroupsStateProvider.overrideWithValue(
+          const GroupsState(value: groups),
+        ),
+        groupsProvider.overrideWithValue(groups),
+      ],
+    );
+    addTearDown(container.dispose);
+    globalState.container = container;
+    container
+        .read(viewSizeProvider.notifier)
+        .update((_) => const Size(500, 1000));
+
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: const TestApp(child: ProxiesView()),
+      ),
+    );
+    container
+        .read(proxiesStyleSettingProvider.notifier)
+        .update((state) => state.copyWith(type: ProxiesType.list));
+    await tester.pump();
+
+    final spacer = find.descendant(
+      of: find.byType(PinnedHeaderSliver).first,
+      matching: find.byType(ColoredBox),
+    );
+    expect(spacer, findsOneWidget);
+    final spacerColor = tester.widget<ColoredBox>(spacer).color;
+    expect(
+      spacerColor,
+      SurfaceLevel.page.colorOf(
+        tester.element(find.byType(ProxiesView)).colorScheme,
+      ),
+    );
+    expect(spacerColor.a, 1.0);
+    expect(tester.takeException(), isNull);
+  });
+}
+
+class _RecordingProxiesAction extends ProxiesAction {
+  static final List<String> tested = [];
+
+  @override
+  Future<void> delayTestPageGroup(
+    String groupName, {
+    bool matchSearch = true,
+  }) async {
+    tested.add(groupName);
+  }
 }

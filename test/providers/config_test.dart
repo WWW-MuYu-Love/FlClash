@@ -167,7 +167,9 @@ void main() {
   group('ProxiesStyleSetting provider', () {
     test('default values', () {
       final value = container.read(proxiesStyleSettingProvider);
-      expect(value.type, ProxiesType.list);
+      expect(value.type, ProxiesType.icons);
+      expect(value.cardType, ProxyCardType.compact);
+      expect(value.iconStyle, ProxiesIconStyle.plain);
     });
 
     test('can update state', () {

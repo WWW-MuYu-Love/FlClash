@@ -130,7 +130,7 @@ class _ImagePlaceholder extends StatelessWidget {
   }
 }
 
-const groupBrandIconSize = 40.0;
+const groupBrandIconSize = 48.0;
 
 class GroupBrandIcon extends StatelessWidget {
   const GroupBrandIcon({

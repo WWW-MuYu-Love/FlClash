@@ -293,214 +293,126 @@ void main() {
       );
       expect(result.length, 2);
     });
+
+    test('sorting nodes never reorders the groups themselves', () {
+      final multiGroups = [
+        const Group(
+          name: 'z-group',
+          type: GroupType.Selector,
+          all: [
+            Proxy(name: 'z-b', type: 'ss'),
+            Proxy(name: 'z-a', type: 'ss'),
+          ],
+        ),
+        const Group(
+          name: 'a-group',
+          type: GroupType.Selector,
+          all: [Proxy(name: 'a-1', type: 'ss')],
+        ),
+      ];
+      for (final sortType in [ProxiesSortType.name, ProxiesSortType.delay]) {
+        final result = computeSort(
+          groups: multiGroups,
+          sortType: sortType,
+          delayMap: delayMap,
+          selectedMap: {},
+          defaultTestUrl: 'http://test.com',
+        );
+        expect(result.map((group) => group.name).toList(), [
+          'z-group',
+          'a-group',
+        ]);
+      }
+    });
   });
 
-  group('sortIconGroups', () {
-    late List<Group> groups;
-    late DelayMap delayMap;
-    late Map<String, String> selectedMap;
-    late Set<String> groupNames;
+  group('flatLeafNodes', () {
+    List<Group> groupsOf(List<List<String>> members) => [
+      for (var i = 0; i < members.length; i++)
+        Group(
+          name: 'G$i',
+          type: GroupType.Selector,
+          testUrl: 'http://test.com',
+          all: [for (final name in members[i]) Proxy(name: name, type: 'ss')],
+        ),
+    ];
 
-    setUp(() {
-      groups = [
-        const Group(
-          name: 'G-slow',
-          type: GroupType.Selector,
-          testUrl: 'http://test.com',
-          all: [Proxy(name: 'G-slow-0', type: 'ss')],
-        ),
-        const Group(
-          name: 'G-untested',
-          type: GroupType.Selector,
-          testUrl: 'http://test.com',
-          all: [Proxy(name: 'G-untested-0', type: 'ss')],
-        ),
-        const Group(
-          name: 'G-timeout',
-          type: GroupType.Selector,
-          testUrl: 'http://test.com',
-          all: [Proxy(name: 'G-timeout-0', type: 'ss')],
-        ),
-        const Group(
-          name: 'G-fast',
-          type: GroupType.Selector,
-          testUrl: 'http://test.com',
-          all: [Proxy(name: 'G-fast-0', type: 'ss')],
-        ),
-      ];
-      delayMap = <String, Map<String, int?>>{
-        'http://test.com': {'G-slow-0': 200, 'G-timeout-0': -1, 'G-fast-0': 50},
-      };
-      groupNames = {for (final group in groups) group.name};
-      selectedMap = {
-        'G-slow': 'G-slow-0',
-        'G-untested': 'G-untested-0',
-        'G-timeout': 'G-timeout-0',
-        'G-fast': 'G-fast-0',
-      };
-    });
+    List<String> flatNames(
+      List<Group> groups, {
+      ProxiesSortType sortType = ProxiesSortType.none,
+      DelayMap delayMap = const {},
+    }) => flatLeafNodes(
+      groups: groups,
+      groupNames: {for (final group in groups) group.name},
+      sortType: sortType,
+      delayMap: delayMap,
+      selectedMap: {},
+      defaultTestUrl: 'http://test.com',
+    ).map((entry) => entry.proxy.name).toList();
 
-    List<String> namesOf(List<Group> groups) =>
-        groups.map((group) => group.name).toList();
-
-    test('ProxiesSortType.none preserves original order', () {
-      final result = sortIconGroups(
+    test('deduplicates by name and keeps the first group', () {
+      final groups = groupsOf([
+        ['leaf-b', 'G1'],
+        ['leaf-a', 'leaf-b'],
+      ]);
+      final result = flatLeafNodes(
         groups: groups,
+        groupNames: {for (final group in groups) group.name},
         sortType: ProxiesSortType.none,
-        delayMap: delayMap,
-        selectedMap: selectedMap,
+        delayMap: {},
+        selectedMap: {},
         defaultTestUrl: 'http://test.com',
-        groupNames: groupNames,
       );
-      expect(namesOf(result), ['G-slow', 'G-untested', 'G-timeout', 'G-fast']);
+      expect(result.map((entry) => entry.proxy.name).toList(), [
+        'leaf-b',
+        'leaf-a',
+      ]);
+      expect(result.map((entry) => entry.group.name).toList(), ['G0', 'G1']);
     });
 
-    test('ProxiesSortType.name sorts alphabetically', () {
-      final result = sortIconGroups(
-        groups: groups,
-        sortType: ProxiesSortType.name,
-        delayMap: delayMap,
-        selectedMap: selectedMap,
-        defaultTestUrl: 'http://test.com',
-        groupNames: groupNames,
-      );
-      expect(namesOf(result), ['G-fast', 'G-slow', 'G-timeout', 'G-untested']);
+    test('skips members that are group names', () {
+      final groups = groupsOf([
+        ['G1', 'leaf'],
+        ['leaf'],
+      ]);
+      expect(flatNames(groups), ['leaf']);
     });
 
-    test('ProxiesSortType.delay sorts by the selected node delay', () {
-      final result = sortIconGroups(
-        groups: groups,
-        sortType: ProxiesSortType.delay,
-        delayMap: delayMap,
-        selectedMap: selectedMap,
-        defaultTestUrl: 'http://test.com',
-        groupNames: groupNames,
-      );
-      expect(namesOf(result), ['G-fast', 'G-slow', 'G-untested', 'G-timeout']);
+    test('skips the built-in outbounds', () {
+      final groups = groupsOf([
+        ['REJECT', 'DIRECT', 'real'],
+        ['REJECT-DROP', 'PASS'],
+      ]);
+      expect(flatNames(groups), ['real']);
     });
 
-    test('name sorts only the node groups, strategy groups stay put', () {
-      final mixed = [
-        const Group(
-          name: 'S-outer',
-          type: GroupType.Selector,
-          testUrl: 'http://test.com',
-          all: [Proxy(name: 'N-zebra', type: 'Selector')],
-        ),
-        const Group(
-          name: 'N-zebra',
-          type: GroupType.Selector,
-          testUrl: 'http://test.com',
-          all: [Proxy(name: 'N-zebra-0', type: 'ss')],
-        ),
-        const Group(
-          name: 'S-mid',
-          type: GroupType.Selector,
-          testUrl: 'http://test.com',
-          all: [Proxy(name: 'N-apple', type: 'Selector')],
-        ),
-        const Group(
-          name: 'N-apple',
-          type: GroupType.Selector,
-          testUrl: 'http://test.com',
-          all: [Proxy(name: 'N-apple-0', type: 'ss')],
-        ),
-        const Group(
-          name: 'E-empty',
-          type: GroupType.Selector,
-          testUrl: 'http://test.com',
-          all: [],
-        ),
-        const Group(
-          name: 'N-mango',
-          type: GroupType.Selector,
-          testUrl: 'http://test.com',
-          all: [Proxy(name: 'N-mango-0', type: 'ss')],
-        ),
-      ];
-      final result = sortIconGroups(
-        groups: mixed,
-        sortType: ProxiesSortType.name,
-        delayMap: delayMap,
-        selectedMap: selectedMap,
-        defaultTestUrl: 'http://test.com',
-        groupNames: {for (final group in mixed) group.name},
-      );
-      expect(namesOf(result), [
-        'S-outer',
-        'N-apple',
-        'S-mid',
-        'N-mango',
-        'E-empty',
-        'N-zebra',
+    test('name sorts the flat list alphabetically', () {
+      final groups = groupsOf([
+        ['zebra', 'apple'],
+        ['mango'],
+      ]);
+      expect(flatNames(groups, sortType: ProxiesSortType.name), [
+        'apple',
+        'mango',
+        'zebra',
       ]);
     });
 
-    test('delay sorts only the node groups, strategy groups stay put', () {
-      final mixed = [
-        const Group(
-          name: 'S-outer',
-          type: GroupType.Selector,
-          testUrl: 'http://test.com',
-          all: [Proxy(name: 'N-zebra', type: 'Selector')],
-        ),
-        const Group(
-          name: 'N-zebra',
-          type: GroupType.Selector,
-          testUrl: 'http://test.com',
-          all: [Proxy(name: 'N-zebra-0', type: 'ss')],
-        ),
-        const Group(
-          name: 'S-mid',
-          type: GroupType.Selector,
-          testUrl: 'http://test.com',
-          all: [Proxy(name: 'N-apple', type: 'Selector')],
-        ),
-        const Group(
-          name: 'N-apple',
-          type: GroupType.Selector,
-          testUrl: 'http://test.com',
-          all: [Proxy(name: 'N-apple-0', type: 'ss')],
-        ),
-        const Group(
-          name: 'E-empty',
-          type: GroupType.Selector,
-          testUrl: 'http://test.com',
-          all: [],
-        ),
-        const Group(
-          name: 'N-mango',
-          type: GroupType.Selector,
-          testUrl: 'http://test.com',
-          all: [Proxy(name: 'N-mango-0', type: 'ss')],
-        ),
-      ];
-      final result = sortIconGroups(
-        groups: mixed,
-        sortType: ProxiesSortType.delay,
-        delayMap: <String, Map<String, int?>>{
-          'http://test.com': {
-            'N-zebra-0': 200,
-            'N-apple-0': 50,
-            'N-mango-0': 100,
+    test('delay sorts the flat list by delay state', () {
+      final groups = groupsOf([
+        ['slow', 'fast'],
+        ['untested'],
+      ]);
+      expect(
+        flatNames(
+          groups,
+          sortType: ProxiesSortType.delay,
+          delayMap: {
+            'http://test.com': {'slow': 200, 'fast': 50},
           },
-        },
-        selectedMap: {
-          'N-zebra': 'N-zebra-0',
-          'N-apple': 'N-apple-0',
-          'N-mango': 'N-mango-0',
-        },
-        defaultTestUrl: 'http://test.com',
-        groupNames: {for (final group in mixed) group.name},
+        ),
+        ['fast', 'slow', 'untested'],
       );
-      expect(namesOf(result), [
-        'S-outer',
-        'N-apple',
-        'S-mid',
-        'N-mango',
-        'E-empty',
-        'N-zebra',
-      ]);
     });
   });
 

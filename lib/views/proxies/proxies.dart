@@ -114,17 +114,29 @@ class _ProxiesViewState extends ConsumerState<ProxiesView> {
   }
 
   IconButtonData? _buildPrimaryAction() {
-    if (!_isTab) {
-      return null;
-    }
-    final isDelayTesting = ref.watch(currentGroupDelayTestingProvider);
+    final isDelayTesting = _isTab
+        ? ref.watch(currentGroupDelayTestingProvider)
+        : ref.watch(
+            delayTestingGroupsProvider.select((state) => state.isNotEmpty),
+          );
     return IconButtonData(
       glyph: AppGlyphs.bolt,
-      onPressed: () {
-        _proxiesTabKey.currentState?.delayTestCurrentGroup();
-      },
+      onPressed: _isTab
+          ? () => _proxiesTabKey.currentState?.delayTestCurrentGroup()
+          : _delayTestAllGroups,
       tooltip: context.appLocalizations.delayTest,
       isLoading: isDelayTesting,
+    );
+  }
+
+  Future<void> _delayTestAllGroups() async {
+    final groups = ref.read(proxiesListStateProvider).groups;
+    await Future.wait(
+      groups.map(
+        (group) => ref
+            .read(proxiesActionProvider.notifier)
+            .delayTestPageGroup(group.name),
+      ),
     );
   }
 
