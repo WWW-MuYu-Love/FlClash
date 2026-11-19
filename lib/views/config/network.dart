@@ -141,19 +141,6 @@ class Ipv6Item extends ConsumerWidget {
   }
 }
 
-class AutoSetSystemDnsItem extends ConsumerWidget {
-  const AutoSetSystemDnsItem({super.key});
-
-  @override
-  Widget build(BuildContext context, ref) {
-    return _networkToggle(
-      title: (l) => l.autoSetSystemDns,
-      select: (state) => state.autoSetSystemDns,
-      update: (state, value) => state.copyWith(autoSetSystemDns: value),
-    );
-  }
-}
-
 class DNSHijackingItem extends ConsumerWidget {
   const DNSHijackingItem({super.key});
 
@@ -446,6 +433,44 @@ class DnsHijackItem extends ConsumerWidget {
   }
 }
 
+class PacModeItem extends ConsumerWidget {
+  const PacModeItem({super.key});
+
+  @override
+  Widget build(BuildContext context, ref) {
+    return _networkToggle(
+      title: (l) => l.pacMode,
+      select: (state) => state.pacMode,
+      update: (state, value) => state.copyWith(pacMode: value),
+    );
+  }
+}
+
+class PacScriptItem extends ConsumerWidget {
+  const PacScriptItem({super.key});
+
+  @override
+  Widget build(BuildContext context, ref) {
+    final title = context.appLocalizations.pacScript;
+    return ListItem(
+      title: Text(title),
+      onTap: () => showQuickEdit(
+        context,
+        title: title,
+        content: ref.read(networkSettingProvider).pacScript,
+        language: Language.javaScript,
+        apply: (content) => ref
+            .read(networkSettingProvider.notifier)
+            .update(
+              (state) => state.copyWith(
+                pacScript: content.trim().isEmpty ? defaultPacScript : content,
+              ),
+            ),
+      ),
+    );
+  }
+}
+
 class LoopbackItem extends StatelessWidget {
   const LoopbackItem({super.key});
 
@@ -647,13 +672,11 @@ List<Widget> outboundItems({
 
 List<Widget> networkOptionsItems({
   required bool isDesktop,
-  required bool isMacOS,
   required bool isCustomInterfaceName,
 }) {
   return [
     if (isDesktop) const TUNItem(),
-    if (isMacOS) const AutoSetSystemDnsItem(),
-    if (isDesktop) const TunStackItem(),
+    const TunStackItem(),
     // mihomo's DefaultSocketHook ignores interface-name on Android
     // (core/lib.go installHooks, vendored dialer.go), so these rows only
     // apply on desktop.
@@ -730,17 +753,21 @@ class IncludeAllNetworksSection extends StatelessWidget {
   }
 }
 
-class SystemProxySection extends StatelessWidget {
+class SystemProxySection extends ConsumerWidget {
   const SystemProxySection({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, ref) {
     final appLocalizations = context.appLocalizations;
+    final pacMode = ref.watch(
+      networkSettingProvider.select((state) => state.pacMode),
+    );
     return generateSection(
       title: appLocalizations.system,
       items: [
         const SystemProxyItem(),
-        const BypassDomainItem(),
+        const PacModeItem(),
+        if (pacMode) const PacScriptItem() else const BypassDomainItem(),
         if (system.isWindows) const LoopbackItem(),
       ],
     );
@@ -762,7 +789,6 @@ class NetworkOptionsSection extends ConsumerWidget {
       title: appLocalizations.options,
       items: networkOptionsItems(
         isDesktop: system.isDesktop,
-        isMacOS: system.isMacOS,
         isCustomInterfaceName: isCustomInterfaceName,
       ),
       footer: system.isDesktop ? appLocalizations.tunDesc : null,

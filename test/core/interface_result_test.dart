@@ -1,6 +1,7 @@
 import 'package:fl_clash/core/desktop/model.dart';
 import 'package:fl_clash/core/interface.dart';
 import 'package:fl_clash/core/method.dart';
+import 'package:fl_clash/core/spill.dart';
 import 'package:fl_clash/enum/enum.dart';
 import 'package:fl_clash/models/models.dart';
 import 'package:test/test.dart';
@@ -14,6 +15,7 @@ class _NullCore extends CoreHandlerInterface {
     Object? arguments,
     Duration? timeout,
     CoreRoute? route,
+    CoreResultModel? model,
   }) async {
     invoked.add(method);
     return null;
@@ -46,7 +48,7 @@ const _updateParams = UpdateParams(
   tun: Tun(),
   mixedPort: 7890,
   allowLan: true,
-  findProcessMode: FindProcessMode.off,
+  findProcessMode: FindProcessMode.strict,
   mode: Mode.rule,
   logLevel: LogLevel.info,
   ipv6: false,
@@ -139,6 +141,7 @@ class _DisconnectedCore extends _NullCore {
     Object? arguments,
     Duration? timeout,
     CoreRoute? route,
+    CoreResultModel? model,
   }) async {
     invoked.add(method);
     throw const CoreMethodException(

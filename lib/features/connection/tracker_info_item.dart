@@ -27,14 +27,11 @@ void showTrackerInfoDetail(
   TrackerInfo trackerInfo,
   String title,
 ) {
-  showSheet<void>(
-    context: context,
-    props: nestedPagedSheetProps,
-    builder: (_) => NestedPagedSheet(
-      builder: (_) => Scaffold(
-        body: TrackerInfoDetailView(trackerInfo: trackerInfo),
-        title: title,
-      ),
+  showNestedSheet<void>(
+    context,
+    builder: (_) => Scaffold(
+      body: TrackerInfoDetailView(trackerInfo: trackerInfo),
+      title: title,
     ),
   );
 }
@@ -98,12 +95,6 @@ class TrackerInfoItem extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, ref) {
-    final showIcon = ref.watch(
-      patchClashConfigProvider.select(
-        (state) =>
-            state.findProcessMode == FindProcessMode.always && system.isAndroid,
-      ),
-    );
     // The core never reports the MITM flag on a connection, so the marker
     // also consults the hosts with recorded decrypted exchanges.
     final decrypted =
@@ -122,7 +113,7 @@ class TrackerInfoItem extends ConsumerWidget {
           detailTitle,
         ),
         header: _buildHeader(context, decrypted),
-        body: _TrackerInfoBody(trackerInfo: trackerInfo, showIcon: showIcon),
+        body: _TrackerInfoBody(trackerInfo: trackerInfo),
       ),
     );
   }
@@ -174,9 +165,8 @@ class TrackerInfoItem extends ConsumerWidget {
 
 class _TrackerInfoBody extends StatelessWidget {
   final TrackerInfo trackerInfo;
-  final bool showIcon;
 
-  const _TrackerInfoBody({required this.trackerInfo, required this.showIcon});
+  const _TrackerInfoBody({required this.trackerInfo});
 
   Widget _buildTitle(BuildContext context, RecordTextStyles styles) {
     final metadata = trackerInfo.metadata;
@@ -196,21 +186,27 @@ class _TrackerInfoBody extends StatelessWidget {
       ),
     );
     final process = metadata.process;
-    if (!showIcon || process.isEmpty) {
+    if (process.isEmpty) {
       return title;
     }
-    return Row(
-      spacing: 8,
-      children: [
-        GestureDetector(
-          onTap: () => RecordFilterScope.add(
-            context,
-            RecordFilter(RecordFacetKind.app, process),
-          ),
-          child: PackageIcon(packageName: process, size: 24),
-        ),
-        Flexible(child: title),
-      ],
+    return OwnPackageIcon(
+      packageName: process,
+      size: 24,
+      builder: (context, icon) => icon == null
+          ? title
+          : Row(
+              spacing: 8,
+              children: [
+                GestureDetector(
+                  onTap: () => RecordFilterScope.add(
+                    context,
+                    RecordFilter(RecordFacetKind.app, process),
+                  ),
+                  child: icon,
+                ),
+                Flexible(child: title),
+              ],
+            ),
     );
   }
 

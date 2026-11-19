@@ -26,6 +26,20 @@ class ToolsView extends ConsumerStatefulWidget {
 }
 
 class _ToolViewState extends ConsumerState<ToolsView> {
+  late final ScrollController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = sheetScrollController(context);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
   Widget _buildNavigationMenuItem(NavigationItem navigationItem) {
     return ListItem.open(
       leading: GlyphIcon(navigationItem.glyph),
@@ -86,6 +100,7 @@ class _ToolViewState extends ConsumerState<ToolsView> {
       body: Builder(
         builder: (context) => PrismListView(
           key: toolsStoreKey,
+          controller: _controller,
           itemCount: items.length,
           itemBuilder: (_, index) => items[index],
           padding: EdgeInsets.only(
@@ -124,7 +139,11 @@ class _LocaleItem extends ConsumerWidget {
             .update((state) => state.copyWith(locale: locale?.toString()));
       },
       textBuilder: (locale) => _getLocaleString(context, locale),
-      value: currentLocale,
+      value: currentLocale == null
+          ? null
+          : basicLocaleListResolution([
+              currentLocale,
+            ], AppLocalizations.delegate.supportedLocales),
     );
   }
 }

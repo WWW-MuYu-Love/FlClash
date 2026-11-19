@@ -40,7 +40,7 @@ class InitErrorApp extends StatelessWidget {
       theme: _theme(Brightness.light),
       darkTheme: _theme(Brightness.dark),
       localizationsDelegates: const [
-        AppLocalizations.delegate,
+        appLocalizationsDelegate,
         AppUiLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,
       ],

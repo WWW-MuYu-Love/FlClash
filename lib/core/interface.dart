@@ -6,6 +6,7 @@ import 'package:fl_clash/models/models.dart';
 
 import 'desktop/model.dart';
 import 'method.dart';
+import 'spill.dart';
 
 /// A method answers its result or throws: a [CoreMethodException] for what the
 /// Core reports or a Core out of reach, a [TimeoutException] for no answer.
@@ -23,6 +24,7 @@ abstract class CoreHandlerInterface {
     Object? arguments,
     Duration? timeout,
     CoreRoute? route,
+    CoreResultModel? model,
   });
 
   Future<Object?> _call(
@@ -30,6 +32,7 @@ abstract class CoreHandlerInterface {
     Object? arguments,
     Duration? timeout,
     CoreRoute? route,
+    CoreResultModel? model,
   }) async {
     return await handleWatch(
       onStart: () {
@@ -42,6 +45,7 @@ abstract class CoreHandlerInterface {
         arguments: arguments,
         timeout: timeout,
         route: route,
+        model: model,
       ),
       onEnd: (result, elapsedMilliseconds) {
         commonPrint.log(
@@ -58,12 +62,14 @@ abstract class CoreHandlerInterface {
     Object? arguments,
     Duration? timeout,
     CoreRoute? route,
+    CoreResultModel? model,
   }) async {
     final data = await _call(
       method,
       arguments: arguments,
       timeout: timeout,
       route: route,
+      model: model,
     );
     if (data == null) {
       throw CoreMethodException(
@@ -339,6 +345,15 @@ abstract class CoreHandlerInterface {
     );
   }
 
+  /// Runs [present] where the list is decoded, possibly in another isolate.
+  Future<R> getConnectionsWith<R>(R Function(List<TrackerInfo>) present) {
+    return _query(
+      CoreMethod.connectionList,
+      (data) => data as R,
+      model: _presentConnections(present),
+    );
+  }
+
   Future<int> getConnectionCount({CoreRoute? route}) {
     return _query(
       CoreMethod.connectionCount,
@@ -533,3 +548,7 @@ Map<int, String> _issues(Object data) => {
     if (item case {'index': final num index, 'message': final String message})
       index.toInt(): message,
 };
+
+CoreResultModel _presentConnections<R>(R Function(List<TrackerInfo>) present) {
+  return (result) => present(trackerInfosOf(result));
+}

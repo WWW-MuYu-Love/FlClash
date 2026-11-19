@@ -62,11 +62,8 @@ class _AppStateManagerState extends ConsumerState<AppStateManager>
     // disconnects the VPN on the disconnect SSIDs via on-demand rules, and
     // the extension switches the core to direct on the direct SSIDs. The
     // lists and the controller secret reach them through the shared state.
-    final systemDns = systemDnsCoordinator;
-    if (systemDns != null) {
-      ref.listenManual(shouldPatchSystemDnsProvider, (prev, next) {
-        unawaited(systemDns.sync(next));
-      }, fireImmediately: true);
+    if (system.isMacOS && !safeModeBuild) {
+      unawaited(restoreLegacySystemDns());
     }
   }
 

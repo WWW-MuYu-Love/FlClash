@@ -13,7 +13,7 @@
 #      only once the signing mechanism is decided (see the block below).
 #      No App Store in either workflow.
 #
-# Toolchain (pinned per workflow): Flutter 3.47.9, Xcode 26.3. Go and
+# Toolchain (pinned per workflow): Flutter 3.50.0, Xcode 26.3. Go and
 # Rust are installed by the scripts when missing (Go via brew, Rust via
 # rustup + aarch64-apple-ios). The build follows the reference fork's
 # flow: `dart setup.dart ios --no-codesign`
@@ -32,7 +32,7 @@ workflows:
       # and skip the upload.
       groups:
         - default
-      flutter: 3.47.9
+      flutter: 3.50.0
       xcode: 26.3
       cocoapods: default
       # GH_TOKEN is an optional secret (default group): the publish step
@@ -69,8 +69,8 @@ workflows:
             brew install go
           fi
           go version
-          # Reference CI pins Go 1.26.4. If the hook fails on a newer Go,
-          # pin 1.26.4 from https://go.dev/dl/ instead of brew's latest.
+          # Upstream CI pins Go 1.27.1 (go.mod needs 1.27). If the hook fails,
+          # pin 1.27.1 from https://go.dev/dl/ instead of brew's latest.
       - name: Ensure Rust (hook builds the Rust helper for iOS)
         script: |
           if ! command -v cargo >/dev/null 2>&1; then
@@ -151,7 +151,7 @@ workflows:
   #   instance_type: mac_mini_m2
   #   max_build_duration: 120
   #   environment:
-  #     flutter: 3.47.9
+  #     flutter: 3.50.0
   #     xcode: 26.3
   #     cocoapods: default
   #     ios_signing:

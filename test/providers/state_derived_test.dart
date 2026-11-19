@@ -1,9 +1,9 @@
+import 'package:fl_clash/common/app_localizations.dart';
 import 'package:fl_clash/common/app_ports.dart';
 import 'package:fl_clash/common/cidr.dart';
 import 'package:fl_clash/common/constant.dart';
 import 'package:fl_clash/common/system.dart';
 import 'package:fl_clash/enum/enum.dart';
-import 'package:fl_clash/l10n/l10n.dart';
 import 'package:fl_clash/models/models.dart';
 import 'package:fl_clash/providers/app.dart';
 import 'package:fl_clash/providers/config.dart';
@@ -507,7 +507,7 @@ void main() {
     expect(container.read(filterGroupsStateProvider('hk jp')).value, isEmpty);
   });
 
-  test('runtime, VPN, tray, and DNS states follow live state', () async {
+  test('runtime, VPN, and tray states follow live state', () async {
     container
         .read(runTimeProvider.notifier)
         .update((_) => DateTime(2026).millisecondsSinceEpoch);
@@ -517,7 +517,6 @@ void main() {
           (state) => state.copyWith(
             systemProxy: false,
             bypassDomain: const ['localhost'],
-            autoSetSystemDns: true,
           ),
         );
     container
@@ -529,8 +528,6 @@ void main() {
             tun: state.tun.copyWith(enable: true),
           ),
         );
-    expect(container.read(shouldPatchSystemDnsProvider), isFalse);
-
     container
         .read(authorizedTunEnableProvider.notifier)
         .update((_) => TunAuthorizationState.authorized);
@@ -552,21 +549,6 @@ void main() {
     expect(vpn.stack, container.read(patchClashConfigProvider).tun.stack.name);
     expect(vpn.port, 8899);
     expect(vpn.bypassDomain, ['localhost']);
-
-    expect(container.read(shouldPatchSystemDnsProvider), isTrue);
-
-    container
-        .read(networkSettingProvider.notifier)
-        .update((state) => state.copyWith(autoSetSystemDns: false));
-    expect(container.read(shouldPatchSystemDnsProvider), isFalse);
-    container
-        .read(networkSettingProvider.notifier)
-        .update((state) => state.copyWith(autoSetSystemDns: true));
-
-    container
-        .read(authorizedTunEnableProvider.notifier)
-        .update((_) => TunAuthorizationState.unauthorized);
-    expect(container.read(shouldPatchSystemDnsProvider), isFalse);
 
     container.read(excludeSSIDsProvider.notifier).update((_) => ['Office']);
     container.read(currentSSIDProvider.notifier).update((_) => 'Office');
@@ -663,7 +645,7 @@ void main() {
   );
 
   test('safe mode keeps every host integration off', () async {
-    await AppLocalizations.load(const Locale('en'));
+    loadAppLocalizations(const Locale('en'));
     final scoped = ProviderContainer(
       overrides: [
         profilesProvider.overrideWith(TestProfiles.new),
@@ -675,9 +657,7 @@ void main() {
     scoped.read(runTimeProvider.notifier).update((_) => 1);
     scoped
         .read(networkSettingProvider.notifier)
-        .update(
-          (state) => state.copyWith(systemProxy: true, autoSetSystemDns: true),
-        );
+        .update((state) => state.copyWith(systemProxy: true));
     scoped
         .read(patchClashConfigProvider.notifier)
         .update(
@@ -711,7 +691,6 @@ void main() {
     expect(tray.showTrayTitle, isTrue);
     expect(tray.hotKeys.keys, [HotAction.view]);
     expect(scoped.read(trayTitleStateProvider).showTrayTitle, isTrue);
-    expect(scoped.read(shouldPatchSystemDnsProvider), isFalse);
     await scoped.read(vpnOptionsProvider.future);
     final vpnOptions = scoped.read(sharedStateProvider).vpnOptions!;
     expect(vpnOptions.enable, isFalse);
@@ -872,11 +851,9 @@ void main() {
       HotAction.tun,
     );
 
-    final profile = Profile.normal().copyWith(extendType: ExtendType.script);
+    final profile = Profile.normal();
     _profiles(container).replace([profile]);
     expect(container.read(profileProvider(profile.id)), profile);
-    expect(container.read(extendTypeProvider(profile.id)), ExtendType.script);
-    expect(container.read(extendTypeProvider(-1)), ExtendType.standard);
 
     expect(
       container.read(accessControlStateProvider),
@@ -904,7 +881,7 @@ void main() {
   );
 
   test('shared state hands the VPN service the resolved route list', () async {
-    await AppLocalizations.load(const Locale('en'));
+    loadAppLocalizations(const Locale('en'));
     container.listen(sharedStateProvider, (_, _) {});
     container
         .read(networkSettingProvider.notifier)
@@ -973,7 +950,7 @@ void main() {
   });
 
   test('shared state keeps the last routes while new ones compute', () async {
-    await AppLocalizations.load(const Locale('en'));
+    loadAppLocalizations(const Locale('en'));
     container.listen(sharedStateProvider, (_, _) {});
     container
         .read(networkSettingProvider.notifier)
@@ -1008,7 +985,7 @@ void main() {
 
   // VpnService.setHttpProxy cannot carry credentials.
   test('local authentication withholds the VPN system proxy', () async {
-    await AppLocalizations.load(const Locale('en'));
+    loadAppLocalizations(const Locale('en'));
     container.listen(sharedStateProvider, (_, _) {});
     container
         .read(vpnSettingProvider.notifier)
@@ -1113,7 +1090,7 @@ void main() {
   });
 
   test('shared state carries the notification stop action switch', () async {
-    await AppLocalizations.load(const Locale('en'));
+    loadAppLocalizations(const Locale('en'));
     container.listen(sharedStateProvider, (_, _) {});
     expect(container.read(sharedStateProvider).showStopAction, true);
 
@@ -1125,12 +1102,12 @@ void main() {
 
   test('shared state follows the locale whose messages are loaded', () async {
     container.listen(sharedStateProvider, (_, _) {});
-    await AppLocalizations.load(const Locale('en'));
+    loadAppLocalizations(const Locale('en'));
     container.read(loadedLocaleProvider.notifier).value = const Locale('en');
     final en = container.read(sharedStateProvider);
 
-    await AppLocalizations.load(const Locale('zh', 'CN'));
-    addTearDown(() => AppLocalizations.load(const Locale('en')));
+    loadAppLocalizations(const Locale('zh', 'CN'));
+    addTearDown(() => loadAppLocalizations(const Locale('en')));
     expect(container.read(sharedStateProvider).stopText, en.stopText);
 
     container.read(loadedLocaleProvider.notifier).value = const Locale(

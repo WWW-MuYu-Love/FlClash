@@ -61,7 +61,7 @@ class Database extends _$Database {
   Database([QueryExecutor? executor]) : super(executor ?? _openConnection());
 
   @override
-  int get schemaVersion => 26;
+  int get schemaVersion => 27;
 
   static LazyDatabase _openConnection() {
     return LazyDatabase(() async {
@@ -131,6 +131,21 @@ class Database extends _$Database {
         if (from < 23) {
           await m.alterTable(TableMigration(mitmModules));
         }
+        // Upstream's v24 and v25 share numbers with this line's traffic
+        // tables, so a database this line already took past them lacks both.
+        final missesExits =
+            from < 27 &&
+            !(await _columnsOf(
+              rules.actualTableName,
+            )).contains(rules.customExit.name);
+        if (from < 24 || missesExits) {
+          await _mergeExtendModes();
+        }
+        if (from < 25 || missesExits) {
+          await _addColumnIfMissing(m, rules, rules.customExit);
+          await _addColumnIfMissing(m, profiles, profiles.exitTargets);
+          await _matchTargetToExit();
+        }
         if (from < 24) {
           await _createTableIfMissing(m, trafficStatistics);
         }
@@ -185,6 +200,39 @@ class Database extends _$Database {
       return;
     }
     await m.renameColumn(table, oldName, column);
+  }
+
+  /// A profile keeps the rules it applied when it ran a script or added rules.
+  Future<void> _mergeExtendModes() async {
+    await customStatement(
+      'INSERT OR IGNORE INTO disabled_rules (profile_id, rule_id) '
+      'SELECT profiles.id, rules.id FROM profiles, rules '
+      "WHERE rules.profile_id IS NULL AND profiles.extend_type = 'script'",
+    );
+    await customStatement(
+      'UPDATE profiles SET script_id = NULL '
+      "WHERE extend_type != 'script' "
+      'OR script_id NOT IN (SELECT id FROM scripts)',
+    );
+    await customStatement(
+      'UPDATE profiles SET extend_type = '
+      "CASE WHEN script_id IS NULL THEN 'standard' ELSE 'script' END",
+    );
+  }
+
+  Future<void> _matchTargetToExit() async {
+    await customStatement(
+      'UPDATE rules SET custom_exit = 1 '
+      "WHERE upper(trim(rule_target)) = 'MATCH' AND rule_action != 'SUB_RULE' "
+      'AND (profile_id IS NULL OR profile_id IN '
+      "(SELECT id FROM profiles WHERE type != 'custom'))",
+    );
+    await customStatement(
+      "UPDATE profiles SET exit_targets = json_object('MATCH', "
+      'trim(match_target)) '
+      "WHERE trim(coalesce(match_target, '')) != '' AND type != 'custom'",
+    );
+    await customStatement('UPDATE profiles SET match_target = NULL');
   }
 
   /// alterTable re-creates the old index, which names the dropped column.

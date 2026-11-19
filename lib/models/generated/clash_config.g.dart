@@ -790,6 +790,7 @@ _Rule _$RuleFromJson(Map<String, dynamic> json) => _Rule(
   noResolve: json['noResolve'] as bool? ?? false,
   src: json['src'] as bool? ?? false,
   order: json['order'] as String?,
+  customExit: json['customExit'] as bool? ?? false,
 );
 
 Map<String, dynamic> _$RuleToJson(_Rule instance) => <String, dynamic>{
@@ -802,6 +803,7 @@ Map<String, dynamic> _$RuleToJson(_Rule instance) => <String, dynamic>{
   'noResolve': instance.noResolve,
   'src': instance.src,
   'order': instance.order,
+  'customExit': instance.customExit,
 };
 
 const _$RuleActionEnumMap = {
@@ -879,7 +881,9 @@ Map<String, dynamic> _$ClashConfigToJson(_ClashConfig instance) =>
 
 _PatchClashConfig _$PatchClashConfigFromJson(Map<String, dynamic> json) =>
     _PatchClashConfig(
-      mixedPort: (json['mixed-port'] as num?)?.toInt() ?? defaultMixedPort,
+      mixedPort: json['mixed-port'] == null
+          ? defaultMixedPort
+          : _mixedPortFromJson(json['mixed-port']),
       socksPort: (json['socks-port'] as num?)?.toInt() ?? 0,
       port: (json['port'] as num?)?.toInt() ?? 0,
       redirPort: (json['redir-port'] as num?)?.toInt() ?? 0,
@@ -894,9 +898,9 @@ _PatchClashConfig _$PatchClashConfigFromJson(Map<String, dynamic> json) =>
           $enumDecodeNullable(
             _$FindProcessModeEnumMap,
             json['find-process-mode'],
-            unknownValue: FindProcessMode.off,
+            unknownValue: FindProcessMode.strict,
           ) ??
-          FindProcessMode.off,
+          FindProcessMode.strict,
       interfaceNameMode:
           $enumDecodeNullable(
             _$InterfaceNameModeEnumMap,
@@ -949,7 +953,7 @@ _PatchClashConfig _$PatchClashConfigFromJson(Map<String, dynamic> json) =>
             (k, e) => MapEntry(k, e as String),
           ) ??
           const {},
-      geoAutoUpdate: json['geo-auto-update'] as bool? ?? false,
+      geoAutoUpdate: json['geo-auto-update'] as bool? ?? true,
       geoUpdateInterval: (json['geo-update-interval'] as num?)?.toInt() ?? 24,
       testUrl: json['test-url'] as String? ?? defaultTestUrl,
       generalOverrideKeys: json['general-override-keys'] == null
@@ -1022,7 +1026,7 @@ const _$LogLevelEnumMap = {
 
 const _$FindProcessModeEnumMap = {
   FindProcessMode.always: 'always',
-  FindProcessMode.off: 'off',
+  FindProcessMode.strict: 'strict',
 };
 
 const _$InterfaceNameModeEnumMap = {

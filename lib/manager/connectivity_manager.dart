@@ -1,20 +1,21 @@
 import 'dart:async';
 
-import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:fl_clash/common/common.dart';
 import 'package:fl_clash/enum/enum.dart';
+import 'package:fl_clash/plugins/wifi_ssid.dart';
 import 'package:fl_clash/providers/app.dart';
 import 'package:fl_clash/providers/config.dart';
 import 'package:fl_clash/providers/on_demand.dart';
 import 'package:flutter/widgets.dart';
+import 'package:fl_clash/plugins/app.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:wifi_ssid/wifi_ssid.dart';
+import 'package:rust_api/rust_api.dart' show NetworkState, networkChanges;
 
 typedef SsidReader = Future<String?> Function();
 
 class ConnectivityManager extends ConsumerStatefulWidget {
-  final Function(List<ConnectivityResult> results)? onConnectivityChanged;
-  final Stream<List<ConnectivityResult>>? connectivityStream;
+  final Function(NetworkState state)? onConnectivityChanged;
+  final Stream<NetworkState>? connectivityStream;
   final SsidReader? readSsid;
   final Widget child;
 
@@ -34,8 +35,7 @@ class ConnectivityManager extends ConsumerStatefulWidget {
 class _ConnectivityManagerState extends ConsumerState<ConnectivityManager>
     with WidgetsBindingObserver {
   late final StreamSubscription subscription;
-  late final SsidReader _readSsid =
-      widget.readSsid ?? WifiSsidManager.instance.getSsid;
+  late final SsidReader _readSsid = widget.readSsid ?? wifiSsidManager.getSsid;
 
   int _ssidRequestId = 0;
   bool _onWifi = false;
@@ -45,7 +45,8 @@ class _ConnectivityManagerState extends ConsumerState<ConnectivityManager>
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     final stream =
-        widget.connectivityStream ?? Connectivity().onConnectivityChanged;
+        widget.connectivityStream ??
+        (system.isAndroid ? app!.networkChanges : networkChanges());
     subscription = stream.listen(_handleResults);
     ref.listenManual(excludeSSIDsProvider.select((state) => state.isNotEmpty), (
       previous,
@@ -82,28 +83,24 @@ class _ConnectivityManagerState extends ConsumerState<ConnectivityManager>
   // app may have been suspended while the network changed, so re-read the
   // current network and SSID when coming back to the foreground. This is
   // what lets the direct/disconnect action restore the previous mode.
+  // The rust_api network watcher covers desktop and Android only, so on
+  // iOS the stream never fires and resume probes the SSID directly.
   Future<void> _refreshOnResume() async {
-    try {
-      final results = await Connectivity().checkConnectivity();
-      _onWifi = results.contains(ConnectivityResult.wifi);
-    } catch (_) {
-      // Fall through to the SSID read with the last known state.
-    }
-    unawaited(_updateSsid());
+    await _updateSsid(probeWifi: true);
   }
 
-  void _handleResults(List<ConnectivityResult> results) {
-    _onWifi = results.contains(ConnectivityResult.wifi);
+  void _handleResults(NetworkState state) {
+    _onWifi = state.wifi;
     unawaited(_updateSsid());
-    widget.onConnectivityChanged?.call(results);
+    widget.onConnectivityChanged?.call(state);
   }
 
-  Future<void> _updateSsid() async {
+  Future<void> _updateSsid({bool probeWifi = false}) async {
     final requestId = ++_ssidRequestId;
     // The SSID costs a blocking platform call and a location permission on
     // Android, macOS and Windows, and nothing reads it until a network is
     // excluded.
-    if (!_onWifi ||
+    if ((!probeWifi && !_onWifi) ||
         ref.read(safeModeProvider) ||
         ref.read(excludeSSIDsProvider).isEmpty) {
       _publishSsid(requestId, null);
@@ -111,6 +108,9 @@ class _ConnectivityManagerState extends ConsumerState<ConnectivityManager>
     }
     try {
       final ssid = await _readSsid();
+      if (probeWifi) {
+        _onWifi = ssid != null;
+      }
       if (_publishSsid(requestId, ssid)) {
         commonPrint.log('Wi-fi SSID: $ssid', logLevel: LogLevel.info);
       }

@@ -170,6 +170,7 @@ class GoBuilder {
 
   List<String> _buildArguments(Target target, {String? outFile}) => [
     'build',
+    '-trimpath',
     '-ldflags=${_ldflags()}',
     '-tags=${_buildTags(target)}',
     if (_buildMode(target) != null) '-buildmode=${_buildMode(target)}',

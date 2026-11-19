@@ -36,7 +36,6 @@ void main() {
         selectedMap: const {'Selector': 'Proxy'},
         unfoldSet: const {'Selector'},
         type: ProfileType.url,
-        extendType: ExtendType.script,
         scriptId: 7,
         order: 1,
       );
@@ -168,7 +167,7 @@ void main() {
           type: ProfileType.custom,
           label: 'Managed profile',
           url: 'https://example.com/profile.yaml',
-          extendType: ExtendType.standard,
+          extendType: 'standard',
           autoUpdateDurationMillis: 60000,
           autoUpdate: true,
           selectedMap: const {'Proxy': 'DIRECT'},
@@ -1289,9 +1288,7 @@ void main() {
       );
       expect(policies.map((rank) => rank.label), ['Node-A']);
       final nodes = await dao.rankBy(TrafficStatisticsRankBy.node, start, end);
-      expect(nodes.map((rank) => (rank.label, rank.bytes)), [
-        ('HK-01', 1200),
-      ]);
+      expect(nodes.map((rank) => (rank.label, rank.bytes)), [('HK-01', 1200)]);
       final profiles = await dao.rankBy(
         TrafficStatisticsRankBy.profile,
         start,

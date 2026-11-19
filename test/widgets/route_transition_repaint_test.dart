@@ -75,7 +75,7 @@ void main() {
         container: container,
         child: PrismApp(
           localizationsDelegates: const [
-            AppLocalizations.delegate,
+            appLocalizationsDelegate,
             AppUiLocalizations.delegate,
             GlobalWidgetsLocalizations.delegate,
           ],

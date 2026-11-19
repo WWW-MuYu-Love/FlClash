@@ -211,7 +211,7 @@ enum CoreEventType {
   dialerLoop,
 }
 
-enum FindProcessMode { always, off }
+enum FindProcessMode { always, strict }
 
 enum InterfaceNameMode { clear, follow, custom }
 
@@ -297,8 +297,12 @@ enum DnsOverrideKey with OverrideKey {
   /// groups or rule sets, which change with every update.
   static const normalProfileKeys = {
     listen,
+    useHosts,
+    useSystemHosts,
     ipv6,
+    respectRules,
     preferH3,
+    cacheAlgorithm,
     enhancedMode,
     fakeIpFilter,
     fakeIpFilterMode,
@@ -800,8 +804,6 @@ extension RulePayloadErrorExt on RulePayloadError {
   }
 }
 
-enum ExtendType { standard, script }
-
 enum RuleTarget {
   DIRECT('DIRECT'),
   REJECT('REJECT'),
@@ -883,3 +885,17 @@ enum CoreStatus { connecting, connected, disconnected }
 enum RequestFeed { recent, live }
 
 enum UpdatingScope { core, local }
+
+/// Why the Android service gave up a start, by the code `ServiceStateMachine`
+/// sends with its stopped report.
+enum ServiceStartFailure {
+  vpnPermission('vpn_permission'),
+  service('service');
+
+  final String code;
+
+  const ServiceStartFailure(this.code);
+
+  static ServiceStartFailure? fromCode(Object? code) =>
+      values.where((it) => it.code == code).firstOrNull;
+}

@@ -12,6 +12,7 @@ import 'package:fl_clash/plugins/app.dart';
 import 'package:fl_clash/providers/mitm.dart';
 import 'package:fl_clash/providers/providers.dart';
 import 'package:fl_clash/state.dart';
+import 'package:fl_clash/ui/icons/icons.dart';
 import 'package:fl_clash/views/config/mitm_modules.dart';
 import 'package:fl_clash/widgets/widgets.dart';
 import 'package:flutter/widgets.dart';
@@ -320,6 +321,22 @@ class _MitmViewState extends ConsumerState<MitmView> {
     }
   }
 
+  Widget _trustGlyph(
+    BuildContext context, {
+    required MitmCertificate? certificate,
+    required AsyncValue<MitmTrustCheck> trust,
+  }) {
+    final colorScheme = context.colorScheme;
+    final color = certificate == null
+        ? colorScheme.onSurfaceVariant
+        : trust.value?.trust == MitmTrust.ready
+        ? colorScheme.success
+        : trust.hasError
+        ? colorScheme.error
+        : colorScheme.onSurfaceVariant;
+    return GlyphIcon(AppGlyphs.certificate, size: 32, color: color);
+  }
+
   List<Widget> _certificateItems(
     BuildContext context,
     WidgetRef ref,
@@ -328,10 +345,17 @@ class _MitmViewState extends ConsumerState<MitmView> {
   }) {
     final appLocalizations = context.appLocalizations;
     final certificate = state.value;
+    final trust = ref.watch(mitmTrustStateProvider);
+    final leading = _trustGlyph(
+      context,
+      certificate: certificate,
+      trust: trust,
+    );
     if (certificate == null) {
       final error = state.error;
       return [
         ListItem(
+          leading: leading,
           title: Text(appLocalizations.generateCertificate),
           subtitle: error == null ? null : Text(compactError(error)),
           onTap: () => _generateCertificate(
@@ -341,7 +365,6 @@ class _MitmViewState extends ConsumerState<MitmView> {
         ),
       ];
     }
-    final trust = ref.watch(mitmTrustStateProvider);
     final installable = switch (trust.value) {
       MitmTrustCheck(trust: MitmTrust.notInstalled || MitmTrust.untrusted) =>
         canTrust,
@@ -354,26 +377,34 @@ class _MitmViewState extends ConsumerState<MitmView> {
       _ => false,
     };
     return [
-      ListItem(
-        title: Text(certificate.subject),
-        subtitle: Text(_trustLabel(appLocalizations, trust)),
-        onTap: () => _showDetails(context, certificate),
-      ),
-      if (installable)
-        ListItem(
-          title: Text(
-            trust.value?.trust == MitmTrust.untrusted
-                ? appLocalizations.trustCertificate
-                : appLocalizations.installCertificate,
+      ContextMenuRegion(
+        menuItems: [
+          PopupMenuItem(
+            glyph: AppGlyphs.export,
+            label: appLocalizations.exportCertificate,
+            onPressed: () => _export(context, ref, certificate),
           ),
-          onTap: () => _install(context, ref),
+        ],
+        child: ListItem(
+          leading: leading,
+          title: Text(certificate.subject),
+          subtitle: Text(_trustLabel(appLocalizations, trust)),
+          onTap: () {
+            if (installable) {
+              _install(context, ref);
+            } else if (!canTrust) {
+              _export(context, ref, certificate);
+            } else {
+              _showDetails(context, certificate);
+            }
+          },
         ),
-      ListItem(
-        title: Text(appLocalizations.exportCertificate),
-        onTap: () => _export(context, ref, certificate),
       ),
       ListItem(
-        title: Text(appLocalizations.regenerateCertificate),
+        title: Text(
+          appLocalizations.regenerateCertificate,
+          style: TextStyle(color: context.colorScheme.error),
+        ),
         onTap: () =>
             _regenerate(context, ref, old: certificate, canTrust: canTrust),
       ),
@@ -435,7 +466,6 @@ class _MitmViewState extends ConsumerState<MitmView> {
                               : null,
                         ),
                         generateSection(
-                          title: appLocalizations.certificate,
                           items: _certificateItems(
                             context,
                             ref,

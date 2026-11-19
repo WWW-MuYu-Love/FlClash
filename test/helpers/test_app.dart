@@ -47,7 +47,7 @@ class TestApp extends StatelessWidget {
       darkTheme: darkTheme,
       themeMode: themeMode ?? ThemeMode.system,
       localizationsDelegates: const [
-        AppLocalizations.delegate,
+        appLocalizationsDelegate,
         AppUiLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,
       ],
@@ -126,7 +126,7 @@ class HostApp extends StatelessWidget {
       locale: locale,
       remoteFocus: remoteFocus,
       localizationsDelegates: const [
-        AppLocalizations.delegate,
+        appLocalizationsDelegate,
         AppUiLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,
       ],

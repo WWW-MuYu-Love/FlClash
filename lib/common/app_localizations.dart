@@ -7,10 +7,33 @@ import 'package:fl_clash/core/desktop/launch_policy.dart';
 import 'package:fl_clash/core/desktop/model.dart';
 import 'package:fl_clash/core/method.dart';
 import 'package:fl_clash/l10n/l10n.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
+import 'package:intl/intl.dart';
 import 'package:prism_ui/l10n.dart';
 
-final currentAppLocalizations = AppLocalizations.current;
+AppLocalizations get currentAppLocalizations => AppLocalizations.current;
+
+// Loads the messages for [locale] and returns an instance that reads them.
+// The intl message libraries load synchronously, so this stays synchronous
+// for the callers in bootstrap and tests; the async load primes
+// AppLocalizations.current for later readers.
+AppLocalizations loadAppLocalizations(Locale locale) {
+  final supported = AppLocalizations.delegate.isSupported(locale)
+      ? locale
+      : const Locale('en');
+  final name = (supported.countryCode?.isEmpty ?? false)
+      ? supported.languageCode
+      : supported.toString();
+  Intl.defaultLocale = Intl.canonicalizedLocale(name);
+  unawaited(AppLocalizations.load(supported));
+  return AppLocalizations();
+}
+
+// AppLocalizations.delegate loads the same messages; expose it under the
+// name the app and tests use.
+const LocalizationsDelegate<AppLocalizations> appLocalizationsDelegate =
+    AppLocalizations.delegate;
 
 class AppUiLocalizations implements UiLocalizations {
   const AppUiLocalizations(this._localizations);
@@ -91,7 +114,7 @@ class _AppUiLocalizationsDelegate
 
   @override
   Future<UiLocalizations> load(Locale locale) =>
-      AppLocalizations.load(locale).then(AppUiLocalizations.new);
+      SynchronousFuture(AppUiLocalizations(loadAppLocalizations(locale)));
 
   @override
   bool shouldReload(_AppUiLocalizationsDelegate old) => false;
@@ -269,6 +292,18 @@ String? _segment(String message, String prefix, String suffix) {
     message.length - suffix.length,
   );
   return inner.isEmpty ? null : inner;
+}
+
+String coreSessionLostMessage(
+  Object? cause,
+  AppLocalizations appLocalizations,
+) {
+  final reason = cause == null
+      ? ''
+      : userFacingErrorMessage(cause, appLocalizations);
+  return reason.isEmpty
+      ? appLocalizations.coreStoppedDesc
+      : appLocalizations.coreStoppedWithReason(reason);
 }
 
 String delayFailureText(int delay, AppLocalizations appLocalizations) {

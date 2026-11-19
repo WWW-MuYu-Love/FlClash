@@ -11,25 +11,6 @@
   "logs": "Logs",
   "resources": "Resources",
   "trafficUsage": "Traffic usage",
-  "trafficStatistics": "Traffic statistics",
-  "trafficStatisticsDesc": "Daily, weekly and monthly traffic by rule, domain and proxy",
-  "trafficStatisticsDay": "Day",
-  "trafficStatisticsWeek": "Week",
-  "trafficStatisticsMonth": "Month",
-  "trafficStatisticsToday": "Today",
-  "trafficStatisticsTrend": "Trend",
-  "trafficStatisticsRuleHits": "Rule hits",
-  "trafficStatisticsRankings": "Rankings",
-  "trafficStatisticsProxy": "Proxy",
-  "trafficStatisticsNoData": "No traffic recorded yet. Keep the tunnel on and come back after some connections close.",
-  "trafficStatisticsUptime": "Uptime",
-  "trafficStatisticsRefresh": "Refresh",
-  "trafficStatisticsClear": "Clear statistics",
-  "trafficStatisticsClearConfirm": "Clearing removes the last 90 days of traffic records and the total uptime. This can't be undone.",
-  "trafficStatisticsPrevious": "Previous",
-  "trafficStatisticsNext": "Next",
-  "trafficStatisticsHits": "{count, plural, =1{1 hit} other{{count} hits}}",
-  "trafficStatisticsOverview": "Traffic summary",
   "networkSpeed": "Network speed",
   "outboundMode": "Outbound mode",
   "serviceStatus": "Service status",
@@ -142,7 +123,6 @@
   "safeModeAppTitle": "{appName} (Safe mode)",
   "project": "Project",
   "core": "Core",
-  "extensionCore": "Extension core",
   "tabAnimation": "Tab animation",
   "desc": "A multi-platform proxy client based on ClashMeta, simple and easy to use, open-source and ad-free.",
   "startVpn": "Starting VPN…",
@@ -177,8 +157,6 @@
   "externalController": "External controller",
   "externalControllerDesc": "The external controller lets you control the core on port 9090.",
   "externalControllerSecret": "External controller secret",
-  "externalControllerSecretMismatch": "The controller secret is out of sync. Restart the tunnel to sync it again.",
-  "externalControllerSyncFailed": "Couldn't sync this change to the tunnel; it may not have applied",
   "ipv6Desc": "IPv6 traffic is received only while IPv6 is on.",
   "app": "App",
   "general": "General",
@@ -191,7 +169,6 @@
   "geodataLoader": "Geo low-memory mode",
   "requests": "Requests",
   "recentRequests": "Recent requests",
-  "findProcessMode": "Find process",
   "init": "Init",
   "infiniteTime": "Never expires",
   "connections": "Connections",
@@ -223,7 +200,6 @@
   "autoCloseConnections": "Auto close connections",
   "onlyStatisticsProxy": "Only count proxy traffic",
   "showNotificationStopAction": "Stop button in notification",
-  "showEnvBanner": "Show environment watermark",
   "pureBlackMode": "Pure black mode",
   "sidebar": "Sidebar",
   "backgroundBlur": "Background blur",
@@ -365,12 +341,6 @@
   "iconStyleFilled": "Filled",
   "iconStylePlain": "Plain",
   "iconStyleHidden": "Hidden",
-  "icons": "Cards",
-  "proxyFolderAll": "All",
-  "proxyFolderStrategy": "Strategy",
-  "proxyFolderNodes": "Nodes",
-  "proxyFolderLeafNodes": "Leaf Nodes",
-  "loadBalance": "Load Balance",
   "filter": "Filter",
   "groupBy": "Group by",
   "hideTimeoutProxies": "Hide timed-out proxies",
@@ -426,8 +396,6 @@
   "addRule": "Add rule",
   "content": "Content",
   "ruleTarget": "Rule target",
-  "matchTarget": "MATCH-TARGET",
-  "followProfile": "Follow profile",
   "sourceIp": "Source IP",
   "noResolve": "Don't resolve IP",
   "saveChanges": "Save the changes?",
@@ -505,12 +473,10 @@
   "importFile": "Import from file",
   "importUrl": "Import from URL",
   "startFromScratch": "Start from scratch",
-  "autoSetSystemDns": "Auto-set system DNS",
   "details": "{label} details",
   "creationTime": "Creation time",
   "process": "Process",
   "host": "Host",
-  "hosts": "Hosts",
   "destination": "Destination",
   "destinationGeoIP": "Destination GeoIP",
   "destinationIPASN": "Destination IP ASN",
@@ -524,7 +490,6 @@
   "request": "Request",
   "connected": "Connected",
   "disconnected": "Disconnected",
-  "disconnect": "Disconnect",
   "connecting": "Connecting…",
   "restartCoreTip": "Are you sure you want to restart the core?",
   "forceRestartCoreTip": "Are you sure you want to force restart the core?",
@@ -532,9 +497,6 @@
   "coreStatus": "Core status",
   "appendSystemDns": "Append system DNS",
   "editRule": "Edit rule",
-  "extendMode": "Extend mode",
-  "standardModeDesc": "Standard mode: adds rules on top of the profile",
-  "scriptModeDesc": "Script mode: rewrites the whole profile with an extension script",
   "addedRules": "Added rules",
   "controlGlobalAddedRules": "Control global added rules",
   "quickActions": "Quick actions",
@@ -729,7 +691,6 @@
   "torch": "Flashlight",
   "pickFromAlbum": "Choose from album",
   "closeConnections": "Close connections",
-  "closeConnectionsFailedTip": "Couldn't close the connections; the tunnel controller is unreachable",
   "scrollToSelected": "Scroll to selected",
   "showMore": "Expand",
   "showLess": "Collapse",
@@ -851,19 +812,8 @@
   "clearDataFailed": "Couldn't clear the data: {detail}",
   "bypassPrivateRoute": "Bypass private addresses",
   "disableIcmpForwarding": "Disable ICMP forwarding",
-  "dnsHijackList": "DNS hijack list",
-  "endpointIndependentNat": "Endpoint-independent NAT",
-  "recvMsgX": "Batch receive",
-  "sendMsgX": "Batch send",
-  "loopbackDevice": "Loopback 10.7.0.1",
   "disableIcmpForwardingDesc": "With ICMP forwarding disabled, TUN answers ping itself, so ping no longer shows the real latency.",
   "excludeInterface": "Excluded interfaces",
-  "includeAllNetworks": "Include All Networks",
-  "excludeLocalNetworks": "Exclude Local Networks",
-  "excludeAPNs": "Exclude APNs",
-  "excludeCellularServices": "Exclude Cellular Services",
-  "enforceRoutes": "Enforce Routes",
-  "excludeDeviceCommunication": "Exclude Device Communication",
   "includeInterface": "Included interfaces",
   "includeInterfaceDesc": "Only traffic arriving on included interfaces goes through TUN, and excluded interfaces no longer apply.",
   "includeUid": "Included user IDs",
@@ -1022,7 +972,6 @@
   "httpBodyTruncated": "Only the start of this body was recorded.",
   "httpBodyUndecoded": "Could not decode {encoding}, so this is the data as it was sent.",
   "mitmEnableTip": "FlClash will be able to read everything sent to the decrypted hosts, cookies and passwords included. Turn this on only for hosts you mean to rewrite.",
-  "certificate": "Certificate",
   "generateCertificate": "Generate certificate",
   "regenerateCertificate": "Regenerate certificate",
   "regenerateCertificateTip": "The new certificate replaces the current one, which FlClash takes out of this device's trusted roots where it can. Every other device that trusts the current one has to install the new one.",
@@ -1035,7 +984,6 @@
   "mitmTrustUntrusted": "Not fully trusted",
   "mitmTrustNotInstalled": "Not installed",
   "mitmTrustChecking": "Checking…",
-  "trustCertificate": "Trust certificate",
   "mitmCertificateAndroidReadyTip": "Only apps that trust user certificates, mostly browsers, are decrypted.",
   "mitmCertificateLinuxTip": "Flatpak browsers need the exported certificate imported by hand.",
   "mitmCertutilMissing": "Chrome and Firefox keep their own certificate stores, which need certutil: {command}",
@@ -1045,13 +993,9 @@
   "mitmRootPendingReboot": "The certificate takes effect after the device restarts.",
   "mitmInstallSystemCaTip": "Root was found, so the certificate goes into the system's trusted certificates as a FlClash MITM CA module for Magisk, KernelSU or APatch. Every app on this device will then trust it, and anyone holding its private key could decrypt this device's HTTPS traffic. To undo it, regenerate the certificate or remove the module in the root manager and restart. If root is denied, it is installed as a user certificate instead.",
   "mitmInstallUserCaTip": "No root was found, so the certificate can only be installed as a user certificate. Only apps that trust user certificates, mostly browsers, are decrypted; other apps fail on the hosts you list, so leave those hosts out. On Android 11 and later you finish the install yourself in system settings.",
-  "mitmIosTrustSteps": "Install the certificate from Files, then enable full trust for it in Settings → General → About → Certificate Trust Settings.",
-  "mitmIosSafariTrustSteps": "Safari opened the certificate download. Tap 'Allow', then install it from 'Downloaded Profile' at the top of Settings, and turn on full trust in 'Settings → General → About → Certificate Trust Settings'. A downloaded profile is deleted if it is not installed within 8 minutes.",
   "mitmCertificateSavedTip": "Saved {fileName} to Downloads. Install it in Settings under Security › Encryption & credentials › Install a certificate › CA certificate.",
   "openSettings": "Open settings",
   "mitmRemoveOldCertificateTip": "Remove the old certificate, {name}, in Settings under Security › Encryption & credentials › Trusted credentials › User, then install the new one.",
-  "mitmRestartTunnel": "Restart tunnel",
-  "mitmRestartTunnelTip": "MITM changes take effect after the tunnel restarts.",
   "mitmOldCertificateLeftTip": "The old certificate, {name}, could not be removed. Remove it from the trusted roots yourself.",
   "mitmOldSystemCertificateLeftTip": "The old certificate, {name}, is still among the system's trusted CAs. Allow FlClash root access in your root manager and regenerate, or remove the FlClash MITM CA module there and restart.",
   "mitmDecryptHost": "Decrypt this host",
@@ -1063,7 +1007,6 @@
   "headerRewrite": "Header rewrite",
   "bodyRewrite": "Body rewrite",
   "mapLocal": "Map local",
-  "mitmHostnameDesc": "A leading - excludes a host, and the first match decides.",
   "mitmModules": "Modules",
   "mitmModule": "Module",
   "mitmModuleInvalid": "This is not a Surge module, a Loon plugin, a Quantumult X snippet or a Stash override",
@@ -1076,10 +1019,6 @@
   "mitmSkipSetting": "This setting is not supported",
   "mitmSkipScriptType": "This script type is not supported",
   "mitmSkipRule": "This rule type is not supported",
-  "mitmSkipPolicy": "Only the DIRECT and REJECT policies are supported",
-  "mitmSkipJq": "jq rewrites are not supported",
-  "mitmSkipJsonBody": "JSON body rewrites are not supported",
-  "mitmSkipRawHeader": "Rewriting all headers as one text is not supported",
   "mitmSkipConditional": "Conditional rewrites are not supported",
   "mitmSkipRelativeData": "The file this line names is not attached; use a URL or attach it",
   "mitmSkipNotDownloaded": "Its file has not been downloaded",
@@ -1094,8 +1033,7 @@
   "mitmRunScript": "Run now",
   "mitmScriptNoOutput": "The script finished without output",
   "mitmScriptRiskTitle": "Run this module's scripts?",
-  "mitmScriptRisk": "Its scripts read and change the traffic of the hosts they match, cookies and tokens included, and can send requests of their own. Turn it on only if you trust where it comes from.",
-  "mitmModuleScriptsChanged": "{name} changed its scripts and was turned off",
+  "mitmScriptRisk": "Its scripts read and change the traffic of the hosts they match, cookies and tokens included, and can send requests of their own. Turn it on only if you trust where it comes from. Once on, its updates take effect without asking again.",
   "skipServerCertVerify": "Skip server certificate verification",
   "blockQuic": "Block QUIC",
   "http2": "HTTP/2",
@@ -1124,6 +1062,53 @@
   "fallbackFilterGeositeDesc": "Domains in these GeoSite categories are resolved by Fallback directly.",
   "fallbackFilterIpcidrDesc": "When Nameserver returns an IP in these ranges, the Fallback answer is used.",
   "fallbackFilterDomainDesc": "These domains are resolved by Fallback directly.",
+  "trafficStatistics": "Traffic statistics",
+  "trafficStatisticsDesc": "Daily, weekly and monthly traffic by rule, domain and proxy",
+  "trafficStatisticsDay": "Day",
+  "trafficStatisticsWeek": "Week",
+  "trafficStatisticsMonth": "Month",
+  "trafficStatisticsToday": "Today",
+  "trafficStatisticsTrend": "Trend",
+  "trafficStatisticsRuleHits": "Rule hits",
+  "trafficStatisticsRankings": "Rankings",
+  "trafficStatisticsProxy": "Proxy",
+  "trafficStatisticsNoData": "No traffic recorded yet. Keep the tunnel on and come back after some connections close.",
+  "trafficStatisticsUptime": "Uptime",
+  "trafficStatisticsRefresh": "Refresh",
+  "trafficStatisticsClear": "Clear statistics",
+  "trafficStatisticsClearConfirm": "Clearing removes the last 90 days of traffic records and the total uptime. This can't be undone.",
+  "trafficStatisticsPrevious": "Previous",
+  "trafficStatisticsNext": "Next",
+  "trafficStatisticsHits": "{count, plural, =1{1 hit} other{{count} hits}}",
+  "trafficStatisticsOverview": "Traffic summary",
+  "extensionCore": "Extension core",
+  "externalControllerSecretMismatch": "The controller secret is out of sync. Restart the tunnel to sync it again.",
+  "externalControllerSyncFailed": "Couldn't sync this change to the tunnel; it may not have applied",
+  "showEnvBanner": "Show environment watermark",
+  "icons": "Cards",
+  "proxyFolderAll": "All",
+  "proxyFolderStrategy": "Strategy",
+  "proxyFolderNodes": "Nodes",
+  "proxyFolderLeafNodes": "Leaf Nodes",
+  "loadBalance": "Load Balance",
+  "hosts": "Hosts",
+  "disconnect": "Disconnect",
+  "closeConnectionsFailedTip": "Couldn't close the connections; the tunnel controller is unreachable",
+  "dnsHijackList": "DNS hijack list",
+  "endpointIndependentNat": "Endpoint-independent NAT",
+  "recvMsgX": "Batch receive",
+  "sendMsgX": "Batch send",
+  "loopbackDevice": "Loopback 10.7.0.1",
+  "includeAllNetworks": "Include All Networks",
+  "excludeLocalNetworks": "Exclude Local Networks",
+  "excludeAPNs": "Exclude APNs",
+  "excludeCellularServices": "Exclude Cellular Services",
+  "enforceRoutes": "Enforce Routes",
+  "excludeDeviceCommunication": "Exclude Device Communication",
+  "mitmIosTrustSteps": "Install the certificate from Files, then enable full trust for it in Settings → General → About → Certificate Trust Settings.",
+  "mitmIosSafariTrustSteps": "Safari opened the certificate download. Tap 'Allow', then install it from 'Downloaded Profile' at the top of Settings, and turn on full trust in 'Settings → General → About → Certificate Trust Settings'. A downloaded profile is deleted if it is not installed within 8 minutes.",
+  "mitmRestartTunnel": "Restart tunnel",
+  "mitmRestartTunnelTip": "MITM changes take effect after the tunnel restarts.",
   "serviceDidNotStart": "The service did not start",
   "serviceDidNotStop": "The service did not stop",
   "coreNotConnected": "Core is not connected for {method}",
@@ -1158,5 +1143,200 @@
   "tunnelStartFailed": "The tunnel failed to start",
   "tunnelStartFailedDetail": "The tunnel failed to start: {detail}",
   "extensionConfigFailed": "App core applied the config, but the extension core did not receive it: {reason}",
-  "extensionConfigNotReceived": "App core applied the config, but the extension core did not receive it"
+  "extensionConfigNotReceived": "App core applied the config, but the extension core did not receive it",
+  "alwaysFindProcess": "Always find process",
+  "pacMode": "PAC mode",
+  "pacScript": "PAC script",
+  "bypassLocalWindowsOnly": "Windows only: host names without a dot",
+  "exitDefault": "Default",
+  "customExit": "Custom exit",
+  "inputExitName": "Enter the exit name",
+  "scriptFailed": "The script failed",
+  "@numberRangeTip": {
+    "placeholders": {
+      "label": {},
+      "min": {},
+      "max": {}
+    }
+  },
+  "@maxLengthTip": {
+    "placeholders": {
+      "label": {},
+      "max": {}
+    }
+  },
+  "@batchPreviewTip": {
+    "placeholders": {
+      "count": {},
+      "skipped": {}
+    }
+  },
+  "@lineIssueTip": {
+    "placeholders": {
+      "line": {},
+      "message": {}
+    }
+  },
+  "addedRulesAfterScript": "Inserted after the script runs, ahead of the profile's rules",
+  "@proxiesCount": {
+    "placeholders": {
+      "count": {},
+      "label": {}
+    }
+  },
+  "@rulesCount": {
+    "placeholders": {
+      "count": {},
+      "label": {}
+    }
+  },
+  "@proxyGroupsCount": {
+    "placeholders": {
+      "count": {},
+      "label": {}
+    }
+  },
+  "@proxiesProfileLabel": {
+    "placeholders": {
+      "name": {},
+      "count": {}
+    }
+  },
+  "@customIssueInvalidFilter": {
+    "placeholders": {
+      "name": {},
+      "message": {}
+    }
+  },
+  "@customIssueDialerLoop": {
+    "placeholders": {
+      "proxy": {},
+      "target": {}
+    }
+  },
+  "@providerInUse": {
+    "placeholders": {
+      "label": {},
+      "profiles": {}
+    }
+  },
+  "@proxiesReplacedTip": {
+    "placeholders": {
+      "removed": {},
+      "added": {}
+    }
+  },
+  "@failedItem": {
+    "placeholders": {
+      "label": {},
+      "message": {}
+    }
+  },
+  "@profileExpiresIn": {
+    "placeholders": {
+      "date": {},
+      "days": {}
+    }
+  },
+  "@customImportDroppedSubRules": {
+    "placeholders": {
+      "count": {},
+      "label": {}
+    }
+  },
+  "mitmAndroidRootDesc": "Without root, only apps that trust user certificates, mostly browsers, can be decrypted. With root, every app can.",
+  "httpRequestsReadFailed": "Couldn't read the requests",
+  "requestBodyReadFailed": "Couldn't read the request body",
+  "responseBodyReadFailed": "Couldn't read the response body",
+  "mitmGrpcOverLimit": "Inflates past {size} MB; shown compressed",
+  "mitmUntrustedStores": "Installed but not trusted in: {stores}",
+  "removeCertificate": "Remove certificate",
+  "removeCertificateSuccess": "Certificate removed",
+  "mitmSystemStoreRemoveFailed": "Removing the certificate from the system's trusted roots failed",
+  "mitmRemoveInSettings": "Remove in Settings",
+  "mitmRemoveUserCertificateTip": "Android doesn't let apps remove user certificates. Remove {name} in Settings under Security › Encryption & credentials › Trusted credentials › User.",
+  "mitmCannotRemove": "Can't remove",
+  "mitmRemoveSystemCertificateTip": "The FlClash MITM CA root module added the certificate to the system. Allow FlClash root access in your root manager and try again, or remove the module there and restart.",
+  "requestBodyMock": "Request body mock",
+  "clientSourceAddress": "Client addresses",
+  "skipVerifyHostname": "Hosts without certificate checks",
+  "mitmRequestRulesDesc": "The module’s URL-REGEX and USER-AGENT rules became URL rewrites, judged request by request: on every plain HTTP request, and on HTTPS only for hosts in the MITM hostname list.",
+  "mitmModuleRequirementTip": "The module requires {requirement}, which this device does not meet; it may not work as intended.",
+  "mitmExitModules": "From modules: {modules}",
+  "mitmModuleRiskTitle": "Turn on this module?",
+  "mitmNetworkRisk": "When the config is generated, it changes the network settings below, ahead of what you set for the same ones in FlClash. Turning the module off or deleting it undoes this.",
+  "mitmSkipVerifyRisk": "Turning it on stops checking the certificates of these hosts' servers, so a server posing as one of them goes unnoticed: {hosts}",
+  "mitmClientSourceRisk": "It decrypts only for these clients: {addresses}. With TUN on, this device's apps reach FlClash from the TUN's address, so they may be left out.",
+  "mitmClientSourceTunTip": "With TUN on, this device's apps come from the TUN's address; a list that leaves it out leaves their traffic undecrypted.",
+  "mitmNetworkChanges": "Network settings",
+  "mitmChangeReplace": "Replaced with {values}",
+  "mitmChangeInsert": "Adds {values} first",
+  "mitmChangeAppend": "Adds {values}",
+  "mitmChangeOverridesYours": "Goes over your setting",
+  "mitmChangeReplacedBy": "Overridden by the module {module}",
+  "mitmSkipHttpRulePolicy": "URL-REGEX and USER-AGENT rules only take a REJECT policy",
+  "mitmSkipFinalRule": "Module rules go first, so a final rule would hide every rule after it",
+  "mitmSkipDeviceRule": "This rule needs device or network details FlClash cannot read",
+  "mitmSkipRequirement": "This line’s requirement is not met on this device",
+  "mitmSkipManagedCa": "FlClash manages the CA certificate; a module cannot change it",
+  "mitmSkipProxies": "A module cannot change proxies or proxy groups",
+  "mitmSkipAppOnly": "A feature of the app this was written for that FlClash does not have",
+  "mitmSkipReflect": "FlClash cannot send packets back to their sender",
+  "mitmSkipSkipVerifyAll": "Certificate checks are not turned off for every host",
+  "mitmScriptCron": "Scheduled",
+  "mitmScriptEvent": "Event",
+  "mitmScriptGeneric": "Generic",
+  "mitmExcluded": "Excluded",
+  "mitmModulesTurnedOff": "Modules turned off",
+  "mitmModuleTurnedOffDesc": "An update to {name} brought scripts or network changes you have not agreed to",
+  "mitmModulesTurnedOffDesc": "{count, plural, other{{count} modules got updates with scripts or network changes you have not agreed to}}",
+  "mitmModuleUnreadableRisk": "The module file could not be read, so what it changes is unknown. Turn it on only if you trust where it comes from.",
+  "@invalidOfCount": {
+    "placeholders": {
+      "invalid": {},
+      "total": {}
+    }
+  },
+  "liveStatusTest": "Live status cards test",
+  "forceRestartCoreAsk": "Force restart the core?",
+  "forceRestartCoreAskDesc": "Connections in progress will drop",
+  "stopUpdateDownloadDesc": "What has downloaded is deleted",
+  "stopDownload": "Stop",
+  "liveStatus": "Live status",
+  "coreStopped": "Core stopped",
+  "coreStoppedDesc": "The app lost its connection to the core",
+  "coreStoppedWithReason": "The app lost its connection to the core: {reason}",
+  "mixedPortReset": "The mixed port cannot be {value}, so it was set back to {port}",
+  "@mixedPortReset": {
+    "placeholders": {
+      "value": {},
+      "port": {}
+    }
+  },
+  "restartCore": "Restart core",
+  "installUpdate": "Install update",
+  "liveStatusPosition": "{index} of {count}",
+  "@liveStatusPosition": {
+    "placeholders": {
+      "index": {},
+      "count": {}
+    }
+  },
+  "coreStarting": "Starting core",
+  "coreStartingDesc": "Connecting to the core",
+  "coreRunning": "Core running",
+  "coreRunningDesc": "The app is connected to the core",
+  "forceRestartCore": "Force restart",
+  "vpnPermissionNotGranted": "VPN permission was not granted, so the VPN did not start. An always-on VPN set for another app also blocks it.",
+  "vpnServiceStartFailed": "The VPN service could not start.",
+  "findProcessMode": "Find process",
+  "matchTarget": "MATCH-TARGET",
+  "certificate": "Certificate",
+  "trustCertificate": "Trust certificate",
+  "mitmHostnameDesc": "A leading - excludes a host, and the first match decides.",
+  "mitmSkipPolicy": "Only the DIRECT and REJECT policies are supported",
+  "mitmSkipJq": "jq rewrites are not supported",
+  "mitmSkipJsonBody": "JSON body rewrites are not supported",
+  "mitmSkipRawHeader": "Rewriting all headers as one text is not supported",
+  "mitmModuleScriptsChanged": "{name} changed its scripts and was turned off"
 }

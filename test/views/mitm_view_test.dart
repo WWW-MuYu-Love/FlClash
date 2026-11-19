@@ -8,6 +8,7 @@ import 'package:fl_clash/models/models.dart';
 import 'package:fl_clash/providers/mitm.dart';
 import 'package:fl_clash/providers/providers.dart';
 import 'package:fl_clash/state.dart';
+import 'package:fl_clash/ui/icons/icons.dart';
 import 'package:fl_clash/ui/list_item.dart';
 import 'package:fl_clash/views/config/mitm.dart';
 import 'package:flutter/widgets.dart';
@@ -176,7 +177,10 @@ void main() {
   testWidgets('offers a certificate until one is generated', (tester) async {
     await pumpView(tester);
 
-    expect(find.text(currentAppLocalizations.exportCertificate), findsNothing);
+    expect(
+      find.text(currentAppLocalizations.regenerateCertificate),
+      findsNothing,
+    );
     await tester.tap(find.text(currentAppLocalizations.generateCertificate));
     await tester.pumpAndSettle();
 
@@ -187,14 +191,7 @@ void main() {
       findsOneWidget,
     );
     expect(
-      find.text(currentAppLocalizations.exportCertificate),
-      findsOneWidget,
-    );
-
-    await tester.tap(find.text(_certificate.subject));
-    await tester.pumpAndSettle();
-    expect(
-      find.textContaining(currentAppLocalizations.validUntil('2036-10-22')),
+      find.text(currentAppLocalizations.regenerateCertificate),
       findsOneWidget,
     );
   });
@@ -307,76 +304,86 @@ void main() {
     expect(find.text('5000'), findsOneWidget);
   });
 
-  group('installing to the system', () {
-    Finder install() => find.text(currentAppLocalizations.installCertificate);
+  group('the certificate row', () {
+    Finder row() => find.text(_certificate.subject);
 
-    testWidgets('is offered where FlClash has a trust store', (tester) async {
-      await pumpView(
-        tester,
-        certificate: _certificate,
-        store: _FakeStore(MitmTrust.notInstalled),
-      );
+    GlyphIcon statusGlyph(WidgetTester tester) => tester.widget<GlyphIcon>(
+      find.descendant(
+        of: find.widgetWithText(ListItem, _certificate.subject),
+        matching: find.byType(GlyphIcon),
+      ),
+    );
 
-      expect(install(), findsOneWidget);
+    Color successColor(WidgetTester tester) =>
+        tester.element(row()).colorScheme.success;
+
+    testWidgets('installs on tap where FlClash has a trust store', (
+      tester,
+    ) async {
+      final store = _FakeStore(MitmTrust.notInstalled);
+      await pumpView(tester, certificate: _certificate, store: store);
+      expect(statusGlyph(tester).color, isNot(successColor(tester)));
       expect(saved().trustedFingerprint, isNull);
-    });
 
-    testWidgets('is never offered in safe mode', (tester) async {
-      await pumpView(
-        tester,
-        certificate: _certificate,
-        store: _FakeStore(MitmTrust.notInstalled),
-        safeMode: true,
-      );
+      await tester.tap(row());
+      await tester.pumpAndSettle();
 
-      expect(install(), findsNothing);
-    });
-
-    testWidgets('elsewhere leaves only the export', (tester) async {
-      await pumpView(tester, certificate: _certificate);
-
-      expect(install(), findsNothing);
-      expect(
-        find.text(currentAppLocalizations.exportCertificate),
-        findsOneWidget,
-      );
+      expect(store.installed, [_certificate]);
+      expect(find.text(currentAppLocalizations.mitmTrustReady), findsOneWidget);
+      expect(statusGlyph(tester).color, successColor(tester));
+      expect(saved().trustedFingerprint, _certificate.fingerprint);
     });
 
     testWidgets('trusts a certificate the store holds untrusted', (
       tester,
     ) async {
+      final store = _FakeStore(MitmTrust.untrusted);
+      await pumpView(tester, certificate: _certificate, store: store);
+
+      await tester.tap(row());
+      await tester.pumpAndSettle();
+
+      expect(store.installed, [_certificate]);
+    });
+
+    testWidgets('never installs in safe mode', (tester) async {
+      final store = _FakeStore(MitmTrust.notInstalled);
       await pumpView(
         tester,
         certificate: _certificate,
-        store: _FakeStore(MitmTrust.untrusted),
+        store: store,
+        safeMode: true,
       );
 
-      expect(install(), findsNothing);
+      await tester.tap(row());
+      await tester.pumpAndSettle();
+
+      expect(store.installed, isEmpty);
+    });
+
+    testWidgets('shows a trusted certificate on tap', (tester) async {
+      final store = _FakeStore(MitmTrust.ready);
+      await pumpView(tester, certificate: _certificate, store: store);
+
+      await tester.tap(row());
+      await tester.pumpAndSettle();
+
+      expect(store.installed, isEmpty);
       expect(
-        find.text(currentAppLocalizations.trustCertificate),
+        find.textContaining(currentAppLocalizations.validUntil('2036-10-22')),
         findsOneWidget,
       );
     });
 
-    testWidgets('records the certificate once the store trusts it', (
-      tester,
-    ) async {
-      final store = _FakeStore(MitmTrust.notInstalled);
-      await pumpView(tester, certificate: _certificate, store: store);
-
-      await tester.tap(install());
+    Future<void> openExport(WidgetTester tester) async {
+      await tester.longPress(row());
       await tester.pumpAndSettle();
-
-      expect(store.installed, [_certificate]);
-      expect(install(), findsNothing);
-      expect(find.text(currentAppLocalizations.mitmTrustReady), findsOneWidget);
-      expect(saved().trustedFingerprint, _certificate.fingerprint);
-    });
-
-    Finder exportRow() => find.text(currentAppLocalizations.exportCertificate);
+      await tester.tap(find.text(currentAppLocalizations.exportCertificate));
+      await tester.pumpAndSettle();
+    }
 
     testWidgets('export asks before opening the share sheet', (tester) async {
-      final store = _FakeStore(MitmTrust.notInstalled);
+      final store = _FakeStore(MitmTrust.ready);
       await pumpView(
         tester,
         certificate: _certificate,
@@ -384,8 +391,7 @@ void main() {
         isIOS: true,
       );
 
-      await tester.tap(exportRow());
-      await tester.pumpAndSettle();
+      await openExport(tester);
 
       expect(button(currentAppLocalizations.cancel), findsOneWidget);
       expect(button(currentAppLocalizations.confirm), findsOneWidget);
@@ -393,7 +399,7 @@ void main() {
     });
 
     testWidgets('export opens the share sheet once confirmed', (tester) async {
-      final store = _FakeStore(MitmTrust.notInstalled);
+      final store = _FakeStore(MitmTrust.ready);
       await pumpView(
         tester,
         certificate: _certificate,
@@ -401,8 +407,7 @@ void main() {
         isIOS: true,
       );
 
-      await tester.tap(exportRow());
-      await tester.pumpAndSettle();
+      await openExport(tester);
       await tester.tap(button(currentAppLocalizations.confirm));
       await tester.pumpAndSettle();
 
@@ -412,7 +417,7 @@ void main() {
     testWidgets('export stays put when the prompt is cancelled', (
       tester,
     ) async {
-      final store = _FakeStore(MitmTrust.notInstalled);
+      final store = _FakeStore(MitmTrust.ready);
       await pumpView(
         tester,
         certificate: _certificate,
@@ -420,8 +425,7 @@ void main() {
         isIOS: true,
       );
 
-      await tester.tap(exportRow());
-      await tester.pumpAndSettle();
+      await openExport(tester);
       await tester.tap(button(currentAppLocalizations.cancel));
       await tester.pumpAndSettle();
 

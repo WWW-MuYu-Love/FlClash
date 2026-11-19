@@ -277,14 +277,14 @@ void main() {
       expect(entry.phase, ProbePhase.failed);
       expect(entry.value?.status, ServiceProbeStatus.timeout);
 
-      await tester.pump(const Duration(seconds: 1));
-      scope.read(routeTrackerProvider.notifier).markResumed();
-      await tester.pump();
+      await tester.pump(const Duration(minutes: 1));
       expect(sweeps, hasLength(1));
 
+      scope.read(routeTrackerProvider.notifier).markResumed();
+      await tester.pump();
       await tester.pump(probeThrottleDuration);
       expect(sweeps, hasLength(2));
-      await tester.pump(probeThrottleDuration);
+      scope.dispose();
     },
   );
 
