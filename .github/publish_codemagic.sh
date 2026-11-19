@@ -35,7 +35,7 @@ GIT_MSG=$(git log -1 --pretty=%s 2>/dev/null || true)
 if [ -n "$GIT_MSG" ]; then MSG="$GIT_MSG"; fi
 VER=$(grep -m1 '^version:' pubspec.yaml 2>/dev/null | sed 's/^version: *//; s/+.*//' || true)
 if [ -z "$VER" ]; then VER="0.9.3"; fi
-TAG="v${VER}-ios"
+TAG="v${VER}-ios-trial"
 BUILD_LINK="${CM_BUILD_URL:-https://codemagic.io}"
 export SHA MSG VER TAG BUILD_LINK
 echo "发版：版本 $VER（tag $TAG）提交 ${SHA:0:7}（${MSG:-（无提交信息）}）"
@@ -99,7 +99,7 @@ if [ -z "$REL" ]; then
 sha = os.environ['SHA']
 print(json.dumps({'tag_name': os.environ['TAG'], 'name': os.environ['TAG'],
   'body': f'**Commit:** [{sha}](https://github.com/{os.environ[\"REPO\"]}/commit/{sha})\\n**Build:** {os.environ[\"BUILD_LINK\"]}\\n\\n由 Codemagic 自动构建发布。',
-  'draft': False, 'prerelease': False, 'make_latest': 'true'}))")
+  'target_commitish': sha, 'draft': False, 'prerelease': True, 'make_latest': 'false'}))")
   CREATE_OUT=$(curl -s -w $'\n%{http_code}' -X POST "${AUTH[@]}" "$API/releases" -d "$CREATE_JSON")
   CREATE_CODE=$(printf '%s' "$CREATE_OUT" | tail -n 1)
   echo "新建正式版 release $TAG → HTTP $CREATE_CODE" >&2
