@@ -520,6 +520,40 @@ void main() {
     );
   });
 
+  testWidgets('a testing grid card keeps its delay pill neutral', (
+    tester,
+  ) async {
+    await pumpList(
+      tester,
+      type: ProxiesType.icons,
+      selectedMap: {'G0': 'G0-0'},
+      groups: [_group('G0', 3, testUrl: _testUrl)],
+      delays: {
+        _testUrl: {'G0-0': 123},
+      },
+      unfoldSet: const {},
+    );
+    container.read(delayTestingGroupsProvider.notifier).start('G0');
+    await tester.pump();
+
+    final card = groupCardOf('G0');
+    final spinner = find.descendant(
+      of: card,
+      matching: find.byType(ActivityIndicator),
+    );
+    expect(spinner, findsOneWidget);
+    final pill = tester.widget<DecoratedBox>(
+      find.ancestor(of: spinner, matching: find.byType(DecoratedBox)).first,
+    );
+    final scheme = Theme.of(
+      tester.element(find.byType(ProxiesListView)),
+    ).colorScheme;
+    expect(
+      (pill.decoration as ShapeDecoration).color,
+      scheme.onSurfaceVariant.opacity15,
+    );
+  });
+
   testWidgets('tapping a grid card folds and unfolds its group', (
     tester,
   ) async {
@@ -983,6 +1017,60 @@ void main() {
     expect(find.text('N2', findRichText: true), findsOneWidget);
   });
 
+  testWidgets('the list style hides the folder bar and shows every group', (
+    tester,
+  ) async {
+    await pumpList(
+      tester,
+      type: ProxiesType.list,
+      groups: [
+        _group('S1', 0, memberNames: ['S2']),
+        _group('S2', 0, memberNames: []),
+        _group('N1', 0, memberNames: ['x', 'y']),
+        _group('N2', 0, memberNames: ['z']),
+      ],
+      unfoldSet: const {},
+    );
+
+    expect(find.text('All'), findsNothing);
+    expect(find.text('Strategy'), findsNothing);
+    expect(find.text('Nodes'), findsNothing);
+    expect(find.text('S1', findRichText: true), findsOneWidget);
+    expect(find.text('S2', findRichText: true), findsOneWidget);
+    expect(find.text('N1', findRichText: true), findsOneWidget);
+    expect(find.text('N2', findRichText: true), findsOneWidget);
+  });
+
+  testWidgets('switching from a folder tab to the list style restores '
+      'every group', (tester) async {
+    await pumpList(
+      tester,
+      type: ProxiesType.icons,
+      groups: [
+        _group('S1', 0, memberNames: ['S2']),
+        _group('S2', 0, memberNames: []),
+        _group('N1', 0, memberNames: ['x', 'y']),
+        _group('N2', 0, memberNames: ['z']),
+      ],
+      unfoldSet: const {},
+    );
+
+    await tester.tap(find.text('Nodes'));
+    await tester.pumpAndSettle();
+    expect(find.text('S1', findRichText: true), findsNothing);
+
+    container
+        .read(proxiesStyleSettingProvider.notifier)
+        .update((state) => state.copyWith(type: ProxiesType.list));
+    await tester.pumpAndSettle();
+
+    expect(find.text('All'), findsNothing);
+    expect(find.text('S1', findRichText: true), findsOneWidget);
+    expect(find.text('S2', findRichText: true), findsOneWidget);
+    expect(find.text('N1', findRichText: true), findsOneWidget);
+    expect(find.text('N2', findRichText: true), findsOneWidget);
+  });
+
   testWidgets('the node folder flattens every leaf node into a two-column '
       'grid', (tester) async {
     await pumpList(
@@ -1032,6 +1120,7 @@ void main() {
   ) async {
     await pumpList(
       tester,
+      type: ProxiesType.icons,
       groups: [
         _group('G0', 0, memberNames: ['shared', 'a']),
         _group('G1', 0, memberNames: ['shared', 'b']),
@@ -1060,6 +1149,7 @@ void main() {
   }) async {
     await pumpList(
       tester,
+      type: ProxiesType.icons,
       locale: const Locale('zh', 'CN'),
       groups: [
         for (var i = 0; i < 30; i++)

@@ -363,6 +363,9 @@ class _ProxiesListViewState extends ConsumerState<ProxiesListView> {
             (state) => state.type == ProxiesType.icons,
           ),
         );
+        // The folder bar lives only in the card style; the list style shows
+        // every group, as it did before the bar existed.
+        final folder = iconMode ? _folder : ProxyFolder.all;
         final sortType = ref.watch(
           proxiesStyleSettingProvider.select((state) => state.sortType),
         );
@@ -378,7 +381,7 @@ class _ProxiesListViewState extends ConsumerState<ProxiesListView> {
           ).select((query) => SearchQuery(query).isNotEmpty),
         );
         final groupNames = {for (final group in allGroups) group.name};
-        final flatNodes = _folder == ProxyFolder.leafNodes
+        final flatNodes = folder == ProxyFolder.leafNodes
             ? flatLeafNodes(
                 groups: groups,
                 sortType: sortType,
@@ -389,7 +392,7 @@ class _ProxiesListViewState extends ConsumerState<ProxiesListView> {
               )
             : const <({Proxy proxy, Group group})>[];
         return NullStatusSwitcher(
-          isEmpty: _folder == ProxyFolder.leafNodes
+          isEmpty: folder == ProxyFolder.leafNodes
               ? flatNodes.isEmpty
               : groups.isEmpty,
           isSearching: isSearching,
@@ -421,7 +424,7 @@ class _ProxiesListViewState extends ConsumerState<ProxiesListView> {
               );
               final shownGroups = filterGroupsByFolder(
                 groups,
-                _folder,
+                folder,
                 groupNames,
               );
               _columns = columns;
@@ -432,7 +435,7 @@ class _ProxiesListViewState extends ConsumerState<ProxiesListView> {
               _headerHeight = iconMode
                   ? groupIconCardHeightOf(cardType, iconStyle)
                   : listHeaderHeight;
-              _folderBarExtent = _folderBarHeight + gap;
+              _folderBarExtent = iconMode ? _folderBarHeight + gap : 0;
               _shownGroups = shownGroups;
               Widget buildGroup(Group group, int groupColumnsCount) =>
                   _GroupSliver(
@@ -480,18 +483,19 @@ class _ProxiesListViewState extends ConsumerState<ProxiesListView> {
                         child: SizedBox(height: context.contentTopPadding),
                       ),
                     ),
-                    PinnedHeaderSliver(
-                      child: SizedBox(
-                        height: _folderBarExtent,
-                        child: _FolderBar(
-                          folder: _folder,
-                          counts: folderCounts,
-                          onChange: (folder) =>
-                              setState(() => _folder = folder),
+                    if (iconMode)
+                      PinnedHeaderSliver(
+                        child: SizedBox(
+                          height: _folderBarExtent,
+                          child: _FolderBar(
+                            folder: _folder,
+                            counts: folderCounts,
+                            onChange: (folder) =>
+                                setState(() => _folder = folder),
+                          ),
                         ),
                       ),
-                    ),
-                    if (_folder == ProxyFolder.leafNodes)
+                    if (folder == ProxyFolder.leafNodes)
                       _buildFlatNodeRows(flatNodes, cardType)
                     else
                       SliverPadding(

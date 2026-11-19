@@ -457,7 +457,11 @@ class _SelectedDelay extends ConsumerWidget {
       delayProvider(proxyName: proxyName, testUrl: group.testUrl),
     );
     final colorScheme = context.colorScheme;
-    final color = colorScheme.delayColor(delay) ?? colorScheme.onSurfaceVariant;
+    // While a test is running, the pill keeps a neutral tint instead of the
+    // last delay's green/red one.
+    final color = isDelayTesting
+        ? colorScheme.onSurfaceVariant
+        : colorScheme.delayColor(delay) ?? colorScheme.onSurfaceVariant;
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: isDelayTesting ? null : onDelayTest,
