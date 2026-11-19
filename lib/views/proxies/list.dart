@@ -478,10 +478,7 @@ class _ProxiesListViewState extends ConsumerState<ProxiesListView> {
                   controller: _controller,
                   slivers: [
                     PinnedHeaderSliver(
-                      child: ColoredBox(
-                        color: SurfaceLevel.page.colorOf(context.colorScheme),
-                        child: SizedBox(height: context.contentTopPadding),
-                      ),
+                      child: SizedBox(height: context.contentTopPadding),
                     ),
                     if (iconMode)
                       PinnedHeaderSliver(

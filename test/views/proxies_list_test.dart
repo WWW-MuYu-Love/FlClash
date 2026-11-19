@@ -204,7 +204,7 @@ void main() {
     );
     container
         .read(proxiesStyleSettingProvider.notifier)
-        .update((state) => state.copyWith(type: ProxiesType.list));
+        .update((state) => state.copyWith(type: ProxiesType.icons));
     await tester.pump();
 
     Finder folderPillOf(String label) =>
@@ -257,7 +257,7 @@ void main() {
     );
     expect(
       find.descendant(of: folderPillOf('Leaf Nodes'), matching: find.text('1')),
-      findsNothing,
+      findsOneWidget,
     );
 
     await tester.tap(find.text('Nodes'));
@@ -345,9 +345,7 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('the pinned top spacer paints an opaque page colour', (
-    tester,
-  ) async {
+  testWidgets('the pinned top spacer stays transparent', (tester) async {
     tester.view.physicalSize = const Size(500, 1000);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
@@ -393,15 +391,14 @@ void main() {
       of: find.byType(PinnedHeaderSliver).first,
       matching: find.byType(ColoredBox),
     );
-    expect(spacer, findsOneWidget);
-    final spacerColor = tester.widget<ColoredBox>(spacer).color;
+    expect(spacer, findsNothing);
     expect(
-      spacerColor,
-      SurfaceLevel.page.colorOf(
-        tester.element(find.byType(ProxiesView)).colorScheme,
+      find.descendant(
+        of: find.byType(PinnedHeaderSliver).first,
+        matching: find.byType(SizedBox),
       ),
+      findsOneWidget,
     );
-    expect(spacerColor.a, 1.0);
     expect(tester.takeException(), isNull);
   });
 }
