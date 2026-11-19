@@ -44,7 +44,6 @@ void main() {
     WidgetTester tester, {
     required SsidReader readSsid,
     void Function(NetworkState)? onConnectivityChanged,
-    LocalIpRefresher? refreshLocalIp,
     List<String> excludeSSIDs = const ['Home'],
   }) async {
     await tester.pumpWidget(
@@ -54,7 +53,6 @@ void main() {
           connectivityStream: connectivity.stream,
           readSsid: readSsid,
           onConnectivityChanged: onConnectivityChanged,
-          refreshLocalIp: refreshLocalIp ?? () async {},
           child: const SizedBox.shrink(),
         ),
       ),
@@ -92,44 +90,6 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(currentSsid(), 'Home');
-  });
-
-  testWidgets('refreshes the local IP once on cold start', (tester) async {
-    var refreshes = 0;
-    await pumpManager(
-      tester,
-      readSsid: () async => 'Home',
-      refreshLocalIp: () async {
-        refreshes++;
-        container.read(localIpProvider.notifier).value = '192.168.1.20';
-      },
-    );
-    await tester.pumpAndSettle();
-
-    expect(refreshes, 1);
-    expect(container.read(localIpProvider), '192.168.1.20');
-  });
-
-  testWidgets('refreshes the local IP again when the app resumes', (
-    tester,
-  ) async {
-    var refreshes = 0;
-    await pumpManager(
-      tester,
-      readSsid: () async => 'Home',
-      refreshLocalIp: () async {
-        refreshes++;
-        container.read(localIpProvider.notifier).value = '192.168.1.20';
-      },
-    );
-    await tester.pumpAndSettle();
-    expect(refreshes, 1);
-
-    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
-    await tester.pumpAndSettle();
-
-    expect(refreshes, 2);
-    expect(container.read(localIpProvider), '192.168.1.20');
   });
 
   testWidgets('clears the SSID when Wi-Fi drops', (tester) async {
