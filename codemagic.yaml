@@ -100,7 +100,7 @@ workflows:
           dart setup.dart ios --no-codesign --verbose > build-ios.log 2>&1 || true
           if ! find dist -name '*.ipa' 2>/dev/null | grep -q .; then
             echo "--- Xcode errors ---"
-            grep -n -i -E "error|fail|panic|cannot|requires go|toolchain" build-ios.log | grep -v -E "^\s*[0-9]+:\s*$" | head -150
+            grep -n -i -E "Exception|error:|failed|panic:|cannot |requires go" build-ios.log | grep -v -E "^\s*[0-9]+:\s*$" | head -150
             echo "--- context before the failed phase ---"
             L=$(grep -n "PhaseScriptExecution failed" build-ios.log | head -1 | cut -d: -f1)
             [ -n "$L" ] && sed -n "$((L>200?L-200:1)),${L}p" build-ios.log

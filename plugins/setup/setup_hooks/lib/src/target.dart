@@ -97,6 +97,9 @@ String rustTargetTriple(CodeConfig code) {
     OS.android when arch == 'armv7' => 'armv7-linux-androideabi',
     OS.android => '$arch-linux-android',
     OS.macOS => '$arch-apple-darwin',
+    OS.iOS when code.iOS.targetSdk == IOSSdk.iPhoneSimulator =>
+      arch == 'aarch64' ? 'aarch64-apple-ios-sim' : '$arch-apple-ios',
+    OS.iOS => '$arch-apple-ios',
     OS.linux => '$arch-unknown-linux-gnu',
     OS.windows => '$arch-pc-windows-msvc',
     final other => throw BuildException('No Rust target for $other'),
