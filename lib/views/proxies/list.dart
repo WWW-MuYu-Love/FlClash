@@ -19,9 +19,8 @@ const _liftDistance = 16.0;
 const _groupMinWidth = 360.0;
 const _groupMaxColumns = 3;
 const _folderBarHeight = 40.0;
-const _folderBarInset = 8.0;
-const _folderPillIconGap = 4.0;
-const _folderPillCountGap = 2.0;
+const _folderPillIconGap = 2.0;
+const _folderPillCountGap = 1.0;
 const _folderPillIconSize = 14.0;
 const _flatNodeColumns = 2;
 const _lastRowGrowth = _headerInset - proxyGridSpacing;
@@ -1258,46 +1257,62 @@ class _FolderBar extends StatelessWidget {
       child: Column(
         children: [
           SizedBox(
+            width: double.infinity,
             height: _folderBarHeight,
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: _folderBarInset),
-              child: SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: Row(
-                  children: [
-                    _FolderPill(
-                      label: appLocalizations.proxyFolderAll,
-                      count: counts.all,
-                      glyph: AppGlyphs.dashboard,
-                      selected: folder == ProxyFolder.all,
-                      onTap: () => onChange(ProxyFolder.all),
+              padding: const EdgeInsets.symmetric(horizontal: _groupInset),
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  return SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: SizedBox(
+                      width: constraints.maxWidth,
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: _FolderPill(
+                              label: appLocalizations.proxyFolderAll,
+                              count: counts.all,
+                              glyph: AppGlyphs.dashboard,
+                              selected: folder == ProxyFolder.all,
+                              onTap: () => onChange(ProxyFolder.all),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: _FolderPill(
+                              label: appLocalizations.proxyFolderStrategy,
+                              count: counts.strategy,
+                              glyph: AppGlyphs.folder,
+                              selected: folder == ProxyFolder.strategy,
+                              onTap: () => onChange(ProxyFolder.strategy),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: _FolderPill(
+                              label: appLocalizations.proxyFolderNodes,
+                              count: counts.nodes,
+                              glyph: AppGlyphs.folder,
+                              selected: folder == ProxyFolder.nodes,
+                              onTap: () => onChange(ProxyFolder.nodes),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: _FolderPill(
+                              label: appLocalizations.proxyFolderLeafNodes,
+                              count: counts.leafNodes,
+                              glyph: AppGlyphs.devices,
+                              selected: folder == ProxyFolder.leafNodes,
+                              onTap: () => onChange(ProxyFolder.leafNodes),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                    const SizedBox(width: 8),
-                    _FolderPill(
-                      label: appLocalizations.proxyFolderStrategy,
-                      count: counts.strategy,
-                      glyph: AppGlyphs.folder,
-                      selected: folder == ProxyFolder.strategy,
-                      onTap: () => onChange(ProxyFolder.strategy),
-                    ),
-                    const SizedBox(width: 8),
-                    _FolderPill(
-                      label: appLocalizations.proxyFolderNodes,
-                      count: counts.nodes,
-                      glyph: AppGlyphs.folder,
-                      selected: folder == ProxyFolder.nodes,
-                      onTap: () => onChange(ProxyFolder.nodes),
-                    ),
-                    const SizedBox(width: 8),
-                    _FolderPill(
-                      label: appLocalizations.proxyFolderLeafNodes,
-                      count: counts.leafNodes,
-                      glyph: AppGlyphs.devices,
-                      selected: folder == ProxyFolder.leafNodes,
-                      onTap: () => onChange(ProxyFolder.leafNodes),
-                    ),
-                  ],
-                ),
+                  );
+                },
               ),
             ),
           ),
@@ -1330,10 +1345,10 @@ class _FolderPill extends StatelessWidget {
       isSelected: selected,
       fillsSelection: true,
       shape: AppShape.full,
-      padding: const EdgeInsets.symmetric(horizontal: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 3),
       onPressed: onTap,
       child: Row(
-        mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
           GlyphIcon(glyph, size: _folderPillIconSize),
           const SizedBox(width: _folderPillIconGap),

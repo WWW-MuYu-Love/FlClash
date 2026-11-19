@@ -1054,8 +1054,10 @@ void main() {
     );
   });
 
-  testWidgets('the folder pills show every label and count in full at '
-      '390dp with 45 groups', (tester) async {
+  Future<void> expectFolderBarFillsRow(
+    WidgetTester tester, {
+    required double width,
+  }) async {
     await pumpList(
       tester,
       locale: const Locale('zh', 'CN'),
@@ -1065,22 +1067,22 @@ void main() {
         for (var i = 0; i < 15; i++) _group('N$i', 0, memberNames: ['N$i-0']),
       ],
       unfoldSet: const {},
-      physicalSize: const Size(390, 844),
+      physicalSize: Size(width, 844),
     );
 
     Finder pillOf(String label) =>
         find.ancestor(of: find.text(label), matching: find.byType(Card));
-    for (final (label, width) in [
+    final pillWidth = (width - 16 * 2 - 8 * 3) / 4;
+    for (final (label, labelWidth) in [
       ('全部', 24.0),
       ('策略组', 36.0),
       ('节点组', 36.0),
       ('节点', 24.0),
     ]) {
       final textRect = tester.getRect(find.text(label));
-      expect(textRect.width, moreOrLessEquals(width, epsilon: 1));
+      expect(textRect.width, moreOrLessEquals(labelWidth, epsilon: 1));
       final pillRect = tester.getRect(pillOf(label));
-      expect(pillRect.left, greaterThanOrEqualTo(0));
-      expect(pillRect.right, lessThanOrEqualTo(390));
+      expect(pillRect.width, moreOrLessEquals(pillWidth, epsilon: 1));
     }
     for (final (label, count) in [
       ('全部', '45'),
@@ -1095,8 +1097,20 @@ void main() {
     }
     final firstLeft = tester.getRect(pillOf('全部')).left;
     final lastRight = tester.getRect(pillOf('节点')).right;
-    expect(firstLeft, moreOrLessEquals(11, epsilon: 1));
-    expect(390 - lastRight, moreOrLessEquals(firstLeft, epsilon: 1));
+    expect(firstLeft, moreOrLessEquals(16, epsilon: 1));
+    expect(lastRight, moreOrLessEquals(width - 16, epsilon: 1));
+  }
+
+  testWidgets('the folder pills fill the row at 390dp with 45 groups', (
+    tester,
+  ) async {
+    await expectFolderBarFillsRow(tester, width: 390);
+  });
+
+  testWidgets('the folder pills fill the row at 402dp with 45 groups', (
+    tester,
+  ) async {
+    await expectFolderBarFillsRow(tester, width: 402);
   });
 
   testWidgets('a flat node card paints a visible card fill on the page', (
