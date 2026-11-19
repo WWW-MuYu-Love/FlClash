@@ -145,12 +145,31 @@ class CoreLib extends CoreHandlerInterface {
       _listenersStartedByService = false;
       return;
     }
-    // The service opens and closes the Core's listeners itself and reports a
-    // run that ends, so once it takes the command the Core's own answer is moot.
+    // App core first so it can probe, then hand the listeners to the extension.
+    var appListenersUp = false;
+    try {
+      await invokeMethod(
+        method: CoreMethod.listenerStart,
+        route: CoreRoute.app,
+      );
+      appListenersUp = true;
+      _listenersStartedByService = false;
+    } catch (error) {
+      commonPrint.log(
+        'App core listeners did not start: ${compactError(error)}',
+        logLevel: LogLevel.warning,
+      );
+    }
     if (!await _service!.start()) {
       throw const CoreMethodException(
         code: 'service_refused',
         message: 'The iOS service did not start',
+      );
+    }
+    if (appListenersUp) {
+      await _ignoreUnanswered(
+        () =>
+            invokeMethod(method: CoreMethod.listenerStop, route: CoreRoute.app),
       );
     }
     _listenersStartedByService = true;

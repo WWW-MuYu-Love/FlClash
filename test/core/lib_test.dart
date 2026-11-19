@@ -329,16 +329,47 @@ void main() {
       },
     );
 
-    test('a listener start with VPN on starts the service', () async {
-      final iosLib = CoreLib.scoped(service, listenerManagedByService: true);
-      await iosLib.start();
-      service.onInvokeMethod = (_) => const CoreMethodResponse(id: '1');
+    test(
+      'a listener start with VPN on starts the App core listeners, then the service, then hands them over',
+      () async {
+        final iosLib = CoreLib.scoped(service, listenerManagedByService: true);
+        await iosLib.start();
+        service.onInvokeMethod = (_) => const CoreMethodResponse(id: '1');
 
-      await iosLib.startListener();
+        await iosLib.startListener();
 
-      expect(service.calls.last, 'start');
-      expect(service.invokedCalls, isEmpty);
-    });
+        expect(service.calls, contains('start'));
+        expect(service.invokedCalls.map((call) => (call.method, call.route)), [
+          (CoreMethod.listenerStart, CoreRoute.app),
+          (CoreMethod.listenerStop, CoreRoute.app),
+        ]);
+      },
+    );
+
+    test(
+      'a listener start with VPN on still starts the service when the App core listeners refuse',
+      () async {
+        final iosLib = CoreLib.scoped(service, listenerManagedByService: true);
+        await iosLib.start();
+        service.onInvokeMethod = (call) =>
+            call.method == CoreMethod.listenerStart
+            ? CoreMethodResponse(
+                id: call.id,
+                error: const CoreMethodError(
+                  code: 'core_error',
+                  message: 'busy',
+                ),
+              )
+            : const CoreMethodResponse(id: '1');
+
+        await iosLib.startListener();
+
+        expect(service.calls.last, 'start');
+        expect(service.invokedCalls.map((call) => call.method), [
+          CoreMethod.listenerStart,
+        ]);
+      },
+    );
   });
 
   group('invokeMethod', () {
