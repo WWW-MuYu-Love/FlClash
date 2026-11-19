@@ -316,7 +316,7 @@ void main() {
     await teardownWidget(tester);
   });
 
-  testWidgets('overview gauge sits level with the total block', (tester) async {
+  testWidgets('overview gauge rises to the title row', (tester) async {
     await pumpWidget(
       tester,
       const TrafficStatisticsView(),
@@ -332,18 +332,14 @@ void main() {
     final cellsRow = find
         .ancestor(of: labelRow, matching: find.byType(Row))
         .first;
-    final leftColumn = find
-        .ancestor(of: find.text('Total traffic'), matching: find.byType(Column))
-        .first;
     final gaugeRect = tester.getRect(find.byType(TrafficGaugeTicks));
 
-    final topGap = gaugeRect.top - tester.getBottomLeft(headerRow).dy;
-    final bottomGap = tester.getTopLeft(cellsRow).dy - gaugeRect.bottom;
-    expect(topGap, moreOrLessEquals(bottomGap, epsilon: 1.0));
     expect(
-      gaugeRect.center.dy,
-      moreOrLessEquals(tester.getRect(leftColumn).center.dy, epsilon: 1.0),
+      gaugeRect.top,
+      moreOrLessEquals(tester.getRect(headerRow).top, epsilon: 1.0),
     );
+    final bottomGap = tester.getTopLeft(cellsRow).dy - gaugeRect.bottom;
+    expect(bottomGap, moreOrLessEquals(48.0, epsilon: 1.0));
 
     await teardownWidget(tester);
   });

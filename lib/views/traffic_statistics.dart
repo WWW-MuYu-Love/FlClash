@@ -364,15 +364,13 @@ class _Overview extends StatelessWidget {
     final proxyBytes = data.proxyUpload + data.proxyDownload;
     final proxyRatio = total == 0 ? 0.0 : proxyBytes / total;
     final textScaler = MediaQuery.textScalerOf(context);
-    final leftHeight =
-        textScaler.scale(AppTextStyle.subheadline.leading) +
-        4 +
-        textScaler.scale(AppTextStyle.title1.leading) +
-        8 +
-        (8 + textScaler.scale(AppTextStyle.footnote.leading));
-    // Centred on the total block beside it: the gaps above and below the
-    // gauge stay even, and the gauge never reaches the bottom row.
-    final gaugeOffset = leftHeight / 2 - _ProxyGauge.size / 2;
+    final headerHeight = math.max(
+      28,
+      textScaler.scale(AppTextStyle.headline.leading),
+    );
+    // Top-aligned with the title row: the gauge fills the empty space
+    // beside the title.
+    final gaugeOffset = -(headerHeight + 12).toDouble();
     return Column(
       children: [
         _SectionHeader(
