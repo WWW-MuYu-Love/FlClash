@@ -316,9 +316,7 @@ void main() {
     await teardownWidget(tester);
   });
 
-  testWidgets('overview gauge is centred on the whole overview', (
-    tester,
-  ) async {
+  testWidgets('overview gauge sits level with the total block', (tester) async {
     await pumpWidget(
       tester,
       const TrafficStatisticsView(),
@@ -334,12 +332,18 @@ void main() {
     final cellsRow = find
         .ancestor(of: labelRow, matching: find.byType(Row))
         .first;
+    final leftColumn = find
+        .ancestor(of: find.text('Total traffic'), matching: find.byType(Column))
+        .first;
     final gaugeRect = tester.getRect(find.byType(TrafficGaugeTicks));
 
-    final contentCenter =
-        (tester.getTopLeft(headerRow).dy + tester.getBottomLeft(cellsRow).dy) /
-        2;
-    expect(gaugeRect.center.dy, moreOrLessEquals(contentCenter, epsilon: 1.0));
+    final topGap = gaugeRect.top - tester.getBottomLeft(headerRow).dy;
+    final bottomGap = tester.getTopLeft(cellsRow).dy - gaugeRect.bottom;
+    expect(topGap, moreOrLessEquals(bottomGap, epsilon: 1.0));
+    expect(
+      gaugeRect.center.dy,
+      moreOrLessEquals(tester.getRect(leftColumn).center.dy, epsilon: 1.0),
+    );
 
     await teardownWidget(tester);
   });
