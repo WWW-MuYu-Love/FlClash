@@ -39,6 +39,7 @@ class _ConnectivityManagerState extends ConsumerState<ConnectivityManager>
 
   int _ssidRequestId = 0;
   bool _onWifi = false;
+  bool _streamSeen = false;
 
   @override
   void initState() {
@@ -68,8 +69,11 @@ class _ConnectivityManagerState extends ConsumerState<ConnectivityManager>
     );
     // Cold start emits no connectivity event, so read the current network
     // once up front; otherwise an already-connected excluded SSID stays
-    // unpublished until the next resume or network change.
-    unawaited(_refreshOnResume());
+    // unpublished until the next resume or network change. Deferred past
+    // initState: the refresh writes providers, which initState may not do.
+    // A stream result arriving first sets _streamSeen, so the deferred
+    // refresh skips itself instead of re-reading after the stream.
+    unawaited(Future(_refreshOnResume));
   }
 
   @override
@@ -86,10 +90,14 @@ class _ConnectivityManagerState extends ConsumerState<ConnectivityManager>
   // The rust_api network watcher covers desktop and Android only, so on
   // iOS the stream never fires and resume probes the SSID directly.
   Future<void> _refreshOnResume() async {
+    // A stream result that landed before this ran already refreshed the
+    // network state; do not read it a second time.
+    if (_streamSeen) return;
     await _updateSsid(probeWifi: true);
   }
 
   void _handleResults(NetworkState state) {
+    _streamSeen = true;
     _onWifi = state.wifi;
     unawaited(_updateSsid());
     widget.onConnectivityChanged?.call(state);
