@@ -73,13 +73,9 @@ const builtinOutbounds = {'DIRECT', 'REJECT', 'REJECT-DROP', 'PASS'};
 
 bool isBuiltinOutbound(String name) => builtinOutbounds.contains(name);
 
-List<({Proxy proxy, Group group})> flatLeafNodes({
+Map<String, ({Proxy proxy, Group group})> _leafNodeEntries({
   required List<Group> groups,
   required Set<String> groupNames,
-  required ProxiesSortType sortType,
-  required DelayMap delayMap,
-  required Map<String, String> selectedMap,
-  required String defaultTestUrl,
 }) {
   final entries = <String, ({Proxy proxy, Group group})>{};
   for (final group in groups) {
@@ -89,6 +85,23 @@ List<({Proxy proxy, Group group})> flatLeafNodes({
       entries.putIfAbsent(proxy.name, () => (proxy: proxy, group: group));
     }
   }
+  return entries;
+}
+
+int countLeafNodes({
+  required List<Group> groups,
+  required Set<String> groupNames,
+}) => _leafNodeEntries(groups: groups, groupNames: groupNames).length;
+
+List<({Proxy proxy, Group group})> flatLeafNodes({
+  required List<Group> groups,
+  required Set<String> groupNames,
+  required ProxiesSortType sortType,
+  required DelayMap delayMap,
+  required Map<String, String> selectedMap,
+  required String defaultTestUrl,
+}) {
+  final entries = _leafNodeEntries(groups: groups, groupNames: groupNames);
   final sorted = sortProxies(
     proxies: [for (final entry in entries.values) entry.proxy],
     sortType: sortType,

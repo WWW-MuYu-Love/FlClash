@@ -1054,15 +1054,15 @@ void main() {
     );
   });
 
-  testWidgets('the folder pills show every label in full at 390dp with 52 '
-      'groups', (tester) async {
+  testWidgets('the folder pills show every label and count in full at '
+      '390dp with 45 groups', (tester) async {
     await pumpList(
       tester,
       locale: const Locale('zh', 'CN'),
       groups: [
         for (var i = 0; i < 30; i++)
           _group('S$i', 0, memberNames: ['N0', 'S$i-1']),
-        for (var i = 0; i < 22; i++) _group('N$i', 0, memberNames: ['N$i-0']),
+        for (var i = 0; i < 15; i++) _group('N$i', 0, memberNames: ['N$i-0']),
       ],
       unfoldSet: const {},
       physicalSize: const Size(390, 844),
@@ -1082,10 +1082,21 @@ void main() {
       expect(pillRect.left, greaterThanOrEqualTo(0));
       expect(pillRect.right, lessThanOrEqualTo(390));
     }
-    expect(
-      find.descendant(of: pillOf('节点'), matching: find.text('22')),
-      findsNothing,
-    );
+    for (final (label, count) in [
+      ('全部', '45'),
+      ('策略组', '30'),
+      ('节点组', '15'),
+      ('节点', '45'),
+    ]) {
+      expect(
+        find.descendant(of: pillOf(label), matching: find.text(count)),
+        findsOneWidget,
+      );
+    }
+    final firstLeft = tester.getRect(pillOf('全部')).left;
+    final lastRight = tester.getRect(pillOf('节点')).right;
+    expect(firstLeft, moreOrLessEquals(11, epsilon: 1));
+    expect(390 - lastRight, moreOrLessEquals(firstLeft, epsilon: 1));
   });
 
   testWidgets('a flat node card paints a visible card fill on the page', (

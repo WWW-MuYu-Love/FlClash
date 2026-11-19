@@ -386,6 +386,20 @@ void main() {
       expect(flatNames(groups), ['real']);
     });
 
+    test('countLeafNodes matches the flat list', () {
+      final groups = groupsOf([
+        ['REJECT', 'leaf-a', 'G1'],
+        ['leaf-a', 'leaf-b'],
+      ]);
+      expect(
+        countLeafNodes(
+          groups: groups,
+          groupNames: {for (final group in groups) group.name},
+        ),
+        2,
+      );
+    });
+
     test('name sorts the flat list alphabetically', () {
       final groups = groupsOf([
         ['zebra', 'apple'],

@@ -19,7 +19,7 @@ const _liftDistance = 16.0;
 const _groupMinWidth = 360.0;
 const _groupMaxColumns = 3;
 const _folderBarHeight = 40.0;
-const _folderBarInset = 14.0;
+const _folderBarInset = 8.0;
 const _folderPillIconGap = 4.0;
 const _folderPillCountGap = 2.0;
 const _folderPillIconSize = 14.0;
@@ -463,6 +463,10 @@ class _ProxiesListViewState extends ConsumerState<ProxiesListView> {
                 nodes: allGroups
                     .where((group) => groupIsNodeOnly(group, groupNames))
                     .length,
+                leafNodes: countLeafNodes(
+                  groups: allGroups,
+                  groupNames: groupNames,
+                ),
               );
               return Scrollbar(
                 controller: _controller,
@@ -1243,7 +1247,7 @@ class _FolderBar extends StatelessWidget {
   });
 
   final ProxyFolder folder;
-  final ({int all, int strategy, int nodes}) counts;
+  final ({int all, int strategy, int nodes, int leafNodes}) counts;
   final ValueChanged<ProxyFolder> onChange;
 
   @override
@@ -1287,7 +1291,7 @@ class _FolderBar extends StatelessWidget {
                     const SizedBox(width: 8),
                     _FolderPill(
                       label: appLocalizations.proxyFolderLeafNodes,
-                      count: null,
+                      count: counts.leafNodes,
                       glyph: AppGlyphs.devices,
                       selected: folder == ProxyFolder.leafNodes,
                       onTap: () => onChange(ProxyFolder.leafNodes),
@@ -1314,9 +1318,7 @@ class _FolderPill extends StatelessWidget {
   });
 
   final String label;
-
-  /// Null hides the count, for the node folder.
-  final int? count;
+  final int count;
   final Glyph glyph;
   final bool selected;
   final VoidCallback onTap;
@@ -1324,12 +1326,11 @@ class _FolderPill extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = context.colorScheme;
-    final count = this.count;
     return Card(
       isSelected: selected,
       fillsSelection: true,
       shape: AppShape.full,
-      padding: const EdgeInsets.symmetric(horizontal: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 6),
       onPressed: onTap,
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -1350,19 +1351,17 @@ class _FolderPill extends StatelessWidget {
                   ),
             ),
           ),
-          if (count != null) ...[
-            const SizedBox(width: _folderPillCountGap),
-            Text(
-              '$count',
-              style: AppTextStyle.caption1
-                  .of(context)
-                  .copyWith(
-                    color: selected
-                        ? colorScheme.onPrimary
-                        : colorScheme.onSurfaceVariant,
-                  ),
-            ),
-          ],
+          const SizedBox(width: _folderPillCountGap),
+          Text(
+            '$count',
+            style: AppTextStyle.caption1
+                .of(context)
+                .copyWith(
+                  color: selected
+                      ? colorScheme.onPrimary
+                      : colorScheme.onSurfaceVariant,
+                ),
+          ),
         ],
       ),
     );
