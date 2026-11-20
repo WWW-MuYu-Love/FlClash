@@ -19,6 +19,9 @@ perl -pi -e 's/build_assets: true/build_assets: false/' pubspec.yaml
 flutter pub get
 dart run tool/strip_rs_feature.dart
 dart run build_runner build --delete-conflicting-outputs
-flutter gen-l10n
+# This branch localizes with intl_utils, not flutter gen-l10n.
+# intl_utils emits files dart format rewraps, so normalize them first.
+dart run intl_utils:generate
+dart format lib/l10n
 dart format --output=none --set-exit-if-changed lib test
 flutter analyze --no-fatal-infos
