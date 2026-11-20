@@ -69,9 +69,9 @@ List<Proxy> _sortProxiesByDelay({
 
 /// The flat leaf-node list for the node folder, deduplicated by name.
 /// The core's built-in outbounds; they are policies, not real nodes.
-const builtinOutbounds = {'DIRECT', 'REJECT', 'REJECT-DROP', 'PASS'};
+const _builtinOutbounds = {'DIRECT', 'REJECT', 'REJECT-DROP', 'PASS'};
 
-bool isBuiltinOutbound(String name) => builtinOutbounds.contains(name);
+bool isBuiltinOutbound(String name) => _builtinOutbounds.contains(name);
 
 Map<String, ({Proxy proxy, Group group})> _leafNodeEntries({
   required List<Group> groups,
