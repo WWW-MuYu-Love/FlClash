@@ -1107,6 +1107,7 @@
   "excludeDeviceCommunication": "排除设备间通信",
   "mitmIosTrustSteps": "在「文件」中打开证书安装后，前往「设置 → 通用 → 关于本机 → 证书信任设置」启用完全信任。",
   "mitmIosSafariTrustSteps": "已在 Safari 中打开证书下载，点「允许」后前往「设置」顶部的「已下载描述文件」安装，再到「设置 → 通用 → 关于本机 → 证书信任设置」打开完全信任。下载后 8 分钟内不安装会被系统删除。",
+  "mitmRemoveIosProfileTip": "旧的描述文件仍在「设置 → VPN 与设备管理」里。请在那里手动移除，重启隧道后，再安装并信任新证书。",
   "mitmRestartTunnel": "重启隧道",
   "mitmRestartTunnelTip": "MITM 的改动需重启隧道后生效。",
   "serviceDidNotStart": "服务未能启动",

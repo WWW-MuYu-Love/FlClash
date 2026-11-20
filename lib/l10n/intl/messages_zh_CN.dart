@@ -1212,6 +1212,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "mitmOldCertificateLeftTip": m79,
     "mitmOldSystemCertificateLeftTip": m80,
     "mitmRemoveInSettings": MessageLookupByLibrary.simpleMessage("在系统设置中移除"),
+    "mitmRemoveIosProfileTip": MessageLookupByLibrary.simpleMessage(
+      "旧的描述文件仍在「设置 → VPN 与设备管理」里。请在那里手动移除，重启隧道后，再安装并信任新证书。",
+    ),
     "mitmRemoveOldCertificateTip": m81,
     "mitmRemoveSystemCertificateTip": MessageLookupByLibrary.simpleMessage(
       "证书由 root 模块“FlClash MITM CA”加入系统。请在 root 管理器中允许 FlClash 使用 root 后再试，或在其中移除该模块并重启手机。",

@@ -1107,6 +1107,7 @@
   "excludeDeviceCommunication": "Excluir comunicación entre dispositivos",
   "mitmIosTrustSteps": "Instala el certificado desde Archivos y luego activa la confianza total en Ajustes → General → Información → Ajustes de confianza de certificados.",
   "mitmIosSafariTrustSteps": "Safari abrió la descarga del certificado. Toca «Permitir», instálalo desde «Perfil descargado» en la parte superior de Ajustes y activa la confianza total en «Ajustes → General → Información → Ajustes de confianza de certificados». Un perfil descargado se elimina si no se instala en 8 minutos.",
+  "mitmRemoveIosProfileTip": "El perfil antiguo permanece en Ajustes → VPN y gestión de dispositivos. Elimínalo allí, reinicia el túnel y luego instala el certificado nuevo y confía en él.",
   "mitmRestartTunnel": "Reiniciar el túnel",
   "mitmRestartTunnelTip": "Los cambios de MITM se aplicarán tras reiniciar el túnel.",
   "serviceDidNotStart": "No se pudo iniciar el servicio",

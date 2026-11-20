@@ -1107,6 +1107,7 @@
   "excludeDeviceCommunication": "Exclude Device Communication",
   "mitmIosTrustSteps": "Install the certificate from Files, then enable full trust for it in Settings → General → About → Certificate Trust Settings.",
   "mitmIosSafariTrustSteps": "Safari opened the certificate download. Tap 'Allow', then install it from 'Downloaded Profile' at the top of Settings, and turn on full trust in 'Settings → General → About → Certificate Trust Settings'. A downloaded profile is deleted if it is not installed within 8 minutes.",
+  "mitmRemoveIosProfileTip": "The old profile stays in Settings → VPN & Device Management. Remove it there, restart the tunnel, then install and trust the new certificate.",
   "mitmRestartTunnel": "Restart tunnel",
   "mitmRestartTunnelTip": "MITM changes take effect after the tunnel restarts.",
   "serviceDidNotStart": "The service did not start",

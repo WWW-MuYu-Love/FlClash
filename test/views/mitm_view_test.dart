@@ -87,6 +87,7 @@ void main() {
     bool safeMode = false,
     bool running = false,
     bool? isIOS,
+    Widget? child,
   }) async {
     tester.view.physicalSize = const Size(1000, 2000);
     tester.view.devicePixelRatio = 1;
@@ -132,7 +133,9 @@ void main() {
     await tester.pumpWidget(
       UncontrolledProviderScope(
         container: container,
-        child: TestApp(child: MitmView(isAndroid: false, isIOS: isIOS)),
+        child: TestApp(
+          child: child ?? MitmOptionsView(isAndroid: false, isIOS: isIOS),
+        ),
       ),
     );
     await tester.pumpAndSettle();
@@ -199,7 +202,7 @@ void main() {
   testWidgets('turning on asks first and generates a missing certificate', (
     tester,
   ) async {
-    await pumpView(tester);
+    await pumpView(tester, child: const MitmEnableItem());
 
     await toggleEnable(tester);
     expect(find.text(currentAppLocalizations.mitmEnableTip), findsOneWidget);
@@ -217,7 +220,11 @@ void main() {
   });
 
   testWidgets('turning on keeps the certificate there is', (tester) async {
-    await pumpView(tester, certificate: _certificate);
+    await pumpView(
+      tester,
+      certificate: _certificate,
+      child: const MitmEnableItem(),
+    );
 
     await toggleEnable(tester);
     await tester.tap(button(currentAppLocalizations.confirm));
@@ -230,7 +237,7 @@ void main() {
   testWidgets('a certificate that fails to generate leaves it off', (
     tester,
   ) async {
-    await pumpView(tester);
+    await pumpView(tester, child: const MitmEnableItem());
     when(() => core.generateMitmCertificate()).thenAnswer(
       (_) => Future.error(
         const CoreMethodException(code: 'core_error', message: 'disk full'),
@@ -250,6 +257,7 @@ void main() {
       tester,
       certificate: _certificate,
       mitm: const Mitm(enable: true),
+      child: const MitmEnableItem(),
     );
 
     await toggleEnable(tester);
@@ -266,7 +274,7 @@ void main() {
   testWidgets('capture waits for decryption to be on', (tester) async {
     await pumpView(tester, certificate: _certificate);
 
-    expect(find.text(currentAppLocalizations.mitm), findsOneWidget);
+    expect(find.text(currentAppLocalizations.options), findsOneWidget);
     await openCapture(tester);
     expect(tester.widget<Switch>(captureSwitch()).onChanged, isNull);
   });
@@ -509,7 +517,11 @@ void main() {
   testWidgets('the hostname list counts and marks the lines the Core skips', (
     tester,
   ) async {
-    await pumpView(tester, mitm: const Mitm(hostname: ['a.com', 'bad host']));
+    await pumpView(
+      tester,
+      mitm: const Mitm(hostname: ['a.com', 'bad host']),
+      child: const MitmHostnameItem(),
+    );
 
     expect(
       find.text(currentAppLocalizations.invalidOfCount(1, 2)),
@@ -524,7 +536,7 @@ void main() {
   });
 
   testWidgets('a hostname entry takes one host', (tester) async {
-    await pumpView(tester);
+    await pumpView(tester, child: const MitmHostnameItem());
 
     await tester.tap(find.text(currentAppLocalizations.hostname));
     await tester.pumpAndSettle();
@@ -663,4 +675,27 @@ void main() {
       );
     },
   );
+
+  testWidgets('removing a trusted certificate asks first', (tester) async {
+    final store = _FakeStore(MitmTrust.ready);
+    await pumpView(
+      tester,
+      certificate: _certificate,
+      store: store,
+      mitm: const Mitm(enable: true),
+      running: true,
+    );
+
+    await tester.tap(find.text(_certificate.subject));
+    await tester.pumpAndSettle();
+
+    expect(button(currentAppLocalizations.removeCertificate), findsOneWidget);
+    expect(
+      find.text(currentAppLocalizations.removeCertificateSuccess),
+      findsNothing,
+    );
+    await tester.tap(button(currentAppLocalizations.close));
+    await tester.pumpAndSettle();
+    expect(button(currentAppLocalizations.removeCertificate), findsNothing);
+  });
 }

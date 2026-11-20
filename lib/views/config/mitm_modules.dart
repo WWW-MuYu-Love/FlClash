@@ -146,6 +146,7 @@ class MitmModulesItem extends ConsumerWidget {
       mitmModulesProvider.select((state) => state.value?.length ?? 0),
     );
     return ListItem.open(
+      leading: const GlyphIcon(AppGlyphs.puzzle),
       title: Text(appLocalizations.mitmModules),
       subtitle: Text(
         count == 0 ? appLocalizations.none : appLocalizations.itemsCount(count),

@@ -1567,6 +1567,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "mitmRemoveInSettings": MessageLookupByLibrary.simpleMessage(
       "Remove in Settings",
     ),
+    "mitmRemoveIosProfileTip": MessageLookupByLibrary.simpleMessage(
+      "The old profile stays in Settings → VPN & Device Management. Remove it there, restart the tunnel, then install and trust the new certificate.",
+    ),
     "mitmRemoveOldCertificateTip": m81,
     "mitmRemoveSystemCertificateTip": MessageLookupByLibrary.simpleMessage(
       "The FlClash MITM CA root module added the certificate to the system. Allow FlClash root access in your root manager and try again, or remove the module there and restart.",

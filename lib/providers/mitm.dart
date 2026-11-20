@@ -88,6 +88,7 @@ Future<Set<String>> mitmDecryptedHosts(Ref ref) async {
 class MitmCa extends _$MitmCa {
   @override
   Future<MitmCertificate?> build() {
+    ref.watch(coreStatusProvider);
     return ref.read(coreHandlerProvider).getMitmCertificate();
   }
 
@@ -225,6 +226,44 @@ class MitmTrustState extends _$MitmTrustState {
       }
     }
     await ref.read(mitmCaProvider.notifier).generate();
+    return removed;
+  }
+
+  /// Deletes the CA files from the app-private and App Group shared MITM
+  /// folders, so the Core regenerates a fresh CA on its next start. Both
+  /// copies go, or the startup sync copies the survivor back. The running
+  /// cores still hold the old CA in memory until they restart. Returns
+  /// false when a deletion fails.
+  Future<bool> remove() async {
+    final dirs = <Directory>[
+      Directory(join(await appPath.homeDirPath, mitmDirectoryName)),
+    ];
+    final shared = await appPath.sharedIOSFlClashDirPath;
+    if (shared != null) {
+      dirs.add(Directory(join(shared, mitmDirectoryName)));
+    }
+    var removed = true;
+    for (final dir in dirs) {
+      for (final name in [
+        mitmCaCertFileName,
+        mitmCaKeyFileName,
+        '$mitmCaCertFileName.bak',
+        '$mitmCaKeyFileName.bak',
+      ]) {
+        try {
+          final file = File(join(dir.path, name));
+          if (await file.exists()) {
+            await file.delete();
+          }
+        } catch (error) {
+          commonPrint.log(
+            'Removing the MITM CA file failed: ${compactError(error)}',
+            logLevel: LogLevel.warning,
+          );
+          removed = false;
+        }
+      }
+    }
     return removed;
   }
 }

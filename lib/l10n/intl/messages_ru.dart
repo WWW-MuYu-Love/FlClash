@@ -1643,6 +1643,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "mitmRemoveInSettings": MessageLookupByLibrary.simpleMessage(
       "Удалите в настройках",
     ),
+    "mitmRemoveIosProfileTip": MessageLookupByLibrary.simpleMessage(
+      "Старый профиль останется в «Настройки → VPN и управление устройствами». Удалите его там, перезапустите туннель, затем установите новый сертификат и доверьтесь ему.",
+    ),
     "mitmRemoveOldCertificateTip": m81,
     "mitmRemoveSystemCertificateTip": MessageLookupByLibrary.simpleMessage(
       "Сертификат добавлен в систему root-модулем «FlClash MITM CA». Разрешите FlClash доступ root в менеджере root и повторите попытку или удалите там модуль и перезагрузите устройство.",

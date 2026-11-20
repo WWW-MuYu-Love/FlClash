@@ -5,6 +5,7 @@ import 'package:fl_clash/views/config/dns.dart';
 import 'package:fl_clash/views/config/filters.dart';
 import 'package:fl_clash/views/config/icon_sets.dart';
 import 'package:fl_clash/views/config/mitm.dart';
+import 'package:fl_clash/views/config/mitm_modules.dart';
 import 'package:fl_clash/views/config/network.dart';
 import 'package:fl_clash/views/config/providers.dart';
 import 'package:fl_clash/views/config/scripts.dart';
@@ -14,11 +15,14 @@ import 'package:flutter/widgets.dart';
 import 'rules.dart';
 
 class AdvancedConfigView extends StatelessWidget {
-  const AdvancedConfigView({super.key});
+  const AdvancedConfigView({super.key, this.isAndroid});
+
+  final bool? isAndroid;
 
   @override
   Widget build(BuildContext context) {
     final appLocalizations = context.appLocalizations;
+    final isAndroid = this.isAndroid ?? system.isAndroid;
     final items = [
       ListItem.open(
         title: Text(appLocalizations.network),
@@ -43,12 +47,6 @@ class AdvancedConfigView extends StatelessWidget {
         leading: const GlyphIcon(AppGlyphs.code),
         widget: const ScriptsView(),
       ),
-      if (mitmFeature)
-        ListItem.open(
-          title: Text(appLocalizations.mitm),
-          leading: const GlyphIcon(AppGlyphs.lockOpen),
-          widget: MitmView(isAndroid: system.isAndroid),
-        ),
     ];
     final customItems = [
       ListItem.open(
@@ -85,6 +83,21 @@ class AdvancedConfigView extends StatelessWidget {
             title: appLocalizations.customResources,
             items: customItems,
           ),
+          if (mitmFeature)
+            generateSection(
+              title: appLocalizations.mitm,
+              footer: isAndroid ? appLocalizations.mitmAndroidRootDesc : null,
+              items: [
+                const MitmEnableItem(),
+                const MitmModulesItem(),
+                const MitmHostnameItem(),
+                ListItem.open(
+                  title: Text(appLocalizations.options),
+                  leading: const GlyphIcon(AppGlyphs.sliders),
+                  widget: MitmOptionsView(isAndroid: isAndroid),
+                ),
+              ],
+            ),
         ],
       ),
     );

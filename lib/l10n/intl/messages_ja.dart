@@ -1342,6 +1342,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "mitmOldCertificateLeftTip": m79,
     "mitmOldSystemCertificateLeftTip": m80,
     "mitmRemoveInSettings": MessageLookupByLibrary.simpleMessage("設定で削除"),
+    "mitmRemoveIosProfileTip": MessageLookupByLibrary.simpleMessage(
+      "古いプロファイルは「設定 → VPNとデバイス管理」に残ります。そこで手動で削除し、トンネルを再起動してから、新しい証明書をインストールして信頼してください。",
+    ),
     "mitmRemoveOldCertificateTip": m81,
     "mitmRemoveSystemCertificateTip": MessageLookupByLibrary.simpleMessage(
       "この証明書は root モジュール「FlClash MITM CA」によってシステムに追加されています。root マネージャーで FlClash に root を許可してからもう一度試すか、そこでモジュールを削除して再起動してください。",

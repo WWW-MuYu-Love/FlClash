@@ -1321,6 +1321,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "mitmOldCertificateLeftTip": m79,
     "mitmOldSystemCertificateLeftTip": m80,
     "mitmRemoveInSettings": MessageLookupByLibrary.simpleMessage("설정에서 제거"),
+    "mitmRemoveIosProfileTip": MessageLookupByLibrary.simpleMessage(
+      "이전 프로필은 설정 → VPN 및 기기 관리에 남아 있습니다. 거기서 직접 제거하고 터널을 다시 시작한 뒤 새 인증서를 설치하고 신뢰하세요.",
+    ),
     "mitmRemoveOldCertificateTip": m81,
     "mitmRemoveSystemCertificateTip": MessageLookupByLibrary.simpleMessage(
       "인증서는 루트 모듈 \'FlClash MITM CA\'가 시스템에 추가했습니다. 루트 관리자에서 FlClash의 루트 권한을 허용한 뒤 다시 시도하거나, 그곳에서 모듈을 제거하고 다시 시작하세요.",

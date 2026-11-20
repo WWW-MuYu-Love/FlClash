@@ -9349,6 +9349,16 @@ class AppLocalizations {
     );
   }
 
+  /// `The old profile stays in Settings → VPN & Device Management. Remove it there, restart the tunnel, then install and trust the new certificate.`
+  String get mitmRemoveIosProfileTip {
+    return Intl.message(
+      'The old profile stays in Settings → VPN & Device Management. Remove it there, restart the tunnel, then install and trust the new certificate.',
+      name: 'mitmRemoveIosProfileTip',
+      desc: '',
+      args: [],
+    );
+  }
+
   /// `Restart tunnel`
   String get mitmRestartTunnel {
     return Intl.message(
