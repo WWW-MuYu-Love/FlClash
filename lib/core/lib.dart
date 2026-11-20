@@ -205,7 +205,9 @@ class CoreLib extends CoreHandlerInterface {
   }
 
   @override
-  Future<void> handListenersToAppCore() async {
+  Future<void> handListenersToAppCore({
+    Future<void> Function()? waitForServiceStopped,
+  }) async {
     if (!_listenerManagedByService || !_listenersStartedByService) {
       return;
     }
@@ -216,6 +218,7 @@ class CoreLib extends CoreHandlerInterface {
         message: 'The mobile service did not stop',
       );
     }
+    await waitForServiceStopped?.call();
     await invokeMethod(method: CoreMethod.listenerStart, route: CoreRoute.app);
     _listenersStartedByService = false;
   }

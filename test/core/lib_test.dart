@@ -391,6 +391,33 @@ void main() {
     );
 
     test(
+      'handing listeners to the App core waits for the service to stop first',
+      () async {
+        final iosLib = CoreLib.scoped(service, listenerManagedByService: true);
+        await iosLib.start();
+        service.onInvokeMethod = (_) => const CoreMethodResponse(id: '1');
+        await iosLib.startListener();
+        service.calls.clear();
+        service.invokedCalls.clear();
+
+        await iosLib.handListenersToAppCore(
+          waitForServiceStopped: () async {
+            service.calls.add('waited');
+          },
+        );
+
+        expect(service.calls, [
+          'stop',
+          'waited',
+          'invokeMethod:listener.start',
+        ]);
+        expect(service.invokedCalls.map((call) => (call.method, call.route)), [
+          (CoreMethod.listenerStart, CoreRoute.app),
+        ]);
+      },
+    );
+
+    test(
       'handing listeners to the App core is a no-op when it already holds them',
       () async {
         container

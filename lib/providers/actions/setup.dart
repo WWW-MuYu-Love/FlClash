@@ -454,7 +454,9 @@ class SetupAction extends _$SetupAction {
       return;
     }
     try {
-      await _core.handListenersToAppCore();
+      await _core.handListenersToAppCore(
+        waitForServiceStopped: _waitForTunnelStopped,
+      );
     } catch (error) {
       commonPrint.log(
         'handing listeners to the App core failed: ${compactError(error)}',

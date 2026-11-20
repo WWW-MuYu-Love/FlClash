@@ -2772,7 +2772,11 @@ void main() {
 
         expect(await handoverAction.setRunning(false), isTrue);
 
-        verify(() => core.handListenersToAppCore()).called(1);
+        verify(
+          () => core.handListenersToAppCore(
+            waitForServiceStopped: any(named: 'waitForServiceStopped'),
+          ),
+        ).called(1);
         expect(handoverAction.coreRunningCalls, contains(false));
       },
     );
@@ -2787,7 +2791,11 @@ void main() {
 
         expect(await handoverAction.setRunning(false), isTrue);
 
-        verifyNever(() => core.handListenersToAppCore());
+        verifyNever(
+          () => core.handListenersToAppCore(
+            waitForServiceStopped: any(named: 'waitForServiceStopped'),
+          ),
+        );
         expect(handoverAction.coreRunningCalls, contains(false));
       },
     );
