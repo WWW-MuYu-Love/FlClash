@@ -1356,6 +1356,77 @@ void main() {
       },
     );
 
+    test(
+      'a push before the core applied any config shows no banner and still mirrors the override',
+      () async {
+        await AppLocalizations.load(const Locale('en'));
+        final printed = capturePrints();
+        final core = _MockCoreHandlerInterface();
+        when(() => core.updateConfig(any())).thenThrow(
+          const CoreMethodException(
+            code: 'core_error',
+            message: 'config is not applied',
+          ),
+        );
+        final patchScope = buildPatchScoped(
+          core: core,
+          ssidDirectOverride: (active: true, restoreMode: Mode.rule),
+        );
+        when(
+          () => patchScope.externalController.patchConfigs(any()),
+        ).thenAnswer((_) async => true);
+
+        await patchScope.action.updateConfig();
+
+        expect(
+          printed.where((line) => line?.contains('banner: ') ?? false),
+          isEmpty,
+        );
+        expect(
+          printed.any(
+            (line) =>
+                line?.contains(
+                  'updateConfig: core has no config applied yet',
+                ) ??
+                false,
+          ),
+          isTrue,
+        );
+        // The push failed before the core had a config, but the mode must
+        // still reach the App core: setup applies the effective config.
+        final mirrored =
+            verify(
+                  () => core.updateConfig(captureAny(), route: CoreRoute.app),
+                ).captured.single
+                as UpdateParams;
+        expect(mirrored.mode, Mode.direct);
+      },
+    );
+
+    test('any other core error still surfaces the banner', () async {
+      await AppLocalizations.load(const Locale('en'));
+      final printed = capturePrints();
+      final core = _MockCoreHandlerInterface();
+      when(() => core.updateConfig(any())).thenThrow(
+        const CoreMethodException(
+          code: 'core_error',
+          message: 'something else went wrong',
+        ),
+      );
+      final patchScope = buildPatchScoped(core: core);
+      when(
+        () => patchScope.externalController.patchConfigs(any()),
+      ).thenAnswer((_) async => true);
+
+      await patchScope.action.updateConfig();
+
+      expect(
+        printed.where((line) => line?.contains('banner: ') ?? false),
+        isNotEmpty,
+      );
+      verifyNever(() => core.updateConfig(any(), route: CoreRoute.app));
+    });
+
     test('skips the patch while the tunnel is down', () async {
       final core = _MockCoreHandlerInterface();
       when(() => core.updateConfig(any())).thenAnswer((_) async {});

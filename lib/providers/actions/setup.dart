@@ -559,6 +559,17 @@ class SetupAction extends _$SetupAction {
               logLevel: LogLevel.warning,
             );
           }
+        } else if (error.code == 'core_error' &&
+            error.message == 'config is not applied') {
+          // A push that lands before the core applied any config is a
+          // no-op: the core takes its config from setup, which uses the
+          // effective config, so the mode still lands. Swallow it instead
+          // of surfacing a banner on a cold start.
+          commonPrint.log(
+            'updateConfig: core has no config applied yet; the setup push '
+            'carries the mode',
+            logLevel: LogLevel.warning,
+          );
         } else {
           rethrow;
         }
