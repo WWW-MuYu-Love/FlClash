@@ -26,7 +26,6 @@ class RouteState {
     this.synced = false,
     this.live = false,
     this.resumes = 0,
-    this.picks = 0,
   });
 
   final int coreEpoch;
@@ -36,7 +35,6 @@ class RouteState {
   final bool synced;
   final bool live;
   final int resumes;
-  final int picks;
 
   RouteState copyWith({
     int? coreEpoch,
@@ -46,7 +44,6 @@ class RouteState {
     bool? synced,
     bool? live,
     int? resumes,
-    int? picks,
   }) {
     return RouteState(
       coreEpoch: coreEpoch ?? this.coreEpoch,
@@ -56,7 +53,6 @@ class RouteState {
       synced: synced ?? this.synced,
       live: live ?? this.live,
       resumes: resumes ?? this.resumes,
-      picks: picks ?? this.picks,
     );
   }
 
@@ -80,8 +76,7 @@ class RouteState {
       other.proxied == proxied &&
       other.synced == synced &&
       other.live == live &&
-      other.resumes == resumes &&
-      other.picks == picks;
+      other.resumes == resumes;
 
   @override
   int get hashCode => Object.hash(
@@ -92,7 +87,6 @@ class RouteState {
     synced,
     live,
     resumes,
-    picks,
   );
 }
 
@@ -161,11 +155,8 @@ class RouteTracker extends _$RouteTracker {
   @override
   RouteState build() {
     ref.onDispose(_cancelRetry);
-    final safeMode = ref.read(safeModeProvider);
-    if (safeMode) {
-      ref.listen(isStartProvider, (_, _) => _scheduleSyncProxied());
-      ref.listen(suspendProvider, (_, _) => _scheduleSyncProxied());
-    }
+    ref.listen(isStartProvider, (_, _) => _scheduleSyncProxied());
+    ref.listen(suspendProvider, (_, _) => _scheduleSyncProxied());
     ref.listen(initProvider, (_, _) => _subscribe());
     ref.listen(appVisibleProvider, (_, visible) {
       if (visible) {
@@ -181,12 +172,10 @@ class RouteTracker extends _$RouteTracker {
         _dropSync();
       }
     });
-    return RouteState(proxied: safeMode && _hostProxied);
+    return RouteState(proxied: _proxied);
   }
 
-  /// Followed only in safe mode, where the Core never starts its listeners.
-  bool get _hostProxied =>
-      ref.read(isStartProvider) && !ref.read(suspendProvider);
+  bool get _proxied => ref.read(isStartProvider) && !ref.read(suspendProvider);
 
   bool get _ready =>
       _watchers > 0 &&
@@ -217,7 +206,6 @@ class RouteTracker extends _$RouteTracker {
     state = state.copyWith(
       coreEpoch: snapshot.coreEpoch,
       routeVersion: snapshot.routeVersion,
-      proxied: ref.read(safeModeProvider) ? null : snapshot.running,
       hostEpoch: state.synced ? state.hostEpoch : state.hostEpoch + 1,
       synced: true,
       live: true,
@@ -232,10 +220,6 @@ class RouteTracker extends _$RouteTracker {
     state = state.copyWith(resumes: state.resumes + 1);
   }
 
-  void markPicked() {
-    state = state.copyWith(picks: state.picks + 1);
-  }
-
   /// Deferred because both are computed: unwatched, they go stale, and the
   /// widget that next reads one recomputes it from initState or build.
   void _scheduleSyncProxied() {
@@ -247,7 +231,7 @@ class RouteTracker extends _$RouteTracker {
   }
 
   void _syncProxied() {
-    final proxied = _hostProxied;
+    final proxied = _proxied;
     if (proxied != state.proxied) {
       state = state.copyWith(proxied: proxied);
     }
