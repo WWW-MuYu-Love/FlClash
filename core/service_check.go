@@ -2,6 +2,8 @@ package core
 
 import (
 	"context"
+	"net"
+	"net/url"
 	"strings"
 	"sync"
 	"time"
@@ -83,7 +85,7 @@ func (e serviceEnv) scan(url string, until func(tail string) bool) *ProbeResult 
 }
 
 func (e serviceEnv) send(req probeRequest) *ProbeResult {
-	req.proxyName = e.proxyName
+	req.proxyName = exitForServiceURL(e.proxyName, req.url)
 	req.timeout = e.timeout
 	req.recorder = e.hits
 	headers := map[string]string{"User-Agent": browserUserAgent}
@@ -92,6 +94,36 @@ func (e serviceEnv) send(req probeRequest) *ProbeResult {
 	}
 	req.headers = headers
 	return runProbe(e.ctx, req)
+}
+
+// The tunnel collapses every service to the same exit, so resolve the exit and dial it directly.
+func exitForServiceURL(proxyName, rawURL string) string {
+	if proxyName != "" {
+		return proxyName
+	}
+	host := hostOfServiceURL(rawURL)
+	if host == "" {
+		return proxyName
+	}
+	if exit := resolveExit(host, ""); exit != "" {
+		return exit
+	}
+	return proxyName
+}
+
+func hostOfServiceURL(rawURL string) string {
+	parsed, err := url.Parse(rawURL)
+	if err != nil || parsed.Host == "" {
+		return ""
+	}
+	if _, _, err := net.SplitHostPort(parsed.Host); err == nil {
+		return parsed.Host
+	}
+	port := "443"
+	if strings.EqualFold(parsed.Scheme, "http") {
+		port = "80"
+	}
+	return net.JoinHostPort(parsed.Host, port)
 }
 
 type serviceChecker struct {
