@@ -420,6 +420,22 @@ void main() {
 
   testWidgets('a narrow desktop window shows the phone cards in a centred '
       'column, takeover in place of the VPN', (tester) async {
+    container.read(appSettingProvider.notifier).update(
+      (state) => state.copyWith(
+        dashboardWidgets: [
+          DashboardWidget.currentOutbound,
+          DashboardWidget.networkSpeed,
+          DashboardWidget.vpnButton,
+          DashboardWidget.outboundMode,
+          DashboardWidget.networkTakeover,
+          DashboardWidget.serviceStatus,
+          DashboardWidget.connectionStats,
+          DashboardWidget.proxyGroups,
+          DashboardWidget.profiles,
+          DashboardWidget.trafficStatistics,
+        ],
+      ),
+    );
     await pumpDashboard(tester, const Size(620, 700));
 
     final card = rectOf(tester, CurrentOutboundCard);
