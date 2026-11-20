@@ -318,6 +318,7 @@ class SetupAction extends _$SetupAction {
     if (unanswered case (final error, final stackTrace)) {
       Error.throwWithStackTrace(error, stackTrace);
     }
+    ref.read(coreStatusProvider.notifier).value = CoreStatus.disconnected;
     return true;
   }
 
