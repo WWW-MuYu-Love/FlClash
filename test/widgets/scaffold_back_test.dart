@@ -420,7 +420,6 @@ void main() {
     expect(find.byType(DashboardEditor), findsNothing);
     expect(container.read(appSettingProvider).dashboardWidgets, [
       DashboardWidget.outboundMode,
-      DashboardWidget.networkTakeover,
     ]);
   });
 }
