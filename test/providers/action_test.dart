@@ -1,9 +1,11 @@
 import 'dart:async';
 
+import 'package:drift/native.dart';
 import 'package:fl_clash/common/app_localizations.dart';
 import 'package:fl_clash/core/controller.dart';
 import 'package:fl_clash/core/desktop/model.dart';
 import 'package:fl_clash/core/interface.dart';
+import 'package:fl_clash/database/database.dart' as db;
 import 'package:fl_clash/enum/enum.dart';
 import 'package:fl_clash/models/models.dart';
 import 'package:fl_clash/providers/action.dart';
@@ -631,6 +633,17 @@ void main() {
   });
 
   group('SetupAction', () {
+    late db.Database testDatabase;
+
+    setUp(() {
+      testDatabase = db.Database(NativeDatabase.memory());
+      db.database = testDatabase;
+    });
+
+    tearDown(() async {
+      await testDatabase.close();
+    });
+
     group('rapid status changes', () {
       test('updates runtime and traffic while core start is pending', () async {
         final startCompleter = Completer<bool>();
