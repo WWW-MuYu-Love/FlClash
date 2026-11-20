@@ -147,7 +147,7 @@ hooks:
 <dict>
   <key>com.apple.security.application-groups</key>
   <array>
-    <string>group.\\\$(APP_BUNDLE_ID)</string>
+    <string>group.\$(APP_BUNDLE_ID)</string>
   </array>
 </dict>
 </plist>
