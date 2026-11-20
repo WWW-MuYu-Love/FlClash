@@ -224,7 +224,7 @@ void main() {
     await pumpLocalizedTrayManager(tester, const Locale('zh', 'CN'));
 
     expect(_RecordingSystemAction.updateTrayCount, 1);
-    expect(_RecordingSystemAction.updateTrayLocales, <String>['zh']);
+    expect(_RecordingSystemAction.updateTrayLocales, <String>['zh_CN']);
   });
 
   testWidgets('the locale a language switch starts from does not push twice', (
