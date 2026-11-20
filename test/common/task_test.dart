@@ -481,7 +481,9 @@ DOMAIN,c.example,REJECT
       expect(Map.of((config['rule-providers'] as YamlMap)[set] as YamlMap), {
         'type': 'file',
         'behavior': 'domain',
-        'format': 'domain-set',
+        // mihomo knows no 'domain-set' format; a domain behavior over
+        // text lines is the same set of bare domains.
+        'format': 'text',
         'path': 'mitm/resources/ab12.conf',
       });
     });
