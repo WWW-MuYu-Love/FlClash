@@ -143,6 +143,7 @@ class AppEnvManager extends ConsumerWidget {
     return Banner(
       message: message,
       location: BannerLocation.topEnd,
+      color: context.colorScheme.primary,
       child: child,
     );
   }
