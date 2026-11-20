@@ -1,6 +1,5 @@
 import 'package:fl_clash/common/mixin.dart';
 import 'package:fl_clash/common/service_probe.dart';
-import 'package:fl_clash/core/method.dart';
 import 'package:fl_clash/models/models.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -28,12 +27,10 @@ class ServiceStatus extends _$ServiceStatus
     ServiceTarget target,
     RouteState route,
   ) async {
-    // The App core answers the check: the extension core is not asked.
     final checks = await checkServices(
       ref.read(coreHandlerProvider),
       proxyName: route.proxied ? '' : directOutbound,
       targets: [target],
-      route: CoreRoute.app,
     );
     final check = checks[target];
     return {
