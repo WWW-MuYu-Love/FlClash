@@ -145,6 +145,18 @@ class CoreLib extends CoreHandlerInterface {
       _listenersStartedByService = false;
       return;
     }
+    // Cold start with the tunnel already up: the extension already owns the
+    // listeners, so starting the App core's would collide on 7890/9090.
+    if (_isTunnelConnected()) {
+      if (!await _service!.start()) {
+        throw const CoreMethodException(
+          code: 'service_refused',
+          message: 'The iOS service did not start',
+        );
+      }
+      _listenersStartedByService = true;
+      return;
+    }
     // App core first so it can probe, then hand the listeners to the extension.
     var appListenersUp = false;
     try {
@@ -180,6 +192,11 @@ class CoreLib extends CoreHandlerInterface {
       vpnOptionsProvider.future,
     );
     return vpnOptions.enable;
+  }
+
+  bool _isTunnelConnected() {
+    return globalState.container.read(tunnelStateProvider) ==
+        TunnelState.connected;
   }
 
   @override

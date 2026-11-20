@@ -372,6 +372,28 @@ void main() {
     );
 
     test(
+      'a listener start with VPN on and the tunnel already connected skips the App core listeners',
+      () async {
+        final tunnelContainer = ProviderContainer(
+          overrides: [
+            profilesProvider.overrideWith(TestProfiles.new),
+            tunnelStateProvider.overrideWith((ref) => TunnelState.connected),
+          ],
+        );
+        addTearDown(tunnelContainer.dispose);
+        globalState.container = tunnelContainer;
+        final iosLib = CoreLib.scoped(service, listenerManagedByService: true);
+        await iosLib.start();
+        service.onInvokeMethod = (_) => const CoreMethodResponse(id: '1');
+
+        await iosLib.startListener();
+
+        expect(service.calls, contains('start'));
+        expect(service.invokedCalls, isEmpty);
+      },
+    );
+
+    test(
       'handing listeners to the App core stops the service and starts them',
       () async {
         final iosLib = CoreLib.scoped(service, listenerManagedByService: true);
