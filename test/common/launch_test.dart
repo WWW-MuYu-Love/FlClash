@@ -44,6 +44,10 @@ void main() {
 
   tearDownAll(() {
     AutoLaunch.entry = systemEntry;
+    // initMock leaves the bridge initialized for the rest of this isolate;
+    // release it so a file sharing the bundle can initialize the real
+    // library (profile_preview_test does).
+    RustLib.dispose();
   });
 
   test('AutoLaunch is a singleton', () {
