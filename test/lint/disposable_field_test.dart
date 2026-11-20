@@ -26,6 +26,10 @@ const _allowed = {
   // state from the platform channel for the whole run.
   'lib/plugins/app.dart#floatingKeyboard',
   'lib/plugins/app.dart#_networkChanges',
+  // `Service` is a process-lifetime singleton; the notifiers relay tunnel
+  // state and start failures from the platform channel for the whole run.
+  'lib/plugins/service.dart#_tunnelState',
+  'lib/plugins/service.dart#_tunnelError',
 };
 
 final _declaration = RegExp(
