@@ -553,6 +553,14 @@ void main() {
         profilesProvider.overrideWith(TestProfiles.new),
         runningVpnOptionsProvider.overrideWithValue(runningOptions),
         externalControllerClientProvider.overrideWithValue(client),
+        appSettingProvider.overrideWithBuild(
+          (_, _) => const AppSettingProps(
+            dashboardWidgets: [
+              ...defaultDashboardWidgets,
+              DashboardWidget.zashboard,
+            ],
+          ),
+        ),
       ],
     );
     addTearDown(container.dispose);
@@ -645,6 +653,14 @@ void main() {
         profilesProvider.overrideWith(TestProfiles.new),
         runningVpnOptionsProvider.overrideWithValue(runningOptions),
         externalControllerClientProvider.overrideWithValue(client),
+        appSettingProvider.overrideWithBuild(
+          (_, _) => const AppSettingProps(
+            dashboardWidgets: [
+              ...defaultDashboardWidgets,
+              DashboardWidget.zashboard,
+            ],
+          ),
+        ),
       ],
     );
     addTearDown(container.dispose);
@@ -732,6 +748,14 @@ void main() {
         profilesProvider.overrideWith(TestProfiles.new),
         runningVpnOptionsProvider.overrideWithValue(runningOptions),
         externalControllerClientProvider.overrideWithValue(client),
+        appSettingProvider.overrideWithBuild(
+          (_, _) => const AppSettingProps(
+            dashboardWidgets: [
+              ...defaultDashboardWidgets,
+              DashboardWidget.zashboard,
+            ],
+          ),
+        ),
       ],
     );
     addTearDown(container.dispose);

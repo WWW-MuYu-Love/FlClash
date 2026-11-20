@@ -151,16 +151,13 @@ final List<HotKeyAction> defaultHotKeyActions = system.isWindows
 const List<DashboardWidget> defaultDashboardWidgets = [
   DashboardWidget.currentOutbound,
   DashboardWidget.networkSpeed,
-  DashboardWidget.outboundMode,
   DashboardWidget.vpnButton,
-  DashboardWidget.networkTakeover,
-  DashboardWidget.intranetIp,
+  DashboardWidget.outboundMode,
   DashboardWidget.serviceStatus,
-  DashboardWidget.profiles,
-  DashboardWidget.proxyGroups,
   DashboardWidget.connectionStats,
+  DashboardWidget.proxyGroups,
+  DashboardWidget.profiles,
   DashboardWidget.trafficStatistics,
-  DashboardWidget.zashboard,
 ];
 
 /// A phone starts without the VPN switch and the diagnostic cards, which stay
