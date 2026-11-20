@@ -48,6 +48,16 @@ class _VpnContainerState extends ConsumerState<VpnManager> with TileListener {
       }
       _showRestartTip();
     });
+    // A failed tunnel start is otherwise silent: the dashboard shows the
+    // core running while the system VPN never connects.
+    ref.listenManual(tunnelErrorProvider, (prev, next) {
+      if (next != null && next != prev) {
+        dialogs.showBanner(
+          tunnelStartFailureMessage(next, currentAppLocalizations),
+          level: BannerLevel.error,
+        );
+      }
+    });
     // The tile channel's syncRunningState never fires on a cold start with
     // the tunnel already up, because Swift records the first observation
     // without notifying. The service channel's tunnelState does report it,
