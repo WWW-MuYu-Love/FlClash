@@ -13,13 +13,18 @@ import 'package:mocktail/mocktail.dart';
 import 'package:path/path.dart';
 import 'package:test/test.dart';
 
+import '../helpers/app_paths.dart';
+
 class MockCoreHandlerInterface extends Mock implements CoreHandlerInterface {}
 
 void main() {
   late MockCoreHandlerInterface mock;
   late CoreController controller;
+  late Directory root;
 
-  setUpAll(() {
+  setUpAll(() async {
+    root = Directory.systemTemp.createTempSync('controller_test');
+    await useAppPaths(root);
     registerFallbackValue(
       const TestDelayParams(proxyName: 'P', testUrl: 'U', timeout: 0),
     );
@@ -48,6 +53,12 @@ void main() {
     registerFallbackValue(
       const ChangeProxyParams(groupName: 'G', proxyName: 'P'),
     );
+  });
+
+  tearDownAll(() {
+    if (root.existsSync()) {
+      root.deleteSync(recursive: true);
+    }
   });
 
   setUp(() {
