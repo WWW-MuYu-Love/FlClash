@@ -728,8 +728,9 @@ class _StatusCard extends ConsumerWidget {
 
   final VoidCallback onUnask;
 
-  Future<void> _restartCore(CoreAction core) async {
+  Future<void> _restartCore(CoreAction core, SetupAction setup) async {
     try {
+      setup.resumeOnRestart();
       await core.restartCore();
     } catch (error) {
       dialogs.showBanner(
@@ -753,9 +754,10 @@ class _StatusCard extends ConsumerWidget {
     final level = SurfaceLevel.floatingOf(colorScheme);
     final neutral = level.next.colorOf(colorScheme);
     final core = ref.read(coreActionProvider.notifier);
+    final setup = ref.read(setupActionProvider.notifier);
     final effects = status.preview == null
         ? (
-            restartCore: () => unawaited(_restartCore(core)),
+            restartCore: () => unawaited(_restartCore(core, setup)),
             stopDownload: action.cancelUpdateDownload,
             install: () => _install(context, ref),
             discard: () => unawaited(action.discardUpdate()),
