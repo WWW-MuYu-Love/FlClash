@@ -1,5 +1,7 @@
 import 'dart:async';
+import 'dart:ui';
 
+import 'package:fl_clash/common/common.dart';
 import 'package:fl_clash/core/desktop/lifecycle.dart';
 import 'package:fl_clash/core/desktop/model.dart';
 import 'package:fl_clash/core/desktop/rpc_client.dart';
@@ -25,6 +27,10 @@ void main() {
     revision: 1,
     outcome: CoreLifecycleOutcome.applied,
   );
+
+  setUpAll(() {
+    loadAppLocalizations(const Locale('en'));
+  });
 
   setUp(() {
     lifecycle = _MockLifecycle();
