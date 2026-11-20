@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:fl_clash/common/constant.dart';
+import 'package:fl_clash/common/system.dart';
 import 'package:fl_clash/enum/enum.dart';
 import 'package:fl_clash/plugins/battery.dart';
 import 'package:fl_clash/plugins/wifi_ssid.dart';
@@ -25,163 +26,174 @@ void main() {
   final messenger =
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
 
-  group('location permission', () {
-    const channel = MethodChannel('$packageName/wifi_ssid');
-    late ProviderContainer container;
-    late List<String> calls;
+  group(
+    'location permission',
+    () {
+      const channel = MethodChannel('$packageName/wifi_ssid');
+      late ProviderContainer container;
+      late List<String> calls;
 
-    void answer(Future<Object?> Function(MethodCall call) handler) {
-      messenger.setMockMethodCallHandler(channel, (call) {
-        calls.add(call.method);
-        return handler(call);
+      void answer(Future<Object?> Function(MethodCall call) handler) {
+        messenger.setMockMethodCallHandler(channel, (call) {
+          calls.add(call.method);
+          return handler(call);
+        });
+      }
+
+      ProviderContainer excluding(List<String> ssids) {
+        return ProviderContainer(
+          overrides: [excludeSSIDsProvider.overrideWithValue(ssids)],
+        );
+      }
+
+      LocationPermissions notifier() {
+        return container.read(locationPermissionsProvider.notifier);
+      }
+
+      setUp(() {
+        calls = [];
+        container = excluding(const ['Office Wi-Fi']);
       });
-    }
 
-    ProviderContainer excluding(List<String> ssids) {
-      return ProviderContainer(
-        overrides: [excludeSSIDsProvider.overrideWithValue(ssids)],
-      );
-    }
+      tearDown(() {
+        messenger.setMockMethodCallHandler(channel, null);
+        container.dispose();
+      });
 
-    LocationPermissions notifier() {
-      return container.read(locationPermissionsProvider.notifier);
-    }
+      test('asks for the permission once a network is excluded', () async {
+        answer(
+          (call) async => switch (call.method) {
+            'checkPermission' => 1,
+            _ => 0,
+          },
+        );
 
-    setUp(() {
-      calls = [];
-      container = excluding(const ['Office Wi-Fi']);
-    });
+        await notifier().refresh();
 
-    tearDown(() {
-      messenger.setMockMethodCallHandler(channel, null);
-      container.dispose();
-    });
+        expect(calls, ['checkPermission', 'requestPermission']);
+        expect(
+          container.read(locationPermissionsProvider),
+          WifiSsidPermission.granted,
+        );
+      });
 
-    test('asks for the permission once a network is excluded', () async {
-      answer(
-        (call) async => switch (call.method) {
-          'checkPermission' => 1,
-          _ => 0,
+      test('a safe mode build neither checks nor requests location', () async {
+        container.dispose();
+        container = ProviderContainer(
+          overrides: [
+            excludeSSIDsProvider.overrideWithValue(const ['Office Wi-Fi']),
+            safeModeProvider.overrideWithValue(true),
+          ],
+        );
+        answer((_) async => 0);
+
+        await notifier().refresh();
+
+        expect(calls, isEmpty);
+        expect(
+          container.read(locationPermissionsProvider),
+          WifiSsidPermission.denied,
+        );
+      });
+
+      test('nothing is asked while no network is excluded', () async {
+        container.dispose();
+        container = excluding(const []);
+        answer((_) async => 1);
+
+        await notifier().refresh();
+
+        expect(calls, ['checkPermission']);
+      });
+
+      test('auto-requests at most once per session while denied', () async {
+        answer((_) async => 1);
+
+        await notifier().refresh();
+        await notifier().refresh();
+
+        expect(calls.where((call) => call == 'requestPermission').length, 1);
+      });
+
+      test('an empty excluded list re-arms the auto-request', () async {
+        container.dispose();
+        container = ProviderContainer();
+        answer((_) async => 1);
+
+        await notifier().refresh();
+        container.read(excludeSSIDsProvider.notifier).value = const ['Office'];
+        await notifier().refresh();
+        await notifier().refresh();
+        container.read(excludeSSIDsProvider.notifier).value = const [];
+        await notifier().refresh();
+        container.read(excludeSSIDsProvider.notifier).value = const ['Office'];
+        await notifier().refresh();
+
+        expect(calls.where((call) => call == 'requestPermission').length, 2);
+      });
+
+      test('a failed auto-request is retried on the next refresh', () async {
+        answer((call) async {
+          if (call.method == 'requestPermission') {
+            throw PlatformException(code: 'IN_PROGRESS');
+          }
+          return 1;
+        });
+
+        await expectLater(notifier().refresh(), completes);
+        await notifier().refresh();
+
+        expect(calls.where((call) => call == 'requestPermission').length, 2);
+      });
+
+      test(
+        'a check keeps a permanent denial until it sees the grant',
+        () async {
+          container.dispose();
+          container = excluding(const []);
+          var checked = 1;
+          answer(
+            (call) async => switch (call.method) {
+              'requestPermission' => 2,
+              _ => checked,
+            },
+          );
+
+          await notifier().request();
+          await notifier().refresh();
+          expect(
+            container.read(locationPermissionsProvider),
+            WifiSsidPermission.permanentlyDenied,
+          );
+
+          checked = 0;
+          await notifier().refresh();
+          expect(
+            container.read(locationPermissionsProvider),
+            WifiSsidPermission.granted,
+          );
         },
       );
 
-      await notifier().refresh();
+      test('a request made while one is showing answers null', () async {
+        final prompt = Completer<Object?>();
+        answer((_) => prompt.future);
 
-      expect(calls, ['checkPermission', 'requestPermission']);
-      expect(
-        container.read(locationPermissionsProvider),
-        WifiSsidPermission.granted,
-      );
-    });
+        final first = notifier().request();
+        final second = await notifier().request();
+        prompt.complete(0);
 
-    test('a safe mode build neither checks nor requests location', () async {
-      container.dispose();
-      container = ProviderContainer(
-        overrides: [
-          excludeSSIDsProvider.overrideWithValue(const ['Office Wi-Fi']),
-          safeModeProvider.overrideWithValue(true),
-        ],
-      );
-      answer((_) async => 0);
-
-      await notifier().refresh();
-
-      expect(calls, isEmpty);
-      expect(
-        container.read(locationPermissionsProvider),
-        WifiSsidPermission.denied,
-      );
-    });
-
-    test('nothing is asked while no network is excluded', () async {
-      container.dispose();
-      container = excluding(const []);
-      answer((_) async => 1);
-
-      await notifier().refresh();
-
-      expect(calls, ['checkPermission']);
-    });
-
-    test('auto-requests at most once per session while denied', () async {
-      answer((_) async => 1);
-
-      await notifier().refresh();
-      await notifier().refresh();
-
-      expect(calls.where((call) => call == 'requestPermission').length, 1);
-    });
-
-    test('an empty excluded list re-arms the auto-request', () async {
-      container.dispose();
-      container = ProviderContainer();
-      answer((_) async => 1);
-
-      await notifier().refresh();
-      container.read(excludeSSIDsProvider.notifier).value = const ['Office'];
-      await notifier().refresh();
-      await notifier().refresh();
-      container.read(excludeSSIDsProvider.notifier).value = const [];
-      await notifier().refresh();
-      container.read(excludeSSIDsProvider.notifier).value = const ['Office'];
-      await notifier().refresh();
-
-      expect(calls.where((call) => call == 'requestPermission').length, 2);
-    });
-
-    test('a failed auto-request is retried on the next refresh', () async {
-      answer((call) async {
-        if (call.method == 'requestPermission') {
-          throw PlatformException(code: 'IN_PROGRESS');
-        }
-        return 1;
+        expect(second, isNull);
+        expect(await first, WifiSsidPermission.granted);
+        expect(calls, ['requestPermission']);
       });
-
-      await expectLater(notifier().refresh(), completes);
-      await notifier().refresh();
-
-      expect(calls.where((call) => call == 'requestPermission').length, 2);
-    });
-
-    test('a check keeps a permanent denial until it sees the grant', () async {
-      container.dispose();
-      container = excluding(const []);
-      var checked = 1;
-      answer(
-        (call) async => switch (call.method) {
-          'requestPermission' => 2,
-          _ => checked,
-        },
-      );
-
-      await notifier().request();
-      await notifier().refresh();
-      expect(
-        container.read(locationPermissionsProvider),
-        WifiSsidPermission.permanentlyDenied,
-      );
-
-      checked = 0;
-      await notifier().refresh();
-      expect(
-        container.read(locationPermissionsProvider),
-        WifiSsidPermission.granted,
-      );
-    });
-
-    test('a request made while one is showing answers null', () async {
-      final prompt = Completer<Object?>();
-      answer((_) => prompt.future);
-
-      final first = notifier().request();
-      final second = await notifier().request();
-      prompt.complete(0);
-
-      expect(second, isNull);
-      expect(await first, WifiSsidPermission.granted);
-      expect(calls, ['requestPermission']);
-    });
-  });
+    },
+    // LocationPermissions.refresh is a no-op where it is unsupported, so
+    // these tests can only run on a mobile or macOS host.
+    skip: system.isMobile || system.isMacOS
+        ? false
+        : 'location permission needs a mobile or macOS host',
+  );
 
   group('battery optimization', () {
     const methodChannel = MethodChannel('$packageName/battery');
