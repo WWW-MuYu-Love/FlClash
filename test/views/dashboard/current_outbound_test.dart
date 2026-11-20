@@ -297,7 +297,9 @@ void main() {
       tester,
     ) async {
       final core = _MockCore();
-      when(() => core.outboundIp(any(), route: CoreRoute.app)).thenAnswer((_) async => _address());
+      when(
+        () => core.outboundIp(any(), route: CoreRoute.app),
+      ).thenAnswer((_) async => _address());
       var calls = 0;
       await tester.pumpWidget(
         _probingApp(
@@ -452,7 +454,9 @@ void main() {
     ) async {
       final core = _MockCore();
       var failing = true;
-      when(() => core.outboundIp(any(), route: CoreRoute.app)).thenAnswer((invocation) async {
+      when(() => core.outboundIp(any(), route: CoreRoute.app)).thenAnswer((
+        invocation,
+      ) async {
         final params =
             invocation.positionalArguments.single as OutboundIpParams;
         if (params.proxyName != directOutbound && failing) {
@@ -484,7 +488,9 @@ void main() {
       final core = _MockCore();
       final asked = <String>[];
       const failing = true;
-      when(() => core.outboundIp(any(), route: CoreRoute.app)).thenAnswer((invocation) async {
+      when(() => core.outboundIp(any(), route: CoreRoute.app)).thenAnswer((
+        invocation,
+      ) async {
         final params =
             invocation.positionalArguments.single as OutboundIpParams;
         asked.add(params.proxyName);
@@ -518,7 +524,9 @@ void main() {
       tester,
     ) async {
       final core = _MockCore();
-      when(() => core.outboundIp(any(), route: CoreRoute.app)).thenAnswer((invocation) async {
+      when(() => core.outboundIp(any(), route: CoreRoute.app)).thenAnswer((
+        invocation,
+      ) async {
         final params =
             invocation.positionalArguments.single as OutboundIpParams;
         return params.proxyName == directOutbound

@@ -71,9 +71,7 @@ void main() {
   void answer(
     FutureOr<List<ServiceCheckItem>> Function(ServiceCheckParams params) check,
   ) {
-    when(
-      () => core.serviceCheck(any(), route: CoreRoute.app),
-    ).thenAnswer(
+    when(() => core.serviceCheck(any(), route: CoreRoute.app)).thenAnswer(
       (invocation) async =>
           check(invocation.positionalArguments.single as ServiceCheckParams),
     );
@@ -89,9 +87,9 @@ void main() {
     Widget body = const ServiceStatusCard(),
     IpQuality? ipQuality,
   }) {
-    when(
-      () => core.outboundIp(any(), route: CoreRoute.app),
-    ).thenAnswer((invocation) async {
+    when(() => core.outboundIp(any(), route: CoreRoute.app)).thenAnswer((
+      invocation,
+    ) async {
       if (outboundIp == null) return Completer<OutboundIpResult>().future;
       return outboundIp(
         invocation.positionalArguments.single as OutboundIpParams,
