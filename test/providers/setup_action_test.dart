@@ -17,6 +17,7 @@ import 'package:fl_clash/providers/app.dart';
 import 'package:fl_clash/providers/config.dart';
 import 'package:fl_clash/providers/core.dart';
 import 'package:fl_clash/providers/database.dart';
+import 'package:fl_clash/providers/on_demand.dart';
 import 'package:fl_clash/providers/state.dart';
 import 'package:fl_clash/state.dart';
 import 'package:flutter/scheduler.dart';
@@ -1036,6 +1037,10 @@ void main() {
         secret: 'abc',
       ),
       bool tunnelUp = true,
+      ({bool active, Mode? restoreMode}) ssidDirectOverride = (
+        active: false,
+        restoreMode: null,
+      ),
     }) {
       final externalController = _MockExternalControllerClient();
       final action = TestSetupAction();
@@ -1047,6 +1052,7 @@ void main() {
           externalControllerClientProvider.overrideWithValue(
             externalController,
           ),
+          ssidDirectOverrideProvider.overrideWithValue(ssidDirectOverride),
         ],
       );
       addTearDown(scoped.dispose);
@@ -1151,6 +1157,113 @@ void main() {
         expect(mirrored.mode, Mode.direct);
       },
     );
+
+    test(
+      'an active SSID direct override pushes direct to the App core',
+      () async {
+        final core = _MockCoreHandlerInterface();
+        when(() => core.updateConfig(any())).thenAnswer((_) async {});
+        final patchScope = buildPatchScoped(
+          core: core,
+          patchConfig: const PatchClashConfig(
+            externalController: ExternalControllerStatus.open,
+            secret: 'abc',
+          ),
+          ssidDirectOverride: (active: true, restoreMode: Mode.rule),
+        );
+        when(
+          () => patchScope.externalController.patchConfigs(any()),
+        ).thenAnswer((_) async => true);
+
+        await patchScope.action.updateConfig();
+
+        final mirrored =
+            verify(
+                  () => core.updateConfig(captureAny(), route: CoreRoute.app),
+                ).captured.single
+                as UpdateParams;
+        expect(mirrored.mode, Mode.direct);
+        expect(
+          patchScope.scoped.read(patchClashConfigProvider).mode,
+          Mode.rule,
+        );
+      },
+    );
+
+    test('no override pushes the stored mode to the App core', () async {
+      final core = _MockCoreHandlerInterface();
+      when(() => core.updateConfig(any())).thenAnswer((_) async {});
+      final patchScope = buildPatchScoped(
+        core: core,
+        patchConfig: const PatchClashConfig(
+          externalController: ExternalControllerStatus.open,
+          secret: 'abc',
+        ),
+      );
+      when(
+        () => patchScope.externalController.patchConfigs(any()),
+      ).thenAnswer((_) async => true);
+
+      await patchScope.action.updateConfig();
+
+      final mirrored =
+          verify(
+                () => core.updateConfig(captureAny(), route: CoreRoute.app),
+              ).captured.single
+              as UpdateParams;
+      expect(mirrored.mode, Mode.rule);
+    });
+
+    test('an override the user took over pushes the stored mode', () async {
+      final core = _MockCoreHandlerInterface();
+      when(() => core.updateConfig(any())).thenAnswer((_) async {});
+      final patchScope = buildPatchScoped(
+        core: core,
+        patchConfig: const PatchClashConfig(
+          externalController: ExternalControllerStatus.open,
+          secret: 'abc',
+          mode: Mode.global,
+        ),
+        ssidDirectOverride: (active: true, restoreMode: Mode.rule),
+      );
+      when(
+        () => patchScope.externalController.patchConfigs(any()),
+      ).thenAnswer((_) async => true);
+
+      await patchScope.action.updateConfig();
+
+      final mirrored =
+          verify(
+                () => core.updateConfig(captureAny(), route: CoreRoute.app),
+              ).captured.single
+              as UpdateParams;
+      expect(mirrored.mode, Mode.global);
+    });
+
+    test('an override with the tunnel down pushes the stored mode', () async {
+      final core = _MockCoreHandlerInterface();
+      when(() => core.updateConfig(any())).thenAnswer((_) async {});
+      final patchScope = buildPatchScoped(
+        core: core,
+        patchConfig: const PatchClashConfig(
+          externalController: ExternalControllerStatus.open,
+          secret: 'abc',
+        ),
+        tunnelUp: false,
+        ssidDirectOverride: (active: true, restoreMode: Mode.rule),
+      );
+      when(
+        () => patchScope.externalController.patchConfigs(any()),
+      ).thenAnswer((_) async => true);
+
+      await patchScope.action.updateConfig();
+
+      final params =
+          verify(() => core.updateConfig(captureAny())).captured.single
+              as UpdateParams;
+      expect(params.mode, Mode.rule);
+      verifyNever(() => core.updateConfig(any(), route: CoreRoute.app));
+    });
 
     test('a patched config that XPC also accepts shows no banner', () async {
       await AppLocalizations.load(const Locale('en'));

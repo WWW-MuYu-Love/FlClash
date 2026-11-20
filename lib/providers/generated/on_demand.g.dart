@@ -107,3 +107,77 @@ abstract class _$BatteryOptimizationIgnored extends $StreamNotifier<bool> {
     return element.handleCreate(ref, build);
   }
 }
+
+/// The SSID direct override the extension is enforcing, if any.
+
+@ProviderFor(SsidDirectOverride)
+final ssidDirectOverrideProvider = SsidDirectOverrideProvider._();
+
+/// The SSID direct override the extension is enforcing, if any.
+final class SsidDirectOverrideProvider
+    extends
+        $NotifierProvider<
+          SsidDirectOverride,
+          ({bool active, Mode? restoreMode})
+        > {
+  /// The SSID direct override the extension is enforcing, if any.
+  SsidDirectOverrideProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'ssidDirectOverrideProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$ssidDirectOverrideHash();
+
+  @$internal
+  @override
+  SsidDirectOverride create() => SsidDirectOverride();
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(({bool active, Mode? restoreMode}) value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<({bool active, Mode? restoreMode})>(
+        value,
+      ),
+    );
+  }
+}
+
+String _$ssidDirectOverrideHash() =>
+    r'2e84e4b3e2a6021ec53491872b192b7717e703db';
+
+/// The SSID direct override the extension is enforcing, if any.
+
+abstract class _$SsidDirectOverride
+    extends $Notifier<({bool active, Mode? restoreMode})> {
+  ({bool active, Mode? restoreMode}) build();
+  @$mustCallSuper
+  @override
+  WhenComplete runBuild() {
+    final ref =
+        this.ref
+            as $Ref<
+              ({bool active, Mode? restoreMode}),
+              ({bool active, Mode? restoreMode})
+            >;
+    final element =
+        ref.element
+            as $ClassProviderElement<
+              AnyNotifier<
+                ({bool active, Mode? restoreMode}),
+                ({bool active, Mode? restoreMode})
+              >,
+              ({bool active, Mode? restoreMode}),
+              Object?,
+              Object?
+            >;
+    return element.handleCreate(ref, build);
+  }
+}

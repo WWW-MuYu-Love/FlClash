@@ -947,7 +947,23 @@ class SetupAction extends _$SetupAction {
     final authorized =
         ref.read(authorizedTunEnableProvider) ==
         TunAuthorizationState.authorized;
+    // An SSID direct override only switches the extension core; the App
+    // core follows the config, so the probes pinned to it keep showing the
+    // proxied records. Mirror it here, in memory only: the stored config
+    // keeps the user's mode. The stored mode must still equal the recorded
+    // restore mode, otherwise the user took the mode over and their choice
+    // stands. Gated on the tunnel being up, so a stale flag from a killed
+    // extension run cannot switch the App core while it is the routing core.
+    final override = ref.read(ssidDirectOverrideProvider);
+    final mode =
+        ref.read(runningVpnOptionsProvider)?.enable == true &&
+            override.active &&
+            override.restoreMode != null &&
+            patchConfig.mode == override.restoreMode
+        ? Mode.direct
+        : patchConfig.mode;
     return patchConfig.copyWith(
+      mode: mode,
       tun: patchConfig.tun.copyWith(
         enable: patchConfig.tun.enable && authorized,
       ),

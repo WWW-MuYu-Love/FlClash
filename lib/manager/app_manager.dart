@@ -57,6 +57,16 @@ class _AppStateManagerState extends ConsumerState<AppStateManager>
         ref.read(proxiesActionProvider.notifier).updateGroupsDebounce();
       }
     });
+    // The extension enforces an SSID direct override without the app
+    // running; mirror it onto the App core, which only follows the config,
+    // so the probes pinned to it stop showing the proxied records. The
+    // stored config is untouched: the override lives in the effective patch
+    // config and lifts itself on the next push once it ends.
+    ref.listenManual(ssidDirectOverrideProvider, (prev, next) {
+      if (prev != next) {
+        unawaited(ref.read(setupActionProvider.notifier).pushCurrentMode());
+      }
+    });
     // The exclude-SSID actions are enforced by the native side so they
     // keep working when this app is killed in the background: the system
     // disconnects the VPN on the disconnect SSIDs via on-demand rules, and
@@ -87,6 +97,7 @@ class _AppStateManagerState extends ConsumerState<AppStateManager>
     _updateVisible(state);
     if (state == AppLifecycleState.resumed) {
       unawaited(ref.read(locationPermissionsProvider.notifier).refresh());
+      unawaited(ref.read(ssidDirectOverrideProvider.notifier).refresh());
       // A certificate removed meanwhile stops decryption before the next start.
       if (mitmFeature && ref.read(patchClashConfigProvider).mitm.enable) {
         unawaited(ref.read(mitmTrustStateProvider.notifier).refresh());

@@ -73,7 +73,7 @@ final class MitmCaProvider
   MitmCa create() => MitmCa();
 }
 
-String _$mitmCaHash() => r'a3c0701e935a4b1949cca7baa07b0860cc814ba6';
+String _$mitmCaHash() => r'c3b438bc64c1af8b8dee4182c5b26bbcb64727ab';
 
 abstract class _$MitmCa extends $AsyncNotifier<MitmCertificate?> {
   FutureOr<MitmCertificate?> build();
@@ -167,7 +167,7 @@ final class MitmTrustStateProvider
   MitmTrustState create() => MitmTrustState();
 }
 
-String _$mitmTrustStateHash() => r'f7f7f6d0f6589075dbaa14fa94c13eecc464cca5';
+String _$mitmTrustStateHash() => r'4dfc2a746c44705ba30d39e62f75079c3e3d86bd';
 
 /// Whether this device trusts the CA. A check records the CA it found
 /// trusted, which is the one the Core decrypts HTTPS with.

@@ -32,6 +32,8 @@ final class PacketTunnelSharedStateStore {
   private let activeVpnOptionsKey = "activeVpnOptions"
   private let lastErrorKey = "tunnelLastError"
   private let stageKey = "tunnelStage"
+  private let ssidDirectActiveKey = "ssidDirectActive"
+  private let ssidDirectRestoreModeKey = "ssidDirectRestoreMode"
 
   private var setupParamsValidatedWithSnapshot: Data?
 
@@ -54,6 +56,24 @@ final class PacketTunnelSharedStateStore {
   func saveStage(_ stage: String) {
     userDefaults?.set(stage, forKey: stageKey)
     userDefaults?.synchronize()
+  }
+
+  func saveSsidDirectOverride(active: Bool, restoreMode: String?) {
+    userDefaults?.set(active, forKey: ssidDirectActiveKey)
+    if let restoreMode {
+      userDefaults?.set(restoreMode, forKey: ssidDirectRestoreModeKey)
+    } else {
+      userDefaults?.removeObject(forKey: ssidDirectRestoreModeKey)
+    }
+    userDefaults?.synchronize()
+  }
+
+  func loadSsidDirectOverride() -> (active: Bool, restoreMode: String?) {
+    guard let userDefaults else { return (false, nil) }
+    return (
+      userDefaults.bool(forKey: ssidDirectActiveKey),
+      userDefaults.string(forKey: ssidDirectRestoreModeKey)
+    )
   }
 
   func loadVPNOptionsSnapshot() -> (options: PacketTunnelVPNOptions, data: Data)? {

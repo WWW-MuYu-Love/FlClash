@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:fl_clash/common/constant.dart';
+import 'package:fl_clash/enum/enum.dart';
 import 'package:fl_clash/plugins/battery.dart';
 import 'package:fl_clash/plugins/wifi_ssid.dart';
 import 'package:fl_clash/providers/app.dart';
@@ -304,4 +305,84 @@ void main() {
       expect(listening, isFalse);
     });
   });
+
+  group('ssid direct override', () {
+    late _StubSsidDirectOverride stub;
+    late ProviderContainer container;
+
+    SsidDirectOverride notifier() =>
+        container.read(ssidDirectOverrideProvider.notifier);
+
+    setUp(() {
+      stub = _StubSsidDirectOverride();
+      container = ProviderContainer(
+        overrides: [ssidDirectOverrideProvider.overrideWith(() => stub)],
+      );
+    });
+
+    tearDown(() {
+      container.dispose();
+    });
+
+    test('starts inactive and takes an active override on refresh', () async {
+      expect(container.read(ssidDirectOverrideProvider), (
+        active: false,
+        restoreMode: null,
+      ));
+      await pumpEventQueue();
+      stub.next = (active: true, restoreMode: Mode.rule);
+
+      await notifier().refresh();
+
+      expect(container.read(ssidDirectOverrideProvider), (
+        active: true,
+        restoreMode: Mode.rule,
+      ));
+    });
+
+    test('an unchanged override leaves the state alone', () async {
+      stub.next = (active: true, restoreMode: Mode.rule);
+      await notifier().refresh();
+      final first = container.read(ssidDirectOverrideProvider);
+
+      await notifier().refresh();
+
+      expect(container.read(ssidDirectOverrideProvider), first);
+    });
+
+    test('a cleared override returns to inactive', () async {
+      stub.next = (active: true, restoreMode: Mode.rule);
+      await notifier().refresh();
+      stub.next = (active: false, restoreMode: null);
+
+      await notifier().refresh();
+
+      expect(container.read(ssidDirectOverrideProvider), (
+        active: false,
+        restoreMode: null,
+      ));
+    });
+
+    test('coming back to the app re-reads the override', () async {
+      container.read(ssidDirectOverrideProvider);
+      await pumpEventQueue();
+      stub.next = (active: true, restoreMode: Mode.global);
+
+      container.read(appVisibleProvider.notifier).value = false;
+      container.read(appVisibleProvider.notifier).value = true;
+      await pumpEventQueue();
+
+      expect(container.read(ssidDirectOverrideProvider), (
+        active: true,
+        restoreMode: Mode.global,
+      ));
+    });
+  });
+}
+
+class _StubSsidDirectOverride extends SsidDirectOverride {
+  ({bool active, Mode? restoreMode}) next = (active: false, restoreMode: null);
+
+  @override
+  Future<({bool active, Mode? restoreMode})> readOverride() async => next;
 }

@@ -224,6 +224,27 @@ class Service {
     return DateTime.fromMillisecondsSinceEpoch(ms);
   }
 
+  Future<({bool active, Mode? restoreMode})> getSsidDirectOverride() async {
+    Map<Object?, Object?>? result;
+    try {
+      result = await methodChannel
+          .invokeMethod<Map<Object?, Object?>>('getSsidDirectOverride')
+          .timeout(const Duration(seconds: 10));
+    } on TimeoutException {
+      return (active: false, restoreMode: null);
+    }
+    if (result == null) {
+      return (active: false, restoreMode: null);
+    }
+    final restoreMode = result['restoreMode'];
+    return (
+      active: result['active'] == true,
+      restoreMode: restoreMode is String
+          ? Mode.values.where((mode) => mode.name == restoreMode).firstOrNull
+          : null,
+    );
+  }
+
   bool get hasListeners {
     return _listeners.isNotEmpty;
   }

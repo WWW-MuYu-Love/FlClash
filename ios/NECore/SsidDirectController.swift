@@ -33,7 +33,15 @@ final class SsidDirectController {
   /// The mode to restore when the phone leaves a direct SSID, nil while no
   /// direct override is active. Only cleared once the restore is issued
   /// or the user takes the mode over; a failed 9090 call never drops it.
-  private var restoreMode: String?
+  private var restoreMode: String? {
+    didSet {
+      if oldValue != restoreMode {
+        syncOverrideState()
+      }
+    }
+  }
+  private var lastPersistedOverrideActive = false
+  private var lastPersistedOverrideRestoreMode: String?
   private var currentSsid: String?
   /// A direct SSID entered whose switch to direct is not confirmed yet.
   private var pendingEnterSsid: String?
@@ -46,6 +54,10 @@ final class SsidDirectController {
 
   init(sharedStateStore: PacketTunnelSharedStateStore) {
     self.sharedStateStore = sharedStateStore
+    // Seed the dedup from disk, so start() clears a stale flag from a killed run.
+    let persisted = sharedStateStore.loadSsidDirectOverride()
+    self.lastPersistedOverrideActive = persisted.active
+    self.lastPersistedOverrideRestoreMode = persisted.restoreMode
     let configuration = URLSessionConfiguration.ephemeral
     configuration.timeoutIntervalForRequest = Self.requestTimeout
     self.session = URLSession(configuration: configuration)
@@ -61,6 +73,7 @@ final class SsidDirectController {
         self?.refreshSsid()
       }
       monitor.start(queue: self.queue)
+      self.syncOverrideState()
       self.refreshSsid()
       self.logger.info("ssid direct monitor started")
     }
@@ -303,6 +316,20 @@ final class SsidDirectController {
     pendingRetryWorkItem = nil
     pendingRetryCount = 0
     pendingRetryExhausted = false
+  }
+
+  private func syncOverrideState() {
+    let active = restoreMode != nil
+    let restore = restoreMode
+    guard
+      active != lastPersistedOverrideActive
+        || restore != lastPersistedOverrideRestoreMode
+    else {
+      return
+    }
+    lastPersistedOverrideActive = active
+    lastPersistedOverrideRestoreMode = restore
+    sharedStateStore.saveSsidDirectOverride(active: active, restoreMode: restore)
   }
 
   private func fetchMode(completion: @escaping (String?) -> Void) {

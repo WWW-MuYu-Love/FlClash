@@ -234,6 +234,12 @@ final class ServiceChannel {
       Task {
         result(await tunnelController.getRunTime())
       }
+    case "getSsidDirectOverride":
+      let override = sharedStateStore.ssidDirectOverride()
+      result([
+        "active": override.active,
+        "restoreMode": override.restoreMode ?? "",
+      ])
     case "getProfileAppGroups":
       result(AppGroupResolver.profileAppGroups())
     case "getActiveVpnOptions":

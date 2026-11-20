@@ -9,6 +9,8 @@ final class SharedStateStore {
   private let sharedStatePreviousKey = "sharedStatePrevious"
   private let setupParamsPreviousKey = "setupParamsPrevious"
   private let runTimeKey = "runTime"
+  private let ssidDirectActiveKey = "ssidDirectActive"
+  private let ssidDirectRestoreModeKey = "ssidDirectRestoreMode"
 
   // Fresh instance per call site, so the counter is static: two saves in one millisecond must still differ.
   private static let versionLock = NSLock()
@@ -39,6 +41,17 @@ final class SharedStateStore {
       return nil
     }
     return String(data: data, encoding: .utf8)
+  }
+
+  /// The SSID direct override the extension is enforcing, if any.
+  func ssidDirectOverride() -> (active: Bool, restoreMode: String?) {
+    guard let userDefaults = UserDefaults(suiteName: appGroupIdentifier) else {
+      return (false, nil)
+    }
+    return (
+      userDefaults.bool(forKey: ssidDirectActiveKey),
+      userDefaults.string(forKey: ssidDirectRestoreModeKey)
+    )
   }
 
   func saveSharedState(_ data: Data) -> Bool {

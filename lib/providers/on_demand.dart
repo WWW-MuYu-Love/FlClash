@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:fl_clash/common/common.dart';
 import 'package:fl_clash/enum/enum.dart';
 import 'package:fl_clash/plugins/battery.dart';
+import 'package:fl_clash/plugins/service.dart';
 import 'package:fl_clash/plugins/wifi_ssid.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
@@ -104,5 +105,37 @@ class BatteryOptimizationIgnored extends _$BatteryOptimizationIgnored {
     } finally {
       _requesting = false;
     }
+  }
+}
+
+/// The SSID direct override the extension is enforcing, if any.
+@Riverpod(keepAlive: true)
+class SsidDirectOverride extends _$SsidDirectOverride {
+  @override
+  ({bool active, Mode? restoreMode}) build() {
+    ref.listen(appVisibleProvider, (_, visible) {
+      if (visible) {
+        unawaited(refresh());
+      }
+    });
+    unawaited(refresh());
+    return (active: false, restoreMode: null);
+  }
+
+  Future<void> refresh() async {
+    final next = await readOverride();
+    if (!ref.mounted || next == state) {
+      return;
+    }
+    state = next;
+  }
+
+  @protected
+  Future<({bool active, Mode? restoreMode})> readOverride() async {
+    if (!system.isIOS) {
+      return (active: false, restoreMode: null);
+    }
+    return await service?.getSsidDirectOverride() ??
+        (active: false, restoreMode: null);
   }
 }
