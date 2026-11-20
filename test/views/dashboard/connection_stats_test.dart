@@ -137,7 +137,9 @@ void main() {
     await teardownCard(tester);
   });
 
-  testWidgets('takes the Core count and never asks 9090', (tester) async {
+  testWidgets('takes the 9090 snapshot count over the Core count', (
+    tester,
+  ) async {
     when(
       () => core.getConnectionCount(route: CoreRoute.app),
     ).thenAnswer((_) async => 34);
@@ -156,14 +158,35 @@ void main() {
     await pumpCard(tester);
     await tester.pump(const Duration(seconds: 2));
 
-    expect(find.text('34'), findsOneWidget);
-    expect(find.text('61'), findsNothing);
-    expect(client.fetchConnectionsCalls, 0);
+    expect(find.text('61'), findsOneWidget);
+    expect(find.text('34'), findsNothing);
+    expect(client.fetchConnectionsCalls, greaterThan(0));
 
     await teardownCard(tester);
   });
 
-  testWidgets('falls back to the 9090 snapshot count when the Core fails', (
+  testWidgets('falls back to the Core count when 9090 answers nothing', (
+    tester,
+  ) async {
+    when(
+      () => core.getConnectionCount(route: CoreRoute.app),
+    ).thenAnswer((_) async => 34);
+    final client = _FakeExternalControllerClient(null);
+    addTearDown(client.close);
+    container.dispose();
+    container = createContainer(client: client);
+    globalState.container = container;
+
+    await pumpCard(tester);
+    await tester.pump(const Duration(seconds: 2));
+
+    expect(find.text('34'), findsOneWidget);
+    expect(client.fetchConnectionsCalls, greaterThan(0));
+
+    await teardownCard(tester);
+  });
+
+  testWidgets('takes the 9090 snapshot count even when the Core fails', (
     tester,
   ) async {
     when(() => core.getConnectionCount(route: CoreRoute.app)).thenThrow(
