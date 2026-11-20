@@ -1,8 +1,10 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:math';
 
 import 'package:collection/collection.dart';
 import 'package:crypto/crypto.dart';
+import 'package:fl_clash/common/constant.dart';
 import 'package:fl_clash/common/string.dart';
 import 'package:fl_clash/common/yaml.dart';
 import 'package:fl_clash/enum/enum.dart';
@@ -80,6 +82,8 @@ class MitmModuleContent {
     this.script = const [],
     this.declaredScriptLines = const [],
     this.rules = const [],
+    this.ruleProviders = const {},
+    this.exits = const {},
     this.resourceUrls = const {},
     this.skipped = const [],
   });
@@ -104,6 +108,12 @@ class MitmModuleContent {
   final List<String> declaredScriptLines;
   int get declaredScripts => declaredScriptLines.length;
   final List<String> rules;
+
+  /// The rule sets a module's rules name, by the name the rule reads.
+  final Map<String, Map<String, Object?>> ruleProviders;
+
+  /// The exit names a module's rules name, for the profile to map.
+  final Set<String> exits;
   final Set<String> resourceUrls;
   final List<MitmModuleSkip> skipped;
 
@@ -126,10 +136,13 @@ class MitmModuleContent {
 
 /// The user's own hostnames come first, so an exclusion they wrote holds
 /// against any module.
-({MitmRules mitm, List<String> rules}) mergeMitmModules(
-  List<String> hostname,
-  Iterable<MitmModuleContent> modules,
-) {
+({
+  MitmRules mitm,
+  List<String> rules,
+  Map<String, Map<String, Object?>> ruleProviders,
+  Set<String> exits,
+})
+mergeMitmModules(List<String> hostname, Iterable<MitmModuleContent> modules) {
   final contents = modules.toList();
   List<String> all(List<String> Function(MitmModuleContent) of) => [
     for (final module in contents) ...of(module),
@@ -148,7 +161,32 @@ class MitmModuleContent {
       script: all((module) => module.script),
     ),
     rules: all((module) => module.rules),
+    ruleProviders: _mergeRuleProviders(contents),
+    exits: {for (final module in contents) ...module.exits},
   );
+}
+
+/// Inline sets of one name add up, as Surge merges a module's `[Ruleset]`
+/// lines into the set of that name.
+Map<String, Map<String, Object?>> _mergeRuleProviders(
+  List<MitmModuleContent> modules,
+) {
+  final merged = <String, Map<String, Object?>>{};
+  for (final module in modules) {
+    for (final MapEntry(:key, :value) in module.ruleProviders.entries) {
+      final previous = merged[key];
+      merged[key] = previous != null && value['type'] == 'inline'
+          ? {
+              ...value,
+              'payload': {
+                ...previous['payload']! as List,
+                ...value['payload']! as List,
+              }.toList(),
+            }
+          : {...value};
+    }
+  }
+  return merged;
 }
 
 Map<String, String> mitmAttachments(MitmModule module) => {
@@ -754,6 +792,40 @@ String? mitmTaskName(String line) {
   return name.isEmpty ? null : name;
 }
 
+/// A rule set refreshes daily unless the module says otherwise.
+const _ruleSetInterval = 86400;
+
+/// What follows a rule's payload when it is not its target.
+const _ruleOptions = {'no-resolve', 'extended-matching', 'pre-matching'};
+
+String? _builtInTarget(String policy) => switch (policy.toUpperCase()) {
+  'DIRECT' => 'DIRECT',
+  'REJECT-DROP' => 'REJECT-DROP',
+  final upper when _rejectActions.containsKey(upper) => 'REJECT',
+  _ => null,
+};
+
+List<String> mitmRulesWithExits(
+  List<String> rules,
+  Set<String> exits,
+  String Function(String exit) target,
+) => [
+  for (final rule in rules)
+    if (rule.split(',') case final parts
+        when exits.contains(parts[_targetIndex(parts)]))
+      (parts..[_targetIndex(parts)] = target(parts[_targetIndex(parts)])).join(
+        ',',
+      )
+    else
+      rule,
+];
+
+int _targetIndex(List<String> parts) =>
+    parts.last == 'no-resolve' ? parts.length - 2 : parts.length - 1;
+
+String _ruleSetName(String key) =>
+    'mitm-${sha1.convert(utf8.encode(key)).toString().substring(0, 12)}';
+
 String _scriptValue(String value) =>
     RegExp(r'[\s,"=\[\](){}]').hasMatch(value) ? _quoted(value) : value;
 
@@ -802,6 +874,8 @@ class _ModuleParser {
   final _script = <String>[];
   final _declaredScriptLines = <String>[];
   final _rules = <String>[];
+  final _ruleProviders = <String, Map<String, Object?>>{};
+  final _exits = <String>{};
   final _resourceUrls = <String>{};
   final _skipped = <MitmModuleSkip>[];
 
@@ -860,6 +934,8 @@ class _ModuleParser {
       script: _script,
       declaredScriptLines: _declaredScriptLines,
       rules: _rules,
+      ruleProviders: _ruleProviders,
+      exits: _exits,
       resourceUrls: _resourceUrls,
       skipped: _skipped,
     );
@@ -1191,6 +1267,27 @@ class _ModuleParser {
   void _readRule(String section, String line, {String? shown}) {
     final parts = _ruleParts(line);
     final type = parts.first.toUpperCase();
+    if (type == 'RULE-SET' && parts.length > 1) {
+      _readRuleSet(
+        section,
+        shown ?? line,
+        _unquote(parts[1]),
+        parts.length > 2 ? _unquote(parts[2].trim()) : 'DIRECT',
+        [...parts.skip(3)],
+      );
+      return;
+    }
+    if (type == 'DOMAIN-SET' && parts.length > 1) {
+      _readRuleSet(
+        section,
+        shown ?? line,
+        _unquote(parts[1]),
+        parts.length > 2 ? _unquote(parts[2].trim()) : 'DIRECT',
+        [...parts.skip(3)],
+        domainSet: true,
+      );
+      return;
+    }
     final policy = parts.length > 2 ? parts[2].toUpperCase() : null;
     if (type == 'URL-REGEX') {
       final action = _rejectActions[policy];
@@ -1201,12 +1298,11 @@ class _ModuleParser {
       }
       return;
     }
-    final target = switch (policy) {
-      'DIRECT' => 'DIRECT',
-      'REJECT-DROP' => 'REJECT-DROP',
-      final policy? when _rejectActions.containsKey(policy) => 'REJECT',
-      _ => null,
-    };
+    final named =
+        parts.length > 2 &&
+        parts[2].trim().isNotEmpty &&
+        !_ruleOptions.contains(parts[2].toLowerCase());
+    final target = named ? _target(_unquote(parts[2].trim())) : null;
     if (target == null) {
       _skip(section, shown ?? line, MitmModuleSkipReason.policy);
       return;
@@ -1219,6 +1315,75 @@ class _ModuleParser {
       return;
     }
     _rules.add([rule.body, target, if (rule.noResolve) 'no-resolve'].join(','));
+  }
+
+  /// A built-in policy, or an exit of the policy's name; Quantumult X writes
+  /// Loon's `PROXY` as `proxy`. An argument left unexpanded names nothing.
+  String? _target(String policy) {
+    if (_builtInTarget(policy) case final target?) {
+      return target;
+    }
+    if (policy.contains(r'${')) {
+      return null;
+    }
+    final exit = policy == 'proxy' ? 'PROXY' : policy;
+    _exits.add(exit);
+    return exit;
+  }
+
+  /// A RULE-SET of a URL, or of a file the module brings.
+  void _readRuleSet(
+    String section,
+    String line,
+    String value,
+    String policy,
+    List<String> options, {
+    bool domainSet = false,
+  }) {
+    final target = _target(policy);
+    if (target == null) {
+      _skip(section, line, MitmModuleSkipReason.rule);
+      return;
+    }
+    final String name;
+    if (RegExp(r'^https?://').hasMatch(value)) {
+      final interval = options
+          .map(
+            (option) => RegExp(
+              r'^update-interval\s*=\s*(-?\d+)$',
+            ).firstMatch(option.trim()),
+          )
+          .nonNulls
+          .map((match) => int.parse(match.group(1)!))
+          .firstOrNull;
+      name = _ruleSetName(domainSet ? 'domain-set:$value' : value);
+      _ruleProviders[name] = {
+        'type': 'http',
+        'behavior': domainSet ? 'domain' : 'classical',
+        'format': 'text',
+        'url': value,
+        'interval': max(interval ?? _ruleSetInterval, 0),
+      };
+    } else if (section == 'rules') {
+      _skip(section, line, MitmModuleSkipReason.rule);
+      return;
+    } else if (_resource(section, line, value) case final file?) {
+      name = _ruleSetName('file:${domainSet ? 'domain-set:' : ''}$file');
+      _ruleProviders[name] = {
+        'type': 'file',
+        'behavior': domainSet ? 'domain' : 'classical',
+        'format': 'text',
+        'path': '$mitmDirectoryName/$mitmResourcesDirectoryName/$file',
+      };
+    } else {
+      return;
+    }
+    final noResolve = options.any(
+      (option) => option.trim().toLowerCase() == 'no-resolve',
+    );
+    _rules.add(
+      ['RULE-SET', name, target, if (noResolve) 'no-resolve'].join(','),
+    );
   }
 
   ({String body, bool noResolve})? _translateRule(
