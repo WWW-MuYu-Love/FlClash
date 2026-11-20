@@ -151,7 +151,7 @@ final class SsidDirectOverrideProvider
 }
 
 String _$ssidDirectOverrideHash() =>
-    r'2e84e4b3e2a6021ec53491872b192b7717e703db';
+    r'ecff0e012fb9dbe8ff632c3e5995434679cf703a';
 
 /// The SSID direct override the extension is enforcing, if any.
 

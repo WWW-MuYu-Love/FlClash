@@ -611,7 +611,9 @@ abstract class Config with _$Config {
 
   factory Config.strictFromJson(Map<String, Object?> json) =>
       _withLegacyOverrideDns(
-        _$ConfigFromJson(_withLegacyTestUrl(_withLegacyRouteMode(json))),
+        _$ConfigFromJson(
+          _withLegacyTestUrl(_withLegacyRouteMode(_withLegacyTunKeys(json))),
+        ),
         json,
       );
 
@@ -686,5 +688,40 @@ Map<String, Object?> _withLegacyRouteMode(Map<String, Object?> json) {
         ...Map<String, Object?>.from(clash),
         'tun': {...Map<String, Object?>.from(tun), 'route-address': <String>[]},
       },
+  };
+}
+
+/// The app TUN section used to save its keys camelCased; the Core spells
+/// them kebab-cased, and the model follows it now.
+const _legacyTunKeys = {
+  'disableIcmpForwarding': 'disable-icmp-forwarding',
+  'endpointIndependentNat': 'endpoint-independent-nat',
+  'recvMsgX': 'recvmsgx',
+  'sendMsgX': 'sendmsgx',
+  'udpTimeout': 'udp-timeout',
+  'dnsHijack': 'dns-hijack',
+};
+
+Map<String, Object?> _withLegacyTunKeys(Map<String, Object?> json) {
+  final clash = json['patchClashConfig'];
+  final tun = clash is Map ? clash['tun'] : null;
+  if (clash is! Map || tun is! Map) {
+    return json;
+  }
+  final renamed = <String, Object?>{};
+  for (final MapEntry(key: old, value: value) in _legacyTunKeys.entries) {
+    if (tun.containsKey(old) && !tun.containsKey(value)) {
+      renamed[value] = tun[old];
+    }
+  }
+  if (renamed.isEmpty) {
+    return json;
+  }
+  return {
+    ...json,
+    'patchClashConfig': {
+      ...Map<String, Object?>.from(clash),
+      'tun': {...Map<String, Object?>.from(tun), ...renamed},
+    },
   };
 }

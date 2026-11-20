@@ -18,7 +18,9 @@ Set<String> _keysOf(String path, String struct, String tag) {
 }
 
 void main() {
-  final tunKeys = const Tun().toJson().keys.toSet();
+  // loopbackDevice is the iOS-only switch, carried to the extension through
+  // VpnOptions; the Core has no such key.
+  final tunKeys = const Tun().toJson().keys.toSet()..remove('loopbackDevice');
 
   test('every Tun key is a key of the core TUN section', () {
     expect(

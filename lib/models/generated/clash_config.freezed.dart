@@ -3760,7 +3760,7 @@ as bool?,
 /// @nodoc
 mixin _$Tun {
 
- bool get enable; String get device; TunStack get stack;@JsonKey(name: 'route-address') List<String> get routeAddress;@JsonKey(fromJson: _mtuFromJson) int get mtu;@JsonKey(name: 'congestion-controller', fromJson: _congestionControllerFromJson) String get congestionController;@JsonKey(name: 'route-exclude-address') List<String> get routeExcludeAddress; bool get disableIcmpForwarding; bool get endpointIndependentNat; bool get recvMsgX; bool get sendMsgX; int get udpTimeout; List<String> get dnsHijack; bool get loopbackDevice;
+ bool get enable; String get device; TunStack get stack;@JsonKey(name: 'route-address') List<String> get routeAddress;@JsonKey(fromJson: _mtuFromJson) int get mtu;@JsonKey(name: 'congestion-controller', fromJson: _congestionControllerFromJson) String get congestionController;@JsonKey(name: 'route-exclude-address') List<String> get routeExcludeAddress;@JsonKey(name: 'disable-icmp-forwarding') bool get disableIcmpForwarding;@JsonKey(name: 'endpoint-independent-nat') bool get endpointIndependentNat;@JsonKey(name: 'recvmsgx') bool get recvMsgX;@JsonKey(name: 'sendmsgx') bool get sendMsgX;@JsonKey(name: 'udp-timeout') int get udpTimeout;@JsonKey(name: 'dns-hijack') List<String> get dnsHijack; bool get loopbackDevice;
 /// Create a copy of Tun
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -3798,7 +3798,7 @@ abstract mixin class $TunCopyWith<$Res>  {
   factory $TunCopyWith(Tun value, $Res Function(Tun) _then) = _$TunCopyWithImpl;
 @useResult
 $Res call({
- bool enable, String device, TunStack stack,@JsonKey(name: 'route-address') List<String> routeAddress,@JsonKey(fromJson: _mtuFromJson) int mtu,@JsonKey(name: 'congestion-controller', fromJson: _congestionControllerFromJson) String congestionController,@JsonKey(name: 'route-exclude-address') List<String> routeExcludeAddress, bool disableIcmpForwarding, bool endpointIndependentNat, bool recvMsgX, bool sendMsgX, int udpTimeout, List<String> dnsHijack, bool loopbackDevice
+ bool enable, String device, TunStack stack,@JsonKey(name: 'route-address') List<String> routeAddress,@JsonKey(fromJson: _mtuFromJson) int mtu,@JsonKey(name: 'congestion-controller', fromJson: _congestionControllerFromJson) String congestionController,@JsonKey(name: 'route-exclude-address') List<String> routeExcludeAddress,@JsonKey(name: 'disable-icmp-forwarding') bool disableIcmpForwarding,@JsonKey(name: 'endpoint-independent-nat') bool endpointIndependentNat,@JsonKey(name: 'recvmsgx') bool recvMsgX,@JsonKey(name: 'sendmsgx') bool sendMsgX,@JsonKey(name: 'udp-timeout') int udpTimeout,@JsonKey(name: 'dns-hijack') List<String> dnsHijack, bool loopbackDevice
 });
 
 
@@ -3916,7 +3916,7 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( bool enable,  String device,  TunStack stack, @JsonKey(name: 'route-address')  List<String> routeAddress, @JsonKey(fromJson: _mtuFromJson)  int mtu, @JsonKey(name: 'congestion-controller', fromJson: _congestionControllerFromJson)  String congestionController, @JsonKey(name: 'route-exclude-address')  List<String> routeExcludeAddress,  bool disableIcmpForwarding,  bool endpointIndependentNat,  bool recvMsgX,  bool sendMsgX,  int udpTimeout,  List<String> dnsHijack,  bool loopbackDevice)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( bool enable,  String device,  TunStack stack, @JsonKey(name: 'route-address')  List<String> routeAddress, @JsonKey(fromJson: _mtuFromJson)  int mtu, @JsonKey(name: 'congestion-controller', fromJson: _congestionControllerFromJson)  String congestionController, @JsonKey(name: 'route-exclude-address')  List<String> routeExcludeAddress, @JsonKey(name: 'disable-icmp-forwarding')  bool disableIcmpForwarding, @JsonKey(name: 'endpoint-independent-nat')  bool endpointIndependentNat, @JsonKey(name: 'recvmsgx')  bool recvMsgX, @JsonKey(name: 'sendmsgx')  bool sendMsgX, @JsonKey(name: 'udp-timeout')  int udpTimeout, @JsonKey(name: 'dns-hijack')  List<String> dnsHijack,  bool loopbackDevice)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _Tun() when $default != null:
 return $default(_that.enable,_that.device,_that.stack,_that.routeAddress,_that.mtu,_that.congestionController,_that.routeExcludeAddress,_that.disableIcmpForwarding,_that.endpointIndependentNat,_that.recvMsgX,_that.sendMsgX,_that.udpTimeout,_that.dnsHijack,_that.loopbackDevice);case _:
@@ -3937,7 +3937,7 @@ return $default(_that.enable,_that.device,_that.stack,_that.routeAddress,_that.m
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( bool enable,  String device,  TunStack stack, @JsonKey(name: 'route-address')  List<String> routeAddress, @JsonKey(fromJson: _mtuFromJson)  int mtu, @JsonKey(name: 'congestion-controller', fromJson: _congestionControllerFromJson)  String congestionController, @JsonKey(name: 'route-exclude-address')  List<String> routeExcludeAddress,  bool disableIcmpForwarding,  bool endpointIndependentNat,  bool recvMsgX,  bool sendMsgX,  int udpTimeout,  List<String> dnsHijack,  bool loopbackDevice)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( bool enable,  String device,  TunStack stack, @JsonKey(name: 'route-address')  List<String> routeAddress, @JsonKey(fromJson: _mtuFromJson)  int mtu, @JsonKey(name: 'congestion-controller', fromJson: _congestionControllerFromJson)  String congestionController, @JsonKey(name: 'route-exclude-address')  List<String> routeExcludeAddress, @JsonKey(name: 'disable-icmp-forwarding')  bool disableIcmpForwarding, @JsonKey(name: 'endpoint-independent-nat')  bool endpointIndependentNat, @JsonKey(name: 'recvmsgx')  bool recvMsgX, @JsonKey(name: 'sendmsgx')  bool sendMsgX, @JsonKey(name: 'udp-timeout')  int udpTimeout, @JsonKey(name: 'dns-hijack')  List<String> dnsHijack,  bool loopbackDevice)  $default,) {final _that = this;
 switch (_that) {
 case _Tun():
 return $default(_that.enable,_that.device,_that.stack,_that.routeAddress,_that.mtu,_that.congestionController,_that.routeExcludeAddress,_that.disableIcmpForwarding,_that.endpointIndependentNat,_that.recvMsgX,_that.sendMsgX,_that.udpTimeout,_that.dnsHijack,_that.loopbackDevice);case _:
@@ -3957,7 +3957,7 @@ return $default(_that.enable,_that.device,_that.stack,_that.routeAddress,_that.m
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( bool enable,  String device,  TunStack stack, @JsonKey(name: 'route-address')  List<String> routeAddress, @JsonKey(fromJson: _mtuFromJson)  int mtu, @JsonKey(name: 'congestion-controller', fromJson: _congestionControllerFromJson)  String congestionController, @JsonKey(name: 'route-exclude-address')  List<String> routeExcludeAddress,  bool disableIcmpForwarding,  bool endpointIndependentNat,  bool recvMsgX,  bool sendMsgX,  int udpTimeout,  List<String> dnsHijack,  bool loopbackDevice)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( bool enable,  String device,  TunStack stack, @JsonKey(name: 'route-address')  List<String> routeAddress, @JsonKey(fromJson: _mtuFromJson)  int mtu, @JsonKey(name: 'congestion-controller', fromJson: _congestionControllerFromJson)  String congestionController, @JsonKey(name: 'route-exclude-address')  List<String> routeExcludeAddress, @JsonKey(name: 'disable-icmp-forwarding')  bool disableIcmpForwarding, @JsonKey(name: 'endpoint-independent-nat')  bool endpointIndependentNat, @JsonKey(name: 'recvmsgx')  bool recvMsgX, @JsonKey(name: 'sendmsgx')  bool sendMsgX, @JsonKey(name: 'udp-timeout')  int udpTimeout, @JsonKey(name: 'dns-hijack')  List<String> dnsHijack,  bool loopbackDevice)?  $default,) {final _that = this;
 switch (_that) {
 case _Tun() when $default != null:
 return $default(_that.enable,_that.device,_that.stack,_that.routeAddress,_that.mtu,_that.congestionController,_that.routeExcludeAddress,_that.disableIcmpForwarding,_that.endpointIndependentNat,_that.recvMsgX,_that.sendMsgX,_that.udpTimeout,_that.dnsHijack,_that.loopbackDevice);case _:
@@ -3972,7 +3972,7 @@ return $default(_that.enable,_that.device,_that.stack,_that.routeAddress,_that.m
 @JsonSerializable()
 
 class _Tun implements Tun {
-  const _Tun({this.enable = false, this.device = appName, this.stack = TunStack.mips, @JsonKey(name: 'route-address')  List<String> routeAddress = const [], @JsonKey(fromJson: _mtuFromJson) this.mtu = defaultTunMtu, @JsonKey(name: 'congestion-controller', fromJson: _congestionControllerFromJson) this.congestionController = defaultCongestionController, @JsonKey(name: 'route-exclude-address')  List<String> routeExcludeAddress = const [], this.disableIcmpForwarding = false, this.endpointIndependentNat = false, this.recvMsgX = true, this.sendMsgX = false, this.udpTimeout = defaultTunUdpTimeout,  List<String> dnsHijack = const [], this.loopbackDevice = false}): _routeAddress = routeAddress,_routeExcludeAddress = routeExcludeAddress,_dnsHijack = dnsHijack;
+  const _Tun({this.enable = false, this.device = appName, this.stack = TunStack.mips, @JsonKey(name: 'route-address')  List<String> routeAddress = const [], @JsonKey(fromJson: _mtuFromJson) this.mtu = defaultTunMtu, @JsonKey(name: 'congestion-controller', fromJson: _congestionControllerFromJson) this.congestionController = defaultCongestionController, @JsonKey(name: 'route-exclude-address')  List<String> routeExcludeAddress = const [], @JsonKey(name: 'disable-icmp-forwarding') this.disableIcmpForwarding = false, @JsonKey(name: 'endpoint-independent-nat') this.endpointIndependentNat = false, @JsonKey(name: 'recvmsgx') this.recvMsgX = true, @JsonKey(name: 'sendmsgx') this.sendMsgX = false, @JsonKey(name: 'udp-timeout') this.udpTimeout = defaultTunUdpTimeout, @JsonKey(name: 'dns-hijack')  List<String> dnsHijack = const [], this.loopbackDevice = false}): _routeAddress = routeAddress,_routeExcludeAddress = routeExcludeAddress,_dnsHijack = dnsHijack;
   factory _Tun.fromJson(Map<String, dynamic> json) => _$TunFromJson(json);
 
 @override@JsonKey() final  bool enable;
@@ -3994,13 +3994,13 @@ class _Tun implements Tun {
   return EqualUnmodifiableListView(_routeExcludeAddress);
 }
 
-@override@JsonKey() final  bool disableIcmpForwarding;
-@override@JsonKey() final  bool endpointIndependentNat;
-@override@JsonKey() final  bool recvMsgX;
-@override@JsonKey() final  bool sendMsgX;
-@override@JsonKey() final  int udpTimeout;
+@override@JsonKey(name: 'disable-icmp-forwarding') final  bool disableIcmpForwarding;
+@override@JsonKey(name: 'endpoint-independent-nat') final  bool endpointIndependentNat;
+@override@JsonKey(name: 'recvmsgx') final  bool recvMsgX;
+@override@JsonKey(name: 'sendmsgx') final  bool sendMsgX;
+@override@JsonKey(name: 'udp-timeout') final  int udpTimeout;
  final  List<String> _dnsHijack;
-@override@JsonKey() List<String> get dnsHijack {
+@override@JsonKey(name: 'dns-hijack') List<String> get dnsHijack {
   if (_dnsHijack is EqualUnmodifiableListView) return _dnsHijack;
   // ignore: implicit_dynamic_type
   return EqualUnmodifiableListView(_dnsHijack);
@@ -4043,7 +4043,7 @@ abstract mixin class _$TunCopyWith<$Res> implements $TunCopyWith<$Res> {
   factory _$TunCopyWith(_Tun value, $Res Function(_Tun) _then) = __$TunCopyWithImpl;
 @override @useResult
 $Res call({
- bool enable, String device, TunStack stack,@JsonKey(name: 'route-address') List<String> routeAddress,@JsonKey(fromJson: _mtuFromJson) int mtu,@JsonKey(name: 'congestion-controller', fromJson: _congestionControllerFromJson) String congestionController,@JsonKey(name: 'route-exclude-address') List<String> routeExcludeAddress, bool disableIcmpForwarding, bool endpointIndependentNat, bool recvMsgX, bool sendMsgX, int udpTimeout, List<String> dnsHijack, bool loopbackDevice
+ bool enable, String device, TunStack stack,@JsonKey(name: 'route-address') List<String> routeAddress,@JsonKey(fromJson: _mtuFromJson) int mtu,@JsonKey(name: 'congestion-controller', fromJson: _congestionControllerFromJson) String congestionController,@JsonKey(name: 'route-exclude-address') List<String> routeExcludeAddress,@JsonKey(name: 'disable-icmp-forwarding') bool disableIcmpForwarding,@JsonKey(name: 'endpoint-independent-nat') bool endpointIndependentNat,@JsonKey(name: 'recvmsgx') bool recvMsgX,@JsonKey(name: 'sendmsgx') bool sendMsgX,@JsonKey(name: 'udp-timeout') int udpTimeout,@JsonKey(name: 'dns-hijack') List<String> dnsHijack, bool loopbackDevice
 });
 
 

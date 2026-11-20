@@ -1156,12 +1156,16 @@ abstract class Tun with _$Tun {
     @JsonKey(name: 'route-exclude-address')
     @Default([])
     List<String> routeExcludeAddress,
-    @Default(false) bool disableIcmpForwarding,
-    @Default(false) bool endpointIndependentNat,
-    @Default(true) bool recvMsgX,
-    @Default(false) bool sendMsgX,
-    @Default(defaultTunUdpTimeout) int udpTimeout,
-    @Default([]) List<String> dnsHijack,
+    @Default(false)
+    @JsonKey(name: 'disable-icmp-forwarding')
+    bool disableIcmpForwarding,
+    @Default(false)
+    @JsonKey(name: 'endpoint-independent-nat')
+    bool endpointIndependentNat,
+    @Default(true) @JsonKey(name: 'recvmsgx') bool recvMsgX,
+    @Default(false) @JsonKey(name: 'sendmsgx') bool sendMsgX,
+    @Default(defaultTunUdpTimeout) @JsonKey(name: 'udp-timeout') int udpTimeout,
+    @Default([]) @JsonKey(name: 'dns-hijack') List<String> dnsHijack,
     @Default(false) bool loopbackDevice,
   }) = _Tun;
 

@@ -293,13 +293,15 @@ _Tun _$TunFromJson(Map<String, dynamic> json) => _Tun(
           ?.map((e) => e as String)
           .toList() ??
       const [],
-  disableIcmpForwarding: json['disableIcmpForwarding'] as bool? ?? false,
-  endpointIndependentNat: json['endpointIndependentNat'] as bool? ?? false,
-  recvMsgX: json['recvMsgX'] as bool? ?? true,
-  sendMsgX: json['sendMsgX'] as bool? ?? false,
-  udpTimeout: (json['udpTimeout'] as num?)?.toInt() ?? defaultTunUdpTimeout,
+  disableIcmpForwarding: json['disable-icmp-forwarding'] as bool? ?? false,
+  endpointIndependentNat: json['endpoint-independent-nat'] as bool? ?? false,
+  recvMsgX: json['recvmsgx'] as bool? ?? true,
+  sendMsgX: json['sendmsgx'] as bool? ?? false,
+  udpTimeout: (json['udp-timeout'] as num?)?.toInt() ?? defaultTunUdpTimeout,
   dnsHijack:
-      (json['dnsHijack'] as List<dynamic>?)?.map((e) => e as String).toList() ??
+      (json['dns-hijack'] as List<dynamic>?)
+          ?.map((e) => e as String)
+          .toList() ??
       const [],
   loopbackDevice: json['loopbackDevice'] as bool? ?? false,
 );
@@ -312,12 +314,12 @@ Map<String, dynamic> _$TunToJson(_Tun instance) => <String, dynamic>{
   'mtu': instance.mtu,
   'congestion-controller': instance.congestionController,
   'route-exclude-address': instance.routeExcludeAddress,
-  'disableIcmpForwarding': instance.disableIcmpForwarding,
-  'endpointIndependentNat': instance.endpointIndependentNat,
-  'recvMsgX': instance.recvMsgX,
-  'sendMsgX': instance.sendMsgX,
-  'udpTimeout': instance.udpTimeout,
-  'dnsHijack': instance.dnsHijack,
+  'disable-icmp-forwarding': instance.disableIcmpForwarding,
+  'endpoint-independent-nat': instance.endpointIndependentNat,
+  'recvmsgx': instance.recvMsgX,
+  'sendmsgx': instance.sendMsgX,
+  'udp-timeout': instance.udpTimeout,
+  'dns-hijack': instance.dnsHijack,
   'loopbackDevice': instance.loopbackDevice,
 };
 
