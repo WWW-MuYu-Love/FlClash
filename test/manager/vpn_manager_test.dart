@@ -301,6 +301,10 @@ void main() {
     tester,
   ) async {
     await pumpVpnManager(tester);
+    // The mixed port only reaches the running service through the system
+    // proxy, so the proxy has to be on before the service starts.
+    updateVpn((state) => state.copyWith(systemProxy: true));
+    await container.read(vpnOptionsProvider.future);
     startService();
 
     container
