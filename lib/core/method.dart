@@ -9,6 +9,7 @@ enum CoreMethod {
   coreGc('core.gc'),
   coreMemory('core.memory'),
   coreCrash('core.crash'),
+  coreShutdown('core.shutdown'),
   configSetup('config.setup'),
   configUpdate('config.update'),
   configValidate('config.validate'),
