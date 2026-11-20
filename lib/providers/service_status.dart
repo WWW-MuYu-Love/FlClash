@@ -43,7 +43,6 @@ class ServiceStatus extends _$ServiceStatus
           coreEpoch: check.coreEpoch,
           routeVersion: check.routeVersion,
           hits: check.hits,
-          timedOut: check.status == ServiceProbeStatus.timeout,
         ),
     };
   }

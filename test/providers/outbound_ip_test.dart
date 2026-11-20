@@ -1,3 +1,4 @@
+import 'package:fl_clash/common/constant.dart';
 import 'package:fl_clash/common/service_probe.dart';
 import 'package:fl_clash/core/controller.dart';
 import 'package:fl_clash/core/external_controller.dart';
@@ -182,11 +183,20 @@ void main() {
     probe.watch(routedOutbound);
     await pumpEventQueue();
 
+    // A failure is confirmed before it shows: the first answer is held
+    // until a second one through the same exits agrees.
+    expect(
+      container.read(outboundIpProbeProvider).entryOf(routedOutbound).phase,
+      ProbePhase.probing,
+    );
+    await Future.delayed(probeConfirmDelay);
+    await pumpEventQueue();
+
     expect(
       container.read(outboundIpProbeProvider).entryOf(routedOutbound).phase,
       ProbePhase.failed,
     );
-    verify(() => core.outboundIp(any(), route: CoreRoute.app)).called(1);
+    verify(() => core.outboundIp(any(), route: CoreRoute.app)).called(2);
 
     probe.refresh([routedOutbound]);
     await pumpEventQueue();

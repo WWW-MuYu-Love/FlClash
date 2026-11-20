@@ -273,17 +273,26 @@ void main() {
       notifierOf(scope).watch(ServiceTarget.youtube);
       await tester.pump();
 
+      // A timeout is confirmed like any other failure: the first answer is
+      // held until a second one through the same exits agrees.
+      expect(
+        stateOf(scope).entryOf(ServiceTarget.youtube).phase,
+        ProbePhase.probing,
+      );
+      await tester.pump(probeConfirmDelay);
+      await tester.pump();
+
       final entry = stateOf(scope).entryOf(ServiceTarget.youtube);
       expect(entry.phase, ProbePhase.failed);
       expect(entry.value?.status, ServiceProbeStatus.timeout);
 
       await tester.pump(const Duration(minutes: 1));
-      expect(sweeps, hasLength(1));
+      expect(sweeps, hasLength(2));
 
       scope.read(routeTrackerProvider.notifier).markResumed();
       await tester.pump();
       await tester.pump(probeThrottleDuration);
-      expect(sweeps, hasLength(2));
+      expect(sweeps, hasLength(3));
       scope.dispose();
     },
   );
