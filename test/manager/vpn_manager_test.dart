@@ -490,9 +490,7 @@ void main() {
     await drainTimers(tester);
   });
 
-  testWidgets('a disconnected re-read never clears the flag', (
-    tester,
-  ) async {
+  testWidgets('a disconnected re-read never clears the flag', (tester) async {
     await pumpVpnManager(tester);
     container.read(initProvider.notifier).state = true;
     container.read(runTimeProvider.notifier).state = 1;
