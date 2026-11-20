@@ -401,6 +401,59 @@ void main() {
     );
     expect(tester.takeException(), isNull);
   });
+  testWidgets('the pinned top spacer is opaque in the card style', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(500, 1000);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final profile = Profile.normal();
+    const groups = [
+      Group(
+        name: 'Inner',
+        type: GroupType.Selector,
+        hidden: false,
+        all: [Proxy(name: 'Proxy 1', type: 'Direct')],
+      ),
+    ];
+    final container = ProviderContainer(
+      overrides: [
+        profilesProvider.overrideWith(() => TestProfiles([profile])),
+        currentProfileIdProvider.overrideWithBuild((_, _) => profile.id),
+        currentGroupsStateProvider.overrideWithValue(
+          const GroupsState(value: groups),
+        ),
+        groupsProvider.overrideWithValue(groups),
+      ],
+    );
+    addTearDown(container.dispose);
+    globalState.container = container;
+    container
+        .read(viewSizeProvider.notifier)
+        .update((_) => const Size(500, 1000));
+
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: const TestApp(child: ProxiesView()),
+      ),
+    );
+    container
+        .read(proxiesStyleSettingProvider.notifier)
+        .update((state) => state.copyWith(type: ProxiesType.icons));
+    await tester.pump();
+
+    expect(
+      find.descendant(
+        of: find.byType(PinnedHeaderSliver).first,
+        matching: find.byType(ColoredBox),
+      ),
+      findsOneWidget,
+    );
+    expect(tester.takeException(), isNull);
+  });
 }
 
 class _RecordingProxiesAction extends ProxiesAction {
