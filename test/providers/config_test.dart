@@ -55,7 +55,7 @@ void main() {
     test('default value has enable true', () {
       final value = container.read(vpnSettingProvider);
       expect(value.enable, true);
-      expect(value.systemProxy, true);
+      expect(value.systemProxy, false);
     });
 
     test('can update state', () {
