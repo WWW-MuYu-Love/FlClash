@@ -23,7 +23,10 @@ const _forbiddenImports = <String, String>{
 bool _isGenerated(String path) {
   return path.contains('/generated/') ||
       path.endsWith('.g.dart') ||
-      path.endsWith('.freezed.dart');
+      path.endsWith('.freezed.dart') ||
+      // intl_utils writes its generated localizations here; they import
+      // material.dart and are never edited by hand.
+      path.startsWith('lib/l10n/');
 }
 
 void main() {
