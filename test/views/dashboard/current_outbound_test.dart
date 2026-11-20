@@ -4,6 +4,7 @@ import 'package:fl_clash/common/service_probe.dart'
     show directOutbound, routedOutbound;
 import 'package:fl_clash/core/controller.dart';
 import 'package:fl_clash/core/interface.dart';
+import 'package:fl_clash/core/method.dart';
 import 'package:fl_clash/enum/enum.dart';
 import 'package:fl_clash/models/models.dart';
 import 'package:fl_clash/providers/ip_quality.dart';
@@ -296,7 +297,7 @@ void main() {
       tester,
     ) async {
       final core = _MockCore();
-      when(() => core.outboundIp(any())).thenAnswer((_) async => _address());
+      when(() => core.outboundIp(any(), route: CoreRoute.app)).thenAnswer((_) async => _address());
       var calls = 0;
       await tester.pumpWidget(
         _probingApp(
@@ -315,7 +316,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(calls, 2);
-      verify(() => core.outboundIp(any())).called(2);
+      verify(() => core.outboundIp(any(), route: CoreRoute.app)).called(2);
     });
 
     testWidgets('names its network by ASN when the organization is unknown', (
@@ -451,7 +452,7 @@ void main() {
     ) async {
       final core = _MockCore();
       var failing = true;
-      when(() => core.outboundIp(any())).thenAnswer((invocation) async {
+      when(() => core.outboundIp(any(), route: CoreRoute.app)).thenAnswer((invocation) async {
         final params =
             invocation.positionalArguments.single as OutboundIpParams;
         if (params.proxyName != directOutbound && failing) {
@@ -483,7 +484,7 @@ void main() {
       final core = _MockCore();
       final asked = <String>[];
       const failing = true;
-      when(() => core.outboundIp(any())).thenAnswer((invocation) async {
+      when(() => core.outboundIp(any(), route: CoreRoute.app)).thenAnswer((invocation) async {
         final params =
             invocation.positionalArguments.single as OutboundIpParams;
         asked.add(params.proxyName);
@@ -517,7 +518,7 @@ void main() {
       tester,
     ) async {
       final core = _MockCore();
-      when(() => core.outboundIp(any())).thenAnswer((invocation) async {
+      when(() => core.outboundIp(any(), route: CoreRoute.app)).thenAnswer((invocation) async {
         final params =
             invocation.positionalArguments.single as OutboundIpParams;
         return params.proxyName == directOutbound

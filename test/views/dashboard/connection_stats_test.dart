@@ -85,7 +85,7 @@ void main() {
 
   setUp(() {
     core = _MockCore();
-    when(() => core.getConnectionCount()).thenAnswer((_) async => 0);
+    when(() => core.getConnectionCount(route: CoreRoute.app)).thenAnswer((_) async => 0);
     container = createContainer();
     globalState.container = container;
   });
@@ -124,7 +124,7 @@ void main() {
   }
 
   testWidgets('counts what the Core is holding open', (tester) async {
-    when(() => core.getConnectionCount()).thenAnswer((_) async => 34);
+    when(() => core.getConnectionCount(route: CoreRoute.app)).thenAnswer((_) async => 34);
 
     await pumpCard(tester);
 
@@ -134,7 +134,7 @@ void main() {
   });
 
   testWidgets('takes the Core count and never asks 9090', (tester) async {
-    when(() => core.getConnectionCount()).thenAnswer((_) async => 34);
+    when(() => core.getConnectionCount(route: CoreRoute.app)).thenAnswer((_) async => 34);
     final client = _FakeExternalControllerClient(
       ExternalControllerSnapshot(
         uploadTotal: 1000,
@@ -160,7 +160,7 @@ void main() {
   testWidgets('falls back to the 9090 snapshot count when the Core fails', (
     tester,
   ) async {
-    when(() => core.getConnectionCount()).thenThrow(
+    when(() => core.getConnectionCount(route: CoreRoute.app)).thenThrow(
       const CoreMethodException(code: 'empty_response', message: 'empty'),
     );
     final client = _FakeExternalControllerClient(
@@ -214,7 +214,7 @@ void main() {
 
   testWidgets('a count too long for a third of a phone is shortened in any '
       'locale', (tester) async {
-    when(() => core.getConnectionCount()).thenAnswer((_) async => 99999);
+    when(() => core.getConnectionCount(route: CoreRoute.app)).thenAnswer((_) async => 99999);
     container.read(requestCountProvider.notifier).value = 123456;
 
     await pumpCard(tester, locale: const Locale('zh', 'CN'));

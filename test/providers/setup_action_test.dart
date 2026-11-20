@@ -2,12 +2,14 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:drift/native.dart';
 import 'package:fl_clash/common/common.dart';
 import 'package:fl_clash/core/controller.dart';
 import 'package:fl_clash/core/external_controller.dart';
 import 'package:fl_clash/core/interface.dart';
 import 'package:fl_clash/core/method.dart';
 import 'package:fl_clash/core/spill.dart';
+import 'package:fl_clash/database/database.dart' as db;
 import 'package:fl_clash/enum/enum.dart';
 import 'package:fl_clash/l10n/l10n.dart';
 import 'package:fl_clash/models/models.dart';
@@ -194,8 +196,11 @@ void main() {
 
   late TestSetupAction action;
   late ProviderContainer container;
+  late db.Database testDatabase;
 
   setUp(() {
+    testDatabase = db.Database(NativeDatabase.memory());
+    db.database = testDatabase;
     action = TestSetupAction();
     container = ProviderContainer(
       overrides: [
@@ -221,6 +226,7 @@ void main() {
     await container.read(setupActionProvider.notifier).setRunning(false);
     container.dispose();
     globalState.needInitStatus = true;
+    await testDatabase.close();
   });
 
   void markInitialized() {
@@ -355,6 +361,7 @@ void main() {
     test(
       'an initial start the core leaves unanswered is stopped again',
       () async {
+        loadAppLocalizations(const Locale('en'));
         action.unansweredCoreCalls.add(true);
 
         final applied = await container
@@ -1104,6 +1111,9 @@ void main() {
         when(() => core.updateConfig(any())).thenAnswer((_) async {
           order.add('xpc');
         });
+        when(
+          () => core.updateConfig(any(), route: CoreRoute.app),
+        ).thenAnswer((_) async {});
         final patchScope = buildPatchScoped(
           core: core,
           patchConfig: const PatchClashConfig(
@@ -1139,7 +1149,7 @@ void main() {
           'log-level': 'debug',
           'mixed-port': 7891,
           'allow-lan': true,
-          'find-process-mode': 'off',
+          'find-process-mode': 'strict',
           'ipv6': true,
           'tcp-concurrent': false,
         });

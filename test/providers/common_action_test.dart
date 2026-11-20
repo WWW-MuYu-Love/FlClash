@@ -1,9 +1,11 @@
 import 'dart:async';
 
+import 'package:drift/native.dart';
 import 'package:fl_clash/core/controller.dart';
 import 'package:fl_clash/core/external_controller.dart';
 import 'package:fl_clash/core/interface.dart';
 import 'package:fl_clash/core/method.dart';
+import 'package:fl_clash/database/database.dart' as db;
 import 'package:fl_clash/enum/enum.dart';
 import 'package:fl_clash/models/models.dart';
 import 'package:fl_clash/providers/action.dart';
@@ -38,6 +40,7 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   late MockCoreHandlerInterface core;
+  late db.Database testDatabase;
 
   setUpAll(() {
     core = MockCoreHandlerInterface();
@@ -49,7 +52,15 @@ void main() {
     );
   });
 
-  setUp(() => reset(core));
+  setUp(() {
+    reset(core);
+    testDatabase = db.Database(NativeDatabase.memory());
+    db.database = testDatabase;
+  });
+
+  tearDown(() async {
+    await testDatabase.close();
+  });
 
   ProviderContainer buildContainer() {
     final container = ProviderContainer(

@@ -4,6 +4,7 @@ import 'package:fl_clash/common/common.dart';
 import 'package:fl_clash/common/service_probe.dart';
 import 'package:fl_clash/core/controller.dart';
 import 'package:fl_clash/core/interface.dart';
+import 'package:fl_clash/core/method.dart';
 import 'package:fl_clash/enum/enum.dart';
 import 'package:fl_clash/models/models.dart';
 import 'package:fl_clash/providers/app.dart';
@@ -70,7 +71,9 @@ void main() {
   void answer(
     FutureOr<List<ServiceCheckItem>> Function(ServiceCheckParams params) check,
   ) {
-    when(() => core.serviceCheck(any())).thenAnswer(
+    when(
+      () => core.serviceCheck(any(), route: CoreRoute.app),
+    ).thenAnswer(
       (invocation) async =>
           check(invocation.positionalArguments.single as ServiceCheckParams),
     );
@@ -86,7 +89,9 @@ void main() {
     Widget body = const ServiceStatusCard(),
     IpQuality? ipQuality,
   }) {
-    when(() => core.outboundIp(any())).thenAnswer((invocation) async {
+    when(
+      () => core.outboundIp(any(), route: CoreRoute.app),
+    ).thenAnswer((invocation) async {
       if (outboundIp == null) return Completer<OutboundIpResult>().future;
       return outboundIp(
         invocation.positionalArguments.single as OutboundIpParams,
