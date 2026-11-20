@@ -1,3 +1,4 @@
+import 'package:fl_clash/common/constant.dart';
 import 'package:fl_clash/common/service_probe.dart';
 import 'package:fl_clash/core/controller.dart';
 import 'package:fl_clash/core/external_controller.dart';
@@ -8,6 +9,7 @@ import 'package:fl_clash/providers/core.dart';
 import 'package:fl_clash/providers/outbound_ip.dart';
 import 'package:fl_clash/providers/route_state.dart';
 import 'package:fl_clash/providers/routed_probe.dart';
+import 'package:fl_clash/providers/state.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:riverpod/riverpod.dart';
@@ -52,6 +54,8 @@ void main() {
             live: true,
           ),
         ),
+        isStartProvider.overrideWithValue(true),
+        suspendProvider.overrideWithValue(false),
         coreHandlerProvider.overrideWithValue(CoreController.scoped(core)),
         externalControllerClientProvider.overrideWithValue(client),
       ],
@@ -182,6 +186,8 @@ void main() {
     probe.watch(routedOutbound);
     await pumpEventQueue();
 
+    // A timeout shows at once: timed-out answers skip the failure
+    // confirmation.
     expect(
       container.read(outboundIpProbeProvider).entryOf(routedOutbound).phase,
       ProbePhase.failed,

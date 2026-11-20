@@ -12,6 +12,7 @@ import 'package:fl_clash/providers/core.dart';
 import 'package:fl_clash/providers/route_state.dart';
 import 'package:fl_clash/providers/routed_probe.dart';
 import 'package:fl_clash/providers/service_status.dart';
+import 'package:fl_clash/providers/state.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
@@ -88,6 +89,8 @@ void main() {
             live: synced,
           ),
         ),
+        isStartProvider.overrideWithValue(true),
+        suspendProvider.overrideWithValue(false),
         coreHandlerProvider.overrideWithValue(CoreController.scoped(core)),
         externalControllerClientProvider.overrideWithValue(
           _FakeExternalControllerClient(null),
@@ -273,18 +276,20 @@ void main() {
       notifierOf(scope).watch(ServiceTarget.youtube);
       await tester.pump();
 
+      // A timeout shows at once: timed-out answers skip the failure
+      // confirmation.
       final entry = stateOf(scope).entryOf(ServiceTarget.youtube);
       expect(entry.phase, ProbePhase.failed);
       expect(entry.value?.status, ServiceProbeStatus.timeout);
 
-      await tester.pump(const Duration(seconds: 1));
-      scope.read(routeTrackerProvider.notifier).markResumed();
-      await tester.pump();
+      await tester.pump(const Duration(minutes: 1));
       expect(sweeps, hasLength(1));
 
+      scope.read(routeTrackerProvider.notifier).markResumed();
+      await tester.pump();
       await tester.pump(probeThrottleDuration);
       expect(sweeps, hasLength(2));
-      await tester.pump(probeThrottleDuration);
+      scope.dispose();
     },
   );
 
