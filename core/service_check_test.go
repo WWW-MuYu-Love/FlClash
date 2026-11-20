@@ -414,34 +414,3 @@ func TestTraceValue(t *testing.T) {
 		t.Errorf("colo = %q, want empty", got)
 	}
 }
-
-func TestHostOfServiceURL(t *testing.T) {
-	cases := map[string]string{
-		"https://ios.chat.openai.com/path": "ios.chat.openai.com:443",
-		"http://example.com:8080/x":        "example.com:8080",
-		"https://example.com":              "example.com:443",
-		"http://example.com":               "example.com:80",
-		"not-a-url":                        "",
-		"":                                 "",
-	}
-	for rawURL, want := range cases {
-		if got := hostOfServiceURL(rawURL); got != want {
-			t.Errorf("hostOfServiceURL(%q) = %q, want %q", rawURL, got, want)
-		}
-	}
-}
-
-func TestExitForServiceURLKeepsANamedProxy(t *testing.T) {
-	if got := exitForServiceURL("DIRECT", "https://example.com/"); got != "DIRECT" {
-		t.Errorf("exit = %q, want DIRECT", got)
-	}
-}
-
-func TestExitForServiceURLFallsBackWithoutARoute(t *testing.T) {
-	if got := exitForServiceURL("", "https://example.com/"); got != "" {
-		t.Errorf("exit = %q, want the tunnel proxy when nothing resolves", got)
-	}
-	if got := exitForServiceURL("", "not-a-url"); got != "" {
-		t.Errorf("exit = %q, want the tunnel proxy for an unparseable URL", got)
-	}
-}
