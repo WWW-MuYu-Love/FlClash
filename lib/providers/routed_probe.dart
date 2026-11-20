@@ -66,12 +66,14 @@ class ProbeAnswer<V> {
     this.coreEpoch,
     this.routeVersion,
     this.hits = const [],
+    this.timedOut = false,
   });
 
   final V? value;
   final int? coreEpoch;
   final int? routeVersion;
   final List<RouteHit> hits;
+  final bool timedOut;
 }
 
 /// Keeps one answer per target and only ever shows one that still describes
