@@ -204,6 +204,22 @@ class CoreLib extends CoreHandlerInterface {
     }
   }
 
+  @override
+  Future<void> handListenersToAppCore() async {
+    if (!_listenerManagedByService || !_listenersStartedByService) {
+      return;
+    }
+    final serviceStopped = await _service!.stop();
+    if (!serviceStopped) {
+      throw const CoreMethodException(
+        code: 'service_refused',
+        message: 'The mobile service did not stop',
+      );
+    }
+    await invokeMethod(method: CoreMethod.listenerStart, route: CoreRoute.app);
+    _listenersStartedByService = false;
+  }
+
   Future<void> _ignoreUnanswered(Future<void> Function() command) async {
     try {
       await command();

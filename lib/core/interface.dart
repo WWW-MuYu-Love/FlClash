@@ -383,6 +383,11 @@ abstract class CoreHandlerInterface {
 
   Future<void> stopListener() => _command(CoreMethod.listenerStop);
 
+  /// iOS only: hand the listeners from the service back to the App core.
+  /// Stops the service, then starts the App core's own listeners. The
+  /// caller owns stopping the App core's listeners afterwards.
+  Future<void> handListenersToAppCore() async {}
+
   Future<RouteSnapshot> watchRoute(bool watch) {
     return _query(
       CoreMethod.routeWatch,

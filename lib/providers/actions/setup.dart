@@ -299,6 +299,7 @@ class SetupAction extends _$SetupAction {
   Future<bool> _stop(_RunRequest request) async {
     (Object, StackTrace)? unanswered;
     try {
+      await _handListenersToAppCoreForStop();
       await _setCoreRunning(request);
     } catch (error, stackTrace) {
       if (!_isUnanswered(error)) {
@@ -440,6 +441,29 @@ class SetupAction extends _$SetupAction {
       }
       await Future.delayed(tunnelSettlePollInterval);
     }
+  }
+
+  @visibleForTesting
+  Duration get stopProbeWait => const Duration(seconds: 1);
+
+  Future<void> _handListenersToAppCoreForStop() async {
+    if (!isIOSHandover) {
+      return;
+    }
+    if (ref.read(tunnelStateProvider) != TunnelState.connected) {
+      return;
+    }
+    try {
+      await _core.handListenersToAppCore();
+    } catch (error) {
+      commonPrint.log(
+        'handing listeners to the App core failed: ${compactError(error)}',
+        logLevel: LogLevel.warning,
+      );
+      return;
+    }
+    // Let the route settle and the probe land before the App core stops.
+    await Future.delayed(stopProbeWait);
   }
 
   void _rollbackRunning(_RunRequest request) {

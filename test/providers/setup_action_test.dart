@@ -86,6 +86,9 @@ class _IOSHandoverSetupAction extends TestSetupAction {
 
   @override
   Duration get tunnelSettlePollInterval => const Duration(milliseconds: 5);
+
+  @override
+  Duration get stopProbeWait => const Duration(milliseconds: 5);
 }
 
 class TestCommonAction extends CommonAction {
@@ -2693,7 +2696,7 @@ void main() {
     late _IOSHandoverSetupAction handoverAction;
     late _TunnelStateNotifier tunnelState;
 
-    ProviderContainer buildScopedContainer() {
+    ProviderContainer buildScopedContainer({_MockCoreHandlerInterface? core}) {
       handoverAction = _IOSHandoverSetupAction();
       final tunnelStateOverride =
           NotifierProvider<_TunnelStateNotifier, TunnelState?>(
@@ -2704,6 +2707,8 @@ void main() {
           profilesProvider.overrideWith(TestProfiles.new),
           setupActionProvider.overrideWith(() => handoverAction),
           commonActionProvider.overrideWith(TestCommonAction.new),
+          if (core != null)
+            coreHandlerProvider.overrideWithValue(CoreController.scoped(core)),
           tunnelStateProvider.overrideWith(
             (ref) => ref.watch(tunnelStateOverride),
           ),
@@ -2756,5 +2761,35 @@ void main() {
       expect(await handoverAction.setTunnelEnabled(false), isTrue);
       expect(handoverAction.coreRunningCalls, [false, true]);
     });
+
+    test(
+      'stopping hands the listeners to the App core first when the tunnel is up',
+      () async {
+        final core = _MockCoreHandlerInterface();
+        buildScopedContainer(core: core);
+        await startCore();
+        tunnelState.set(TunnelState.connected);
+
+        expect(await handoverAction.setRunning(false), isTrue);
+
+        verify(() => core.handListenersToAppCore()).called(1);
+        expect(handoverAction.coreRunningCalls, contains(false));
+      },
+    );
+
+    test(
+      'stopping skips the handover when the tunnel is already down',
+      () async {
+        final core = _MockCoreHandlerInterface();
+        buildScopedContainer(core: core);
+        await startCore();
+        tunnelState.set(TunnelState.disconnected);
+
+        expect(await handoverAction.setRunning(false), isTrue);
+
+        verifyNever(() => core.handListenersToAppCore());
+        expect(handoverAction.coreRunningCalls, contains(false));
+      },
+    );
   });
 }

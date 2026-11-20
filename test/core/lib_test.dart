@@ -370,6 +370,45 @@ void main() {
         ]);
       },
     );
+
+    test(
+      'handing listeners to the App core stops the service and starts them',
+      () async {
+        final iosLib = CoreLib.scoped(service, listenerManagedByService: true);
+        await iosLib.start();
+        service.onInvokeMethod = (_) => const CoreMethodResponse(id: '1');
+        await iosLib.startListener();
+        service.calls.clear();
+        service.invokedCalls.clear();
+
+        await iosLib.handListenersToAppCore();
+
+        expect(service.calls.first, 'stop');
+        expect(service.invokedCalls.map((call) => (call.method, call.route)), [
+          (CoreMethod.listenerStart, CoreRoute.app),
+        ]);
+      },
+    );
+
+    test(
+      'handing listeners to the App core is a no-op when it already holds them',
+      () async {
+        container
+            .read(vpnSettingProvider.notifier)
+            .update((state) => state.copyWith(enable: false));
+        final iosLib = CoreLib.scoped(service, listenerManagedByService: true);
+        await iosLib.start();
+        service.onInvokeMethod = (_) => const CoreMethodResponse(id: '1');
+        await iosLib.startListener();
+        service.calls.clear();
+        service.invokedCalls.clear();
+
+        await iosLib.handListenersToAppCore();
+
+        expect(service.calls, isEmpty);
+        expect(service.invokedCalls, isEmpty);
+      },
+    );
   });
 
   group('invokeMethod', () {
