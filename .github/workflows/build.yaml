@@ -340,7 +340,7 @@ jobs:
   version:
     name: Version
     # Releases publish where the release links point: the public repository.
-    if: &release github.repository == 'chen08209/FlClash' && github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+    if: &release (github.repository == 'chen08209/FlClash' || github.repository == 'WWW-MuYu-Love/FlClash') && github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
     outputs:
       version: ${{ steps.tag.outputs.version }}
@@ -424,7 +424,10 @@ jobs:
           mv pubspec.yaml.tmp pubspec.yaml
 
       - name: Setup Android Signing
-        if: startsWith(matrix.platform,'android')
+        # No release keystore in this fork; an empty KEYSTORE would write a
+        # 0-byte keystore.jks and fail the build. Without it the Android
+        # build falls back to the debug signing config.
+        if: ${{ startsWith(matrix.platform, 'android') && secrets.KEYSTORE != '' }}
         run: |
           echo "${{ secrets.KEYSTORE }}" | base64 --decode > android/app/keystore.jks
           {
@@ -509,14 +512,6 @@ jobs:
       contents: write
     needs: [ version, build, dart, plugins, go, android, rust, windows-helper-test ]
     runs-on: ubuntu-latest
-    services:
-      telegram-bot-api:
-        image: aiogram/telegram-bot-api:latest
-        env:
-          TELEGRAM_API_ID: ${{ secrets.TELEGRAM_API_ID }}
-          TELEGRAM_API_HASH: ${{ secrets.TELEGRAM_API_HASH }}
-        ports:
-          - 8081:8081
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -567,16 +562,6 @@ jobs:
           fi
           dart run tool/changelog.dart render release "${target[@]}" --out release.md
           dart run tool/changelog.dart render telegram "${target[@]}" --out telegram.md
-
-      - name: Push to telegram
-        env:
-          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-          TAG: ${{ github.ref_name }}
-          RUN_ID: ${{ github.run_id }}
-        run: |
-          python -m pip install --upgrade pip
-          pip install requests
-          python release_telegram.py
 
       - name: Patch release.md
         run: |
