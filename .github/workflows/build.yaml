@@ -424,16 +424,25 @@ jobs:
           mv pubspec.yaml.tmp pubspec.yaml
 
       - name: Setup Android Signing
-        # No release keystore in this fork; an empty KEYSTORE would write a
-        # 0-byte keystore.jks and fail the build. Without it the Android
-        # build falls back to the debug signing config.
-        if: ${{ startsWith(matrix.platform, 'android') && secrets.KEYSTORE != '' }}
+        # No release keystore in this fork; without the guard an empty
+        # KEYSTORE would write a 0-byte keystore.jks and fail the build.
+        # (secrets cannot be read in a step `if`, so the check lives here.)
+        if: startsWith(matrix.platform,'android')
+        env:
+          KEYSTORE: ${{ secrets.KEYSTORE }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          STORE_PASSWORD: ${{ secrets.STORE_PASSWORD }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
         run: |
-          echo "${{ secrets.KEYSTORE }}" | base64 --decode > android/app/keystore.jks
+          if [ -z "$KEYSTORE" ]; then
+            echo 'No release keystore secret; the Android build falls back to the debug signing config.'
+            exit 0
+          fi
+          echo "$KEYSTORE" | base64 --decode > android/app/keystore.jks
           {
-            echo "keyAlias=${{ secrets.KEY_ALIAS }}"
-            echo "storePassword=${{ secrets.STORE_PASSWORD }}"
-            echo "keyPassword=${{ secrets.KEY_PASSWORD }}"
+            echo "keyAlias=$KEY_ALIAS"
+            echo "storePassword=$STORE_PASSWORD"
+            echo "keyPassword=$KEY_PASSWORD"
           } >> android/local.properties
 
       - name: Setup Go
