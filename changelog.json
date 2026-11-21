@@ -2,6 +2,1073 @@
   "schemaVersion": 2,
   "versions": [
     {
+      "version": "0.9.5",
+      "tag": "v0.9.5",
+      "date": "2026-11-22",
+      "prerelease": false,
+      "groups": [
+        {
+          "type": "feat",
+          "entries": [
+            {
+              "id": "7158fe0",
+              "scope": "mitm",
+              "text": "Modules can now route rules through exits and rule-set providers."
+            },
+            {
+              "id": "581d898",
+              "scope": "ios",
+              "text": "Mirror the on-demand SSID direct override onto the App core so the status card and service status show direct results"
+            },
+            {
+              "id": "cc64d33",
+              "scope": "dashboard",
+              "text": "Set the default dashboard cards to status, network speed, VPN switch, outbound mode, service status, connections, proxy groups, profiles and traffic statistics."
+            },
+            {
+              "id": "ac90aeb",
+              "scope": "ios",
+              "text": "The MITM settings follow the upstream options layout, and a trusted certificate can be removed so the Core generates a fresh one on restart."
+            },
+            {
+              "id": "95ab9ff",
+              "scope": "probe",
+              "text": "Restore the upstream probe scheduling with proxied from the host state."
+            },
+            {
+              "id": "980111f",
+              "scope": "proxies",
+              "text": "Show the leaf-node count on the node folder tab and tighten the folder bar insets"
+            },
+            {
+              "id": "b4f5249",
+              "scope": "proxies",
+              "text": "Rename the Icons proxy style to Cards"
+            },
+            {
+              "id": "f2f14a3",
+              "scope": "proxies",
+              "text": "Proxies page: a Leaf Nodes tab, nodes-only sorting, an opaque top bar, test-all in every style, larger group icons, and Icons/compact/plain are now the defaults; the traffic overview gauge is centred"
+            },
+            {
+              "id": "72d59a3",
+              "scope": "proxies",
+              "text": "Proxies grid: capsule folder tabs, in-group search, live speeds for the selected node, member group icons, and sorting that moves only node groups."
+            },
+            {
+              "id": "eb45c21",
+              "scope": "proxies",
+              "text": "Add an Icons style to the proxies page with full-width expanded groups, Zashboard-style group headers, folder tabs, and sort, size and icon style support"
+            },
+            {
+              "id": "41b198a",
+              "scope": "traffic",
+              "text": "Traffic statistics now ranks by policy group and egress node, and the rule ranking is removed."
+            },
+            {
+              "id": "7cdb7b5",
+              "scope": "proxies",
+              "text": "Add a Zashboard-style icon grid for proxy groups, with brand icons and a delay pill on each card."
+            },
+            {
+              "id": "aab8695",
+              "scope": "traffic",
+              "text": "Open traffic statistics in a half sheet, add a clear-statistics action, and center the overview gauge."
+            },
+            {
+              "id": "72f8006",
+              "scope": "dashboard",
+              "text": "Remove the Global connections globe card from the dashboard"
+            },
+            {
+              "id": "a2e0dff",
+              "scope": "traffic",
+              "text": "Show four grid cells in the month traffic trend."
+            },
+            {
+              "id": "a1f827b",
+              "scope": "traffic",
+              "text": "Show four grid cells in the week traffic trend."
+            },
+            {
+              "id": "1d14035",
+              "scope": "traffic",
+              "text": "Traffic trend bars are now the same thin width in every range."
+            },
+            {
+              "id": "785af93",
+              "scope": "traffic",
+              "text": "Traffic overview: remove the gauge inner disc, center the gauge on the total figure, and merge proxy/direct back into one cell."
+            },
+            {
+              "id": "a740c37",
+              "scope": "traffic",
+              "text": "Traffic trend charts show vertical dashed gridlines in day, week and month views"
+            },
+            {
+              "id": "e13b332",
+              "scope": "traffic",
+              "text": "Traffic statistics uptime label goes back to its original style"
+            },
+            {
+              "id": "b202dab",
+              "scope": "traffic",
+              "text": "Rule hit cards show hits and traffic on a single smaller line"
+            },
+            {
+              "id": "352db89",
+              "scope": "traffic",
+              "text": "Traffic statistics overview card matches the Stash layout"
+            },
+            {
+              "id": "9e0ade7",
+              "scope": "traffic",
+              "text": "Rule hit type tags use theme colors, with Match sharing RuleSet's fill"
+            },
+            {
+              "id": "2fe9b6c",
+              "scope": "traffic",
+              "text": "Fix traffic statistics trend axis labels wrapping, thin out trend bars, unfill rule type tags, and show full rule hit counts."
+            },
+            {
+              "id": "9835460",
+              "scope": "dashboard",
+              "text": "Add a dashboard card that shows Zashboard's global-connections globe in place."
+            },
+            {
+              "id": "741620e",
+              "scope": "traffic",
+              "text": "Move the rule ranking tab after domain and align the traffic statistics page closer to the Stash layout."
+            },
+            {
+              "id": "6b66345",
+              "scope": "traffic",
+              "text": "Restyle the traffic statistics page and dashboard card after the Stash layout, drop the process ranking tab, add tunnel uptime tracking, date paging, and a rule ranking tab."
+            },
+            {
+              "id": "4ffb730",
+              "text": "Add a traffic statistics page with day, week and month views, including totals, trends, rule hits and rankings, plus a dashboard card for today's traffic."
+            },
+            {
+              "id": "89aa066",
+              "scope": "ios",
+              "text": "A new 'Loopback 10.7.0.1' switch in the TUN section reflects 10.7.0.1 back to this device, so SideStore and SideInstaller can reach it while the VPN is on."
+            },
+            {
+              "id": "3f7aedf",
+              "scope": "mitm",
+              "text": "Loon conditional mock_file rewrites now load as Map Local entries"
+            },
+            {
+              "id": "386ea64",
+              "scope": "core",
+              "text": "Update the core to mihomo v1.19.34 (FlClash branch)"
+            },
+            {
+              "id": "0c21866",
+              "scope": "mitm",
+              "text": "MITM scripts can now answer requests directly with $done({response}) and the engine identifies itself as Surge to scripts"
+            },
+            {
+              "id": "85ad7a0",
+              "scope": "mitm",
+              "text": "Added MITM script execution for HTTP requests and responses, $persistentStore/$prefs, $httpClient, $notification, $network and cron scheduling."
+            },
+            {
+              "id": "21b5dcf",
+              "scope": "config",
+              "text": "Changed the default system proxy setting to off."
+            },
+            {
+              "id": "bfa174d",
+              "scope": "config",
+              "text": "Moved the outbound section from the network page to below the inbound section on the general page."
+            },
+            {
+              "id": "06f2079",
+              "scope": "config",
+              "text": "Moved the virtual network interface section above the include-all-networks section on the network page."
+            },
+            {
+              "id": "5f102fb",
+              "scope": "config",
+              "text": "Added a DNS hijack list to the TUN section and made the TCP keep-alive settings available on iOS."
+            },
+            {
+              "id": "10268d3",
+              "scope": "config",
+              "text": "Move the VPN block to the top of the network page."
+            },
+            {
+              "id": "66eb922",
+              "scope": "config",
+              "text": "Move the TUN section above the VPN section on the network page."
+            },
+            {
+              "id": "8156818",
+              "scope": "ios",
+              "text": "Hide the allow-bypass switch on iOS, where the packet tunnel has no per-app bypass API."
+            },
+            {
+              "id": "f9fdc2c",
+              "scope": "config",
+              "text": "Add the remaining TUN engine switches (disable ICMP forwarding, endpoint independent NAT, batch receive/send, UDP timeout) to the TUN section."
+            },
+            {
+              "id": "efa2dfa",
+              "scope": "config",
+              "text": "Show the TUN stack picker in the TUN section instead of the options section"
+            },
+            {
+              "id": "4f82aee",
+              "scope": "ios",
+              "text": "Show the iOS include-all-networks switches in their own section instead of mixed into the VPN section"
+            },
+            {
+              "id": "ef97d26",
+              "scope": "ios",
+              "text": "Add iOS-only VPN switches for include-all-networks plus the local-network, APN, cellular-service, route-enforcement and device-communication exclusions"
+            },
+            {
+              "id": "ff2ca0b",
+              "scope": "ios",
+              "text": "Show a restart banner when MITM settings change or the certificate becomes trusted, and give the restart button tap feedback"
+            },
+            {
+              "id": "8046afc",
+              "scope": "codemagic",
+              "text": "Builds now publish automatically to the v0.9.3-ios release."
+            },
+            {
+              "id": "79bc845",
+              "scope": "probe",
+              "text": "Dashboard probes no longer wait 5 seconds before falling back to the App core when 9090 does not answer."
+            },
+            {
+              "id": "5738548",
+              "scope": "ios",
+              "text": "The dashboard status, service status and outbound IP now stay working while the tunnel is up."
+            },
+            {
+              "id": "ed38845",
+              "scope": "ios",
+              "text": "Dashboard outbound IP now reads from the extension core over 9090 instead of the broken XPC channel."
+            },
+            {
+              "id": "1b58ae2",
+              "scope": "ios",
+              "text": "MITM page now reads captures from the extension core over 9090 instead of the broken XPC channel."
+            },
+            {
+              "id": "b23f4f5",
+              "scope": "ios",
+              "text": "The service card's route check now goes through the external controller first."
+            },
+            {
+              "id": "f97b130",
+              "scope": "ios",
+              "text": "The external controller is now always on, and its secret no longer changes."
+            },
+            {
+              "id": "8b469b7",
+              "scope": "ios",
+              "text": "9090-first dashboard, proxy, and delay paths no longer fall back to XPC; they go straight to the App core when the controller is unreachable, and delay tests now run through 9090 first."
+            },
+            {
+              "id": "709cb95",
+              "scope": "ios",
+              "text": "The bundled Zashboard web panel is back on the dashboard, opening at 127.0.0.1:9090/ui."
+            },
+            {
+              "id": "6705497",
+              "scope": "ios",
+              "text": "When the VPN tunnel fails to start, the error banner now names the reason (invalid configuration, disabled configuration, extension failure, or tunnel never started) instead of showing the raw system error."
+            },
+            {
+              "id": "f82811c",
+              "scope": "l10n",
+              "text": "Error banners now show translated messages for core start, stop, transport, session and lifecycle failures instead of the raw English error."
+            },
+            {
+              "id": "6182f03",
+              "scope": "dashboard",
+              "text": "The dashboard memory card now also shows the extension core's memory on iOS, so the total covers the VPN tunnel too."
+            },
+            {
+              "id": "7c364d9",
+              "scope": "ios",
+              "text": "iOS: keep the extension event queue inside the shared FlClash folder, so the App Group root holds only that folder."
+            },
+            {
+              "id": "9561fef",
+              "scope": "ios",
+              "text": "iOS: keep app data in the app's private directory and share only the tunnel profile and MITM files with the VPN extension, so the app stays alive in the background."
+            },
+            {
+              "id": "b3cccdd",
+              "scope": "mitm",
+              "text": "MITM body-rewrite and map-local now take effect on decrypted traffic."
+            },
+            {
+              "id": "9df4941",
+              "scope": "mitm",
+              "text": "MITM module scripts (cron, event and generic) now actually run, with their logs and result shown."
+            },
+            {
+              "id": "dcf3359",
+              "scope": "ios",
+              "text": "On-demand connection (per-SSID direct/disconnect) is back."
+            },
+            {
+              "id": "b4ba2c6",
+              "scope": "ios",
+              "text": "The core can now run without turning on the VPN switch."
+            },
+            {
+              "id": "eff52af",
+              "scope": "ios",
+              "text": "Error banners are now shown in Simplified Chinese."
+            },
+            {
+              "id": "a152fdc",
+              "scope": "mitm",
+              "text": "MITM captures now read from the extension core first, with the external controller and the app core as fallbacks"
+            },
+            {
+              "id": "037e17a",
+              "scope": "ios",
+              "text": "Live features now read from the extension core first, with the external controller and the app core as fallbacks."
+            },
+            {
+              "id": "83912b4",
+              "scope": "ssid",
+              "text": "Direct-mode SSIDs now switch the core to direct from the extension itself, and the mode is restored even if the controller is briefly unreachable."
+            },
+            {
+              "id": "f55dd39",
+              "scope": "mitm",
+              "text": "MITM captures now show in-flight exchanges live while the tunnel runs, as well as the persisted history after it stops."
+            },
+            {
+              "id": "567da5d",
+              "scope": "mitm",
+              "text": "MITM captures are now readable from the app over the controller as well as from the shared disk."
+            },
+            {
+              "id": "4be4f13",
+              "text": "Added a setting to hide the environment watermark (PRE/DEBUG ribbon) in the top-right corner."
+            },
+            {
+              "id": "28b22c3",
+              "scope": "ssid",
+              "text": "Newly added excluded SSIDs now default to Direct instead of Disconnect."
+            },
+            {
+              "id": "3495798",
+              "scope": "ssid",
+              "text": "The Exclude SSIDs cards now animate like the swipe actions on LiveContainer's subscription proxy page, close when you tap or swipe elsewhere, and show the SSID name and status centered."
+            },
+            {
+              "id": "ef444b5",
+              "scope": "on-demand",
+              "text": "Add per-SSID actions for excluded Wi-Fi networks: swipe left for direct mode, right to disconnect"
+            },
+            {
+              "id": "5f1ae6d",
+              "scope": "on-demand",
+              "text": "Excluded SSIDs now suspend the VPN on iOS"
+            },
+            {
+              "id": "8586826",
+              "scope": "mitm",
+              "text": "MITM captures are now stored on disk instead of in the extension's memory, so heavy capture sessions no longer push the VPN tunnel toward its memory limit; decrypted hosts and requests stay visible after the tunnel stops."
+            },
+            {
+              "id": "2ca67dd",
+              "scope": "core",
+              "text": "Add HTTPS decryption (MITM) to the core using the open-source mitmproxy-go engine."
+            },
+            {
+              "id": "216a7eb",
+              "scope": "ios",
+              "text": "Forward LAN TCP to the loopback proxy so LAN sharing works with loopback-only bind"
+            },
+            {
+              "id": "64bb9dc",
+              "scope": "ios",
+              "text": "Read dashboard data from the 9090 external controller with Router fallback"
+            },
+            {
+              "id": "6def8d9",
+              "scope": "ios",
+              "text": "Forward app core listeners to the extension on port+1"
+            }
+          ]
+        },
+        {
+          "type": "fix",
+          "entries": [
+            {
+              "id": "77977a7",
+              "scope": "tun",
+              "text": "TUN settings are saved with the Core's key names; existing settings carry over."
+            },
+            {
+              "id": "12aa5f6",
+              "scope": "ios",
+              "text": "Fix the spurious \"config is not applied\" banner on an on-demand cold start."
+            },
+            {
+              "id": "eab6dc8",
+              "scope": "ui",
+              "text": "The environment watermark follows the theme color."
+            },
+            {
+              "id": "ed9765e",
+              "scope": "dashboard",
+              "text": "Restarting the core from the live-status deck starts a stopped core."
+            },
+            {
+              "id": "9b6f3cf",
+              "scope": "dashboard",
+              "text": "Show the live-status button when the core stops."
+            },
+            {
+              "id": "e114fac",
+              "scope": "service",
+              "text": "Service detection is no longer pinned to the App core, so it is answered by the core that is actually routing."
+            },
+            {
+              "id": "6c5f4b1",
+              "scope": "ios",
+              "text": "Cold start with the tunnel already on no longer shows the 7890 bind error"
+            },
+            {
+              "id": "71ace08",
+              "scope": "proxies",
+              "text": "Proxies page: the top bar stays translucent in the list style and solid in the card style"
+            },
+            {
+              "id": "e2fe64f",
+              "scope": "service",
+              "text": "Service detection probes each service through its own node instead of the tunnel, so services show their own IPs"
+            },
+            {
+              "id": "af2de32",
+              "scope": "ios",
+              "text": "On iOS, stopping the Core now waits for the tunnel to release the listener ports before the App core starts its own listeners, so the Mixed listener no longer fails with address already in use."
+            },
+            {
+              "id": "8c7884b",
+              "scope": "ios",
+              "text": "On iOS, stopping the Core first hands the listeners back to the App core so the address returns to the local IP, then stops the App core."
+            },
+            {
+              "id": "319977e",
+              "scope": "ios",
+              "text": "Start the App core listeners before the extension on iOS, then hand them over once the tunnel is up."
+            },
+            {
+              "id": "d303d5c",
+              "scope": "vpn",
+              "text": "Restarting from a settings banner now re-applies the profile, so the changed settings reach the tunnel"
+            },
+            {
+              "id": "ad6ce08",
+              "scope": "proxies",
+              "text": "Proxies page: the top bar is translucent again; scrolled content shows through it"
+            },
+            {
+              "id": "1dff909",
+              "scope": "config",
+              "text": "Fix the TUN stack picker showing twice on the network page on mobile."
+            },
+            {
+              "id": "db320ff",
+              "scope": "proxies",
+              "text": "Speed up manual delay tests by running 32 at once, matching upstream."
+            },
+            {
+              "id": "5b975c7",
+              "scope": "proxies",
+              "text": "Keep the delay pill neutral while a test runs, and show the folder bar only in the card style."
+            },
+            {
+              "id": "a2e1934",
+              "scope": "probe",
+              "text": "Fix service detection showing a single IP for all services while the tunnel is up on iOS."
+            },
+            {
+              "id": "5552356",
+              "scope": "proxies",
+              "text": "Stretch the proxy folder tabs to fill the full row, aligned with the group cards below."
+            },
+            {
+              "id": "2c4b09a",
+              "scope": "traffic",
+              "text": "Lower the traffic overview gauge to sit 12 dp below the title row."
+            },
+            {
+              "id": "d1040d8",
+              "scope": "traffic",
+              "text": "Raise the traffic overview gauge to the top of the card, level with the title row."
+            },
+            {
+              "id": "43c5c62",
+              "scope": "traffic",
+              "text": "Centre the traffic overview gauge on the total traffic block so the gaps above and below it are even."
+            },
+            {
+              "id": "37b8eb5",
+              "scope": "ios",
+              "text": "The Loopback 10.7.0.1 switch now actually turns reflection in the core on and off."
+            },
+            {
+              "id": "58cd453",
+              "scope": "ios",
+              "text": "The TUN congestion controller, UDP timeout and DNS hijack list now reach the iOS core; they were silently dropped before."
+            },
+            {
+              "id": "9f2dd71",
+              "scope": "ios",
+              "text": "The 'App core applied the config, but the extension core did not receive it' banner no longer appears."
+            },
+            {
+              "id": "210da81",
+              "scope": "ios",
+              "text": "Excluded SSIDs now switch to rule mode instead of disconnecting the VPN"
+            },
+            {
+              "id": "f9a7e65",
+              "scope": "ios",
+              "text": "Dashboard mode segment now shows the mode the routing core actually runs, so an SSID override no longer leaves it showing the configured mode"
+            },
+            {
+              "id": "2f897a7",
+              "scope": "ios",
+              "text": "Remove the popup banner shown when the tunnel fails to start"
+            },
+            {
+              "id": "8894ca8",
+              "scope": "ios",
+              "text": "Log tunnel start failures at warning level instead of info level"
+            },
+            {
+              "id": "2c796cd",
+              "scope": "ios",
+              "text": "Log tunnel start failures at info level instead of error level"
+            },
+            {
+              "id": "bb6b4d9",
+              "scope": "core",
+              "text": "Fix the tunnel failing to start from the iOS VPN switch when the saved config path is unreadable"
+            },
+            {
+              "id": "fb650ab",
+              "scope": "ios",
+              "text": "Report a tunnel start failure even when iOS tears the tunnel down through the disconnecting state."
+            },
+            {
+              "id": "b5d2a91",
+              "scope": "ios",
+              "text": "A tunnel start that fails without the app driving it now leaves a failure report in the log."
+            },
+            {
+              "id": "7a3dec9",
+              "scope": "ios",
+              "text": "Fix the mixed-port bind failure when turning the VPN switch off while the tunnel is stopping."
+            },
+            {
+              "id": "eb702a9",
+              "scope": "ios",
+              "text": "An external VPN stop now also stops the core."
+            },
+            {
+              "id": "89ff87c",
+              "scope": "l10n",
+              "text": "Localized the Hosts title and the close-connections error title."
+            },
+            {
+              "id": "f0f5e00",
+              "scope": "ios",
+              "text": "Exporting the MITM certificate on iOS now asks first, and only opens the share sheet after confirming"
+            },
+            {
+              "id": "2bba87e",
+              "scope": "ios",
+              "text": "Install the MITM certificate through Safari and export it through the share sheet"
+            },
+            {
+              "id": "d81e3b8",
+              "scope": "ios",
+              "text": "Include enabled MITM modules' IPs and domains in the system proxy exception list"
+            },
+            {
+              "id": "bc812c0",
+              "scope": "mitm",
+              "text": "MITM module rules with ^ anchors now match as intended."
+            },
+            {
+              "id": "f6ece7f",
+              "scope": "mitm",
+              "text": "The MITM option switches now take effect: Block QUIC, HTTP/2, and decrypt when untrusted."
+            },
+            {
+              "id": "d390130",
+              "scope": "ios",
+              "text": "Replace the default system-proxy bypass list with private ranges and local suffixes"
+            },
+            {
+              "id": "2cf0b5d",
+              "scope": "ios",
+              "text": "Route MITM hosts around the system proxy so the tunnel captures them"
+            },
+            {
+              "id": "1364810",
+              "scope": "ios",
+              "text": "Drop the extension push failure banner; silence it on profile switch"
+            },
+            {
+              "id": "3cfc637",
+              "scope": "ios",
+              "text": "Pin node delay tests to the App core"
+            },
+            {
+              "id": "2d5f4b8",
+              "scope": "ios",
+              "text": "Sync node selection and mode to the App core so the status and service cards follow them"
+            },
+            {
+              "id": "87ef8d9",
+              "scope": "ios",
+              "text": "Rerun probes when the VPN options come back after a cold restart"
+            },
+            {
+              "id": "dbb245f",
+              "scope": "ios",
+              "text": "Retry the 9090 outbound-IP lookup while its answer is unusable"
+            },
+            {
+              "id": "6b33d0b",
+              "scope": "ios",
+              "text": "Wait for the 9090 listener before the first probe round and queue manual refreshes"
+            },
+            {
+              "id": "90a92f6",
+              "scope": "ios",
+              "text": "Report disconnecting instead of connecting while the tunnel stops"
+            },
+            {
+              "id": "1eb7b11",
+              "scope": "core",
+              "text": "Fix MITM capture not showing with the system proxy on by always rebuilding the mixed listener with the MITM-wrapped tunnel."
+            },
+            {
+              "id": "c359933",
+              "scope": "ios",
+              "text": "the local controller is now reached directly even with the system proxy on."
+            },
+            {
+              "id": "5c563a8",
+              "scope": "ios",
+              "text": "the running flag now re-syncs when the app reopens with the tunnel already up."
+            },
+            {
+              "id": "fca2593",
+              "scope": "requests",
+              "text": "MITM labels on the Requests page now update live as new captures arrive."
+            },
+            {
+              "id": "23a26a6",
+              "scope": "mitm",
+              "text": "Fixed MITM decryption not working while the system proxy is on."
+            },
+            {
+              "id": "7b83dcf",
+              "scope": "ios",
+              "text": "Fixed the dashboard, delay test, and Zashboard card going dead after swiping the app away and reopening it while the VPN was on."
+            },
+            {
+              "id": "e85cd10",
+              "scope": "ios",
+              "text": "Dashboard detection now recovers after returning to the app instead of staying failed until the next settings change."
+            },
+            {
+              "id": "b9e86cd",
+              "scope": "ios",
+              "text": "the extension now picks up the latest config on tunnel restarts instead of a stale saved copy."
+            },
+            {
+              "id": "e755f23",
+              "scope": "ios",
+              "text": "relaunching the app no longer stops a running tunnel when the extension misses a config push."
+            },
+            {
+              "id": "96b6203",
+              "scope": "ios",
+              "text": "clearing the DNS cache now works while the tunnel is running."
+            },
+            {
+              "id": "5e30a01",
+              "scope": "ios",
+              "text": "identical consecutive DNS log entries now collapse into one row with a count badge."
+            },
+            {
+              "id": "776ef85",
+              "scope": "ios",
+              "text": "detection waits longer for the extension controller to come up before falling back."
+            },
+            {
+              "id": "36d1a45",
+              "scope": "ios",
+              "text": "detection retries the extension controller once when the tunnel is still starting, instead of failing at once."
+            },
+            {
+              "id": "085786e",
+              "scope": "mitm",
+              "text": "MITM now decrypts whenever it is switched on."
+            },
+            {
+              "id": "42efcf2",
+              "scope": "ios",
+              "text": "Reopening the app no longer switches off a running tunnel."
+            },
+            {
+              "id": "a41287b",
+              "scope": "ios",
+              "text": "Fixed the tunnel being switched off when reopening the app after swiping it away."
+            },
+            {
+              "id": "a0e27bc",
+              "scope": "ios",
+              "text": "Config changes now reach the extension core over 9090 first, so mode and port changes apply even when the extension channel does not answer."
+            },
+            {
+              "id": "db0b197",
+              "scope": "ios",
+              "text": "The dashboard and proxy selection now prefer the local 9090 controller over the extension channel, wait 30 seconds before retrying a silent extension call, and log which call went unanswered."
+            },
+            {
+              "id": "9937788",
+              "scope": "ios",
+              "text": "The traffic poll now waits a minute before retrying the extension after an empty response, instead of retrying every second."
+            },
+            {
+              "id": "0c27553",
+              "scope": "ios",
+              "text": "The \"extension core did not receive the config\" banner now shows the actual failure reason in your language instead of a generic error."
+            },
+            {
+              "id": "a0f841c",
+              "scope": "dashboard",
+              "text": "The dashboard memory card no longer counts the App Core's memory twice on iOS, so its total now matches the real usage."
+            },
+            {
+              "id": "bfe06e0",
+              "scope": "ios",
+              "text": "Fixed proxy selection falling back to the previous node when the tunnel control channel was unreachable; the selection now reaches the extension through its controller as well."
+            },
+            {
+              "id": "9863f54",
+              "scope": "ios",
+              "text": "Dashboard traffic and memory now fall back to the app core when both the extension and the 9090 controller are unreachable."
+            },
+            {
+              "id": "c5cc817",
+              "scope": "ios",
+              "text": "Connections, request counts, and the Requests live feed now fall back to the app core when both the tunnel channel and the 9090 controller are unreachable, instead of showing an error."
+            },
+            {
+              "id": "0e3b0fc",
+              "scope": "ios",
+              "text": "Requests page keeps its 9090 fallback for live connections."
+            },
+            {
+              "id": "60bd001",
+              "scope": "ios",
+              "text": "Flipping the VPN switch while running now starts or stops just the tunnel on iOS, without restarting the core."
+            },
+            {
+              "id": "a244b7d",
+              "scope": "mitm",
+              "text": "MITM copy, export, and detail loading now fall back to the external controller and the app core when the extension does not answer"
+            },
+            {
+              "id": "1921289",
+              "scope": "ios",
+              "text": "Fix app-side detection: proxy delays, service status, route checks and DNS cache clearing now fall back to the extension core over 9090 when the app-to-extension message channel fails."
+            },
+            {
+              "id": "5d80992",
+              "scope": "ssid",
+              "text": "Fixed leaving a direct-mode Wi-Fi network while the controller was briefly unreachable permanently sticking in direct mode, and the app now recognizes an already-connected excluded Wi-Fi network on cold start."
+            },
+            {
+              "id": "7db93e4",
+              "scope": "core",
+              "text": "Fix MITM interception: TLS connections through the VPN tunnel are now actually inspected and decrypted when their host is in the MITM list."
+            },
+            {
+              "id": "98ac5a4",
+              "scope": "mitm",
+              "text": "MITM header rewrites work, changing the mixed port no longer breaks decrypted connections until restart, and capture limits behave as shown."
+            },
+            {
+              "id": "fbf7c72",
+              "scope": "mitm",
+              "text": "MITM changes now show a tunnel restart prompt, and the core logs the applied MITM state"
+            },
+            {
+              "id": "e49cb1f",
+              "scope": "mitm",
+              "text": "MITM no longer silently truncates request or response bodies over 1 MiB, and turning the capture switch off now really stops recording while decrypted-connection markers keep showing."
+            },
+            {
+              "id": "68ff185",
+              "scope": "mitm",
+              "text": "Fixed the MITM certificate export failing on iOS and the CA always showing as not installed after installing and trusting it."
+            },
+            {
+              "id": "abf5aa0",
+              "scope": "core",
+              "text": "Fixed the tunnel failing to start on the build with the MITM engine: the wrapper now forwards the provider interface the TUN listener requires."
+            },
+            {
+              "id": "6379afa",
+              "scope": "ios",
+              "text": "Tunnel start no longer reads stale config, restarting the core on iOS works again, and mode/proxy sync failures now warn and retry instead of silently diverging."
+            },
+            {
+              "id": "9b8f62c",
+              "scope": "ios",
+              "text": "Fix service detection and other extension calls failing with \"empty response\" after a tunnel restart by retrying on a freshly loaded tunnel session."
+            },
+            {
+              "id": "3baa0df",
+              "scope": "ios",
+              "text": "Harden iOS App Group shared-state handling: torn-write detection with fallback to the previous state, clearer errors when the tunnel config fails to stage or the shared container cannot be found, and re-migration of newer data files."
+            },
+            {
+              "id": "36cc8b3",
+              "scope": "ios",
+              "text": "Read the App Group from the containing app bundle in extensions"
+            },
+            {
+              "id": "0d85026",
+              "scope": "ios",
+              "text": "Discover the App Group from the provisioning profile"
+            },
+            {
+              "id": "34c1682",
+              "scope": "ios",
+              "text": "Retry a missed reply from the VPN extension once before failing, and stop the Zashboard panel from opening onto a login page when the controller secret is out of sync."
+            },
+            {
+              "id": "35c60b3",
+              "scope": "ios",
+              "text": "Read the dashboard live-connection count from 9090 first"
+            },
+            {
+              "id": "7e6853c",
+              "scope": "ios",
+              "text": "Default the required VPN options instead of failing decode"
+            },
+            {
+              "id": "aa4c8e1",
+              "scope": "ios",
+              "text": "Honor onlyStatisticsProxy for the 9090 traffic path"
+            },
+            {
+              "id": "62c8ef2",
+              "scope": "ios",
+              "text": "Skip the 9090 selection sync when the tunnel is down"
+            },
+            {
+              "id": "40955ff",
+              "scope": "ios",
+              "text": "Close connections through the 9090 controller when VPN is on"
+            },
+            {
+              "id": "36bf55a",
+              "scope": "ios",
+              "text": "Read Requests live feed from the 9090 external controller first"
+            },
+            {
+              "id": "fb3de2b",
+              "scope": "ios",
+              "text": "Mark the throwing NWListener initializer with try"
+            },
+            {
+              "id": "5ed99ed",
+              "scope": "ios",
+              "text": "Propagate proxy group selection to the 9090 external controller"
+            },
+            {
+              "id": "162c9f2",
+              "scope": "ios",
+              "text": "Keep the dashboard connections list when one entry is malformed"
+            },
+            {
+              "id": "2fe28c1",
+              "scope": "ios",
+              "text": "Exclude loopback from the tunnel so the system proxy reaches the local core"
+            },
+            {
+              "id": "c912e74",
+              "scope": "ios",
+              "text": "Stop the app core from binding the external controller"
+            },
+            {
+              "id": "8b6a105",
+              "scope": "ios",
+              "text": "Stop the app core from binding the external controller"
+            },
+            {
+              "id": "19e0405",
+              "scope": "ios",
+              "text": "Let the app core own the mixed port, extension skips it"
+            },
+            {
+              "id": "a0e0dd8",
+              "scope": "ios",
+              "text": "Stop the app core from binding the mixed port"
+            },
+            {
+              "id": "d3fac27",
+              "scope": "ios",
+              "text": "Stop the app core from binding the DNS listen port"
+            },
+            {
+              "id": "8732859",
+              "scope": "ios",
+              "text": "Link the core and the VPN switch like Android"
+            },
+            {
+              "id": "bcaa2c8",
+              "scope": "ios",
+              "text": "Let the tunnel start from Settings without the app"
+            },
+            {
+              "id": "efc052c",
+              "scope": "core",
+              "text": "Drop provider cache paths outside the core home directory"
+            },
+            {
+              "id": "5a70f8b",
+              "scope": "ios",
+              "text": "Surface the extension's real tunnel error"
+            },
+            {
+              "id": "20a7882",
+              "scope": "core",
+              "text": "Use the profile as-is when the base has no overlay"
+            },
+            {
+              "id": "c6ba237",
+              "scope": "ios",
+              "text": "Forward the built config when the profile has no base"
+            },
+            {
+              "id": "7a0068a",
+              "scope": "ios",
+              "text": "Carry the profile base in the shared state so the tunnel can start"
+            },
+            {
+              "id": "8cb6363",
+              "scope": "ios",
+              "text": "Report whether start options were sent on tunnel failure"
+            },
+            {
+              "id": "1e5bd23",
+              "scope": "ios",
+              "text": "Forward tunnel config through startVPNTunnel options"
+            },
+            {
+              "id": "665d8e5",
+              "text": "Clear external-ui-name so mihomo stops trying to download the web UI"
+            },
+            {
+              "id": "1c2c977",
+              "scope": "ios",
+              "text": "Surface the real tunnel state and tunnel start failures"
+            },
+            {
+              "id": "374f16a",
+              "scope": "ios",
+              "text": "CoreLib must exist on iOS, not only Android"
+            },
+            {
+              "id": "98957f0",
+              "text": "Await migrateIOSDataDirectory inside try in path.dart"
+            }
+          ]
+        },
+        {
+          "type": "revert",
+          "entries": [
+            {
+              "id": "2d55cb4",
+              "scope": "ios",
+              "text": "Restore the author's error log and banner for tunnel start failures."
+            },
+            {
+              "id": "822a60b",
+              "scope": "service",
+              "text": "Restore the upstream service detection with the main-line probe scheduling."
+            },
+            {
+              "id": "95f1c47",
+              "scope": "probe",
+              "text": "Restore the main-line probe scheduling."
+            },
+            {
+              "id": "4fb7aa7",
+              "scope": "service",
+              "text": "Restore the main-line service detection while keeping the new probe scheduling."
+            },
+            {
+              "id": "752d102",
+              "scope": "service",
+              "text": "Restore the App-core pin for the service status check."
+            },
+            {
+              "id": "ec93be2",
+              "text": "Excluded SSIDs disconnect the VPN again instead of switching to rule mode"
+            },
+            {
+              "id": "c88af80",
+              "scope": "core",
+              "text": "Revert the core to mihomo 024245dc."
+            },
+            {
+              "id": "8050b70",
+              "scope": "ios",
+              "text": "An external VPN stop no longer stops the core."
+            },
+            {
+              "id": "724c756",
+              "scope": "ios",
+              "text": "Restore status-card and service detection to the branch start, keep the probes"
+            },
+            {
+              "id": "08ba7a4",
+              "text": "Drop the MITM listener rebuild and the disconnecting state"
+            },
+            {
+              "id": "ed84554",
+              "scope": "ios",
+              "text": "Removed the per-SSID direct/disconnect actions and the non-dashboard 9090 fallbacks; the dashboard keeps its extension-controller chain."
+            },
+            {
+              "id": "9a3098f",
+              "scope": "ios",
+              "text": "Read dashboard connections table from the App core again"
+            }
+          ]
+        }
+      ]
+    },
+    {
       "version": "0.9.4",
       "tag": "v0.9.4",
       "date": "2026-11-19",
