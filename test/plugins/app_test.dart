@@ -2,11 +2,14 @@ import 'dart:async';
 import 'dart:math';
 
 import 'package:dio/dio.dart';
+import 'package:fl_clash/common/app_localizations.dart';
 import 'package:fl_clash/common/boot_record.dart';
 import 'package:fl_clash/common/constant.dart';
 import 'package:fl_clash/common/exception.dart';
+import 'package:fl_clash/enum/enum.dart';
 import 'package:fl_clash/plugins/app.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -22,6 +25,239 @@ void main() {
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(channel, null);
     App().clearPackageIconCache();
+  });
+
+  test('has no app plugin off Android', () {
+    expect(app, isNull);
+  });
+
+  test('a failed install is anything but success or abort', () {
+    expect(packageInstallFailed(0), isFalse);
+    expect(packageInstallFailed(3), isFalse);
+    expect(packageInstallFailed(1), isTrue);
+  });
+
+  test('exposes network changes as a stream', () {
+    expect(App().networkChanges, isNotNull);
+  });
+
+  test('watches the network while the stream is listened to', () async {
+    final watched = <bool>[];
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(channel, (call) async {
+          watched.add(call.arguments as bool);
+          return true;
+        });
+
+    final subscription = App().networkChanges.listen((_) {});
+    await pumpEventQueue();
+    await subscription.cancel();
+    await pumpEventQueue();
+
+    expect(watched, [true, false]);
+  });
+
+  test('reads the device info Android answers with', () async {
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(
+          channel,
+          (_) async => {'sdkInt': 34, 'isTelevision': false},
+        );
+
+    expect(await App().getDeviceInfo(), (sdkInt: 34, isTelevision: false));
+  });
+
+  test('forwards the simple platform calls and their answers', () async {
+    final methods = <String>[];
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(channel, (call) async {
+          methods.add(call.method);
+          return switch (call.method) {
+            'moveTaskToBack' => true,
+            'tip' => true,
+            'initShortcuts' => true,
+            'updateExcludeFromRecents' => true,
+            'extractAsset' => true,
+            'clearDownloads' => true,
+            'installPackage' => 0,
+            'hasRootAccess' => true,
+            'removeCaCertificateWithRoot' => true,
+            'openCertificateSettings' => true,
+            'getChinaPackageNames' => '["com.a","com.b"]',
+            'requestLocalNetworkPermission' => true,
+            'getPackages' =>
+              '[{"packageName":"com.a","label":"A","system":false,'
+                  '"internet":true,"lastUpdateTime":0}]',
+            _ => null,
+          };
+        });
+    loadAppLocalizations(const Locale('en'));
+    final device = App();
+    expect(await device.moveTaskToBack(), isTrue);
+    expect(await device.tip('hello'), isTrue);
+    expect(await device.initShortcuts(), isTrue);
+    expect(await device.updateExcludeFromRecents(true), isTrue);
+    await device.extractAsset('asset', '/files/asset');
+    await device.clearDownloads();
+    expect(await device.installPackage('/files/a.apk'), 0);
+    expect(await device.openAppSettings(), isFalse);
+    expect(await device.hasRootAccess(), isTrue);
+    expect(await device.removeCaCertificateWithRoot([1, 2, 3]), isTrue);
+    expect(await device.openCertificateSettings(), isTrue);
+    expect(await device.getChinaPackageNames(), ['com.a', 'com.b']);
+    expect(await device.requestLocalNetworkPermission(), isTrue);
+    final packages = await device.getPackages();
+    expect(packages.single.packageName, 'com.a');
+    expect(
+      methods,
+      containsAll([
+        'moveTaskToBack',
+        'tip',
+        'initShortcuts',
+        'updateExcludeFromRecents',
+        'extractAsset',
+        'clearDownloads',
+        'installPackage',
+        'hasRootAccess',
+        'removeCaCertificateWithRoot',
+        'openCertificateSettings',
+        'getChinaPackageNames',
+        'requestLocalNetworkPermission',
+        'getPackages',
+      ]),
+    );
+  });
+
+  test('locates a CA certificate across the Android stores', () async {
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(
+          channel,
+          (_) async => {'user': true, 'system': false, 'root': true},
+        );
+
+    expect(await App().locateCaCertificate([1, 2, 3]), (
+      user: true,
+      system: false,
+      root: true,
+    ));
+  });
+
+  test('maps every root CA install outcome', () async {
+    String? outcome = 'installed';
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(channel, (_) async => outcome);
+
+    expect(
+      await App().installCaCertificateWithRoot([1, 2, 3]),
+      MitmInstallOutcome.installed,
+    );
+    outcome = 'untilReboot';
+    expect(
+      await App().installCaCertificateWithRoot([1, 2, 3]),
+      MitmInstallOutcome.untilReboot,
+    );
+    outcome = 'denied';
+    expect(await App().installCaCertificateWithRoot([1, 2, 3]), isNull);
+  });
+
+  test('maps every CA install outcome', () async {
+    String? outcome = 'prompted';
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(channel, (_) async => outcome);
+
+    expect(
+      await App().installCaCertificate(
+        [1, 2, 3],
+        name: 'FlClash',
+        fileName: 'flclash-ca.crt',
+      ),
+      MitmInstallOutcome.prompted,
+    );
+    outcome = 'saved';
+    expect(
+      await App().installCaCertificate(
+        [1, 2, 3],
+        name: 'FlClash',
+        fileName: 'flclash-ca.crt',
+      ),
+      MitmInstallOutcome.saved,
+    );
+    outcome = 'denied';
+    expect(
+      await App().installCaCertificate(
+        [1, 2, 3],
+        name: 'FlClash',
+        fileName: 'flclash-ca.crt',
+      ),
+      isNull,
+    );
+  });
+
+  test('runs the exit hook Android asks for', () async {
+    var exits = 0;
+    final device = App();
+    device.onExit = () async => exits++;
+    addTearDown(() => device.onExit = null);
+
+    await TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .handlePlatformMessage(
+          channel.name,
+          channel.codec.encodeMethodCall(const MethodCall('exit')),
+          (_) {},
+        );
+
+    expect(exits, 1);
+  });
+
+  test('forwards floating keyboard and network changes', () async {
+    final device = App();
+    expect(device.floatingKeyboard.value, isFalse);
+
+    await TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .handlePlatformMessage(
+          channel.name,
+          channel.codec.encodeMethodCall(
+            const MethodCall('floatingImeChanged', true),
+          ),
+          (_) {},
+        );
+    expect(device.floatingKeyboard.value, isTrue);
+
+    await TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .handlePlatformMessage(
+          channel.name,
+          channel.codec.encodeMethodCall(
+            const MethodCall('networkChanged', {'wifi': true, 'vpn': false}),
+          ),
+          (_) {},
+        );
+  });
+
+  test('an unknown platform method is reported as unimplemented', () async {
+    final reply = await TestDefaultBinaryMessengerBinding
+        .instance
+        .defaultBinaryMessenger
+        .handlePlatformMessage(
+          channel.name,
+          channel.codec.encodeMethodCall(const MethodCall('nope')),
+          (_) {},
+        );
+
+    expect(reply, isNull);
+  });
+
+  test('returns the cached own icon without asking Android again', () async {
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(channel, (call) async {
+          final packageName = call.arguments['packageName'] as String;
+          return packageName == 'com.own'
+              ? '/icons/com.own.webp'
+              : '/icons/default_icon.webp';
+        });
+
+    final device = App();
+    final own = await device.getOwnPackageIcon('com.own');
+    expect(await device.getOwnPackageIcon('com.own'), same(own));
   });
 
   test('requests every package icon from Android only once', () async {

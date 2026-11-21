@@ -34,20 +34,45 @@ class _MutatingTileListener with TileListener {
   }
 }
 
+class _DefaultTileListener with TileListener {}
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   const channelName = '$packageName/tile';
   const codec = StandardMethodCodec();
 
-  Future<void> emitFromPlatform(String method) async {
+  Future<void> emit(String method, [Object? arguments]) async {
     await TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .handlePlatformMessage(
           channelName,
-          codec.encodeMethodCall(MethodCall(method)),
+          codec.encodeMethodCall(MethodCall(method, arguments)),
           null,
         );
   }
+
+  Future<void> emitFromPlatform(String method) async {
+    await emit(method);
+  }
+
+  test(
+    'a listener that overrides nothing still receives every action',
+    () async {
+      final listener = _DefaultTileListener();
+      Tile.instance.addListener(listener);
+      addTearDown(() => Tile.instance.removeListener(listener));
+
+      await expectLater(emit('start'), completes);
+      await expectLater(emit('detached'), completes);
+      await expectLater(emit('syncRunningState', {'running': true}), completes);
+      await expectLater(emit('syncRunningState'), completes);
+      await expectLater(emit('syncRunningState', 'not-a-map'), completes);
+    },
+  );
+
+  test('has no quick settings tile off Android and iOS', () {
+    expect(tile, isNull);
+  });
 
   test('routes every quick settings action to its listener callback', () async {
     final listener = _RecordingListener();

@@ -26,6 +26,23 @@ void main() {
     expect(receivedCall?.method, 'getSsid');
   });
 
+  test('the manager asks its host for the permission state', () async {
+    var nativeState = 0;
+    wifiSsidManager.resetForTesting(const AndroidWifiSsidHost());
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(channel, (call) async {
+          expect(call.method, anyOf('checkPermission', 'requestPermission'));
+          return nativeState;
+        });
+
+    expect(await wifiSsidManager.checkPermission(), WifiSsidPermission.granted);
+    nativeState = 2;
+    expect(
+      await wifiSsidManager.requestPermission(),
+      WifiSsidPermission.permanentlyDenied,
+    );
+  });
+
   test('the manager asks its host for the SSID', () async {
     wifiSsidManager.resetForTesting(const AndroidWifiSsidHost());
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger

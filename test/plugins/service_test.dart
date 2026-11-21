@@ -57,6 +57,8 @@ class _MutatingListener with ServiceListener {
   }
 }
 
+class _DefaultListener with ServiceListener {}
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
@@ -92,6 +94,114 @@ void main() {
           null,
         );
   }
+
+  Future<void> emitCall(MethodCall call) async {
+    await TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .handlePlatformMessage(channelName, codec.encodeMethodCall(call), null);
+  }
+
+  test('has no service plugin off Android and iOS', () {
+    expect(service, isNull);
+  });
+
+  test('exposes the tunnel state and error as listenables', () {
+    expect(Service().tunnelState.value, TunnelState.pending);
+    expect(Service().tunnelError.value, isNull);
+  });
+
+  group('tunnel reports', () {
+    test('a listener that overrides nothing still receives reports', () async {
+      final listener = _DefaultListener();
+      Service().addListener(listener);
+      addTearDown(() => Service().removeListener(listener));
+      mockChannel((_) async => true);
+      await Service().start();
+
+      await emitFromPlatform([
+        {'type': CoreEventType.crash.name, 'data': 'boom'},
+      ]);
+      await emitCall(
+        MethodCall('stopped', {'revision': calls.last.arguments as int}),
+      );
+
+      expect(Service().tunnelState.value, TunnelState.pending);
+    });
+
+    test('follows the tunnel state Android reports', () async {
+      await emitCall(const MethodCall('tunnelState', 'connected'));
+
+      expect(Service().tunnelState.value, TunnelState.connected);
+
+      await emitCall(const MethodCall('tunnelState', 'disconnected'));
+
+      expect(Service().tunnelState.value, TunnelState.disconnected);
+    });
+
+    test('reads a failure report with a diagnosis code', () async {
+      await emitCall(
+        const MethodCall('tunnelError', {
+          'code': 'extension_failed',
+          'detail': 'core init timed out',
+        }),
+      );
+
+      expect(Service().tunnelError.value, (
+        code: 'extension_failed',
+        detail: 'core init timed out',
+      ));
+    });
+
+    test('reads a bare failure string as an undiagnosed failure', () async {
+      await emitCall(const MethodCall('tunnelError', 'boom'));
+
+      expect(Service().tunnelError.value, (code: 'unknown', detail: 'boom'));
+    });
+
+    test('reads a failure it cannot parse as empty', () async {
+      await emitCall(const MethodCall('tunnelError', 42));
+
+      expect(Service().tunnelError.value, (code: 'unknown', detail: ''));
+    });
+  });
+
+  group('refreshTunnelState', () {
+    test('asks the runner to re-read the tunnel state once', () async {
+      mockChannel((_) async => null);
+
+      await Service().refreshTunnelState();
+
+      expect(calls.single.method, 'refreshTunnelState');
+    });
+  });
+
+  group('getSsidDirectOverride', () {
+    test('maps the native answer to the active flag and mode', () async {
+      mockChannel((_) async => {'active': true, 'restoreMode': 'global'});
+
+      expect(await Service().getSsidDirectOverride(), (
+        active: true,
+        restoreMode: Mode.global,
+      ));
+    });
+
+    test('treats a missing restore mode as no mode to restore', () async {
+      mockChannel((_) async => {'active': false});
+
+      expect(await Service().getSsidDirectOverride(), (
+        active: false,
+        restoreMode: null,
+      ));
+    });
+
+    test('treats no native answer as no override', () async {
+      mockChannel((_) async => null);
+
+      expect(await Service().getSsidDirectOverride(), (
+        active: false,
+        restoreMode: null,
+      ));
+    });
+  });
 
   setUp(() {
     calls = <MethodCall>[];
