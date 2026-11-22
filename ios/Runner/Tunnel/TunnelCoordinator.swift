@@ -28,6 +28,7 @@ final class TunnelCoordinator {
   private var tunnelRequest: TunnelRequest?
   private var tunnelWait: TunnelWait?
   private var tunnelWaitTimeoutTask: Task<Void, Never>?
+  private var pendingExternalStopTask: Task<Void, Never>?
   private var isCoordinatorRunning = false
   // A start that supersedes a stop before it stopped anything must still
   // cycle the tunnel, or a restart meant to apply new options is lost.
@@ -75,6 +76,7 @@ final class TunnelCoordinator {
     publishConnectionState()
     publishedTunnelState = target
     cancelTunnelWait()
+    cancelPendingExternalStop()
     log(
       "request target=\(target.description) generation=\(request.generation)"
     )
@@ -684,6 +686,9 @@ final class TunnelCoordinator {
     else {
       return
     }
+    if stableState == .running {
+      cancelPendingExternalStop()
+    }
     reportTunnelState(stableState)
     if publishedTunnelState == nil {
       // First observation: record it, but do not report it outward. The
@@ -764,8 +769,52 @@ final class TunnelCoordinator {
     guard publishedTunnelState != state else {
       return
     }
+    if state == .stopped {
+      scheduleExternalStopConfirmation()
+      return
+    }
     publishedTunnelState = state
     notifyExternalState(state)
+  }
+
+  private func cancelPendingExternalStop() {
+    pendingExternalStopTask?.cancel()
+    pendingExternalStopTask = nil
+  }
+
+  // A stopped report can be stale at launch or after a foreground
+  // transition, and publishing it switches a running tunnel off. Publish
+  // it only once a fresh read, after the status has had time to settle,
+  // still shows the tunnel stopped.
+  private func scheduleExternalStopConfirmation() {
+    cancelPendingExternalStop()
+    let generation = requestGeneration
+    pendingExternalStopTask = Task { @MainActor [weak self] in
+      try? await Task.sleep(nanoseconds: 2_000_000_000)
+      guard let self,
+        !Task.isCancelled,
+        generation == self.requestGeneration,
+        self.tunnelRequest == nil,
+        self.tunnelWait == nil,
+        self.publishedTunnelState != .stopped
+      else {
+        return
+      }
+      let manager: NETunnelProviderManager?
+      do {
+        manager = try await self.managerStore.loadManager(
+          createIfNeeded: false
+        )
+      } catch {
+        return
+      }
+      guard manager?.connection.status.tunnelState == .stopped else {
+        return
+      }
+      self.pendingExternalStopTask = nil
+      self.publishedTunnelState = .stopped
+      self.notifyExternalState(.stopped)
+    }
   }
 
   private func notifyExternalState(_ state: TunnelTarget) {
