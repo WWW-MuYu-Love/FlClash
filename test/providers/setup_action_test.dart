@@ -197,8 +197,11 @@ void main() {
   late TestSetupAction action;
   late ProviderContainer container;
   late db.Database testDatabase;
+  late Directory appRoot;
 
-  setUp(() {
+  setUp(() async {
+    appRoot = await Directory.systemTemp.createTemp();
+    await useAppPaths(appRoot);
     testDatabase = db.Database(NativeDatabase.memory());
     db.database = testDatabase;
     action = TestSetupAction();
@@ -227,6 +230,7 @@ void main() {
     container.dispose();
     globalState.needInitStatus = true;
     await testDatabase.close();
+    await appRoot.delete(recursive: true);
   });
 
   void markInitialized() {

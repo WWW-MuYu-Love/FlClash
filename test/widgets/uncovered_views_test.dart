@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 
+import 'package:code_forge/code_forge.dart';
 import 'package:dio/dio.dart';
 import 'package:fl_clash/common/app_localizations.dart';
 import 'package:fl_clash/common/exception.dart';
@@ -364,6 +365,12 @@ void main() {
       tester,
       overrides: [scriptsProvider.overrideWith(() => _TestScripts(const []))],
     );
+    Future<void> settleUntil(bool Function() done) async {
+      for (var i = 0; i < 100 && !done(); i++) {
+        await settle(tester, 1);
+      }
+    }
+
     await tester.pumpWidget(
       UncontrolledProviderScope(
         container: container,
@@ -374,7 +381,7 @@ void main() {
     await tester.tap(find.byTooltip('Add'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Start from scratch'));
-    await settle(tester, 22);
+    await settleUntil(() => find.byType(CodeForge).evaluate().isNotEmpty);
 
     await tester.enterText(
       find.descendant(
@@ -385,7 +392,9 @@ void main() {
     );
     await tester.pump();
     await tester.binding.handlePopRoute();
-    await settle(tester, 12);
+    await settleUntil(
+      () => find.text('Save the changes?').evaluate().isNotEmpty,
+    );
 
     expect(find.text('Save the changes?'), findsOneWidget);
   });
