@@ -668,6 +668,18 @@ void main() {
       expect(action.coreRunningCalls, isEmpty);
       expect(container.read(isStartProvider), isFalse);
     });
+
+    test('a restart clears the stopped status the stop step reports', () async {
+      markInitialized();
+      final setup = container.read(setupActionProvider.notifier);
+      await setup.setRunning(true);
+
+      expect(container.read(coreStatusProvider), CoreStatus.disconnected);
+
+      await setup.restartVpn();
+
+      expect(container.read(coreStatusProvider), CoreStatus.connected);
+    });
   });
 
   group('latest-intent arbitration', () {

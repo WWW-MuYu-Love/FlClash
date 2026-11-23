@@ -393,7 +393,11 @@ class SetupAction extends _$SetupAction {
       return;
     }
     await setRunning(false);
-    await setRunning(true, initialize: true);
+    if (await setRunning(true, initialize: true)) {
+      // The stop above reports the core disconnected, and only the
+      // cold-start path ever reports it connected again.
+      ref.read(coreStatusProvider.notifier).value = CoreStatus.connected;
+    }
   }
 
   @visibleForTesting
