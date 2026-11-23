@@ -14,10 +14,10 @@ import (
 
 func testTrafficInfo(upload, download int64) *statistic.TrackerInfo {
 	info := &statistic.TrackerInfo{
-		Metadata: &constant.Metadata{Host: "example.com", Process: "Safari"},
-		Start:    time.Date(2026, 11, 23, 10, 0, 0, 0, time.UTC),
-		Chain:    constant.Chain{"Node-A", "Proxy"},
-		Rule:     "RULE-SET",
+		Metadata:    &constant.Metadata{Host: "example.com", Process: "Safari"},
+		Start:       time.Date(2026, 11, 23, 10, 0, 0, 0, time.UTC),
+		Chain:       constant.Chain{"Node-A", "Proxy"},
+		Rule:        "RULE-SET",
 		RulePayload: "ads",
 	}
 	info.UploadTotal.Store(upload)
@@ -158,8 +158,8 @@ func TestTrafficJournalPrune(t *testing.T) {
 		t.Fatal(err)
 	}
 	now := time.Now()
-	oldName := now.Add(-4 * 24 * time.Hour).Format("2006-01-02-15") + trafficJournalFileSuffix
-	keepName := now.Add(-2 * 24 * time.Hour).Format("2006-01-02-15") + trafficJournalFileSuffix
+	oldName := now.Add(-4*24*time.Hour).Format("2006-01-02-15") + trafficJournalFileSuffix
+	keepName := now.Add(-2*24*time.Hour).Format("2006-01-02-15") + trafficJournalFileSuffix
 	for _, name := range []string{oldName, keepName, "notes.txt"} {
 		if err := os.WriteFile(filepath.Join(journalDir, name), []byte("x\n"), 0o644); err != nil {
 			t.Fatal(err)
