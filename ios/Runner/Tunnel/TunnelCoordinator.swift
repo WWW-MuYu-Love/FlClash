@@ -681,6 +681,12 @@ final class TunnelCoordinator {
       consumeWaitStatus(status)
       return
     }
+    // A start coming up means the tunnel is alive: drop a stop scheduled
+    // from the stale report just before it, instead of letting the
+    // confirmation publish it once the tunnel is back.
+    if status == .connecting {
+      cancelPendingExternalStop()
+    }
     guard tunnelRequest == nil,
       let stableState = status.tunnelState
     else {
@@ -800,15 +806,11 @@ final class TunnelCoordinator {
       else {
         return
       }
-      let manager: NETunnelProviderManager?
-      do {
-        manager = try await self.managerStore.loadManager(
-          createIfNeeded: false
-        )
-      } catch {
-        return
-      }
-      guard manager?.connection.status.tunnelState == .stopped else {
+      // Read the status straight from preferences: the cached manager's
+      // status only moves when this process receives a notification, so
+      // re-reading it can "confirm" the stale stop that scheduled this.
+      let freshStatus = await self.managerStore.freshTunnelStatus()
+      guard freshStatus?.tunnelState == .stopped else {
         return
       }
       self.pendingExternalStopTask = nil

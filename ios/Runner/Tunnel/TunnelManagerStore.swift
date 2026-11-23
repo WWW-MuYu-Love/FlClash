@@ -93,6 +93,23 @@ final class TunnelManagerStore {
     }
   }
 
+  /// The live tunnel status straight from preferences, bypassing the
+  /// cached manager. The cached connection's status only moves when this
+  /// process receives a status notification, so re-reading it can
+  /// "confirm" a stop that never happened. This read leaves the cache
+  /// alone: swapping the cached manager would break the waits and
+  /// requests holding the old one.
+  func freshTunnelStatus() async -> NEVPNStatus? {
+    await withCheckedContinuation { continuation in
+      NETunnelProviderManager.loadAllFromPreferences { managers, _ in
+        DispatchQueue.main.async {
+          let status = managers?.first(where: self.isManagedManager)?.connection.status
+          continuation.resume(returning: status)
+        }
+      }
+    }
+  }
+
   @discardableResult
   func invalidateCachedManager(forPreferenceError error: Error) -> Bool {
     guard isRetryablePreferenceError(error) else {
