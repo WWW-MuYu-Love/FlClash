@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:drift/native.dart';
 import 'package:fl_clash/common/common.dart';
 import 'package:fl_clash/database/database.dart';
@@ -13,6 +15,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:prism_ui/prism_ui.dart';
 
+import '../../helpers/app_paths.dart';
 import '../../helpers/host_scaffold.dart';
 import '../../helpers/test_app.dart';
 
@@ -69,6 +72,7 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   late ProviderContainer container;
+  late Directory appDir;
 
   ProviderContainer createContainer(TrafficStatisticsData data) {
     return ProviderContainer(
@@ -79,12 +83,17 @@ void main() {
     );
   }
 
-  setUp(() {
+  setUp(() async {
+    appDir = await Directory.systemTemp.createTemp();
+    await useAppPaths(appDir);
     container = createContainer(_data());
     globalState.container = container;
   });
 
-  tearDown(() => container.dispose());
+  tearDown(() async {
+    container.dispose();
+    await appDir.delete(recursive: true);
+  });
 
   Future<void> pumpWidget(
     WidgetTester tester,
@@ -157,7 +166,14 @@ void main() {
 
   Future<Database> pumpDatabaseBackedSheet(WidgetTester tester) async {
     final testDatabase = Database(NativeDatabase.memory());
-    addTearDown(testDatabase.close);
+    // Dispose before closing: Riverpod pauses stream subscriptions once the
+    // widgets unmount, and Drift's close waits on those paused listeners.
+    // The pump fires Drift's stream-cache timer so close() can finish.
+    addTearDown(() async {
+      container.dispose();
+      await tester.pump(const Duration(milliseconds: 100));
+      await testDatabase.close();
+    });
     container.dispose();
     container = ProviderContainer();
     globalState.container = container;

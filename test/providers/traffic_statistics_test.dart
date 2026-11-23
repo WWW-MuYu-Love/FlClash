@@ -1,118 +1,141 @@
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:drift/drift.dart' hide isNull, isNotNull;
 import 'package:drift/native.dart';
 import 'package:fl_clash/database/database.dart' as db;
-import 'package:fl_clash/models/models.dart';
 import 'package:fl_clash/providers/app.dart';
 import 'package:fl_clash/providers/traffic_statistics.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:path/path.dart' as path;
+
+import '../helpers/app_paths.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   late db.Database testDatabase;
   late ProviderContainer container;
-  late TrafficStatisticsRecorder recorder;
+  late Directory root;
 
-  TrackerInfo connection({
+  String hourName(DateTime at) =>
+      '${at.year}-'
+      '${at.month.toString().padLeft(2, '0')}-'
+      '${at.day.toString().padLeft(2, '0')}-'
+      '${at.hour.toString().padLeft(2, '0')}';
+
+  String line({
     required String id,
     String host = 'example.com',
     String process = 'Safari',
-    List<String> chains = const ['Node-A', 'Proxy'],
+    String proxy = 'Proxy',
+    String node = 'Node-A',
+    bool direct = false,
     String rule = 'RULE-SET',
     String rulePayload = 'ads',
-    int upload = 0,
-    int download = 0,
+    int upload = 10,
+    int download = 20,
     DateTime? start,
+    DateTime? end,
   }) {
-    return TrackerInfo(
-      id: id,
-      upload: upload,
-      download: download,
-      start: start ?? DateTime(2026, 11, 19, 10, 0),
-      metadata: Metadata(host: host, process: process),
-      chains: chains,
-      rule: rule,
-      rulePayload: rulePayload,
-    );
+    final now = DateTime.now();
+    return jsonEncode({
+      'id': id,
+      'host': host,
+      'process': process,
+      'proxy': proxy,
+      'node': node,
+      'direct': direct,
+      'rule': rule,
+      'rulePayload': rulePayload,
+      'upload': upload,
+      'download': download,
+      'start': (start ?? now).millisecondsSinceEpoch,
+      'end': (end ?? now).millisecondsSinceEpoch,
+    });
   }
 
-  setUp(() {
+  Future<File> journalFile(DateTime at, String contents) async {
+    final dir = Directory(path.join(root.path, 'traffic'));
+    await dir.create(recursive: true);
+    final file = File(path.join(dir.path, '${hourName(at)}.jsonl'));
+    await file.writeAsString(contents);
+    return file;
+  }
+
+  setUp(() async {
+    root = await Directory.systemTemp.createTemp();
+    await useAppPaths(root);
     testDatabase = db.Database(NativeDatabase.memory());
     db.database = testDatabase;
     container = ProviderContainer();
-    container.read(runTimeProvider.notifier).value = 1000;
-    recorder = container.read(trafficStatisticsRecorderProvider.notifier);
   });
 
   tearDown(() async {
     container.dispose();
     await testDatabase.close();
+    await root.delete(recursive: true);
   });
 
   Future<List<db.TrafficStatisticsRecord>> rows() async {
     return (testDatabase.select(testDatabase.trafficStatistics)).get();
   }
 
-  test('a connection is recorded once it leaves the live list', () async {
-    recorder.onRequest(connection(id: 'a', upload: 10, download: 20));
-    recorder.onRequest(connection(id: 'b', upload: 30, download: 40));
-    recorder.onRequestTraffic({'a': (upload: 100, download: 900)});
+  Future<List<db.TunnelSessionRecord>> sessions() async {
+    return (testDatabase.select(testDatabase.tunnelSessions)).get();
+  }
 
-    await recorder.onLiveConnections([
-      connection(id: 'a', upload: 100, download: 900),
-    ]);
+  test('journal rows are imported with their fields', () async {
+    await journalFile(
+      DateTime.now(),
+      '${line(id: 'a')}\n'
+      '${line(id: 'b', upload: 30, download: 40)}\n',
+    );
+    final recorder = container.read(trafficStatisticsRecorderProvider.notifier);
+    await recorder.importJournal();
 
     final recorded = await rows();
-    expect(recorded.map((row) => row.connectionId), ['b']);
-    expect(recorded.single.upload, 30);
-    expect(recorded.single.download, 40);
-    expect(recorded.single.host, 'example.com');
-    expect(recorded.single.process, 'Safari');
-    expect(recorded.single.proxy, 'Proxy');
-    expect(recorded.single.node, 'Node-A');
-    expect(recorded.single.direct, isFalse);
-    expect(recorded.single.rule, 'RULE-SET');
-    expect(recorded.single.rulePayload, 'ads');
-
-    await recorder.onLiveConnections([]);
-
-    final all = await rows();
-    expect(all.map((row) => row.connectionId), ['b', 'a']);
-    expect(all.last.upload, 100);
-    expect(all.last.download, 900);
+    expect(recorded.map((row) => row.connectionId), ['a', 'b']);
+    expect(recorded.first.upload, 10);
+    expect(recorded.first.download, 20);
+    expect(recorded.first.host, 'example.com');
+    expect(recorded.first.process, 'Safari');
+    expect(recorded.first.proxy, 'Proxy');
+    expect(recorded.first.node, 'Node-A');
+    expect(recorded.first.direct, isFalse);
+    expect(recorded.first.rule, 'RULE-SET');
+    expect(recorded.first.rulePayload, 'ads');
+    expect(recorded.first.profileId, 0);
   });
 
-  test(
-    'a connection missing from the events is picked up from the snapshot',
-    () async {
-      await recorder.onLiveConnections([
-        connection(id: 'a', upload: 5, download: 15),
-      ]);
-      await recorder.onLiveConnections([]);
-
-      final recorded = await rows();
-      expect(recorded.single.connectionId, 'a');
-      expect(recorded.single.upload, 5);
-      expect(recorded.single.download, 15);
-    },
-  );
-
-  test('a direct connection is recorded as direct', () async {
-    recorder.onRequest(
-      connection(
-        id: 'a',
-        host: '203.0.113.9',
-        process: '',
-        chains: const ['DIRECT'],
-        rule: 'DIRECT',
-        rulePayload: '',
-        upload: 10,
-        download: 40,
-      ),
+  test('a second import skips rows already in the database', () async {
+    await journalFile(
+      DateTime.now(),
+      '${line(id: 'a')}\n'
+      '${line(id: 'b', upload: 30, download: 40)}\n',
     );
+    final recorder = container.read(trafficStatisticsRecorderProvider.notifier);
+    await recorder.importJournal();
+    expect(await rows(), hasLength(2));
 
-    await recorder.onLiveConnections([]);
+    final second = ProviderContainer();
+    final secondRecorder = second.read(
+      trafficStatisticsRecorderProvider.notifier,
+    );
+    await secondRecorder.importJournal();
+
+    expect(await rows(), hasLength(2));
+    second.dispose();
+  });
+
+  test('a direct journal line is recorded as direct', () async {
+    await journalFile(
+      DateTime.now(),
+      '${line(id: 'a', host: '203.0.113.9', process: '', proxy: 'DIRECT', node: 'DIRECT', direct: true, rule: 'DIRECT', rulePayload: '', upload: 10, download: 40)}\n',
+    );
+    final recorder = container.read(trafficStatisticsRecorderProvider.notifier);
+    await recorder.importJournal();
 
     final recorded = await rows();
     expect(recorded.single.direct, isTrue);
@@ -120,18 +143,66 @@ void main() {
     expect(recorded.single.node, 'DIRECT');
   });
 
-  test('stopping the tunnel flushes the open connections', () async {
-    recorder.onRequest(connection(id: 'a', upload: 7, download: 8));
+  test('a malformed line never blocks the rest', () async {
+    await journalFile(
+      DateTime.now(),
+      '${line(id: 'a')}\n'
+      'not json\n'
+      '${line(id: 'b', upload: 30, download: 40)}\n',
+    );
+    final recorder = container.read(trafficStatisticsRecorderProvider.notifier);
+    await recorder.importJournal();
 
-    container.read(runTimeProvider.notifier).value = null;
-    recorder.onRequest(connection(id: 'b'));
-
-    await recorder.flush();
-
-    final recorded = await rows();
-    expect(recorded.map((row) => row.connectionId), ['a']);
-    expect(recorded.single.upload, 7);
+    expect((await rows()).map((row) => row.connectionId), ['a', 'b']);
   });
+
+  test('a partial trailing line waits for the next import', () async {
+    final now = DateTime.now();
+    final file = await journalFile(now, '');
+    final complete = line(id: 'a');
+    final partial = line(id: 'b', upload: 30, download: 40);
+    await file.writeAsString('$complete\n${partial.substring(0, 40)}');
+    final recorder = container.read(trafficStatisticsRecorderProvider.notifier);
+    await recorder.importJournal();
+    expect((await rows()).map((row) => row.connectionId), ['a']);
+    expect(await file.exists(), isTrue);
+
+    await file.writeAsString(
+      '${partial.substring(40)}\n',
+      mode: FileMode.append,
+    );
+    final second = ProviderContainer();
+    final secondRecorder = second.read(
+      trafficStatisticsRecorderProvider.notifier,
+    );
+    await secondRecorder.importJournal();
+
+    expect((await rows()).map((row) => row.connectionId), ['a', 'b']);
+    second.dispose();
+  });
+
+  test(
+    'a past-hour file is deleted after import, the current-hour file is kept',
+    () async {
+      final now = DateTime.now();
+      final past = await journalFile(
+        now.subtract(const Duration(hours: 2)),
+        '${line(id: 'a')}\n',
+      );
+      final current = await journalFile(
+        now,
+        '${line(id: 'b', upload: 30, download: 40)}\n',
+      );
+      final recorder = container.read(
+        trafficStatisticsRecorderProvider.notifier,
+      );
+      await recorder.importJournal();
+
+      expect((await rows()).map((row) => row.connectionId), ['a', 'b']);
+      expect(await past.exists(), isFalse);
+      expect(await current.exists(), isTrue);
+    },
+  );
 
   test('the statistics provider totals the day and fills the trend', () async {
     final now = DateTime.now();
@@ -238,32 +309,25 @@ void main() {
     expect(past.end, yesterday.add(const Duration(days: 1)));
   });
 
-  test(
-    'a tunnel session opens on the first event and closes on stop',
-    () async {
-      recorder.onRequest(connection(id: 'a', upload: 1, download: 2));
-      await recorder.flush();
+  test('a tunnel session opens on start and closes on stop', () async {
+    final recorder = container.read(trafficStatisticsRecorderProvider.notifier);
+    await recorder.noteTunnelRunning(true);
 
-      var sessions = await testDatabase
-          .select(testDatabase.tunnelSessions)
-          .get();
-      expect(sessions, hasLength(1));
-      expect(sessions.single.endedAt, isNull);
+    var found = await sessions();
+    expect(found, hasLength(1));
+    expect(found.single.endedAt, isNull);
 
-      container.read(runTimeProvider.notifier).value = null;
-      await Future<void>.delayed(Duration.zero);
-      await recorder.flush();
+    await recorder.noteTunnelRunning(false);
 
-      sessions = await testDatabase.select(testDatabase.tunnelSessions).get();
-      expect(sessions, hasLength(1));
-      expect(sessions.single.endedAt, isNotNull);
+    found = await sessions();
+    expect(found, hasLength(1));
+    expect(found.single.endedAt, isNotNull);
 
-      final data = await container.read(
-        trafficStatisticsProvider(TrafficStatisticsRange.day, 0).future,
-      );
-      expect(data.uptime, greaterThanOrEqualTo(Duration.zero));
-    },
-  );
+    final data = await container.read(
+      trafficStatisticsProvider(TrafficStatisticsRange.day, 0).future,
+    );
+    expect(data.uptime, greaterThanOrEqualTo(Duration.zero));
+  });
 
   test('the statistics provider fills the whole week', () async {
     final data = await container.read(
@@ -278,19 +342,18 @@ void main() {
   test(
     'clearing removes every record and session and empties the page',
     () async {
-      recorder.onRequest(connection(id: 'a', upload: 10, download: 20));
-      await recorder.flush();
-      container.read(runTimeProvider.notifier).value = null;
-      await Future<void>.delayed(Duration.zero);
-      await recorder.flush();
+      final file = await journalFile(DateTime.now(), '${line(id: 'a')}\n');
+      final recorder = container.read(
+        trafficStatisticsRecorderProvider.notifier,
+      );
+      await recorder.importJournal();
+      expect(await rows(), hasLength(1));
 
       await recorder.clear();
 
       expect(await rows(), isEmpty);
-      expect(
-        await testDatabase.select(testDatabase.tunnelSessions).get(),
-        isEmpty,
-      );
+      expect(await sessions(), isEmpty);
+      expect(await file.exists(), isFalse);
       final data = await container.read(
         trafficStatisticsProvider(TrafficStatisticsRange.day, 0).future,
       );
@@ -300,23 +363,21 @@ void main() {
     },
   );
 
-  test('clearing while the tunnel is up reopens a session and drops open '
-      'connections', () async {
-    recorder.onRequest(connection(id: 'a', upload: 10, download: 20));
-    await recorder.flush();
-    recorder.onRequest(connection(id: 'b', upload: 5, download: 6));
+  test('clearing while the tunnel is up reopens a session and deletes '
+      'journal files', () async {
+    final file = await journalFile(DateTime.now(), '${line(id: 'a')}\n');
+    container.read(runTimeProvider.notifier).value = 1000;
+    final recorder = container.read(trafficStatisticsRecorderProvider.notifier);
+    await recorder.importJournal();
+    expect(await rows(), hasLength(1));
 
     await recorder.clear();
 
     expect(await rows(), isEmpty);
-    final sessions = await testDatabase
-        .select(testDatabase.tunnelSessions)
-        .get();
-    expect(sessions, hasLength(1));
-    expect(sessions.single.endedAt, isNull);
-
-    await recorder.flush();
-    expect(await rows(), isEmpty);
+    expect(await file.exists(), isFalse);
+    final found = await sessions();
+    expect(found, hasLength(1));
+    expect(found.single.endedAt, isNull);
 
     final data = await container.read(
       trafficStatisticsProvider(TrafficStatisticsRange.day, 0).future,

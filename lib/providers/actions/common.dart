@@ -95,6 +95,9 @@ class CommonAction extends _$CommonAction {
       if (appTotalTraffic != null) {
         ref.read(totalTrafficProvider.notifier).value = appTotalTraffic;
       }
+      unawaited(
+        ref.read(trafficStatisticsRecorderProvider.notifier).importJournal(),
+      );
     } finally {
       _isUpdatingTraffic = false;
     }
@@ -112,11 +115,6 @@ class CommonAction extends _$CommonAction {
     if (snapshot == null) {
       return null;
     }
-    unawaited(
-      ref
-          .read(trafficStatisticsRecorderProvider.notifier)
-          .onLiveConnections(snapshot.connections),
-    );
     final onlyStatisticsProxy = ref.read(
       appSettingProvider.select((state) => state.onlyStatisticsProxy),
     );

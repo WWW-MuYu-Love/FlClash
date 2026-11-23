@@ -1,12 +1,14 @@
 import 'dart:async';
+import 'dart:convert';
+import 'dart:io';
 
-import 'package:collection/collection.dart';
 import 'package:drift/drift.dart';
 import 'package:fl_clash/common/common.dart';
 import 'package:fl_clash/database/database.dart';
 import 'package:fl_clash/enum/enum.dart';
 import 'package:fl_clash/models/models.dart';
 import 'package:fl_clash/providers/state.dart';
+import 'package:path/path.dart' as path;
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'generated/traffic_statistics.g.dart';
@@ -87,32 +89,30 @@ String _shortDateLabel(DateTime date) =>
 
 String _twoDigits(int value) => value.toString().padLeft(2, '0');
 
-/// Records closed connections while the tunnel is up: opens and traffic
-/// updates arrive as core events, and the live snapshot says which ones
-/// have closed. A connection the event queue dropped still shows up in the
-/// snapshot and is picked up from there.
 @Riverpod(keepAlive: true)
 class TrafficStatisticsRecorder extends _$TrafficStatisticsRecorder {
-  final _open = <String, _OpenConnection>{};
   DateTime? _lastPruneAt;
   DateTime? _lastInvalidatedAt;
+  DateTime? _lastImportAt;
   Future<void> _writes = Future.value();
+  Future<void>? _importing;
   int? _openSessionId;
+  final _importOffsets = <String, int>{};
 
   @override
   void build() {
-    // Pruning waits for the first live snapshot: the database may not be
-    // openable yet when this notifier is first read.
-    ref.listen(isStartProvider, (_, running) {
-      if (running) {
-        unawaited(_openSession());
-      } else {
-        unawaited(_closeSession());
-      }
-    });
+    unawaited(importJournal());
   }
 
   bool get _tunnelUp => ref.read(isStartProvider);
+
+  /// Opens a tunnel session when the tunnel starts and closes it when it
+  /// stops. Called directly from the setup action: a listener on the
+  /// tunnel state cannot do this, Riverpod pauses it while nothing
+  /// watches this provider.
+  Future<void> noteTunnelRunning(bool running) {
+    return running ? _openSession() : _closeSession();
+  }
 
   Future<void> _openSession() {
     final run = _writes.then((_) async {
@@ -150,82 +150,242 @@ class TrafficStatisticsRecorder extends _$TrafficStatisticsRecorder {
     return run;
   }
 
-  void _ensureSessionOpen() {
-    if (_openSessionId != null) {
-      return;
+  Future<void> importJournal() {
+    final running = _importing;
+    if (running != null) {
+      return running;
     }
-    unawaited(_openSession());
+    final now = DateTime.now();
+    final lastImportAt = _lastImportAt;
+    if (lastImportAt != null &&
+        now.difference(lastImportAt) < const Duration(seconds: 10)) {
+      return Future.value();
+    }
+    _lastImportAt = now;
+    final run = _writes.then((_) => _importJournal(now));
+    _importing = run;
+    _writes = run.then<void>((_) {}, onError: (_) {});
+    unawaited(
+      run.whenComplete(() {
+        if (identical(_importing, run)) {
+          _importing = null;
+        }
+      }),
+    );
+    return run;
   }
 
-  void onRequest(TrackerInfo connection) {
-    if (!_tunnelUp) {
-      unawaited(flush());
-      return;
-    }
-    _ensureSessionOpen();
-    final now = DateTime.now();
-    final existing = _open[connection.id];
-    if (existing == null) {
-      _open[connection.id] = _OpenConnection(connection, _profile(), now);
-    } else {
-      existing.refresh(connection, now);
-    }
-  }
-
-  void onRequestTraffic(Map<String, RequestTraffic> traffic) {
-    if (!_tunnelUp) {
-      return;
-    }
-    _ensureSessionOpen();
-    final now = DateTime.now();
-    for (final MapEntry(key: id, value: totals) in traffic.entries) {
-      _open[id]?.updateTraffic(totals.upload, totals.download, now);
-    }
-  }
-
-  Future<void> onLiveConnections(List<TrackerInfo> connections) async {
-    if (!_tunnelUp) {
-      await flush();
-      return;
-    }
-    _ensureSessionOpen();
-    final now = DateTime.now();
-    final live = <String>{};
-    for (final connection in connections) {
-      live.add(connection.id);
-      final existing = _open[connection.id];
-      if (existing == null) {
-        _open[connection.id] = _OpenConnection(connection, _profile(), now);
-      } else {
-        existing.refresh(connection, now);
+  Future<void> _importJournal(DateTime now) async {
+    final profile = _profile();
+    var imported = 0;
+    try {
+      for (final dir in await _journalDirs()) {
+        imported += await _importDir(dir, profile, now);
       }
-    }
-    final closed = [
-      for (final open in _open.values)
-        if (!live.contains(open.connection.id)) open,
-    ];
-    for (final open in closed) {
-      _open.remove(open.connection.id);
-    }
-    if (closed.isNotEmpty) {
-      await _record(closed);
+    } catch (error) {
+      commonPrint.log(
+        'Traffic statistics import failed: ${compactError(error)}',
+        logLevel: LogLevel.warning,
+      );
+      return;
     }
     await _pruneIfDue(now);
-    _invalidateStatistics(now);
+    if (imported > 0) {
+      _invalidateStatistics(now);
+    }
   }
 
-  /// Writes every still-open connection with the traffic seen so far, as
-  /// of its last sighting.
-  Future<void> flush() {
-    if (!_tunnelUp) {
-      unawaited(_closeSession());
+  Future<List<Directory>> _journalDirs() async {
+    if (system.isIOS) {
+      // The app core's own journal stays out: it holds probes and
+      // system-proxy traffic the page never counted.
+      final shared = await appPath.sharedIOSFlClashDirPath;
+      if (shared == null) {
+        return const [];
+      }
+      return [Directory(path.join(shared, trafficJournalDirectoryName))];
     }
-    if (_open.isEmpty) {
-      return _writes;
+    return [
+      Directory(
+        path.join(await appPath.homeDirPath, trafficJournalDirectoryName),
+      ),
+    ];
+  }
+
+  // The journal files are small, so the importer reads them synchronously:
+  // async file reads in a background import can stall behind the event loop.
+  Future<int> _importDir(
+    Directory dir,
+    (int, String) profile,
+    DateTime now,
+  ) async {
+    if (!dir.existsSync()) {
+      return 0;
     }
-    final closed = _open.values.toList();
-    _open.clear();
-    return _record(closed);
+    final currentHour = DateTime(now.year, now.month, now.day, now.hour);
+    final files = [
+      for (final entity in dir.listSync())
+        if (entity is File && entity.path.endsWith(trafficJournalFileSuffix))
+          entity,
+    ];
+    files.sort((a, b) => a.path.compareTo(b.path));
+    var imported = 0;
+    for (final file in files) {
+      try {
+        imported += await _importFile(file, profile, currentHour);
+      } catch (error) {
+        commonPrint.log(
+          'Traffic statistics import failed: ${compactError(error)}',
+          logLevel: LogLevel.warning,
+        );
+      }
+    }
+    return imported;
+  }
+
+  Future<int> _importFile(
+    File file,
+    (int, String) profile,
+    DateTime currentHour,
+  ) async {
+    final hour = _journalFileHour(path.basename(file.path));
+    if (hour == null) {
+      return 0;
+    }
+    final bytes = file.readAsBytesSync();
+    var offset = _importOffsets[file.path] ?? 0;
+    if (offset > bytes.length) {
+      offset = 0;
+    }
+    final fresh = utf8.decode(bytes.sublist(offset));
+    final lastNewline = fresh.lastIndexOf('\n');
+    if (lastNewline < 0) {
+      if (hour.isBefore(currentHour)) {
+        file.deleteSync();
+        _importOffsets.remove(file.path);
+      }
+      return 0;
+    }
+    final consumed = fresh.substring(0, lastNewline + 1);
+    final rows = <TrafficStatisticsCompanion>[];
+    final lines = consumed.split('\n');
+    for (var i = 0; i < lines.length; i++) {
+      final row = _journalRow(lines[i], profile);
+      if (row != null) {
+        rows.add(row);
+      }
+      if (i % 256 == 255) {
+        await Future<void>.delayed(Duration.zero);
+      }
+    }
+    var imported = 0;
+    if (rows.isNotEmpty) {
+      final ids = {for (final row in rows) row.connectionId.value};
+      final existing = await database.trafficStatisticsDao.existingIds(ids);
+      final freshRows = [
+        for (final row in rows)
+          if (!existing.contains(row.connectionId.value)) row,
+      ];
+      if (freshRows.isNotEmpty) {
+        await database.trafficStatisticsDao.recordClosed(freshRows);
+        imported = freshRows.length;
+      }
+    }
+    _importOffsets[file.path] = offset + utf8.encode(consumed).length;
+    if (hour.isBefore(currentHour)) {
+      file.deleteSync();
+      _importOffsets.remove(file.path);
+    }
+    return imported;
+  }
+
+  DateTime? _journalFileHour(String name) {
+    final stem = name.endsWith(trafficJournalFileSuffix)
+        ? name.substring(0, name.length - trafficJournalFileSuffix.length)
+        : name;
+    final parts = stem.split('-');
+    if (parts.length != 4) {
+      return null;
+    }
+    final year = int.tryParse(parts[0]);
+    final month = int.tryParse(parts[1]);
+    final day = int.tryParse(parts[2]);
+    final hour = int.tryParse(parts[3]);
+    if (year == null || month == null || day == null || hour == null) {
+      return null;
+    }
+    return DateTime(year, month, day, hour);
+  }
+
+  TrafficStatisticsCompanion? _journalRow(String line, (int, String) profile) {
+    if (line.isEmpty) {
+      return null;
+    }
+    Object? decoded;
+    try {
+      decoded = jsonDecode(line);
+    } catch (_) {
+      return null;
+    }
+    if (decoded is! Map<String, Object?>) {
+      return null;
+    }
+    final id = decoded['id'];
+    final host = decoded['host'];
+    final process = decoded['process'];
+    final proxy = decoded['proxy'];
+    final node = decoded['node'];
+    final direct = decoded['direct'];
+    final rule = decoded['rule'];
+    final rulePayload = decoded['rulePayload'];
+    final upload = decoded['upload'];
+    final download = decoded['download'];
+    final start = decoded['start'];
+    final end = decoded['end'];
+    if (id is! String ||
+        id.isEmpty ||
+        host is! String ||
+        process is! String ||
+        proxy is! String ||
+        node is! String ||
+        direct is! bool ||
+        rule is! String ||
+        rulePayload is! String ||
+        upload is! int ||
+        download is! int ||
+        start is! int ||
+        end is! int) {
+      return null;
+    }
+    return TrafficStatisticsCompanion.insert(
+      connectionId: id,
+      host: host,
+      process: process,
+      proxy: proxy,
+      node: Value(node.isEmpty ? null : node),
+      direct: direct,
+      rule: rule,
+      rulePayload: rulePayload,
+      upload: upload,
+      download: download,
+      startedAt: DateTime.fromMillisecondsSinceEpoch(start),
+      endedAt: DateTime.fromMillisecondsSinceEpoch(end),
+      profileId: profile.$1,
+      profileLabel: profile.$2,
+    );
+  }
+
+  Future<void> _deleteJournalFiles() async {
+    for (final dir in await _journalDirs()) {
+      if (!dir.existsSync()) {
+        continue;
+      }
+      for (final entity in dir.listSync()) {
+        if (entity is File && entity.path.endsWith(trafficJournalFileSuffix)) {
+          entity.deleteSync();
+        }
+      }
+    }
   }
 
   (int, String) _profile() {
@@ -233,28 +393,11 @@ class TrafficStatisticsRecorder extends _$TrafficStatisticsRecorder {
     return (profile?.id ?? 0, profile?.realLabel ?? '');
   }
 
-  Future<void> _record(List<_OpenConnection> closed) {
-    final run = _writes.then((_) async {
-      try {
-        await database.trafficStatisticsDao.recordClosed([
-          for (final open in closed) open.toCompanion(),
-        ]);
-      } catch (error) {
-        commonPrint.log(
-          'Traffic statistics record failed: ${compactError(error)}',
-          logLevel: LogLevel.warning,
-        );
-      }
-    });
-    _writes = run.then<void>((_) {}, onError: (_) {});
-    return run;
-  }
-
   /// Reopens a live session after the wipe, or uptime stalls on a deleted row.
   Future<void> clear() {
     final run = _writes.then((_) async {
-      _open.clear();
       _openSessionId = null;
+      _importOffsets.clear();
       try {
         await database.trafficStatisticsDao.clear();
         await database.tunnelSessionsDao.clear();
@@ -266,6 +409,14 @@ class TrafficStatisticsRecorder extends _$TrafficStatisticsRecorder {
       } catch (error) {
         commonPrint.log(
           'Traffic statistics clear failed: ${compactError(error)}',
+          logLevel: LogLevel.warning,
+        );
+      }
+      try {
+        await _deleteJournalFiles();
+      } catch (error) {
+        commonPrint.log(
+          'Traffic statistics journal clear failed: ${compactError(error)}',
           logLevel: LogLevel.warning,
         );
       }
@@ -306,44 +457,6 @@ class TrafficStatisticsRecorder extends _$TrafficStatisticsRecorder {
     }
     _lastInvalidatedAt = now;
     ref.invalidate(trafficStatisticsProvider);
-  }
-}
-
-class _OpenConnection {
-  _OpenConnection(this.connection, this.profile, this.lastSeenAt);
-
-  TrackerInfo connection;
-  final (int, String) profile;
-  DateTime lastSeenAt;
-
-  void refresh(TrackerInfo next, DateTime at) {
-    connection = next;
-    lastSeenAt = at;
-  }
-
-  void updateTraffic(int upload, int download, DateTime at) {
-    connection = connection.copyWith(upload: upload, download: download);
-    lastSeenAt = at;
-  }
-
-  TrafficStatisticsCompanion toCompanion() {
-    final chains = connection.chains;
-    return TrafficStatisticsCompanion.insert(
-      connectionId: connection.id,
-      host: connection.title,
-      process: connection.metadata.process,
-      proxy: chains.isEmpty ? '' : chains.last,
-      node: Value(chains.firstOrNull),
-      direct: chains.firstOrNull == 'DIRECT',
-      rule: connection.rule,
-      rulePayload: connection.rulePayload,
-      upload: connection.upload,
-      download: connection.download,
-      startedAt: connection.start,
-      endedAt: lastSeenAt,
-      profileId: profile.$1,
-      profileLabel: profile.$2,
-    );
   }
 }
 

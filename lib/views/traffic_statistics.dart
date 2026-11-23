@@ -34,6 +34,14 @@ class _TrafficStatisticsViewState extends ConsumerState<TrafficStatisticsView> {
   var _offset = 0;
   var _rankingTab = _RankingTab.policy;
 
+  @override
+  void initState() {
+    super.initState();
+    unawaited(
+      ref.read(trafficStatisticsRecorderProvider.notifier).importJournal(),
+    );
+  }
+
   Future<void> _handleClear() async {
     final appLocalizations = context.appLocalizations;
     final confirmed = await dialogs.showMessage(
@@ -69,8 +77,14 @@ class _TrafficStatisticsViewState extends ConsumerState<TrafficStatisticsView> {
         IconButtonData(
           glyph: AppGlyphs.refresh,
           tooltip: appLocalizations.trafficStatisticsRefresh,
-          onPressed: () =>
-              ref.invalidate(trafficStatisticsProvider(_range, _offset)),
+          onPressed: () {
+            unawaited(
+              ref
+                  .read(trafficStatisticsRecorderProvider.notifier)
+                  .importJournal(),
+            );
+            ref.invalidate(trafficStatisticsProvider(_range, _offset));
+          },
         ),
       ],
       body: Column(

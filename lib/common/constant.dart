@@ -139,6 +139,12 @@ const mitmCaKeyFileName = 'ca.key';
 /// the Network Extension: the tunnel profile and the MITM files.
 const sharedFlClashDirectoryName = 'FlClash';
 
+/// Hourly closed-connection journals the Go core writes under the core home
+/// directory, one JSON line per connection, for the traffic statistics
+/// importer.
+const trafficJournalDirectoryName = 'traffic';
+const trafficJournalFileSuffix = '.jsonl';
+
 const localhost = '127.0.0.1';
 const clashConfigKey = 'clash_config';
 const configKey = 'config';

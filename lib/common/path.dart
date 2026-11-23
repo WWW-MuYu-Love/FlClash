@@ -167,7 +167,8 @@ class AppPath {
     _dataDir = ResolveOnce(supportDirectory);
     _downloadDir = ResolveOnce(downloadDirectory);
     _tempDir = ResolveOnce(temporaryDirectory);
-    cacheDirectory().then(cacheDir.complete);
+    // Best-effort: a failing lookup must not escape as an unhandled error.
+    cacheDirectory().then(cacheDir.complete, onError: (_) {});
   }
 
   /// Copies the MITM files the extension needs into the FlClash folder

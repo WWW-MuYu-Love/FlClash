@@ -32,6 +32,7 @@ func handleInit(params *InitParams) error {
 	defer configMu.Unlock()
 	sdkVersion.Store(int32(params.Version))
 	constant.SetHomeDir(params.HomeDir)
+	setupTrafficJournal(params.HomeDir)
 	initOwnership(params.HomeDir)
 	clearSpilledResponses()
 	isInit.Store(true)
@@ -63,6 +64,7 @@ func handleStopListener() {
 	setRunning(false)
 	listener.StopListener()
 	resolver.ResetConnection()
+	flushTrafficJournal()
 	bumpRouteEpoch()
 }
 
@@ -99,6 +101,7 @@ func handleShutdown() {
 	configMu.Lock()
 	setRunning(false)
 	listener.StopListener()
+	flushTrafficJournal()
 	updater.StopGeoUpdater()
 	executor.Shutdown()
 	currentConfig = nil

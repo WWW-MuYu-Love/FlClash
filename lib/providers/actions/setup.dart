@@ -138,12 +138,16 @@ class SetupAction extends _$SetupAction {
 
   void _setLocalRunning(bool running) {
     _stopRuntimeTicker();
+    unawaited(
+      ref
+          .read(trafficStatisticsRecorderProvider.notifier)
+          .noteTunnelRunning(running),
+    );
     if (!running) {
       _startTime = null;
       debouncer.cancel(FunctionTag.applyProfile);
       _pendingForceApply = false;
       _updateRunTime();
-      unawaited(ref.read(trafficStatisticsRecorderProvider.notifier).flush());
       return;
     }
 

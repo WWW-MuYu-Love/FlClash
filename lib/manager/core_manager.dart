@@ -158,16 +158,12 @@ class _CoreContainerState extends ConsumerState<CoreManager>
   void onRequest(TrackerInfo trackerInfo) async {
     ref.read(requestsProvider.notifier).addRequest(trackerInfo);
     ref.read(requestCountProvider.notifier).update((count) => count + 1);
-    ref.read(trafficStatisticsRecorderProvider.notifier).onRequest(trackerInfo);
     super.onRequest(trackerInfo);
   }
 
   @override
   void onRequestTraffic(Map<String, RequestTraffic> traffic) {
     ref.read(requestsProvider.notifier).updateTraffic(traffic);
-    ref
-        .read(trafficStatisticsRecorderProvider.notifier)
-        .onRequestTraffic(traffic);
     super.onRequestTraffic(traffic);
   }
 

@@ -171,6 +171,23 @@ class TrafficStatisticsDao extends DatabaseAccessor<Database>
     );
   }
 
+  Future<Set<String>> existingIds(Set<String> ids) async {
+    if (ids.isEmpty) {
+      return const {};
+    }
+    final found = <String>{};
+    for (final chunk in ids.chunks(_maxBoundValues)) {
+      final placeholders = List.filled(chunk.length, '?').join(', ');
+      final rows = await customSelect(
+        'SELECT connection_id FROM traffic_statistics '
+        'WHERE connection_id IN ($placeholders)',
+        variables: [for (final id in chunk) Variable.withString(id)],
+      ).get();
+      found.addAll([for (final row in rows) row.read<String>('connection_id')]);
+    }
+    return found;
+  }
+
   Future<int> pruneOlderThan(DateTime cutoff) {
     return trafficStatistics.remove(
       (t) => t.endedAt.isSmallerThanValue(cutoff),
